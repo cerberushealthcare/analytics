@@ -1,0 +1,255 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Facesheet Data Record Base Classes
+ * @author Warren Hornsby 
+ */
+/**
+ * Data Record
+ */
+abstract class FsDataRec extends SqlRec {
+  //
+  public function getAuditLabel() {
+    return $this->getKeyValue();
+  }
+  /**
+   * Override with natural key for associating facesheet recs (e.g. 'agent')
+   * @return string 'key' or array('key1','key2')  
+   */
+  abstract public function getKey();
+  /**
+   * Override with face rec class (e.g. 'FaceAllergy')
+   * @return string  
+   */
+  abstract public function getFaceClass();
+  /**
+   * @return string 'value' or 'value1|value2'
+   */
+  public function getKeyValue() {
+    $key = $this->getKey();
+    if (is_string($key)) { 
+      return $this->$key;
+    } else {
+      $v = array();
+      foreach ($key as $k)
+        $v[] = $this->$k;
+      return implode('|', $v);
+    }
+  }
+  /**
+   * @param string $value 'value' or 'value1|value2'
+   */
+  public function setKeyValue($value) {
+    $key = $this->getKey();
+    if (is_string($key)) {
+      $this->$key = $value;
+    } else {
+      $v = explode('|', $value);
+      foreach ($key as $k)
+        $this->$k = next($v); 
+    }
+  }
+  /**
+   * @param DataRec $rec
+   * @return bool
+   */
+  public function isNewerThan($rec) {
+    return (compareDates($this->dateUpdated, $rec->dateUpdated) > 0);
+  }
+  /**
+   * @param DataRec $rec
+   * @return bool
+   */
+  public function keyNotEquals($rec) {
+    if ($rec)
+      return ($this->getKeyValue() != $rec->getKeyValue());
+  }
+  /**
+   * @see SqlRec::save()
+   */
+  public function save() {
+    $rec = parent::save();
+    if ($rec) 
+      $this->dateUpdated = $rec->dateUpdated;
+  }
+  /**
+   * Build a facesheet record from this (e.g. a session or UI) 
+   * @return DataRec
+   */
+  public function asFace() {
+    $class = $this->getFaceClass();
+    $face = new $class($this);
+    if ($face->sessionId !== null) {
+      $face->sessionId = null;
+      $face->setPkValue(null);
+    }
+    $face->active = true;
+    $face->dateUpdated = null;
+    return $face;
+  }
+  /**
+   * Cast fields to integer (or null if non-numeric)
+   * @param ('fid',..)
+   */
+  protected function toInt() {
+    $fids = func_get_args();
+    foreach ($fids as $fid) 
+      $this->$fid = (is_numeric($this->$fid)) ? intval($this->$fid) : null;
+  } 
+  /**
+   * Cast fields to float (or null if non-numeric)
+   * @param ('fid',..)
+   */
+  protected function toNumeric() {
+    $fids = func_get_args();
+    foreach ($fids as $fid) 
+      $this->$fid = (is_numeric($this->$fid)) ? floatval($this->$fid) : null;
+  } 
+  //
+  /**
+   * Fetch another active face rec with key matching that of supplied rec
+   * @return DataRec (or null if none exist)
+   */
+  public static function fetchActiveKeyMatch($rec) {
+    $keyValue = $rec->getKeyValue();
+    $c = self::_asFaceCriteria($rec->clientId, get_class($rec));
+    $c->active = true;
+    $c->setKeyValue($keyValue);
+    if ($rec->getPkValue()) 
+      $c->setPkValue(CriteriaValue::notEquals($rec->getPkValue()));
+    return end(self::fetchAllBy($c));
+  }
+  /**
+   * Save face record built from UI and check for key duplication 
+   * @param DataRec $face
+   * @return DataRec face record saved
+   */
+  protected static function _saveFromUi($face) {
+    $facePk = self::_fetchFace($face->getPkValue(), $face->getFaceClass());
+    $faceKey = self::fetchActiveKeyMatch($face);
+    if ($face->keyNotEquals($facePk)) 
+      $face->setPkValue(null);
+    if ($faceKey) 
+      $faceKey->deactivate();
+    $face->save();
+    return $face;
+  }
+  /**
+   * Reset active flag and save
+   */
+  protected static function _deactivate($face) {
+    $face->active = false;
+    $face->save();
+  }
+  /**
+   * Build a new active face rec from a session rec
+   */
+  protected static function _faceFromSession($sess, $class) {
+    $face = new $class();
+    $face->date = nowNoQuotes();
+    $face->active = true;
+    $face->setFromSession($sess);
+    return $face;
+  }
+  /**
+	 * Fetch existing face rec
+   */
+  protected static function _fetchFace($id, $class) {
+    if ($id == null)
+      return null;
+    $c = self::_asFaceCriteria(null, $class);
+    $c->setPkValue($id);
+    return self::fetchOneBy($c); 
+  }
+  /**
+   * Fetch active and inactive face records for client
+   * @return array(key=>DataRec,..) @see getKey()  
+   */
+  protected static function _fetchFaces($cid, $class) {
+    $c = self::_asFaceCriteria($cid, $class);
+    return self::fetchMapBy($c, $c->getKeyValue());
+  }
+  /**
+   * Fetch active face records for client
+   */
+  protected static function _fetchActiveFaces($cid, $class) {
+    $c = self::_asFaceCriteria($cid, $class);
+    $c->active = true;
+    return self::fetchAllBy($c);
+  }
+  /**
+   * Fetch all session records for client
+   */
+  protected static function _fetchAllSess($cid, $class) {
+    $c = self::_asSessCriteria($cid, $class);
+    return self::fetchAllBy($c);
+  }
+	/**
+   * Mark unbuilt sessions as built 
+   * @param DataRec $rec last session record (e.g. highest PK) @see fetchUnbuiltFor()
+   */
+  protected static function _markAsBuilt($rec) {
+    if ($rec) {
+      $cid = $rec->clientId;
+      $id = $rec->getPkValue();
+      $pk = $rec->getPkField();
+      $table = $rec->getSqlTable();
+      if ($cid == null) 
+        throw new SecurityException('Client ID required');
+      if ($id == null) 
+        throw new SecurityException('ID required');
+      Dao::query("UPDATE $table SET active=0 WHERE client_id=$cid AND $pk<=$id AND session_id>0 AND active IS NULL");
+    }
+  }
+  /**
+   * Build new face records from unbuilt session history
+   * @param [DataRec,..] $sessions
+   * @param [key=>DataRec,..] $faces
+   */
+  protected static function _buildFacesFromSessions($sessions, $faces) {
+    $last = end($sessions);
+    Rec::sort($sessions, new RecSort($last->getKey(), '-dateUpdated'));
+    foreach ($sessions as $sess) {
+      $key = $sess->getKeyValue();
+      $faceKey = geta($faces, $key);
+      if ($faceKey) {
+        if ($sess->isNewerThan($faceKey)) {
+          $face = $sess->asFace();
+          if ($face) {
+            $face->setPkValue($faceKey->getPkValue());
+            $face->save();
+            $faces[$key] = $face;
+          }
+        }
+      } else {
+        $face = $sess->asFace();
+        if ($face) {
+          $face->save();
+          $faces[$key] = $face;
+        }
+      }
+    }
+    self::_markAsBuilt($last);
+  }
+  protected static function _asFaceCriteria($cid, $class) {
+    $c = new $class();
+    $c->clientId = $cid;
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+  protected static function _asSessCriteria($cid, $class) {
+    $c = new $class();
+    $c->clientId = $cid;
+    $c->sessionId = CriteriaValue::isNotNull();
+    return $c;
+  }
+  protected static function _asUnbuiltSessCriteria($cid, $class) {
+    if ($cid == null) 
+      throw new SecurityException('Client ID required');
+    $c = new $class();
+    $c->clientId = $cid;
+    $c->sessionId = CriteriaValue::greaterThanNumeric('0');
+    $c->active = CriteriaValue::isNull();
+    return $c;
+  }
+}

@@ -1,0 +1,55 @@
+/**
+ * Pop Downloader
+ */
+CcdDownloader = {
+  pop:function(cid) {
+    return Downloader = this.create().pop(cid);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('File Download').extend(function(self) {
+      return {
+        init:function() {
+          self.frame = My.Frame.create(self.content);
+          //self.cb = Html.CmdBar.create(self.content).button('Download', self.download_onclick, 'download2').button('Encrypted Download', self.download_onclick, 'lock').cancel(self.close)
+          self.cb = Html.CmdBar.create(self.content).button('Download', self.download_onclick, 'download2').cancel(self.close)
+        },
+        onshow:function(cid) {
+          self.working(true);
+          Ajax.Ccd.get(cid, function(file) {
+            self.working(false);
+            self.file = file;
+            self.frame.load(file);
+          })
+        },
+        download_onclick:function() {
+          self.close();
+          Page.Nav.goDownloadCcd(self.file);
+        },
+        //
+        working:function(value) {
+          self.frame.visibleIf(! value);
+          self.cb.wrapper.visibleIf(! value);
+          self.content.working(value);
+        }
+      }
+    })
+  },
+  Frame:{
+    create:function(container) {
+      return Html.Pop.Frame.create(container).extend(function(self) {
+        return {
+          init:function() {
+            self.form = Html.UlEntry.create(self, function(ef) {
+              ef.li('Filename').ro('filename', 'filename');
+              ef.li('SHA-1 Hash').ro('hash', 'hash');
+            })
+          },
+          load:function(file) {
+            self.form.load(file);
+          }
+        }
+      })
+    }
+  }
+}

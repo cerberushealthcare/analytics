@@ -1,0 +1,26 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+class PID extends HL7Segment {
+  //
+  public $seq;
+  public $externalPid;
+  public $pid;
+  public $altPid;
+  public $name = 'XPN';
+  public $mothersMaiden;
+  public $birth;
+  public $gender;
+  public $alias = 'XPN';
+  public $race;
+  public $address = 'XPA';
+  public $county;
+  public $phone;
+  public $workPhone;
+  public $language;
+  public $marital;
+  public $religion;
+  public $account;
+  public $ssn;
+  public $license;
+}

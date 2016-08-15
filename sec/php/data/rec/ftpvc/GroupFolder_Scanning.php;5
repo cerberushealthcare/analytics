@@ -1,0 +1,94 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Scanning
+ * UserFile_Scanning
+ * @author Warren Hornsby
+ */
+class GroupFolder_Scanning extends GroupFolder {
+  /**
+   * @param GroupUpload_Scanning[] $uploads
+   * @param int $fileIndex next file index
+   */
+  public function upload($uploads, $fileIndex) {
+    foreach ($uploads as &$upload) {
+      $upload->setNewName($this->ugid, $fileIndex++);
+      $filename = $this->getCompleteFilename($upload->newName);
+      move_uploaded_file($upload->tmpName, $filename);
+      $upload->setImageInfo(getimagesize($filename));
+    }
+    return $uploads;
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function output($file) {
+    parent::output(GroupFile::from($this, $file->filename), $file->mime);
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function delete($file) {
+    parent::delete(GroupFile::from($this, $file->filename));
+  } 
+  //
+  /**
+   * @param int $ugid
+   * @return GroupFolder_Scanning
+   */
+  static function open($ugid) {
+    return parent::open($ugid, 'scan');
+  }
+}
+class GroupUpload_Scanning extends GroupUpload {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  public $newName;  // 'S00000012'
+  public $ext;      // 'jpg'
+  public $mime;     // 'image/jpeg'
+  public $width;    // 306
+  public $height;   // 205
+  //
+  public function validate() {
+    parent::validate();
+    $this->ext = $this->getExt();
+    if (empty($this->ext)) 
+      throw new GroupUploadException($this, "$this->name is an invalid type; only image and PDF files accepted");
+  }
+  public function setNewName($ugid, $i) {
+    $this->newName = "G$ugid" . sprintf("S%07d", $i) . "." . $this->getExt();
+  }
+  public function setImageInfo($info) {  // from php getimagesize()
+    if (isset($info['mime'])) {
+      $this->width = $info[0];
+      $this->height = $info[1];
+      $this->mime = $info['mime'];
+    } else {
+      $this->mime = $this->type;
+    }
+  }
+  //
+  private function getExt() {
+    switch ($this->type) {
+      case 'image/jpeg':
+      case 'image/pjpeg':
+        return 'jpg';
+      case 'image/bmp':
+      case 'image/x-windows-bmp':
+        return 'bmp';
+      case 'image/gif':
+        return 'gif';
+      case 'image/x-png':
+        return 'png';
+      case 'application/pdf':
+        return 'pdf';
+    }
+  }
+}
+?>

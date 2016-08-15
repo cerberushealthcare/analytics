@@ -1,0 +1,22 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once "php/newcrop/NewCrop.php";
+$newcrop = new NewCrop();
+$clickthru = $newcrop->buildClickThru($_GET['id']);
+?>
+<html>
+<body>
+<form name='info' method='post' action='<?=$clickthru['url'] ?>'>
+  <input type='hidden' value='Go' />
+  <textarea style='display:none' id='RxInput' name='RxInput'><?=$clickthru['xml'] ?></textarea>
+</form>
+<div style='text-align:center;padding-top:50px;font-family:Arial;font-size:10pt'>
+<div style='width:250px;height:70px;background:url(img/icons/working5.gif) #dddddd no-repeat center center;border:10px solid #008E80;margin-bottom:0.5em'>
+</div>
+Contacting ePrescribing partner site
+</div>
+</body>
+<script>
+document.info.submit();
+</script>
+</html>

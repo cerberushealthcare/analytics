@@ -1,0 +1,21 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/PortalMessaging.php'; 
+//
+try {
+  switch ($action) {
+    //
+    case 'getMyUnreadCt':
+      $ct = PortalMessaging::getMyUnreadCt();
+      jam($ct);
+    case 'getMyInboxThreads':
+      $threads = PortalMessaging::getMyInboxThreads();
+      jam($threads);
+    case 'openThread':
+      $thread = PortalMessaging::openThread($_GET['id']);
+      jam($thread);
+  }
+} catch (Exception $e) {
+  jamerr($e);
+}
+?>

@@ -1,0 +1,34 @@
+/**
+ * TemplateMap
+ */
+TemplateMap = Object.Rec.extend({
+  onload:function() {
+    this.Sections = MapSections.revive(this.Sections);
+    var suids = {};
+    this.Sections.forEach(function(section) {
+      suids[section.uid] = section;
+    })
+    this._suids = suids;
+  },
+  getPar:function(suid, puid) {
+    return this._suids[suid]._puids[puid];
+  }
+})
+MapSections = Object.RecArray.of(function() {
+  return MapSection;
+})
+MapSection = Object.Rec.extend({
+  onload:function() {
+    this.Pars = MapPars.revive(this.Pars);
+    var puids = {};
+    this.Pars.forEach(function(par) {
+      puids[par.uid] = par;
+    })
+    this._puids = puids;
+  }
+})
+MapPars = Object.RecArray.of(function() {
+  return MapPar;
+})
+MapPar = Object.Rec.extend({
+})

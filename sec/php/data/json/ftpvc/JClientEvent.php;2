@@ -1,0 +1,93 @@
+<?php
+require_once "php/data/json/_util.php";
+require_once "php/data/json/JSession.php";
+
+// History event for a client
+class JClientEvent {
+
+  public $date; 
+  public $type;  // "S"=session, "K"=sched, "C"=client
+	public $id;
+	public $tid;  // for S only
+	public $name;  // for session, template name; for sched, schedType
+	public $comment;  // for sched, schedStatus
+	public $closed;  // for S only
+  public $clientId;  
+	
+	// Derived
+	public $fts;  // formatted timestamp, "05-Nov-2008 8:50AM"
+  public $fid;  // informal date, "Today"
+  public $fd;  // formatted date, "2008-11-03"
+	
+	// Edit event anchor props
+  public $aHref;  
+  public $aClass; 
+	
+	const TYPE_SCHED = "K";
+	const TYPE_SESSION = "S";
+	const TYPE_CLIENT = "C";
+	
+	public function __construct($apptTypes, $schedStatus, $date, $type, $id, $tid, $name, $comment, $closed, $dateClosed, $dateUpdated, $clientId, $title, $standard) {
+    $this->date = $date;
+    if ($type == JClientEvent::TYPE_SESSION) {
+      $this->fts = formatDate($date);
+    } else {
+      $this->fts = formatInformalTime($date);
+    }
+    $this->fid = formatInformalDate($date);
+    $this->fd = dateToString($date);
+    $this->type = $type;
+		$this->id = $id;
+		$this->tid = $tid;
+    $this->closed = $closed;
+    $this->clientId = $clientId;
+    if ($type == JClientEvent::TYPE_SCHED) {
+      if ($name == "") {
+        $this->name = "[No type selected]";
+      } else {
+        if (isset($apptTypes[$name])) {
+          $this->name = $apptTypes[$name];
+        }
+      }
+      $this->name = 'Appt: ' . $this->name;
+      $this->comment = $this->getStatus($schedStatus, $comment);
+      $this->aHref = "schedule.php?pop=" . $id;
+      $this->aClass = "icon edit-appt";
+    } else if ($type == JClientEvent::TYPE_SESSION) {
+      $this->name = JSession::buildLabel($title, $name, $closed, $standard);
+      if ($closed) {
+        //$this->name = "Signed " . $name;
+        $this->comment = "Signed: " . formatInformalTime($dateClosed);
+        $this->aClass = "icon no-edit-note";
+      } else {
+        $this->comment = "Updated: " . formatInformalTime($dateUpdated);
+        $this->aClass = "icon edit-note";
+      }
+      $this->aHref = "javascript:go(" . $id . ")";
+    } else {
+      $this->name = "Client updated";
+    }
+	}
+  private function getStatus($schedStatus, $index) {
+    if (isset($schedStatus[$index])) {
+      return $schedStatus[$index]->name;
+    } else {
+      return "[No status selected]";
+    }
+  }
+	public function out() {
+		return cb(qq("date", $this->date)
+        . C . qq("fts", $this->fts) 
+        . C . qq("fid", $this->fid) 
+        . C . qq("fd", $this->fd) 
+        . C . qq("type", $this->type) 
+        . C . qq("id", $this->id) 
+        . C . qq("tid", $this->tid) 
+        . C . qq("name", $this->name) 
+        . C . qq("comment", $this->comment) 
+        . C . qq("ahref", $this->aHref) 
+        . C . qq("aclass", $this->aClass) 
+        );
+	}
+}
+?>

@@ -1,0 +1,260 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/LoginReqs.php';
+require_once 'php/data/rec/sql/UserLogin.php';
+require_once 'php/data/rec/sql/UserStub.php';
+//
+/**
+ * User Login Requirements
+ * DAO for UserLoginReq
+ * @author Warren Hornsby
+ */
+class UserLoginReqs {
+  //
+  const REQ_ACTION_NOTIFY = 'NOTIFICATION';  // not yet received
+  const REQ_ACTION_WARN = 'WARNING';         // good now but <30 days until expiration
+  const REQ_ACTION_EXPIRE = 'EXPIRATION';    // expired
+  //
+  /**
+   * Get existing or create any that apply for particular user 
+   * @param int UserId
+   * @return array(
+   *   REQ_ACTION=>[
+   *     UserLoginReq(+LoginReq),..],..) or null if none  
+   */
+  public static function getAllFor($userId) {
+    $user = UserLogin::fetch($userId);
+    $reqs = UserLoginReqs::buildFor($user);
+    $reqsByAction = array();
+    foreach ($reqs as $req) {
+      switch ($req->status) {
+        case UserLoginReq::STATUS_NOTIFIED:
+          $reqsByAction[UserLoginReqs::REQ_ACTION_NOTIFY][] = $req;
+          break;
+        case UserLoginReq::STATUS_GOOD:
+          if ($req->dateExpires && $req->_daysLeft <= 30)
+            $reqsByAction[UserLoginReqs::REQ_ACTION_WARN][] = $req;
+          break;
+        case UserLoginReq::STATUS_EXPIRED:
+        case UserLoginReq::STATUS_PAST_GRACE:
+          $reqsByAction[UserLoginReqs::REQ_ACTION_EXPIRE][] = $req;
+          break;
+      }
+    } 
+    return (empty($reqsByAction)) ? null : $reqsByAction; 
+  }
+  /**
+   * Get existing for all users
+   * @return array(
+   */
+  public static function getAll() {
+    $c = new UserLoginReq();
+    $c->active = true;
+    $c->LoginReq = new LoginReq(); // stdClass();
+    $c->UserStub = new UserStub();
+    $recs = SqlRec::fetchAllBy($c);
+    $recs = UserLoginReq::checkExpiration($recs);
+    Rec::sort($recs, new RecSort('loginReqId','status','_daysLeft'));
+    return $recs;
+  }
+  /**
+   * Save object
+   * Enter description here ...
+   * @param stdClass $obj 
+   * @return UserLoginReq updated rec
+   */
+  public static function save($obj) {
+    logit_r($obj, 'saving');
+    $rec = new UserLoginReq($obj);
+    logit_r($rec, 'saving rec');
+    $rec->save();
+    return $rec;
+  }
+  //
+  /*
+   * Fetch existing UserLoginReqs 
+   * Create any that need added
+   * Expire any that need expired
+   */
+  private static function buildFor($user) {
+    $allReqs = LoginReqs::getApplicablesFor($user);
+    $userReqs = UserLoginReq::fetchAllFor($user);
+    $recs = array();
+    foreach ($allReqs as $name => $allReq) {
+      $userReq = geta($userReqs, $name);
+      if ($userReq == null) 
+        $userReq = UserLoginReq::create($user, $allReq);
+      $userReq->LoginReq = $allReq;
+      $recs[] = $userReq;    
+    }
+    $recs = UserLoginReq::checkExpiration($recs);
+    return $recs;
+  }
+}
+/**
+ * User Login Requirement
+ */
+class UserLoginReq extends SqlRec implements NoUserGroup {
+  //
+  public $userLoginReqId;
+  public $userId;
+  public $loginReqId;
+  public $name;
+  public $active;
+  public $status;
+  public $dateNotified;
+  public $dateRcvd;
+  public $dateExpires;
+  public $dateUpdated;
+  public $updatedBy;
+  public $comments;
+  public /*LoginReq*/ $LoginReq;
+  public /*UserStub*/ $UserStub;
+  //
+  public $_daysLeft;  // days until expiration
+  public $_daysSince; // days since notification
+  //
+  const STATUS_NOTIFIED = '1';
+  const STATUS_PAST_GRACE = '2';
+  const STATUS_EXPIRED = '3';
+  const STATUS_GOOD = '9';
+  public static $STATUSES = array(
+    UserLoginReq::STATUS_NOTIFIED => 'Notified',
+    UserLoginReq::STATUS_PAST_GRACE => 'Past Grace',
+    UserLoginReq::STATUS_EXPIRED => 'Expired',
+    UserLoginReq::STATUS_GOOD => 'Received');
+  //
+  public function getSqlTable() {
+    return 'user_login_reqs';
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    $o->_isExpired = $this->isExpired();
+    $o->_isNotified = $this->isNotified();
+    $o->_isReceived = $this->isReceived();
+    if ($this->LoginReq)
+      $o->_name = $this->name . ' (' . $this->LoginReq->applies . ')';
+    return $o;
+  }
+  public function getJsonFilters() {
+    return array(
+      'LoginReq' => JsonFilter::omit(),
+    	'dateNotified' => JsonFilter::editableDateTime(),
+      '_dateNotified' => JsonFilter::informalDateTime('dateNotified'),
+    	'dateRcvd' => JsonFilter::editableDateTime(),
+      '_dateRcvd' => JsonFilter::informalDateTime('dateRcvd'),
+    	'dateExpires' => JsonFilter::editableDate());
+  }
+  public function isExpired() {
+    return $this->status == UserLoginReq::STATUS_PAST_GRACE || $this->status == UserLoginReq::STATUS_EXPIRED;
+  }
+  public function isNotified() {
+    return $this->status == UserLoginReq::STATUS_NOTIFIED;
+  }
+  public function isReceived() {
+    return $this->status == UserLoginReq::STATUS_GOOD;
+  }
+  /**
+   * @see SqlRec::save()
+   */
+  public function save() {
+    global $myLogin;
+    $this->dateUpdated = nowNoQUotes();
+    $this->updatedBy = $myLogin->userId;
+    if ($this->status == UserLoginReq::STATUS_EXPIRED && $this->dateRcvd) 
+      $this->status = STATUS_GOOD;
+    parent::save();
+    if ($this->dateExpires)
+      UserLoginReq::_checkExpiration($this);
+  }
+  /**
+   * Save record as user-notified (STATUS_NOTIFIED)
+   */
+  public function saveAsNotified() {
+    $loginReq = LoginReq::fetch($this->loginReqId);
+    if ($this->status != null) 
+      $this->deactivateAndNew();
+    $this->status = UserLoginReq::STATUS_NOTIFIED;
+    $this->dateNotified = nowNoQuotes();
+    $this->dateExpires = futureDate($loginReq->grace + 1);
+    $this->save();
+  }
+  /**
+   * Save record as received (STATUS_GOOD)
+   * @param(opt) string $dateExpires 
+   * @param(opt) string $comments
+   */
+  public function saveAsReceived($dateExpires = null, $comments = null) {
+    $this->deactivateAndNew();
+    $this->status = UserLoginReq::STATUS_GOOD;
+    $this->dateRcvd = nowNoQuotes();
+    $this->dateExpires = SqlRec::formatSqlDate($dateExpires);
+    $this->comments = $comments;
+    $this->save();
+  }
+  /**
+   * Save record as expired (STATUS_EXPIRED or STATUS_PAST_GRACE)
+   */
+  public function saveAsExpired() {
+    $status = ($this->status == UserLoginReq::STATUS_NOTIFIED) ? UserLoginReq::STATUS_PAST_GRACE : UserLoginReq::STATUS_EXPIRED; 
+    $this->deactivateAndNew();
+    $this->status = $status;
+    $this->save();
+  }
+  //
+  private function deactivateAndNew() {
+    $this->active = false;
+    $this->save();
+    $this->userLoginReqId = null;
+    $this->active = true;
+    $this->status = null;
+    $this->dateNotified = null;
+    $this->dateRcvd = null;
+    $this->dateExpires = null;
+    $this->comments = null;
+  }
+  //
+  /**
+   * @param LoginUser $user
+   * @return array(name=>UserLoginReq,..)
+   */
+  public static function fetchAllFor($user) {
+    $c = new UserLoginReq();
+    $c->userId = $user->userId;
+    $c->active = true;
+    return SqlRec::fetchMapBy($c, 'name');
+  }
+  /**
+   * @param LoginUser $user
+   * @param LoginReq $loginReq
+   */
+  public static function create($user, $loginReq) {
+    $rec = new UserLoginReq();
+    $rec->userId = $user->userId;
+    $rec->loginReqId = $loginReq->loginReqId;
+    $rec->name = $loginReq->name;
+    $rec->active = true;
+    $rec->saveAsNotified();
+    return $rec; 
+  }
+  /**
+   * @param [UserLoginReq,..] $recs
+   * @return array(UserLoginReq,..)
+   */
+  public static function checkExpiration($recs) {
+    foreach ($recs as &$rec) 
+      UserLoginReq::_checkExpiration($rec); 
+    return $recs;
+  }
+  //
+  private static function _checkExpiration(&$rec) {
+    if ($rec->status == UserLoginReq::STATUS_NOTIFIED)  
+      $rec->_daysSince = -daysUntil($rec->dateNotified);
+    if ($rec->dateExpires) {
+      $rec->_daysLeft = daysUntil($rec->dateExpires) - 1;
+      if ($rec->_daysLeft < 0) 
+        $rec->saveAsExpired();
+    }
+  }
+}
+?>

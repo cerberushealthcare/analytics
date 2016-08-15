@@ -1,0 +1,87 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/data/rec/sql/ClientStub.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Status Detail
+ */
+class ErxStatus extends Rec {
+  //
+  public $status;
+  public $clientId;
+  public $doctorUid;
+  public $staffUid;  
+  public $drugInfo;
+  public $date;
+  public $rxStatus;
+  public $rxArchive;
+  public /*ClientStub*/ $ClientStub;
+  public /*UserStub*/ $UserStub_Doctor;
+  public /*UserStub*/ $UserStub_Staff;
+  //
+  const STATUS_DR_REVIEW = 'DrReview';
+  const STATUS_FAILED_ERX = 'FailedElectronicRx';
+  const STATUS_FAILED_FAX = 'FailedFax';
+  const STATUS_STAFF_PROC = 'StaffProcessing';
+  const STATUS_ALL_DR_REVIEW = 'AllDoctorReview';
+  public static $STATUSES = array(
+    ErxStatus::STATUS_DR_REVIEW => 'Dr Review',
+    ErxStatus::STATUS_FAILED_ERX => 'Failed ERX',
+    ErxStatus::STATUS_FAILED_FAX => 'Failed Fax',
+    ErxStatus::STATUS_STAFF_PROC => 'Staff Proc',
+    ErxStatus::STATUS_ALL_DR_REVIEW => 'All Dr Review'
+    );
+  // 
+  const RX_STATUS_COMPLETE = 'C';
+  const RX_STATUS_PENDING = 'P';
+  public static $RX_STATUSES = array(
+    ErxStatus::RX_STATUS_COMPLETE => 'Complete',
+    ErxStatus::RX_STATUS_PENDING => 'Pending',
+    );
+  //
+  const RX_ARCHIVE_CURRENT = 'N';
+  const RX_ARCHIVE_PRIOR = 'Y';
+  //
+  const DEST_COMPOSE = RequestedPageType::COMPOSE;
+  const DEST_STATUS = RequestedPageType::STATUS;
+  const DEST_MEDENTRY = RequestedPageType::MEDENTRY;
+  public static $DEST_BY_STATUS = array(
+    ErxStatus::STATUS_DR_REVIEW => ErxStatus::DEST_COMPOSE,
+    ErxStatus::STATUS_FAILED_ERX => ErxStatus::DEST_STATUS,
+    ErxStatus::STATUS_FAILED_FAX => ErxStatus::DEST_STATUS,
+    ErxStatus::STATUS_STAFF_PROC => ErxStatus::DEST_COMPOSE,
+    ErxStatus::STATUS_ALL_DR_REVIEW => ErxStatus::DEST_COMPOSE
+    );
+  //
+  public function fetchStubs() {
+    if ($this->clientId) 
+      $this->ClientStub = ClientStub::fetch($this->clientId);
+    if ($this->doctorUid) 
+      $this->UserStub_Doctor = UserStub::fetchByUid($this->doctorUid);
+    if ($this->staffUid) 
+      $this->UserStub_Staff = UserStub::fetchByUid($this->staffUid);
+  }
+  /**
+   * Static builders
+   */
+  public static function fromNewCrop($status, $nc) {
+    $rec = new ErxStatus(
+      $status,
+      $nc->ExternalPatientId,
+      $nc->ExternalDoctorId,
+      $nc->ExternalStaffId,
+      $nc->DrugInfo,
+      $nc->PrescriptionDate,
+      $nc->PrescriptionStatus,
+      $nc->PrescriptionArchiveStatus);
+    $rec->fetchStubs();
+    return $rec;
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('ErxStatus');
+  }
+}
+?>
+

@@ -1,0 +1,49 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/IProcCodes.php';
+require_once 'php/data/rec/sql/IProcCodes_Hm.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverIpc.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverIpc.php (posted)');
+  logit_r($_POST);
+}
+try {
+  switch ($action) {
+    //
+    case 'getAll':
+      $recs = IProcCodes::getAll();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'getIpcHms':
+      $recs = IProcCodes_Hm::getAll();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'saveIpcHm':
+      $rec = IProcCodes_Hm::save($obj);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'delIpcHm':
+      $key = IProcCodes_Hm::del($obj);
+      $m = new JAjaxMsg($action, null);
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+}
+if ($m != null) 
+  echo $m->out();

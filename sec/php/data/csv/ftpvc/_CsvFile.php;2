@@ -1,0 +1,50 @@
+<?php
+require_once 'php/data/csv/_CsvRec.php';
+//
+/**
+ * CSV Record
+ * @author Warren Hornsby
+ */
+abstract class CsvFile {
+  //
+  public $filename;
+  public $recs;
+  //
+  public function setFilename($name) {
+    $this->filename = "$name.csv";
+  }
+  public function download() {
+    $filename = $this->filename;
+    header("Content-Type: application/csv"); 
+    header("Content-Disposition: attachment; filename=$filename");
+    $this->outRecs();
+  }
+  public function outRecs() {
+    foreach ($this->recs as $rec) 
+      echo $rec->formatValues() . "\n";
+  }
+  /**
+   * @param string $filename
+   * @param string $class
+   * @return CsvFile loaded with $recs = array(CsvRec,..) of type $class
+   */
+  static function read($filename, $class, $start = 0, $to = 99999) {
+    $recs = array();
+    if (($handle = fopen($filename, "r")) !== false) {
+      if ($class::hasHeader())
+        fgetcsv($handle, 1000, ',');
+      $i = 0;
+      while (($fields = fgetcsv($handle, 1000, ",")) !== false) {
+        if ($i >= $start && $i < $to) 
+          $recs[$i] = new $class($fields);
+        if (++$i >= $to)
+          break;
+      } 
+      fclose($handle);
+    } 
+    $file = new self();
+    $file->filename = $filename;
+    $file->recs = $recs;   
+    return $file;
+  }
+}

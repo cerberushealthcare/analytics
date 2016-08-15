@@ -1,0 +1,22 @@
+/**
+ * Client UI Library
+ */
+var ClientUi = {
+  formatName:function(c) {
+    return c.lastName + ', ' + c.firstName;
+  },
+  isMale:function(c) {
+    return c.sex == 'M';
+  },
+  /*
+   * Create patient <A> linking to facesheet
+   * - c: ClientStub
+   * - args: optional, extra qs args (client ID supplied by default) 
+   */
+  createClientAnchor:function(c, args) {
+    var cls = (ClientUi.isMale(c)) ? 'action umale' : 'action ufemale';
+    args = denull(args, {});
+    args.id = c.clientId;
+    return createAnchor(null, Page.url(Page.PAGE_FACESHEET, args), cls, ClientUi.formatName(c));
+  }
+}

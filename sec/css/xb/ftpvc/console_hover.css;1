@@ -1,0 +1,164 @@
+DIV#parlist LI A {
+  padding:2px 1px 2px 1px;
+}
+DIV.captionbar A.shrink:hover {
+  background:url(../../img/icons/shrink-hover.gif) no-repeat;
+}
+DIV.captionbar A.expand:hover {
+  background:url(../../img/icons/expand-hover.gif) no-repeat;
+}
+A:hover {
+  text-decoration:underline;
+  color:#f42941;
+}
+DIV#templatemap-expanded A.acth:hover {
+  color:#f42941;
+  text-decoration:underline;  
+}
+DIV#sectionlist A:hover {
+  text-decoration:underline;
+  color:#f42941;
+}
+DIV#sectionlist A#search-map:hover {
+  background-color:white;
+  border-color:#f42941;
+}
+DIV#parindex A:hover {
+  color:#f42941;
+  background:white;
+}
+DIV#parindex A.top:hover {
+  background-color:white;
+}
+DIV#parlist DIV#parsearch A:hover {
+  margin:0;
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+}
+DIV#parlist LI A:hover {
+  text-decoration:underline;
+  color:#f42941;
+}
+DIV#parlist LI A.used:hover {
+  text-decoration:none;
+  color:purple;
+}
+DIV#usedlist A:hover {
+  text-decoration:underline;
+  color:#f42941;
+}
+DIV#usedlist A.used:hover {
+  text-decoration:none;
+  color:purple;
+}
+DIV#doc A.clone:hover {
+  background-color:#f9f9f9;
+  border:1px solid #f42941;
+  color:#f42941;
+  text-decoration:none;
+}
+DIV#doc A:hover {
+  text-decoration:underline;
+  background-color:white;
+}
+DIV#doc A.ftd:hover {
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+}
+DIV#doc SPAN.noprt SPAN A:hover {
+  color:black;
+  border:1px solid #0A246A;
+  background-color:#E0E3EA;
+  text-decoration:none;
+  color:#F42941;
+  border:1px solid #F42941;
+  background-color:white;
+}
+A.pencilBar:hover {
+  text-decoration:underline;
+  color:#f42941;
+}
+A#tsearch-a:hover {
+  border:1px solid #08216B;
+  background-color:#B6BDD2;
+}
+A#txsearch-a:hover {
+  border:1px solid #08216B;
+  background-color:#B6BDD2;
+}
+DIV#pop-tx-pars A:hover {
+  border:1px solid #A12830;
+}
+DIV#doc A.erx:hover {
+  background-color:white;
+  color:#f42941;
+  text-decoration:none;
+}
+DIV#menubar A:hover {
+  margin:0 1px 0 0;
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+}
+DIV#menubar A.push:hover {
+  margin:0;
+  padding-bottom:3px;
+  border:1px solid #666666;
+  background-color:#F9F8F7;
+  border-bottom:none;
+  border-right:2px solid #666666;
+}
+DIV#menubar UL A:hover {
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+  margin:0;
+}
+DIV#toolbar A:hover {
+  margin:0;
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+}
+DIV#toolbar A.check-on:hover {
+  margin:0;
+  border:1px solid #0A246A;
+  background-color:#B6BDD2;
+}
+DIV#menubar A.mdisabled:hover {
+  margin:1px;
+  border:none;
+  background-color:transparent;
+}
+DIV#menubar UL A.mdisabled:hover {
+  margin:0;
+  border:1px solid transparent;
+  background-color:transparent;
+}
+DIV#toolbar A.mdisabled:hover {
+  margin:1px;
+  border:none;
+  background-color:transparent;
+}
+/* ICD */
+DIV#icd-tree A:hover {
+  color:#f42941;
+  text-decoration:underline;
+}
+DIV#icd-tree A.sel:hover {
+  color:#A12830;
+  text-decoration:none;
+}
+DIV#icd-tree A:hover SPAN {
+  color:#f42941;
+}
+DIV#icd-tree A.sel:hover SPAN {
+  color:black;
+}
+DIV#icd-tree A:hover U {
+  text-decoration:underline;
+}
+DIV#icd-tree A.sel:hover U {
+  text-decoration:none;
+}
+TH#icdNav A.enabled:hover {
+  color:#f42941;
+  text-decoration:underline;
+}

@@ -1,0 +1,167 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+require_once 'php/data/rec/sql/_UserRec.php';
+/**
+ * User Groups DAO
+ * @author Warren Hornsby
+ */
+class UserGroups {
+  //
+  static $first;
+  /**
+   * @return UserGroup
+   */
+  public function get() {
+    global $myLogin;
+    return UserGroup::fetch($myLogin->userGroupId);
+  }
+  /**
+   * @return array(id=>UserAny,..)
+   */
+  public function getUserMap() {
+    global $myLogin;
+    return UserAny::fetchMap($myLogin->userGroupId);
+  }
+  /**
+   * @return array(UserAny,..)
+   */
+  public function getAllUsers() {
+    global $myLogin;
+    $recs = UserAny::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('userType', 'name'));
+  }
+  /**
+   * @return array(UserAny,..)
+   */
+  public function getActiveUsers() {
+    global $myLogin;
+    $recs = UserAny::fetchActive($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @return array(UserDoctor,..)
+   */
+  public function getDocs() {
+    global $myLogin;
+    return UserDoctor::fetchAll($myLogin->userGroupId);
+  }
+  /**
+   * @return string '{id:"Dr. Name",..}'
+   */
+  public function getDocsJsonList() {
+    $docs = self::getDocs();
+    $list = array();
+    self::$first = current($docs);
+    foreach ($docs as $doc) 
+      $list[$doc->userId] = $doc->name;
+    return jsonencode($list);
+  }
+  /**
+   * @return string '{id:"Name",..}'
+   */
+  public function getUsersJsonList() {
+    $users = self::getAllUsers();
+    $list = array();
+    foreach ($users as $user) 
+      $list[$user->userId] = $user->name;
+    return jsonencode($list);
+  }
+  /**
+   * @return string '{id:"Name",..}'
+   */
+  public function getActiveUsersJsonList() {
+    $users = self::getActiveUsers();
+    $list = array();
+    self::$first = current($users);
+    foreach ($users as $user) 
+      $list[$user->userId] = $user->name;
+    return jsonencode($list);
+  }
+  /**
+   * @return UserDoctor
+   */
+  public function getFirstDoc() {
+    if (self::$first == null)
+      self::$first = current(self::getDocs());
+    return self::$first;
+  }
+  /**
+   * @param int[] $ids
+   * @return array('Name',..)
+   */
+  public function lookupUsers($ids) {
+    $users = self::getUserMap();
+    foreach ($ids as &$id) 
+      $id = $users[$id]->name;
+    return $ids;
+  }
+}
+class UserGroup extends SqlRec {
+  //
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  //
+  const USAGE_LEVEL_BASIC = '0';
+  const USAGE_LEVEL_PREMIUM = '1';
+  const USAGE_LEVEL_ERX = '2';
+  //
+  public function getSqlTable() {
+    return 'user_groups';
+  }
+  //
+  public static function fetch($ugid) {
+    return parent::fetch($ugid, __CLASS__);
+  }
+}
+class UserAny extends UserRec implements ReadOnly {
+  //
+  public $userId;
+  public $name;
+  public $active;
+  public $userGroupId;
+  public $userType;
+  //
+  static function fetchMap($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchMapBy($c, 'userId');
+  }
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchAllBy($c);
+  }
+  static function fetchActive($ugid) {
+    $c = self::asCriteria($ugid);
+    $c->active = true;
+    return self::fetchAllBy($c);
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+class UserDoctor extends UserAny implements ReadOnly {
+  //
+  public $userId;
+  public $name;
+  public $active;
+  public $userGroupId;
+  public $userType;
+  //
+  static function fetchAll($ugid, $active = true) {
+    $c = self::asCriteria($ugid);
+    $c->active = $active;
+    return self::fetchAllBy($c);
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = parent::asCriteria($ugid);
+    $c->userType = self::TYPE_DOCTOR;
+    return $c;
+  }
+}
+?>

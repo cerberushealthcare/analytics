@@ -1,0 +1,138 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/ErxStatus.php'; 
+require_once 'php/data/rec/ErxPharm.php'; 
+require_once 'php/data/rec/ErxStatusCount.php'; 
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/newcrop/NewCrop.php';
+require_once 'php/data/rec/sql/Clients.php';
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->erx);
+  switch ($action) {
+    /**
+     * Validate schema
+     */
+    case 'validate':
+      $newcrop = new NewCrop();
+      try {
+        $xml = $newcrop->buildClickThru($_GET['id']);
+        $m = new JAjaxMsg($action, 'null');
+      } catch (DomDataRequiredException $e) {
+        $m = new JAjaxMsg($action, jsonencode($e->required));
+      }
+      break;
+    case 'debug2':
+      $newcrop = new NewCrop();
+      $current = $newcrop->pullCurrentMedAllergyU1($_GET['id']);
+      echo '<pre>';
+      print_r($current);
+      exit;
+    case 'debug':
+      $newcrop = new NewCrop();
+      try {
+        $id = $_GET['id'];
+        $allergies = Allergies::getAll($id);
+        $xml = $newcrop->buildClickThru($id);
+        $m = new JAjaxMsg($action, 'null');
+        p_r(htmlentities($xml['xml']));
+        exit;
+      } catch (DomDataRequiredException $e) {
+        $m = new JAjaxMsg($action, jsonencode($e->required));
+      }
+      break;
+    /**
+     * Refresh meds/allergies
+     */
+    case 'refresh':
+      $cid = $_GET['id'];
+      $since = geta($_GET, 'since');
+      $withAudits = geta($_GET, 'auditless') ? false : true; 
+      try {
+        FacesheetDao::refreshFromNewCrop($cid, $withAudits);
+        $facesheet = FacesheetDao::getClientActiveMedsAllergies($cid);
+        if ($since) 
+          $facesheet->audits = FacesheetDao::getNewCropAuditsSince($cid, $since);
+        $m = new JAjaxMsg($action, $facesheet->out());
+      } catch (Exception $e) {
+        $m = JAjaxMsg::constructError($e);
+      }
+      break;
+    case 'drefresh':
+      $cid = $_GET['id'];
+      $since = geta($_GET, 'since');
+      $withAudits = geta($_GET, 'auditless') ? false : true; 
+      try {
+        FacesheetDao::refreshFromNewCrop($cid, $withAudits);
+        $facesheet = FacesheetDao::getClientActiveMedsAllergies($cid);
+        if ($since) 
+          $facesheet->audits = FacesheetDao::getNewCropAuditsSince($cid, $since);
+        $m = new JAjaxMsg($action, $facesheet->out());
+      } catch (Exception $e) {
+        $m = JAjaxMsg::constructError($e);
+      }
+      break;
+    /**
+     * Get pharmacy requests for logged-in LP
+     */
+    case 'getPharmReqs':
+      $newcrop = new NewCrop();
+      $resp = $newcrop->pullRenewalRequests();
+      $recs = ErxPharm::fromRenewalRequests($resp);
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    /**
+     * Get pharmacy requests for entire group of LPs
+     */
+    case 'getAllPharmReqs':
+      $newcrop = new NewCrop();
+      $resp = $newcrop->pullAllRenewalRequests();
+      $recs = ErxPharm::fromRenewalRequests($resp);
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    /**
+     * Search for client matches to pharm request
+     */
+    case 'matchClients':
+      $recs = Clients::search($obj->patientLastName, $obj->patientFirstName, $obj->patientDOB, $obj->patientGender);
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    /**
+     * Get status details 
+     * Note: record may not include a ClientStub if no externalPatientId was supplied by NewCrop
+     * @return {'recs':[ErxStatus,..],'ct':ErxStatusCount} 
+     */
+    case 'getStatusDetail':
+      $newcrop = new NewCrop();
+      $statuses = $newcrop->pullAcctStatusDetails();
+      $statusct = ErxStatusCount::fromNewCrop($statuses, null);
+      $ers = array();
+      foreach ($statuses as $status => &$recs) {
+        if ($recs) 
+          foreach ($recs as &$rec) 
+            $ers[] = ErxStatus::fromNewCrop($status, $rec); 
+      }
+      $o = array('recs' => $ers, 'ct' => $statusct);
+      $m = new JAjaxMsg($action, jsonencode($o));
+      break;
+    case 'debugStatusDetail':
+      error_reporting(E_ALL);
+      ini_set('display_errors', '1');
+      $newcrop = new NewCrop();
+      echo '<pre>';
+      $statuses = $newcrop->pullAcctStatusDetails();
+      p_r($statuses, 'statuses');
+      $ers = array();
+      foreach ($statuses as $status => &$recs) {
+        if ($recs) 
+          foreach ($recs as &$rec) 
+            $ers[] = ErxStatus::fromNewCrop($status, $rec); 
+      }
+      p_r($ers, 'ers');
+      exit;
+  }
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError($e);
+}
+if ($m != null) 
+  echo $m->out();

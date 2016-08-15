@@ -1,0 +1,22 @@
+$(document).ready(function(){
+  $('#toggle').click(function(){
+      $('#loginbox3').css("display","none");
+      $('#loginbox1').css("display","none");
+      $('#loginbox2').css("display","table");
+  });
+  $('#toggle2').click(function(){
+      $('#loginbox3').css("display","none");
+      $('#loginbox2').css("display","none");
+      $('#loginbox1').css("display","table");
+  });
+  $('#toggle3').click(function(){
+      $('#loginbox3').css("display","table");
+      $('#loginbox2').css("display","none");
+      $('#loginbox1').css("display","none");
+  });
+  $('#toggle4').click(function(){
+      $('#loginbox3').css("display","none");
+      $('#loginbox2').css("display","none");
+      $('#loginbox1').css("display","table");
+  });
+});

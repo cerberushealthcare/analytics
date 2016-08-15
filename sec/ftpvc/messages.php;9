@@ -1,0 +1,105 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/dao/UserDao.php';
+require_once 'php/dao/MsgDao.php';
+require_once 'php/data/rec/sql/Messaging.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header('Location: welcome.php');
+}
+$sent = isset($_GET['get']);
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('Message Center') ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/page.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/messages.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/schedule.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == '6') { ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/schedule-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops-font.css?<?=Version::getUrlSuffix() ?>' />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel='stylesheet' type='text/css' href='css/pop-ie6.css?<?=Version::getUrlSuffix() ?>' />
+<![endif]-->    
+    <? if ($myLogin->isPapyrus()) { ?>
+    <link rel="stylesheet" type="text/css" href="css/papyrus.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+    <script language='JavaScript1.2' src='js/pages/MessagesPage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/facesheet.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ajax.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/json.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/new-open.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/template-pops.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/engine-download.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/ProfileLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>"></script>
+<style>
+P {margin:0;padding:0}
+</style>
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <h1>Message Center</h1>
+        <? renderBoxStart('wide small-pad') ?>
+          <table border='0' cellpadding='0' cellspacing='0' style='width:100%'>
+            <tr>
+              <td>
+                <? if ($sent) { ?>
+                  <h2 class='msg'>My Sent Messages</h2>
+                <? } else { ?>
+                  <h2 class='msg'>My Inbox</h2>
+                <? } ?>
+              </td>
+              <td style='text-align:right; vertical-align:bottom;'>
+                <div id="searching">
+                  <? if ($sent) { ?>
+                    <a href='messages.php' class='icon big view'>Show my inbox</a>
+                  <? } else { ?>
+                    <a href='messages.php?get=sent' class='icon big view'>Show sent messages</a>
+                  <? } ?>
+                </div>
+              </td>
+            </tr>
+          </table>
+        <div id='message-working'>
+        </div>
+        <div id='msg-inbox'>
+        </div>
+        <div style='padding:10px 0 0 5px; text-align:center' class='noprt'>
+          <a href='javascript:' onclick='page.compose()' class='cmd note'>Compose New Message...</a>
+        </div>
+        <? renderBoxEnd() ?>
+      <div>
+    </div>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <? include 'inc/footer.php' ?>
+  </body>
+<script>
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  var cInbox = <?=MsgInbox::getStaticJson() ?>;
+  var cThread = <?=MsgThread::getStaticJson() ?>;
+  page.load(query, cInbox, cThread);
+}
+</script>
+</html>

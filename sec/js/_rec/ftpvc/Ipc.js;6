@@ -1,0 +1,73 @@
+/**
+ * RecArray Ipcs
+ */
+Ipcs = Object.RecArray.of(function() {
+  return Ipc;
+})
+/**
+ * LevelRec Ipc
+ */
+Ipc = Object.LevelRec.extend({
+  getGroupLevelProto:function() {
+    return MyIpc;
+  },
+  onload:function() {
+    this._cat = C_Ipc.CATS[this.cat];
+  }
+})
+/**
+ * Ipc MyIpc (Custom IPC)
+ */
+MyIpc = Ipc.extend({
+  custom:1
+})
+/**
+ * RecArray IpcHms
+ */
+IpcHms = Object.RecArray.of(function() {
+  return IpcHm;
+})
+/**
+ * LevelRec IpcHm
+ */
+IpcHm = Object.LevelRec.extend({
+  onload:function() {
+    this.Ipc = Ipc.revive(this.Ipc);
+  },
+  buildReportCriteria:function(empty) {
+    return DummyReportCriteria.from(this.criteria || empty);
+  },
+  getKey:function() {
+    return this.userGroupId + ',' + this.ipc;
+  },
+  summary:function() {
+    if (this.auto) 
+      return this.summaryEvery() + ': ' + this.summaryCriteria();
+    else 
+      return '(None)';
+  },
+  summaryEvery:function() {
+    return (this.every && this.interval) ? 'Every ' + this.every + ' ' + C_IpcHm.INTERVALS[this.interval] : ''; 
+  },
+  summaryCriteria:function() {
+    return (this.criteria) ? RepCritRec.revive(this.criteria).summary() : '';
+  },
+  //
+  asNew:function(Ipc) {
+    return IpcHm.revive({
+      ipc:Ipc.ipc,
+      Ipc:Ipc,
+      criteria:C_IpcHm.EMPTY_CRITERIA});
+  }
+})
+/**
+ * DummyReportCriteria
+ */ 
+DummyReportCriteria = {
+  /*
+   * @arg RepCritRec rec
+   */
+  from:function(rec) {
+    return ReportCriteria.revive({'type':0,'Rec':rec});
+  }
+}

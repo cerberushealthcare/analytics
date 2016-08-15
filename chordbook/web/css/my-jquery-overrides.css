@@ -1,0 +1,63 @@
+.ui-body-c, .ui-overlay-c {
+  text-shadow:none !important;
+}
+.ui-btn-up-c {
+  background-color:white !important;
+  background-image:none !important;
+  text-shadow:none !important;
+  border-color:#ccc !important;
+}
+.ui-btn-hover-c {
+  background-color:white !important;
+  background-image:none !important;
+  text-shadow:none !important;
+  border:auto !important;
+}
+.ui-btn-down-c {
+  background-color:#f2efea !important;
+  background-image:none !important;
+  text-shadow:none !important;
+  border-color:#ccc !important;
+}
+.ui-btn-down-c a.ui-link-inherit {
+  color:orange !important;
+}
+.ui-btn-active a.ui-link-inherit {
+  color:orange !important;
+}
+.ui-bar-b {
+  background-image:none !important;
+  text-shadow:none !important;
+}
+.ui-btn-inner {
+  border:none !important;
+}
+.head .ui-btn-active {
+  border:none !important;
+  background:transparent !important;
+}
+.head .ui-icon {
+  background-color:transparent !important;
+}
+.ui-btn-hover-r, .ui-btn-up-r {
+  background:#F42941;
+  border:1px solid #F42941;
+  text-decoration:none !important;
+  color:white;
+}
+.ui-btn-down-r {
+  background:#e40c25;
+}
+.ui-btn-hover-w, .ui-btn-up-w {
+  background:white;
+  border:1px solid #d0d0d0;
+  text-decoration:none !important;
+  color:black;
+}
+.ui-btn-down-w {
+  background:#efefef;
+}
+.ui-li-divider {
+  font-size:12pt !important;
+  padding:5px 15px 5px 10px !important;
+}

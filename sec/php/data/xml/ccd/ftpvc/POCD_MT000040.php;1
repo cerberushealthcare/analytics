@@ -1,0 +1,1271 @@
+<?php
+require_once 'php/data/xml/ccd/datatypes_base.php';
+//
+class Act extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActClassDocumentEntryAct*/ $_classCode; //REQ
+  public /*x_DocumentActMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code; //REQ
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*CS*/ $languageCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class AssignedAuthor extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Organization*/ $representedOrganization;
+  public /*Person*/ $assignedPerson;
+  public /*AuthoringDevice*/ $assignedAuthoringDevice;
+  //
+  static function from($user, $userGroup) {
+    $e = new self();
+    $e->id = II::fromUser($user);
+    $e->assignedPerson = Person::fromUser($user);
+    $e->representedOrganization = Organization::from($userGroup);
+    return $e;
+  }
+}
+class AssignedCustodian extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CustodianOrganization*/ $representedCustodianOrganization; //REQ
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->representedCustodianOrganization = CustodianOrganization::from($userGroup);
+    return $e;
+  }
+}
+class AssignedEntity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $assignedPerson;
+  public /*Organization*/ $representedOrganization;
+}
+class AssociatedEntity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssociative*/ $_classCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $associatedPerson;
+  public /*Organization*/ $scopingOrganization;
+  //
+  static function fromClient($client, $classCode) {
+    $e = new self();
+    $e->_classCode = $classCode;
+    $e->id = II::fromClient($client);
+    if ($client->Address_Home)
+      $e->addr = AD::from($client->Address_Home);
+    $e->associatedPerson = Person::fromClient($client);
+    return $e;
+  }
+  static function asGuardian($client) {
+    return self::fromClient($client, 'GUA');
+  }
+  static function asNextOfKin($client, $code) {
+    $e = self::fromClient($client, 'NOK');
+    $e->code = $code;
+    return $e;
+  }
+  static function asNextOfKinMother($client) {
+    return self::asNextOfKin($client, CE::asSnomed('65656005', 'Biological mother'));
+  }
+}
+class Authenticator extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time; //REQ
+  public /*CS*/ $signatureCode; //REQ
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Author extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*TS*/ $time; //REQ
+  public /*AssignedAuthor*/ $assignedAuthor; //REQ
+  //
+  static function from($user, $userGroup) {
+    $e = new self();
+    $e->time = TS::fromNow();
+    $e->assignedAuthor = AssignedAuthor::from($user, $userGroup);
+    return $e;
+  }
+}
+class AuthoringDevice extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassDevice*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*SC*/ $manufacturerModelName;
+  public /*SC*/ $softwareName;
+  public /*MaintainedEntity[]*/ $asMaintainedEntity;
+}
+class Authorization extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Consent*/ $consent; //REQ
+}
+class Birthplace extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Place*/ $place; //REQ
+}
+class Component1 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*EncompassingEncounter*/ $encompassingEncounter; //REQ
+}
+class Component2 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*NonXMLBody*/ $nonXMLBody; //REQ
+  public /*StructuredBody*/ $structuredBody; //REQ
+}
+class Component3 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Section*/ $section; //REQ
+}
+class Component4 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*INT*/ $sequenceNumber;
+  public /*BL*/ $seperatableInd;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+}
+class Component5 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Section*/ $section; //REQ
+}
+class Consent extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*CS*/ $statusCode; //REQ
+}
+class Consumable extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ManufacturedProduct*/ $manufacturedProduct; //REQ
+}
+class Criterion extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*ANY*/ $value;
+}
+class Custodian extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedCustodian*/ $assignedCustodian; //REQ
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->assignedCustodian = AssignedCustodian::from($userGroup);
+    return $e;
+  }
+}
+class CustodianOrganization extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassOrganization*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*ON*/ $name;
+  public /*TEL*/ $telecom;
+  public /*AD*/ $addr;
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->id = II::fromUserGroup($userGroup);
+    $e->name = ON::asText($userGroup->name);
+    return $e;
+  }
+}
+class DataEnterer extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Device extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassDevice*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*SC*/ $manufacturerModelName;
+  public /*SC*/ $softwareName;
+}
+class DocumentationOf extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ServiceEvent*/ $serviceEvent; //REQ
+}
+class EncompassingEncounter extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*IVL_TS*/ $effectiveTime; //REQ
+  public /*CE*/ $dischargeDispositionCode;
+  public /*ResponsibleParty*/ $responsibleParty;
+  public /*EncounterParticipant[]*/ $encounterParticipant;
+  public /*Location*/ $location;
+}
+class Encounter extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode; //REQ
+  public /*x_DocumentEncounterMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class EncounterParticipant extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_EncounterParticipant*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Entity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassRoot*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*ED*/ $desc;
+}
+class Entry extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipEntry*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+}
+class EntryRelationship extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipEntryRelationship*/ $_typeCode; //REQ
+  public /*bl*/ $_inversionInd;
+  public /*bl*/ $_contextConductionInd;
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*INT*/ $sequenceNumber;
+  public /*BL*/ $seperatableInd;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+}
+class ExternalAct extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class ExternalDocument extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+}
+class ExternalObservation extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class ExternalProcedure extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class Guardian extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $guardianPerson; //REQ
+  public /*Organization*/ $guardianOrganization; //REQ
+}
+class HealthCareFacility extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassServiceDeliveryLocation*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*Place*/ $location;
+  public /*Organization*/ $serviceProviderOrganization;
+}
+class Informant12 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+  public /*RelatedEntity*/ $relatedEntity; //REQ
+}
+class InformationRecipient extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_InformationRecipient*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IntendedRecipient*/ $intendedRecipient; //REQ
+}
+class InfrastructureRoot_templateId extends II {
+  public /*uid*/ $_root;
+  public /*xs:boolean*/ $_unsorted;
+}
+class InfrastructureRoot_typeId extends II {
+  public /*uid*/ $_root = "2.16.840.1.113883.1.3"; //REQ
+}
+class InFulfillmentOf extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipFulfills*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Order*/ $order; //REQ
+}
+class IntendedRecipient extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_InformationRecipientRole*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $informationRecipient;
+  public /*Organization*/ $receivedOrganization;
+}
+class LabeledDrug extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassManufacturedMaterial*/ $_classCode;
+  public /*EntityDeterminerDetermined*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*EN*/ $name;
+}
+class LanguageCommunication extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CS*/ $languageCode;
+  public /*CE*/ $modeCode;
+  public /*CE*/ $proficiencyLevelCode;
+  public /*BL*/ $preferenceInd;
+}
+class LegalAuthenticator extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time; //REQ
+  public /*CS*/ $signatureCode; //REQ
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Location extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationTargetLocation*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*HealthCareFacility*/ $healthCareFacility; //REQ
+}
+class MaintainedEntity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Person*/ $maintainingPerson; //REQ
+}
+class ManufacturedProduct extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassManufacturedProduct*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*Organization*/ $manufacturerOrganization;
+  public /*LabeledDrug*/ $manufacturedLabeledDrug; //REQ
+  public /*Material*/ $manufacturedMaterial; //REQ
+}
+class Material extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassManufacturedMaterial*/ $_classCode;
+  public /*EntityDeterminerDetermined*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*EN*/ $name;
+  public /*ST*/ $lotNumberText;
+}
+class NonXMLBody extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ED*/ $text; //REQ
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+}
+class Observation extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode; //REQ
+  public /*x_ActMoodDocumentObservation*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code; //REQ
+  public /*ST*/ $derivationExpr;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*CS*/ $languageCode;
+  public /*ANY[]*/ $value;
+  public /*CE[]*/ $interpretationCode;
+  public /*CE[]*/ $methodCode;
+  public /*CD[]*/ $targetSiteCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  public /*ReferenceRange[]*/ $referenceRange;
+}
+class ObservationMedia extends XmlRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode; //REQ
+  public /*ActMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CS*/ $languageCode;
+  public /*ED*/ $value; //REQ
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class ObservationRange extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*ANY*/ $value;
+  public /*CE*/ $interpretationCode;
+}
+class Order extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*CE*/ $priorityCode;
+}
+class Organization extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassOrganization*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*ON[]*/ $name;
+  public /*TEL[]*/ $telecom;
+  public /*AD[]*/ $addr;
+  public /*CE*/ $standardIndustryClassCode;
+  public /*OrganizationPartOf*/ $asOrganizationPartOf;
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->id = II::fromUserGroup($userGroup);
+    $e->name = ON::asText($userGroup->name);
+    return $e;
+  }
+}
+class OrganizationPartOf extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Organization*/ $wholeOrganization;
+}
+class Organizer extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActClassDocumentEntryOrganizer*/ $_classCode; //REQ
+  public /*ActMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*CS*/ $statusCode; //REQ
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  public /*Component4[]*/ $component;
+}
+class ParentDocument extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClinicalDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+}
+class Participant1 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode; //REQ
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*IVL_TS*/ $time;
+  public /*AssociatedEntity*/ $associatedEntity; //REQ
+  //
+  static function fromAssociatedEntity($entity) {
+    $e = new self();
+    $e->associatedEntity = $entity;
+    return $e; 
+  }
+}
+class Participant2 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode; //REQ
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*CE*/ $awarenessCode;
+  public /*ParticipantRole*/ $participantRole; //REQ
+}
+class ParticipantRole extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassRoot*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Entity*/ $scopingEntity;
+  public /*Device*/ $playingDevice;
+  public /*PlayingEntity*/ $playingEntity;
+}
+class Patient extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id;
+  public /*PN[]*/ $name;
+  public /*CE*/ $administrativeGenderCode;
+  public /*TS*/ $birthTime;
+  public /*CE*/ $maritalStatusCode;
+  public /*CE*/ $religiousAffiliationCode;
+  public /*CE*/ $raceCode;
+  public /*CE*/ $ethnicGroupCode;
+  public /*Guardian[]*/ $guardian;
+  public /*Birthplace*/ $birthplace;
+  public /*LanguageCommunication[]*/ $languageCommunication;
+  //
+  static function from($client) {
+    $e = new self();
+    $e->name = PN::fromClient($client);
+    $e->administrativeGenderCode = CE::asGender($client->sex);
+    $e->birthTime = TS::fromDate($client->birth);
+    return $e;
+  }
+}
+class PatientRole extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Patient*/ $patient;
+  public /*Organization*/ $providerOrganization;
+  //
+  static function from($client, $userGroup) {
+    $e = new self();
+    $e->id = II::fromClient($client);
+    if ($client->Address_Home) 
+      $e->addr = AD::from($client->Address_Home);
+    $e->patient = Patient::from($client);
+    $e->providerOrganization = Organization::from($userGroup);
+    return $e;
+  }
+}
+class Performer1 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ServiceEventPerformer*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*IVL_TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Performer2 extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationPhysicalPerformer*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*CE*/ $modeCode;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Person extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PN[]*/ $name;
+  //
+  static function fromUser($user) {
+    $e = new self();
+    $e->name = PN::fromNcUser($user->NcUser);
+    return $e;
+  }
+  static function fromClient($client) {
+    $e = new self();
+    $e->name = PN::fromClient($client);
+    return $e;
+  }
+}
+class Place extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassPlace*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*EN*/ $name;
+  public /*AD*/ $addr;
+}
+class PlayingEntity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassRoot*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*PQ[]*/ $quantity;
+  public /*PN[]*/ $name;
+  public /*ED*/ $desc;
+}
+class Precondition extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Criterion*/ $criterion; //REQ
+}
+class Procedure extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode; //REQ
+  public /*x_DocumentProcedureMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*CS*/ $languageCode;
+  public /*CE[]*/ $methodCode;
+  public /*CD[]*/ $approachSiteCode;
+  public /*CD[]*/ $targetSiteCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class Product extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ManufacturedProduct*/ $manufacturedProduct; //REQ
+}
+class RecordTarget extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PatientRole*/ $patientRole; //REQ
+  //
+  static function from($client, $userGroup) {
+    $e = new self();
+    $e->patientRole = PatientRole::from($client, $userGroup);
+    return $e;
+  }
+}
+class Reference extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipExternalReference*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*BL*/ $seperatableInd;
+  public /*ExternalAct*/ $externalAct; //REQ
+  public /*ExternalObservation*/ $externalObservation; //REQ
+  public /*ExternalProcedure*/ $externalProcedure; //REQ
+  public /*ExternalDocument*/ $externalDocument; //REQ
+}
+class ReferenceRange extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ObservationRange*/ $observationRange; //REQ
+}
+class RegionOfInterest_value extends INT {
+  public /*xs:boolean*/ $_unsorted;
+}
+class RegionOfInterest extends XmlRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode = "ROIOVL"; //REQ
+  public /*ActMood*/ $_moodCode = "EVN"; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CS*/ $code; //REQ
+  public /*RegionOfInterest_value[]*/ $value; //REQ
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class RelatedDocument extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipDocument*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ParentDocument*/ $parentDocument; //REQ
+}
+class RelatedEntity extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassMutualRelationship*/ $_classCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Person*/ $relatedPerson;
+}
+class RelatedSubject extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_DocumentSubject*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*SubjectPerson*/ $subject;
+}
+class ResponsibleParty extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Section extends XmlRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id;
+  public /*CE*/ $code;
+  public /*ST*/ $title;
+  public /*StrucDoc_Text*/ $text;
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+  public /*Subject*/ $subject;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Entry[]*/ $entry;
+  public /*Component5[]*/ $component;
+}
+class ServiceEvent extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Performer1[]*/ $performer;
+}
+class Specimen extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*SpecimenRole*/ $specimenRole; //REQ
+}
+class SpecimenRole extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassSpecimen*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*PlayingEntity*/ $specimenPlayingEntity;
+}
+class StructuredBody extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+  public /*Component3[]*/ $component; //REQ
+}
+class Subject extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationTargetSubject*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $awarenessCode;
+  public /*RelatedSubject*/ $relatedSubject; //REQ
+}
+class SubjectPerson extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PN[]*/ $name;
+  public /*CE*/ $administrativeGenderCode;
+  public /*TS*/ $birthTime;
+}
+class SubstanceAdministration extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode = "SBADM"; //REQ
+  public /*x_DocumentSubstanceMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*SXCM_TS[]*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*CE*/ $routeCode;
+  public /*CD[]*/ $approachSiteCode;
+  public /*IVL_PQ*/ $doseQuantity;
+  public /*IVL_PQ*/ $rateQuantity;
+  public /*RTO_PQ_PQ*/ $maxDoseQuantity;
+  public /*CE*/ $administrationUnitCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Consumable*/ $consumable; //REQ
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class Supply extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassSupply*/ $_classCode = "SPLY"; //REQ
+  public /*x_DocumentSubstanceMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*SXCM_TS[]*/ $effectiveTime;
+  public /*CE[]*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*BL*/ $independentInd;
+  public /*PQ*/ $quantity;
+  public /*IVL_TS*/ $expectedUseTime;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Product*/ $product;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+?>

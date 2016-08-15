@@ -1,0 +1,155 @@
+<?php
+require_once 'php/data/csv/_CsvFile.php';
+//
+/**
+ * Report Download
+ * @author Warren Hornsby
+ */
+class ReportCsvFile extends CsvFile {
+  //
+  /**
+   * @param ReportCriteria $report
+   * @param SqlRec_Rep[] $recs
+   * @return ReportFile 
+   */
+  static function from($report, $recs) {
+    $file = new self();
+    $file->setFilename($report->name);
+    $file->recs = ReportCsvRec::from($report, $recs);
+    return $file;
+  }
+}
+abstract class ReportCsvRec extends CsvRec {
+  //
+  abstract static function fromRec($rec);
+  abstract static function asHeader($recs);
+  //
+  static function from($report, $recs) {
+    if ($report->isAudit())
+      return ReportCsvRec_Audit::fromRecs($recs);
+    else 
+      return ReportCsvRec_Patient::fromRecs($recs);
+  }
+  static function fromRecs($recs) {
+    $lines = array(static::asHeader($recs));
+    foreach ($recs as $rec)
+      $lines[] = static::fromRec($rec);
+    return $lines;
+  }
+  //
+  protected function getJoinFids($rec) {
+    static $fids;
+    if ($fids == null) {
+      $fids = array();
+      foreach ($rec as $fid => $value) 
+        if (substr($fid, 0, 4) == 'Join')
+          $fids[] = $fid;
+    }
+    return $fids;
+  }
+  protected function addJoinHeaders($rec) {
+    $fids = $this->getJoinFids($rec);
+    foreach ($fids as $fid) {
+      $data = current($rec->$fid);
+      $this->$fid = strtoupper($data->getTableName());
+    }
+  }
+  protected function addJoinValues($rec) {
+    $fids = $this->getJoinFids($rec);
+    foreach ($fids as $fid) 
+      $this->addJoin($fid, $rec->$fid);
+  }
+  protected function addJoin($fid, $recs) {
+    $labels = array();
+    foreach ($recs as $rec)
+      $labels[] = $rec->formatLabel();
+    $this->$fid = implode(' - ', $labels);
+  }
+}
+class ReportCsvRec_Patient extends ReportCsvRec {
+  //
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $middleName;
+  public $sex;
+  public $birth;
+  public $age;
+  public $language;
+  public $release;
+  //
+  static function fromRec($rec) {
+    $me = new self();
+    $me->uid = $rec->uid;
+    $me->lastName = $rec->lastName;
+    $me->firstName = $rec->firstName;
+    $me->middleName = $rec->middleName;
+    $me->sex = $rec->sex;
+    $me->birth = $rec->birth;
+    $me->language = geta(ClientRec::$LANGUAGES, $rec->language);
+    $me->setRelease($rec);
+    $me->addJoinValues($rec);
+    return $me;
+  }
+  static function asHeader($recs) {
+    $me = new self();
+    $me->uid = 'UID';
+    $me->lastName = 'LAST_NAME';
+    $me->firstName = 'FIRST_NAME';
+    $me->middleName = 'MIDDLE';
+    $me->sex = 'GENDER';
+    $me->birth = 'BIRTH';
+    $me->language = 'LANGUAGE';
+    $me->release = 'RELEASE PREF';
+    $me->addJoinHeaders(current($recs));
+    return $me;
+  }
+  //
+  protected function setRelease($rec) {
+    if ($rec->releasePref) {
+      $release = $rec::$RELEASE_PREFS[$rec->releasePref];
+      if ($rec->release) 
+        $release .= ': ' . implode(' ', split_crlf($rec->release));
+      $this->release = $release;
+    } else {
+      $this->release = 'No Preference';
+    }
+  }
+}
+class ReportCsvRec_Audit extends ReportCsvRec {
+  //
+  public $record;
+  public $date;
+  public $user;
+  public $patient;
+  //
+  static function fromRec($rec) {
+    $me = new self();
+    $me->record = $rec->formatLabel();
+    $me->date = formatDateTime($rec->date);
+    $me->user = $rec->User->name;
+    $me->patient = $rec->Client->getFullName();
+    $me->addJoinValues($rec);
+    return $me;
+  }
+  static function asHeader($recs) {
+    $me = new self();
+    $me->record = 'Record';
+    $me->date = 'Date';
+    $me->user = 'User';
+    $me->patient = 'Patient';
+    $me->addJoinHeaders(current($recs));
+    return $me;
+  }
+  //
+  protected function setRelease($rec) {
+    if ($rec->releasePref) {
+      $release = $rec::$RELEASE_PREFS[$rec->releasePref];
+      if ($rec->release) 
+        $release .= ': ' . implode(' ', split_crlf($rec->release));
+      $this->release = $release;
+    } else {
+      $this->release = 'No Preference';
+    }
+  }
+}

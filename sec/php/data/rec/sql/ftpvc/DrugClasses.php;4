@@ -1,0 +1,78 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+/**
+ * Drug Class DAO
+ * @author Warren Hornsby
+ */
+class DrugClasses {
+  //
+  static function getSubclasses() {
+    $recs = DrugSubclass::fetchAll();
+    Rec::sort($recs, new RecSort('name'));
+    return $recs;
+  }
+  static function getSubclassJsonList() {
+    return SessionCache::getset_from(__METHOD__, func_get_args(), function() {
+      $recs = DrugClasses::getSubclasses();
+      $list = array();
+      foreach ($recs as $rec) 
+        $list[$rec->subclassId] = $rec->name;
+      return jsonencode($list);
+    });
+  }
+}
+/**
+ * Drug Class
+ */
+class DrugClass extends SqlRec implements ReadOnly {
+  //
+  public $classId;
+  public $name;
+  public /*DrugSubclass[]*/ $DrugSubclasses;
+  //
+  function getSqlTable() {
+    return 'drug_classes';
+  }
+}
+/**
+ * Drug Subclass
+ */
+class DrugSubclass extends SqlRec implements ReadOnly {
+  //
+  public $subclassId;
+  public $classId;
+  public $name;
+  //
+  function getSqlTable() {
+    return 'drug_subclasses';
+  }
+  //
+  static function fetchAll() {
+    $c = new self();
+    $recs = self::fetchAllBy($c);
+    return $recs;
+  }
+}
+/**
+ * Drug Name
+ */
+class DrugName extends SqlRec implements ReadOnly {
+  //
+  public $nameId;
+  public $subclassId;
+  public $name;
+  //
+  function getSqlTable() {
+    return 'drug_names';
+  }
+  //
+  static function fetchAll($drugSubclass) {
+    $c = new self();
+    $c->subclassId = $drugSubclass->subclassId;
+    return self::fetchAllBy($c); 
+  }
+  static function asRegexpValue($subclassId) {
+    return "(SELECT GROUP_CONCAT(name SEPARATOR '|') FROM drug_names WHERE subclass_id=$subclassId)";
+  }
+}

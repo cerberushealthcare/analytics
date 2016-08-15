@@ -1,0 +1,624 @@
+/**
+ * Popup Controller 
+ */
+var Pop = {
+  // 
+  POS_CENTER:1,
+  POS_LAST:2,
+  POS_CURSOR:3,
+  //
+  _pop:null,
+  _unders:[],
+  _lastPos:null,
+  _curtain:null,
+  _event:null,
+  _POS_RESTORE:9,
+  /*
+   * Show popup
+   * @arg 'id'/<div> div of popup   
+   * @arg 'id'/<e> foc element to receive focus (optional) 
+   * @arg int pos Pop.POS_ (optional, default POS_CENTER)
+   * @callback(e) (optional)
+   */
+  show:function(div, foc, pos, callback) {
+    if (pos != Pop._POS_RESTORE && Pop._pop) 
+      Pop._unders.push(Pop._pop);
+    Pop._pop = _$(div);
+    if (Pop._pop.pp == null) 
+      Pop._setProps(Pop._pop);
+    Pop._showCurtainAndPop(Pop._pop, function() {
+      Pop._setPos(Pop._pop, pos);
+      if (foc)
+        _$(foc).setFocus();
+              //    if (foc)         --- still buggy. when focusing on input afterwards the taborder is screwed
+              //      focus_($_(foc));
+              //    else if (Pop._pop.cap && Pop._pop.cap.box)
+              //      focus_(Pop._pop.cap.box);
+      if (Page.browser.isMsie()) 
+        setTimeout(hidePageScroll, 1);
+      Pop._event = null;
+      if (callback) 
+        callback(Pop._pop);
+    });
+  },
+  showPosCursor:function(div, focusId) {
+    Pop.show(div, focusId, Pop.POS_CURSOR);
+  },
+  showPosLast:function(div, focusId) {
+    Pop.show(div, focusId, Pop.POS_LAST);
+  },
+  /*
+   * Zoom popup
+   * @callback() when complete (optional)
+   */
+  zoom:function(div, focusId, callback) {
+    Pop.show(div, focusId, Pop.POS_CURSOR);
+    if (callback)
+      callback();
+  },
+  /*
+   * Close currently displayed popup
+   * @arg arg (optional, to supply to onclose)
+   */
+  close:function(arg) {
+    var p = Pop._pop;
+    if (p) {
+      p.style.display = 'none';
+      if (p.onclose) 
+        p.onclose(arg);
+      Pop._pop = null;
+      if (Pop._unders.length) {
+        p = Pop._unders.pop();
+        Pop.show(p, null, Pop._POS_RESTORE);
+      } else {
+        Pop._hideCurtain();
+        if (Page.browser.isMsie6() == 6)
+          restoreCombos(document);
+      }
+    }
+  },
+  closeAll:function() {
+    while (Pop._pop)
+      Pop.close();
+  },
+  /*
+   * @arg 'id'/<div> div of popup (optional)
+   * @return bool true if div is current top pop (when div supplied)
+   *              true if any pop is up (when div is omitted)  
+   */
+  isActive:function(div) {
+    if (div) {
+      var pop = _$(div);
+      return (Pop._pop && pop && Pop._pop.id == pop.id);
+    } else {
+      return (Pop._pop != null);
+    }
+  },
+  /*
+   * @return bool true if active pop is dirty 
+   */
+  isDirty:function() {
+    f.f();
+    if (Pop._pop && Pop._pop.isDirty)
+      return Pop._pop.isDirty();
+  },
+  /*
+   * Re-center current pop
+   */
+  center:function() {
+    if (Pop._pop)
+      Pop._setPosCenter(Pop._pop);
+  },
+  /*
+   * @arg 'id'/<div> div of popup
+   * @arg string text (optional)
+   */
+  setCaption:function(div, text) {
+    _$(div).innerText = (isBlank(text)) ? 'Clicktate' : 'Clicktate - ' + text;
+  },
+  //
+  _closeByControlBox:function() {
+    var p = Pop._pop;
+    if (p) {
+      if (p.cap && p.cap.box) 
+        Html.Anchor._proto.click.call(p.cap.box, Pop.close);
+      else
+        Pop.close();
+    }
+  },
+  _shutdown:function() {  // TODO: doesn't work right because IE fires onbeforeunload from <a href='javascript:'>
+    Pop.shutdown = true;
+    Pop.dirty = false;
+    while (Pop._pop) {
+      Pop._closeByControlBox();
+      if (Pop.dirty) {
+        Pop.shutdown = false;
+        return "There is a record with unsaved changes.";
+      }
+    }
+  },
+  _closeByEventKey:function() {
+    if (event && event.keyCode == 27) {
+      Pop._closeByControlBox();
+    }
+  },
+  _setProps:function(p) {
+    p.pp = 1;
+    p.onmousedown = Pop._cancelBubble;
+    var tags = $$$$('pop-cap', p, 'DIV');
+    if (tags.length == 1) {
+      p.cap = tags[0];
+      p.cap.onmousedown = Pop._startDrag;
+      tags = $$$$('pop-close', Pop._pop.cap, 'A');
+      if (tags.length == 1) 
+        p.cap.box = _$(tags[0]);
+    }
+  },
+  _showCurtainAndPop:function(p, callback) {
+    if (Pop._curtain == null) 
+      Pop._curtain = _$('curtain');
+    if (Pop._curtain.style.display != 'block') {
+      Pop._curtain.style.display = 'block';
+      Pop._sizeCurtain();
+    }
+    if (Page.browser.isMsie6()) {
+      p.style.display = 'block';
+      hideCombos();
+      restoreCombos(p);
+      Pop._setZIndex();
+      callback();
+    } else {
+//      call(function() {  // delay to assist Chrome in positioning curtain when scrolled to bottom
+        p.style.display = 'block';
+        Pop._setZIndex();
+        callback();
+//      });
+    }
+  },
+  _sizeCurtain:function() {
+    var c = Pop._curtain;
+    if (c) {
+      var dd = Html.Window.getDocumentDim();
+      c.setHeight(dd.height).setWidth(dd.width);
+    }
+  },
+  _hideCurtain:function() {
+    if (Pop._curtain) {
+      Pop._curtain.style.display = 'none';
+      if (Page.browser.isMsie())
+        setTimeout(showPageScroll, 1);
+    }
+  },
+  _setPos:function(p, pos) {
+    if (pos != Pop._POS_RESTORE) {
+      if (pos == Pop.POS_LAST && Pop._lastPos) 
+        Pop._setPosLast(p);
+      else if (pos == Pop.POS_CURSOR) 
+        Pop._setPosCursor(p);
+      else
+        Pop._setPosCenter(p);
+      Pop._lastPos = Pop._getPos(p);
+    } 
+  },
+  _setPosCenter:function(p) {
+    p.center();
+  },
+  _setPosLast:function(p) {
+    if (Pop._lastPos == null) 
+      Pop._setPosCenter(p);
+    else {
+      p.style.left = val(Pop._lastPos.left) + 20;
+      p.style.top = Pop._lastPos.top;
+    }
+  },
+  cacheMousePos:function() {
+    Pop._event = null;
+    if (event) {
+      Pop._event = {
+        'clientX':event.clientX,
+        'clientY':event.clientY};
+    }
+  },
+  _setPosCursor:function(p) {
+    var e = (event) ? event : Pop._event;
+    if (e == null) 
+      Pop._setPosCenter(p);
+    else {
+      var ac = {
+        'x':e.clientX - 50, 
+        'y':e.clientY - 30}; 
+      var cw = document.body.offsetWidth;
+      var ch = document.documentElement.clientHeight;
+      if ((ac.x + p.clientWidth) > cw) 
+        ac.x = cw - p.clientWidth - 30;
+      if ((ac.y + p.clientHeight) > ch) 
+        ac.y = ch - p.clientHeight - 5;
+      if (ac.x < 0) 
+        ac.x = 0;
+      if (ac.y < 0) 
+        ac.y = 0;
+      p.setLeft(ac.x).setTop(ac.y + Html.Window.getScrollTop());
+    }
+  },
+  _getPos:function(p) {
+    return {
+      'left':p.style.left,
+      'top':p.style.top
+      };
+  },
+  _setZIndex:function() {
+    var z = 255 + Pop._unders.length * 2;
+    if (Pop._curtain)
+      Pop._curtain.style.zIndex = z;
+    Pop._pop.style.zIndex = z + 1;
+  },
+  _cancelBubble:function(e) {
+    var event = Html.Window.getEvent(e);
+    event.cancelBubble = true;
+  },
+  _startDrag:function(e) {
+    var event = Html.Window.getEvent(e);
+    var p = Pop._pop;
+    if (p && event.srcElement.className != 'pop-close') {
+      document.isdrag = true;
+      document.mx = event.clientX;
+      document.my = event.clientY;
+      document.px = p.offsetLeft;
+      document.py = p.offsetTop;
+      document.onmousemove = Pop._drag;
+      document.onmouseup = Pop._endDrag;
+    }
+  },
+  _drag:function(e) {
+    var event = Html.Window.getEvent(e);
+    var p = Pop._pop;
+    if (p && document.isdrag) 
+      p.setLeft(document.px + event.clientX - document.mx).setTop(document.py + event.clientY - document.my);
+  },
+  _endDrag:function() {
+    document.isdrag = false;
+    document.onmousemove = null;
+    document.onmouseup = null;
+  }
+}
+Pop.Builder = {
+  _pop:null,
+  _context:null,
+  /*
+   * Dynamically build a pop:
+   *   <div id='[id]' class='pop' ctlbox=<a> content=<div> caption=<div>>
+   *     <div class='pop-cap'> 
+   *       <div>caption</div>
+   *       <a href='[close]' class='pop-close'></a>
+   *     </div>
+   *     <div class='pop-content'> 
+   *     </div>
+   *   </div> 
+   * @arg obj context pop controller
+   * @arg string id of popup <div>
+   * @arg string caption
+   * @arg string width (optional, default '650px')
+   * @arg string/fn close (optional, default 'Pop.close()')
+   * @return <div> of pop  
+   */
+  build:function(context, id, caption, width, close) {
+    close = denull(close, 'Pop.close()');
+    var pop = $(id);
+    if (pop) 
+      clearChildren(pop);
+    else
+      //pop = insertTag(createDiv(id, 'pop'), $('page-includes'));
+      pop = Html.Window.append(createDiv(id, 'pop'));
+    pop.style.width = denull(width);
+    var pcap = createDivIn(pop, 'pop-cap');
+    pop.caption = createDivIn(pcap);
+    pop.caption.innerText = caption;
+    pop.ctlbox = appendInto(pcap, createAnchor(null, null, 'pop-close', null, null, close, context));
+    pop.content = createDivIn(pop, 'pop-content');
+    this._pop = pop;
+    this._context = context;
+    return pop;
+  },
+  div:function(className, id) {
+    var div = createDivIn(this._pop.content, className, id);
+    return div;
+  },
+  entryUl:function() {
+    var ul = createList(this._pop.content);
+    return ul;
+  },
+  entryForm:function(firstLabelClass) {
+    var ul = this.entryUl();
+    var form = new EntryForm(ul, firstLabelClass);
+    return form;
+  },
+  cmdBar:function() {
+    var cmdBar = new CmdBar(this._pop.content, null, this._context);
+    return cmdBar;
+  }
+}
+/*
+ * Invocations
+ */
+Pop._Loader = {
+  JS_PATH:'js/pops/',
+  HTML_PATH:'js/pops/inc/',
+  TILE_PATH:'js/tiles/',
+  //
+  get:function(name, hasHtml, fn) {
+    Pop.cacheMousePos();
+    var inc = [Pop._Loader.JS_PATH + name + '.js'];
+    if (hasHtml)
+      inc.push(Pop._Loader.HTML_PATH + name + '.php');
+    Includer.getWorking(inc, fn);
+  }
+}
+//
+Pop.Calendar = {
+  /*
+   * @arg string value (optional)
+   * @callback(value) on calendar save
+   */
+  show:function(value, callback) {
+    Pop.cacheMousePos();
+    Pop._Loader.get('Calendar', true, function() {
+      Calendar.pop(value, callback);
+    });
+  },
+  /*
+   * @arg string id of textbox
+   */
+  showFromTextbox:function(id) {
+    var textbox = $(id);
+    this.show(textbox.value,
+      function(text) {
+        if (text)
+          textbox.value = text;
+        focus(id);
+      });
+  }
+}
+Pop.Clock = {
+  /*
+   * @arg string value (optional)
+   * @arg bool hourOnly (optional)
+   * @callback(value) on clock save
+   */
+  show:function(value, hourOnly, callback) {
+    Pop._Loader.get('Calendar', true, function() {
+      Clock.pop(value, hourOnly, callback);
+    });
+  },
+  /*
+   * @arg string id of textbox
+   * @arg bool hourOnly (optional)
+   */
+  showFromTextbox:function(id, hourOnly) {
+    var textbox = $(id);
+    this.show(textbox.value, hourOnly,
+      function(text) {
+        if (text)
+          textbox.value = text;
+        focus(id);
+      });
+  }
+}
+Pop.Msg = {
+  /*
+   * @arg string html message text
+   * @arg string iconClass 'information'
+   * @arg string caption (optional)
+   * @callback() when closed (optional)
+   */
+  show:function(html, iconClass, caption, callback) {
+    this._callback = callback;
+    this._build(html, iconClass);
+    this._pop.caption.innerText = caption || 'Clicktate';
+    Pop.show(this._pop, this._pop.ok);
+  },
+  showInfo:function(html, callback) {
+    this.show(html, 'information', null, callback);
+  },
+  showImportant:function(html, callback) {
+    this.show(html, 'important', null, callback);
+  },
+  showCritical:function(html, callback) {
+    this.show(html, 'critical', null, callback);
+  },
+  showCriticalCap:function(html, caption, callback) {
+    this.show(html, 'critical', caption, callback);
+  },
+  //
+  _pOk:function() {
+    if (this._callback)
+      this._callback();
+    Pop.close();
+  },
+  _pop:null,
+  _build:function(html, iconClass) {
+    this._pop = Pop.Builder.build(this, 'pop-msg', 'Clicktate', 500);
+    Pop.Builder.div(iconClass).innerHTML = html;
+    var cmdBar = Pop.Builder.cmdBar();
+    this._pop.ok = cmdBar.ok(this._pOk);
+  }
+}
+Pop.Confirm = {
+  /*
+   * @arg string text 'Are you sure..'
+   * @arg string yesCaption 
+   * @arg string yesClass (optional, default 'ok')
+   * @arg string noCaption 
+   * @arg string noClass (optional)
+   * @arg bool includeCancel (optional, default false)
+   * @arg string iconClass (optional, default 'question')
+   * @arg fn(bool) callback true=yes, false=no (no callback for 'no' when cancel excluded) 
+   * @arg bool alwaysCallback true=callback(bool) for any response including cancel (optional, default false)
+   */
+  show:function(text, yesCaption, yesClass, noCaption, noClass, includeCancel, iconClass, callback, alwaysCallback) {
+    this._callback = callback;
+    this._always = alwaysCallback;
+    this._build(text, yesCaption || 'Yes', yesClass, noCaption || 'No', noClass, includeCancel, iconClass);
+    Pop.show(this._pop, this._pop.yes);
+  },
+  showImportant:function(text, yesCaption, yesClass, noCaption, noClass, includeCancel, callback) {
+    this.show(text, yesCaption, yesClass, noCaption, noClass, includeCancel, 'important', callback);
+  },
+  showYesNo:function(text, callback, always) {
+    this.show(text, null, null, null, null, false, null, callback, always);
+  },
+  showYesNoCancel:function(text, callback, always) {
+    this.show(text, null, null, null, null, true, null, callback, always);
+  },
+  showDelete:function(noun, callback, always) {
+    if (always)
+      this.showYesNoCancel('Are you sure you want to delete this ' + noun + '?', callback, always);
+    else
+      this.showYesNo('Are you sure you want to delete this ' + noun + '?', callback);
+  },
+  showDeleteAlways:function(noun, callback) {
+    this.showDelete(noun, callback, true);
+  },
+  showDeleteRecord:function(callback) {
+    this.showDelete('record', callback);
+  },
+  showDeleteChecked:function(verb, callback) {
+    this.showYesNoCancel('Are you sure you want to ' + verb + ' the checked selection(s)?', callback);
+  },
+  showDirtyExit:function(saveCallback, close) {
+    close = close || Pop.close;
+    var text = 'This record has unsaved changes. Do you want to save before exiting?';
+    this.show(text, 'Save and Exit', 'save', "Don't Save, Just Exit", null, true, null,
+      function(confirmed) {
+        if (confirmed) 
+          saveCallback();
+        else
+          close();
+      });
+  },
+  /*
+   * Close pop but confirm if entry form has unsaved changes 
+   * ex. Pop.Confirm.closeCheckDirty(this, this.pSave);
+   * @arg obj context pop controller
+   * @arg EntryForm entryForm
+   * @arg fn saveFn, e.g. this.pSave
+   */
+  closeCheckDirty:function(context, saveFn) {
+    if (context.isDirty()) {
+      if (Pop.shutdown)
+        Pop.dirty = true;
+      else
+        this.showDirtyExit(function() {
+          saveFn.call(context)
+      });
+    } else {
+      Pop.close();
+    }
+  },
+  //
+  _pop:null,
+  _callback:null,
+  _close:function(confirmed) {
+    Pop.close();
+    this._callback(confirmed);
+  },
+  _closeYes:function() {
+    this._close(true);
+  },
+  _closeNo:function() {
+    if (this._pop.cancel || this._always) 
+      this._close(false);
+    else
+      Pop.close();
+  },
+  _closeCancel:function() {
+    if (this._always)
+      this._close(false);
+    Pop.close();
+  },
+  _build:function(text, yesCap, yesCls, noCap, noCls, incCancel, iconCls) {
+    iconCls = denull(iconCls, 'question');
+    yesCls = denull(yesCls, 'ok');
+    this._pop = Pop.Builder.build(this, 'pop-conf', 'Confirmation Required', 400);
+    Pop.Builder.div(iconCls).innerHTML = text;
+    var cmdBar = Pop.Builder.cmdBar();
+    this._pop.yes = cmdBar.button(yesCap, yesCls, this._closeYes);
+    this._pop.no = cmdBar.button(noCap, noCls, this._closeNo);
+    this._pop.cancel = (incCancel) ? cmdBar.cancel(this._closeCancel) : null;
+  }
+}
+Pop.Prompt = {
+  /*
+   * @arg string html prompt text
+   * @callback(text) when OK clicked
+   */
+  show:function(html, callback) {
+    this._callback = callback;
+    this._build(html);
+    Pop.show(this._pop, this._pop.textbox);
+  },
+  //
+  _pOk:function() {
+    if (this._callback)
+      this._callback(this._pop.textbox.value);
+  },
+  _pCancel:function() {
+    Pop.close();
+  },
+  //
+  _pop:null,
+  _callback:null,
+  _build:function(html) {
+    this._pop = Pop.Builder.build(this, 'pop-prompt', 'Clicktate');
+    Pop.Builder.div('question').innerHTML = html;
+    this._pop.textbox = appendInto(Pop.Builder.div('mb10'), createTextbox(null, null, 30));
+    var cmdBar = Pop.Builder.cmdBar();
+    cmdBar.ok(this._pOk);
+    cmdBar.cancel(this._pCancel);
+  }
+}
+Pop.Working = {
+  /*
+   * @arg string html text to display (optional, default 'Working')
+   * @arg bool locked to hide control box (optional, default false)
+   */
+  show:function(html, locked) {
+    html = denull(html, 'Working');
+    this._build();
+    if (Pop.isActive(this._pop))
+      Pop.close();
+    this._bar.innerHTML = html;
+    Page.visible(this._pop.ctlbox, locked);
+    Pop.show(this._pop);
+  },
+  close:function() {
+    if (Pop.isActive(this._pop))
+      Pop.close();
+  },
+  //
+  _pop:null,
+  _bar:null,
+  _build:function() {
+    if (this._pop == null) {
+      this._pop = Pop.Builder.build(this, 'pop-work', 'Clicktate', '380px');
+      this._bar = Pop.Builder.div('workingbar', 'pop-workingbar');
+    }
+  }
+}
+Pop.Log = {
+  show:function() {
+    Pop._Loader.get('Log', false, function() {
+      Log.pop();
+    });
+  }
+}
+Pop.Patient = {
+  /*
+   * @arg Client client
+   * @callback(Client) if anything changed
+   */
+  showEditor:function(client, callback) {
+    Pop._Loader.get('PatientEditor', true, function() {
+      PatientEditor.pop(client, null, callback);
+    });
+  }
+}

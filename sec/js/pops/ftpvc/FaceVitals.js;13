@@ -1,0 +1,296 @@
+/**
+ * Facesheet Vitals
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceVitals = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-vit',
+  /*
+   * id: optional
+   * callback(facesheet) if anything changed (calls page.vitalsChangedCallback by default)
+   */
+  pop:function(fs, id, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'vitalsChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_VITALS, Includer.AP_TEMPLATE_POPS], function() {
+      if (fs.client) {
+        Pop.setCaption('fsp-vit-cap-text', fs.client.name + ' - Vital Signs');
+        Pop.setCaption('pop-ve-cap-text', fs.client.name + ' - Vitals Entry');
+      }
+      self._load();
+      overlayWorking(false);
+      if (zoom) {
+        Pop.zoom(FaceVitals._POP, null, function(){self.fpEdit(id)});
+      } else {
+        Pop.show(FaceVitals._POP);
+        self.fpEdit(id);
+      }
+    });
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.vitals = fs.vitals;
+    this.fs.workflow.vital = fs.workflow.vital;
+    this.changed = true;
+    this._load();    
+  },
+  fpClose:function() {
+    Pop.close();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpEdit:function(id) {
+    if (id) {
+      FaceVitalsEntry.pop(id);
+    }
+  },
+  fpAdd:function() {
+    FaceVitalsEntry.pop();
+  },
+  fpChart:function() {
+    VitalsChartSelector.pop();
+  },
+  fpPrint:function() {
+    Page.pop(Page.PAGE_PRINT_POP, {
+      'pop':'FaceVitals',
+      'obj':'FaceVitals',
+      'arg':this.fs.client.clientId,
+      'title':this.fs.client.name + ' - Vital Signs - DOB: ' + this.fs.client.birth});
+  },
+  print:function(id) {
+    var self = this;
+    Ajax.Facesheet.get(id, 
+      function(fs) {  
+        self.fs = fs;
+        self._load();
+        printout('fsp-vith-tbl');
+      });
+  },
+  //
+  _load:function(tp) {
+    var fs = this.fs;
+    var tp = new TableLoader('fsp-vith-tbody', 'off', 'fsp-vith-div');
+    if (fs.vitals) {
+      fs.vitalsById = {};
+      for (var i = 0; i < fs.vitals.length; i++) {
+        var vital = fs.vitals[i];
+        fs.vitalsById[vital.dataVitalsId] = vital;
+        var href = 'javascript:FaceVitals.fpEdit(' + vital.dataVitalsId + ')';
+        tp.createTrTd('main');
+        tp.append(createAnchor(null, href, 'fs vital', vital.date));
+        tp.createTd(null, vital.pulse);
+        tp.createTd(null, vital.resp);
+        tp.createTd('nowrap', vital.bp);
+        tp.createTd(null, this._tempText(vital));
+        tp.createTd(null, this._wtText(vital));
+        tp.createTd(null, this._htText(vital));
+        tp.createTd(null, vital.bmi);
+        tp.createTd(null, vital.wc);
+        tp.createTd(null, vital.hc);
+        tp.createTd('nowrap', vital.o2);
+      }
+    }
+  },
+  _tempText:function(vital) {
+    var text = null;
+    if (vital.temp) {
+      text = vital.temp;
+      if (vital.tempRoute)
+        text += ' ' + vital.tempRoute;
+    }
+    return text;
+  },
+  _wtText:function(vital) {
+    var text = null;
+    if (vital.wt) {
+      text = vital.wt;
+      if (vital.wtUnits) {
+        text += ' ' + (vital.wtUnits == 'Pounds' ? 'lbs' : 'kg');
+      }
+    }
+    return text;
+  },
+  _htText:function(vital) {
+    var text = null;
+    if (vital.height) {
+      text = vital.height;
+      if (vital.htUnits) {
+        text += ' ' + (vital.htUnits == 'inches' ? 'in' : 'cm');
+      }
+    }
+    return text;
+  }
+};
+/**
+ * Vitals Entry
+ */
+FaceVitalsEntry = {
+  parent:null,
+  fs:null,
+  //
+  isDirty:function() {
+    return this.fs.vtform && this.fs.vtform.isDirty();
+  },
+  pop:function(id) {
+    var fs = FaceUi.setParentage(FaceVitals, this);
+    overlayWorking(true);
+    fs.vital = id ? fs.vitalsById[id] : null;
+    showIf(id, 've-delete-span');
+    var self = this;
+    if (fs.vq) {
+      self._pop();
+    } else {
+      Ajax.Facesheet.Vitals.getQuestions(
+        function(questions) {
+          fs.vq = questions;  // {'pulse':JQuestion,'rr':JQuestion,...}
+          for (var prop in fs.vq) {
+            var q = fs.vq[prop];
+            q.prop = prop;
+            var setByField = q.out.split('=$')[1];  // either 'ouid' or 'otext'
+            if (setByField == 'ouid') {
+              q.showUid = true;
+            }
+          }
+          self._pop();
+        });
+    }
+  },
+  _pop:function() {
+    this._load();
+    overlayWorking(false);
+    Pop.show('pop-ve', 've-pulse');
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var rec = this._buildRec();
+    var self = this;
+    Ajax.Facesheet.Vitals.save(rec, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.parent.update(fs);
+        Pop.close();
+      });
+  },
+  fpDelete:function() {
+    var fs = this.fs;
+    var self = this;
+    Pop.Confirm.showYesNo('Are you sure you want to remove this record?', function() {
+      overlayWorking(true);
+      Ajax.Facesheet.Vitals.deactivate(fs.vital.dataVitalsId, 
+        function(fs) {
+          overlayWorking(false);
+          self.parent.update(fs);
+          Pop.close();
+        });
+    });
+  },
+  fpClose:function() {
+    Pop.Confirm.closeCheckDirty(this, this.fpSave);
+  },
+  //
+  _load:function() {
+    var fs = this.fs;
+    var self = this;
+    var eform = new EntryForm($('ul-ve-date'), '');
+    eform.li('Date').datetime('date');
+    if (fs.vital)
+      eform.setValue('date', fs.vital.date);
+    else
+      eform.setValue('date', DateValue.nowValue());
+    fs.eform = eform;
+    var tform = new TemplateForm($('ul-ve-fields'), 'first', fs.vq, function(q){self._onChange(q)}, TemplateForm.NAV_NEXT_ON_LINE);
+    tform.addLi();
+    tform.append('Pulse', 'pulse', null, fs.vital);
+    tform.append('Resp', 'resp', null, fs.vital);
+    tform.append('Blood Pressure', 'bpSystolic', null, fs.vital);
+    tform.append(null, 'bpDiastolic', null, fs.vital);
+    tform.append(null, 'bpLoc', null, fs.vital);
+    tform.append('Temp', 'temp', null, fs.vital);
+    tform.append(null, 'tempRoute', null, fs.vital);
+    tform.addLi(null, 'push');
+    tform.append('Weight', 'wt', null, fs.vital);
+    tform.append(null, 'wtUnits', null, fs.vital);
+    tform.append('Height', 'height', null, fs.vital);
+    tform.append(null, 'htUnits', null, fs.vital);
+    tform.lastA = null;  // setNavBreak()
+    tform.append('BMI', 'bmi', null, fs.vital);
+    tform.addLi(null, 'push');
+    tform.append('Waist', 'wc', null, fs.vital);
+    tform.append(null, 'wcUnits', null, fs.vital);
+    tform.append('Head', 'hc', null, fs.vital);
+    tform.append(null, 'hcUnits', null, fs.vital);
+    tform.addLi(null, 'push');
+    tform.append('O2 Sat', 'o2Sat', null, fs.vital);
+    tform.append('% on', 'o2SatOn', null, fs.vital, null, null, 'nopad');
+    fs.vtform = tform;
+  },
+  _onChange:function(q) {
+    if (q.prop == 'wt' || q.prop == 'wtUnits' || q.prop == 'height' || q.prop == 'htUnits') {
+      this._calcBmi();
+    }
+  },
+  _calcBmi:function() {
+    var fs = this.fs;
+    var v = fs.vtform.buildRecord(TemplateForm.VALUES_MIXED, null, true);
+    var bmi = calculateBmiValues(v.wt, v.wtUnits, v.height, v.htUnits);
+    if (bmi) {
+      fs.vtform.setFormattedText('bmi', bmi);
+    }
+  },
+  _buildRec:function() {
+    var fs = this.fs;
+    var v = fs.vtform.buildRecord(TemplateForm.VALUES_MIXED, null, true);
+    v.dataVitalsId = (fs.vital) ? fs.vital.dataVitalsId : null;
+    v.clientId = fs.client.clientId;
+    var vd = fs.eform.getRecord();
+    v.date = vd.date;
+    return v;
+  }  
+};
+/**
+ * Vitals Chart Selector
+ */
+VitalsChartSelector = {
+  parent:null,
+  fs:null,
+  pop:function() {
+    var fs = FaceUi.setParentage(FaceVitals, this);
+    overlayWorking(true);
+    var self = this;
+    if (fs.vcharts) {
+      self._pop();
+    } else {
+      Ajax.Facesheet.Vitals.getCharts(fs.client, 
+        function(charts) {
+          fs.vcharts = charts;
+          self._pop();
+        });
+    }
+  },
+  _pop:function() {
+    var fs = this.fs;
+    var tp = new TableLoader('vcs-tbody', 'off', 'vcs-div');
+    if (fs.vcharts) {
+      for (var i = 0; i < fs.vcharts.length; i++) {
+        var chart = fs.vcharts[i];
+        var href = 'javascript:VitalsChartSelector.pSel(' + i + ')';
+        tp.createTrTd('main');
+        tp.append(createAnchor(null, href, 'fs vital', chart.title));
+      }
+    }
+    overlayWorking(false);
+    Pop.show('pop-vcs');
+  },
+  pSel:function(i) {  
+    var fs = this.fs;
+    var chart = fs.vcharts[i];
+    Page.pop(Page.PAGE_VCHART, {'cid':fs.client.clientId,'id':chart.id});
+  }
+};

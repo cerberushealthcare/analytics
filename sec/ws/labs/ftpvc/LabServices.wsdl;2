@@ -1,0 +1,68 @@
+<definitions targetNamespace="https://www.clicktate.com/cert/sec/ws" xmlns:tns="https://www.clicktate.com/cert/sec/ws" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:ns="urn:hl7-org:v3:ws" xmlns:hl7="urn:hl7-org:v3" xmlns="http://schemas.xmlsoap.org/wsdl/"> 
+  <types>
+    <xs:schema elementFormDefault="qualified" targetNamespace="https://www.clicktate.com/cert/sec/ws">
+      <xs:complexType name="Credentials">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="id" type="xs:string" />
+          <xs:element minOccurs="1" maxOccurs="1" name="password" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="Account">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="providerId" type="xs:string" />
+          <xs:element minOccurs="0" maxOccurs="1" name="patientId" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:simpleType name="Statuses">
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="OK" />
+          <xs:enumeration value="FAIL" />
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:complexType name="Result">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="status" type="tns:Statuses" />
+          <xs:element minOccurs="0" maxOccurs="1" name="errorMsg" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:element name="PostMessageParams">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="credentials" type="tns:Credentials" />
+            <xs:element minOccurs="1" maxOccurs="1" name="account" type="tns:Account" />
+            <xs:element minOccurs="1" maxOccurs="1" name="message" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </types>
+  <message name="PostMessageIn">
+    <part name="params" element="tns:PostMessageParams" />
+  </message>
+  <message name="PostMessageOut">
+    <part name="result" type="tns:Result" />
+  </message>
+  <portType name="MessagePortType">
+    <operation name="postMessage">
+      <input message="tns:PostMessageIn" />
+      <output message="tns:PostMessageOut" />
+    </operation>
+  </portType>
+  <binding name="MessageBinding" type="tns:MessagePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+    <operation name="postMessage">
+      <soap:operation soapAction="urn:#postMessage" style="document" />
+      <input>
+        <soap:body use="literal" />
+      </input>
+      <output>
+        <soap:body use="literal" />
+      </output>
+    </operation>
+  </binding>
+  <service name="MessageService">
+    <port name="MessagePort" binding="MessageBinding">
+      <soap:address location="https://www.clicktate.com/cert/sec/ws/labs/LabServices.php" />
+    </port>
+  </service>
+</definitions>

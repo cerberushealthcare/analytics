@@ -1,0 +1,200 @@
+/**
+ * Facesheet Allergies
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+var FaceAllergies = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-all',
+  /*
+   * callback(facesheet) if anything changed (calls page.allergiesChangedCallback by default)
+   */
+  pop:function(fs, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.fs.FaceAllergies = this;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'allergiesChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_ALLERGIES, Includer.AP_TEMPLATE_POPS], function() {
+      new TabBar('fsp-all', ['Current Allergies', 'Documented History'], ['Current', 'Allergy History']);
+      if (fs.client) {
+        Pop.setCaption('fsp-all-cap-text', fs.client.name + ' - Allergies');
+      }
+      self._load();
+      if (me.perm.er) {
+        Page.show($('all-cmd-erx'), true);
+        Page.show($('all-cmd'), false);
+      }
+      overlayWorking(false);
+      if (zoom) {
+        Pop.zoom(FaceAllergies._POP);
+      } else {
+        Pop.show(FaceAllergies._POP);
+      }
+    });
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.allergies = fs.allergies;
+    this.fs.allergiesHistory = fs.allergiesHistory;
+    this.changed = true;
+    this._load();    
+  },
+  fpClose:function() {
+    Pop.close();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpEdit:function(id) {
+    overlayWorking(true);
+    var fs = this.fs;
+    fs.allergy = id ? fs.activeAllergiesById[id] : null;
+    if (fs.aq) {
+      this._fpEdit();
+    } else {
+      var self = this;
+      Ajax.Facesheet.getAllergyQuestion(
+        function(q) {
+          q.clone = true;
+          q.cboOnly = true;
+          fs.aq = q;
+          self._fpEdit();
+        });
+    }
+  },
+  _fpEdit:function() {
+    var fs = this.fs;
+    var q = fs.aq;
+    if (fs.allergy) {
+      q.cix = 1;
+      qSetByValueCombo(q, fs.allergy.agent, fs.allergy.reactions);
+    } else {
+      q.cix = null;
+      q.sel = [];
+    }
+    var self = this;
+    var saveCallback = function(q){self._saveCallback(q)};
+    var delCallback = function(q){self._deleteCallback(q)};
+    overlayWorking(false);
+    showQuestion(q, null, null, null, saveCallback, delCallback);
+  },
+  _saveCallback:function(q) {
+    var self = this;
+    overlayWorking(true);
+    Ajax.Facesheet.Allergies.save(this._buildRec(q), 
+      function(fs) {
+        self.update(fs);
+        overlayWorking(false);
+      });
+  },
+  _deleteCallback:function(q) {
+    var fs = this.fs;
+    overlayWorking(true);
+    var self = this;
+    Ajax.Facesheet.Allergies.deactivate(fs.allergy.dataAllergyId, 
+      function(fs) {
+        self.update(fs);
+        overlayWorking(false);
+      });
+  },  
+  _buildRec:function(q) {
+    var fs = this.fs;
+    var a = {};
+    a.id = (fs.allergy) ? fs.allergy.dataAllergyId : null;
+    a.clientId = fs.client.clientId;
+    a.index = q.sel[0];
+    a.agent = qOptText(q.opts[q.sel[0]]);
+    a.reactions = toJSONString(qOptTextArray(q.opts, q.sel, 1));
+    return a;
+  },
+  fpDeleteLegacy:function() {
+    var fs = this.fs;
+    var self = this;
+    Pop.Confirm.showYesNo('Remove legacy allergies from active list?', function() {
+      overlayWorking(true);
+      Ajax.Facesheet.Allergies.deleteLegacy(fs.client.clientId, 
+        function(fs) {
+          hide('all-dleg');
+          self.update(fs);
+        }); 
+    });
+  },
+  fpDeleteChecked:function() {
+    var checks = getCheckedValues('sel-all', 'fsp-all-tbody'); 
+    var self = this;
+    if (checks.length > 0) {
+      Pop.Confirm.showDeleteChecked('remove', function(confirm) {
+        if (confirm) {
+          overlayWorking(true);
+          Ajax.Facesheet.Allergies.deactivateMany(checks, 
+            function(fs) {
+              self.update(fs);
+              overlayWorking(false);
+            });
+        }
+      });  
+    } else {
+      Pop.Msg.showCritical('Nothing was selected.');
+    }
+  },
+  //
+  _load:function() {
+    var fs = this.fs;
+    fs.activeAllergiesById = {};
+    var tp = new TableLoader("fsp-all-tbody", "off", "fsp-all-div");
+    var allergy;
+    var i;
+    if (fs.allergies) {
+      for (i = 0; i < fs.allergies.length; i++) {
+        allergy = fs.allergies[i];
+        fs.activeAllergiesById[allergy.dataAllergyId] = allergy;
+        tp.createTr();
+        if (me.perm.er) {
+          if (allergy.source != SOURCE_NEWCROP) {
+            tp.createTd('fs legacy', null, '[LEGACY] ' + allergy.agent);
+            showIf(fs.activeErx, 'all-dleg');
+          } else {
+            tp.createTd('fs', null, allergy.agent);
+          }
+        } else {
+          var href = "javascript:FaceAllergies.fpEdit(" + allergy.dataAllergyId + ")";
+          var html = bulletJoin(allergy.reactions);
+          tp.createTd("check");
+          var c = createCheckbox("sel-all", allergy.dataAllergyId);
+          tp.append(c);
+          tp.createTd();
+          var a = createAnchor(null, href, "fs", allergy.agent)
+          tp.append(createAnchor(null, href, "fs", allergy.agent), createSpan("lpad", null, null, html));
+        }
+      }
+    } else {
+      tp.createTrTd(null, null, "&nbsp;");
+    }
+    t = new TableLoader("fsp-allh-tbody", "off", "fsp-allh-div");
+    if (fs.allergiesHistory) {
+      for (i = 0; i < fs.allergiesHistory.length; i++) {
+        allergy = fs.allergiesHistory[i];
+        t.createTr(allergy.date, [allergy.date, allergy.sessionId]);
+        t.createTd("histbreak nowrap", allergy.date);
+        t.createTdAppend(null, FaceUi.createSessionAnchor(fs, allergy.sessionId));
+        t.createTd(null, null, this._getAllergyText(allergy));
+      }
+    }
+    this._flicker();
+    overlayWorking(false);
+  },
+  _getAllergyText:function(a) {
+    var text = "<b>" + a.agent + "</b>";
+    if (! isEmpty(a.reactions)) {
+      text += ": " + a.reactions.join(", ");
+    }
+    return text;
+  },
+  _flicker:function() {
+    flicker("allh-head");
+  }
+};

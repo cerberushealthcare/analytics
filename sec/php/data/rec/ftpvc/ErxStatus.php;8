@@ -1,0 +1,88 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Status Detail
+ */
+class ErxStatus extends Rec {
+  //
+  public $status;
+  public $clientId;
+  public $doctorId;
+  public $staffUid;  
+  public $drugInfo;
+  public $date;
+  public $rxStatus;
+  public $rxArchive;
+  public $staff;  
+  public /*ClientStub*/ $ClientStub;
+  public /*UserStub*/ $UserStub_Doctor;
+  //
+  const STATUS_DR_REVIEW = 'DrReview';
+  const STATUS_FAILED_ERX = 'FailedElectronicRx';
+  const STATUS_FAILED_FAX = 'FailedFax';
+  const STATUS_STAFF_PROC = 'StaffProcessing';
+  const STATUS_ALL_DR_REVIEW = 'AllDoctorReview';
+  public static $STATUSES = array(
+    ErxStatus::STATUS_DR_REVIEW => 'Dr Review',
+    ErxStatus::STATUS_FAILED_ERX => 'Failed ERX',
+    ErxStatus::STATUS_FAILED_FAX => 'Failed Fax',
+    ErxStatus::STATUS_STAFF_PROC => 'Staff Proc',
+    ErxStatus::STATUS_ALL_DR_REVIEW => 'All Dr Review'
+    );
+  // 
+  const RX_STATUS_COMPLETE = 'C';
+  const RX_STATUS_PENDING = 'P';
+  public static $RX_STATUSES = array(
+    ErxStatus::RX_STATUS_COMPLETE => 'Complete',
+    ErxStatus::RX_STATUS_PENDING => 'Pending',
+    );
+  //
+  const RX_ARCHIVE_CURRENT = 'N';
+  const RX_ARCHIVE_PRIOR = 'Y';
+  //
+  const DEST_COMPOSE = RequestedPageType::COMPOSE;
+  const DEST_STATUS = RequestedPageType::STATUS;
+  const DEST_MEDENTRY = RequestedPageType::MEDENTRY;
+  public static $DEST_BY_STATUS = array(
+    ErxStatus::STATUS_DR_REVIEW => ErxStatus::DEST_COMPOSE,
+    ErxStatus::STATUS_FAILED_ERX => ErxStatus::DEST_STATUS,
+    ErxStatus::STATUS_FAILED_FAX => ErxStatus::DEST_STATUS,
+    ErxStatus::STATUS_STAFF_PROC => ErxStatus::DEST_COMPOSE,
+    ErxStatus::STATUS_ALL_DR_REVIEW => ErxStatus::DEST_COMPOSE
+    );
+  //
+  /**
+   * @param string $status ErxStatus::STATUS_
+   * @param object $nc @see NewCrop::pullAcctStatusDetails
+   * @return ErxStatus 
+   */
+  public static function fromNewCrop($status, $nc) {
+    $rec = new ErxStatus(
+      $status,
+      $nc->ExternalPatientId,
+      $nc->ExternalDoctorId,
+      $nc->ExternalStaffId,
+      $nc->DrugInfo,
+      $nc->PrescriptionDate,
+      $nc->PrescriptionStatus,
+      $nc->PrescriptionArchiveStatus);
+    $rec->fetchStubs();
+    if ($status == ErxStatus::STATUS_STAFF_PROC)
+      $rec->staff = $nc->UserFirstName + ' ' + $nc->UserLastName;
+    return $rec;
+  }
+  public function fetchStubs() {
+    if ($this->clientId) 
+      $this->ClientStub = ClientStub::fetch($this->clientId);
+    if ($this->doctorId) 
+      $this->UserStub_Doctor = UserStub::fetch($this->doctorId);
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('ErxStatus');
+  }
+}
+?>

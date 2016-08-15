@@ -1,0 +1,269 @@
+<?php
+require_once 'php/data/rec/sql/_DataRec.php';
+require_once "php/dao/DataDao.php";
+//
+/**
+ * Allergies DAO (Legacy)
+ * @author Warren Hornsby
+ */
+class AllergiesLegacy {
+  /**
+   * Build face recs from unprocessed session history
+   * @param int cid
+   */
+  public static function rebuildFromSessions($cid) {
+    $sessions = SessionAllergy::fetchAllUnbuilt($cid);
+    $last = end($sessions);
+    if ($last) { 
+      Rec::sort($sessions, new RecSort($last->getKey(), '-date'));
+      $faces = FaceAllergy::fetchAll($cid);
+      foreach ($sessions as $sess) {
+        $key = $sess->getKeyValue();
+        $face = geta($faces, $key);
+        if ($face) {
+          if ($sess->isNewerThan($face)) {
+            $face->setFromSession($sess);
+            $face->save();
+            $faces[$key] = $face;
+          }
+        } else {
+          $face = FaceAllergy::fromSession($sess);
+          $face->active = true;
+          $face->save();
+          $faces[$key] = $face;
+        }
+      }
+      SessionAllergy::markAsBuilt($last);
+    }
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceAllergy,..)
+   */
+  public static function getActive($cid) {
+    self::rebuildFromSessions($cid);
+    $recs = FaceAllergy::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort('expires', 'name'));
+    return $recs; 
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @return array(SessionAllergy,..)
+   */
+  public static function getHistoryByDate($cid) {
+    $recs = SessionAllergy::fetchAll($cid);
+    Rec::sort($recs, new RecSort('-date', 'sessionId', 'agent'));
+    return $recs;
+  }
+  /**
+   * Get allergy UI question
+   * @return JQuestion
+   */
+  public static function getQuestion() {
+    $questions = DataDao::fetchQuestionsForTable(1, nowNoQuotes(), "allergies");
+    return $questions['allerNew.!addAllergy'];
+  } 
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Allergy
+   */
+  public static function save($o) {
+    global $myLogin;
+    $rec = FaceAllergy::fromUi($o, $myLogin->userGroupId);
+    if ($rec->getPkValue()) 
+      $face = FaceAllergy::fetch($rec->getPkValue());
+    else
+      $face = FaceAllergy::fetchActiveKeyMatch($rec);
+    if ($face)
+      $rec->setPkValue($face->getPkValue());
+    else
+      $rec->setPkValue(null);
+    $rec->active = true;
+    $rec->save();
+    return $rec;
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Allergy
+   */
+  public static function deactivate($id) { 
+    $face = FaceAllergy::fetch($id);
+    if ($face) {
+      $face->deactivate();
+      return $face;
+    }
+  }
+}
+//
+/**
+ * Allergy
+ */
+class Allergy extends DataRec {
+  //
+  public $dataAllergyId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+	public $index;
+	public $agent;
+	public $reactions;
+	public $active;   
+	public $dateUpdated;
+	public $source;
+  //
+	public function getSqlTable() {
+    return 'data_allergies';
+  }
+  public function getKey() {
+    return 'agent';
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::informalDate(),
+      'dateUpdated' => JsonFilter::informalDateTime(),
+      'reactions' => JsonFilter::serializedObject());
+  }
+	/**
+	 * @return array('reaction',..)
+	 */
+  public function getReactions() {
+    return jsondecode($this->reactions);  
+  }
+  /**
+   * @return true if a legacy-created allergy
+   */
+  public function isSourceLegacy() {
+    return $this->source == null || $this->source == 0;
+  }
+}
+/**
+ * Allergy Face Record
+ */
+class FaceAllergy extends Allergy {
+  //
+  public function setFromSession($sess) {
+    $rec = clone $sess;
+    parent::_copyNonNullValues($this, $rec);
+  }
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+  //
+  /**
+   * @param object $o JSON
+   * @param int ugid
+   * @return FaceAllergy
+   */
+  public static function fromUi($o, $ugid) {
+    $rec = new FaceAllergy();
+    $rec->dataAllergyId = $o->id;
+    $rec->userGroupId = $ugid;
+    $rec->clientId = $o->clientId;
+    $rec->agent = $o->agent;
+    $rec->reactions = $o->reactions;
+    $rec->data = nowNoQuotes();
+    return $rec;
+  }
+  /**
+   * @param SessionAllergy $sess
+   * @return FaceAllergy
+   */
+  public static function fromSession($sess) {
+    return parent::_faceFromSession($sess, __CLASS__);
+  } 
+	/**
+   * @param int $id
+   * @return FaceAllergy
+   */
+  public static function fetch($id) {
+    return parent::_fetchFace($id, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(name=>FaceAllergy,..) 
+   */
+  public static function fetchAll($cid) {
+    return parent::_fetchFaces($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceAllergy,..)
+   */
+  public static function fetchAllActive($cid) {
+    return parent::_fetchActiveFaces($cid, __CLASS__);
+  }
+  /**
+   * @param FaceAllergy $allergy
+   * @return FaceAllergy (if one exists; may be the same as that supplied)
+   */
+  public static function fetchActiveKeyMatch($allergy) {
+    return parent::_fetchActiveKeyMatch($allergy);
+  }
+  /**
+   * @param int $cid
+   * @return FaceAllergy 
+   */
+  public static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  }  
+}
+//
+/**
+ * Allergy Session Record
+ */
+class SessionAllergy extends Allergy implements NoAudit {
+  //
+  const FIRST_ALLERGY_INDEX = 4;  // 0-3 are 'reviewed' options
+  //
+  public function __clone() {
+//    parent::__clone();
+//    $this->quid = null;
+//    $this->index = null;
+//    $this->rx = null;
+//    $this->amt = nullify($this->amt);
+//    $this->freq = nullify($this->freq);
+//    $this->asNeeded = nullify($this->asNeeded);
+//    $this->meals = nullify($this->meals);
+//    $this->route = nullify($this->route);
+//    $this->length = nullify($this->length);
+//    $this->disp = nullify($this->disp);
+//    $this->text = nullify($this->text);
+  }
+  //
+  /**
+   * @param int $cid
+   * @return array(SessionAllergy,..)
+   */
+  public static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionAllergy,..)
+   */
+  public static function fetchAllUnbuilt($cid) {
+    return parent::_fetchAllUnbuilt($cid, __CLASS__);
+  }
+	/**
+   * @param SessionAllergy $sess last session record (e.g. highest PK) @see fetchAllUnbuilt()
+   */
+  public static function markAsBuilt($sess) {
+    parent::_markAsBuilt($sess);
+  }
+  /**
+   * @param int $cid
+   * @return SessionAllergy
+   */
+  public static function asCriteria($cid) {
+    $c = parent::_asSessCriteria($cid, __CLASS__);
+    $c->index = CriteriaValue::greaterThanOrEquals(self::FIRST_ALLERGY_INDEX);
+    return $c;
+  }
+}
+?>

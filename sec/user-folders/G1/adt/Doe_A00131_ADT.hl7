@@ -1,0 +1,8 @@
+MSH|^~\&|Clicktate|1^1231231234^NPI|||20141215103850||ADT^A04^ADT_A01|1-3839-20141215103850|P|2.5.1|||||||||PH_SS-NoAck^SS Sender^2.16.840.1.114222.4.10.3^ISO
+EVN||20141215103850|||||1^1231231234^NPI
+PID|1||3839^^^1&1231231234&NPI^MR||~^^^^^^S|||F||2106-3^White^CDCREC|^^^^30303^^^^13121|||||||||||2135-2^Hispanic or Latino^CDCREC
+PV1|1||||||||||||||||||1800^^^^VN|||||||||||||||||||||||||20141215103800
+OBX|1|CWE|SS003^Facility visit type^PHINQUESTION||261QU0200X^Urgent Care^NUCC||||||F
+OBX|2|NM|21612-7^Reported patient age^LN||37|a^year^UCUM|||||F
+OBX|3|CWE|8661-1^Chief complaint^LN||^^^^^^^^Chills, Fever, Burning during Urination and Smelly Urine||||||F
+DG1|1||599.0^Urinary Tract Infection^I9CDX||20120817|W

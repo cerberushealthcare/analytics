@@ -1,0 +1,339 @@
+/**
+ * EntryForm
+ * Entry form / data record builder
+ * Requires: EntryForm.css
+ */
+/*
+ * EntryForm constructor
+ * - ul: parent <ul> to contain this form; ul.eform will be set to this instance
+ * - firstLabelClass: optional, default 'first'
+ * After construction, use addLi/append methods to build empty form and define the record 
+ */
+function EntryForm(ul, firstLabelClass) {
+  EntryForm._newInstance(this);
+  this.ul = clearChildren(ul);
+  addClass(this.ul, 'eform');
+  this.ul.eform = this;
+  this.ul.firstLabelClass = denull(firstLabelClass, 'first');
+  this.fields = {};
+  this._dirty = false;
+}
+/*
+ * EntryForm class defs
+ */
+EntryForm.prototype = {
+  ul:null,          // parent <ul>
+  fields:null,      // {fid:e} for constructing data record
+  _li:null,
+  _e:null,          // last cached element 
+  _dirty:null, 
+  _onDirty:null,    // callback
+  _i:null,          // instance index
+  /*
+   * Start <li> entry
+   * - id, className: optional
+   */
+  addLi:function(id, className) {
+    var li = addListItem(this.ul, null, null, id, className);
+    //var div = createDiv(null, 'eform');
+    //li.appendChild(div);
+    this._li = li;
+  },
+  /*
+   * Append non-field element
+   * - labelText, labelClass: optional
+   */
+  append:function(e, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    this._li.appendChild(e);
+  },
+  /*
+   * Append label
+   */
+  appendLabel:function(labelText, labelClass) {
+    if (labelText != null) {
+      labelClass = denull(labelClass, (this._li.innerHTML) ? null : this.ul.firstLabelClass);
+      this._li.appendChild(createLabel(labelClass, labelText));
+    }
+  },
+  /*
+   * Append field entry element
+   * - fid: field ID of data record
+   * - e: optional HTML element to store field's value
+   *      may be null to reserve space (hidden field)   
+   * - labelText, labelClass: optional
+   */
+  appendField:function(fid, e, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    var self = this;
+    if (e) {
+      e.onchange = function() {
+        self._setDirty();
+      }
+    }
+    this._cacheAndAppend(fid, e);
+  },
+  /*
+   * Append textbox
+   * - size: optional
+   */
+  appendTextbox:function(fid, size, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    this._cacheAndAppend(fid, createTextbox(null, null, size));
+  },
+  /*
+   * Append textarea
+   */
+  appendTextArea:function(fid, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    var ta = createTextArea();
+    ta.rows = 4;
+    this._cacheAndAppend(fid, ta);
+  },
+  /*
+   * Append select
+   * - list: {key:text,..}
+   * - blankText: optional, see ui.createSelect
+   */
+  appendSelect:function(fid, list, blankText, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    this._cacheAndAppend(fid, createSelect(null, null, list, null, blankText));
+  },
+  /*
+   * Append AnchorTab
+   * - maxWidth: optional
+   */
+  appendAnchorTab:function(fid, at, labelText, labelClass, maxWidth) {
+    this.appendLabel(labelText, labelClass);
+    if (maxWidth) {
+      var span = createSpanAppend('fwidth', null, at.anchor);
+      span.style.width = maxWidth;
+      this._cacheAndAppend(fid, at.anchor, span);
+    } else {
+      this._cacheAndAppend(fid, at.anchor);  
+    }
+  },
+  /*
+   * Append calendar picker
+   */
+  appendCalendar:function(fid, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    var i = createTextbox(fid, null, 10);
+    i.ftype = EntryForm._FTYPE_CALENDAR;
+    this._cacheAndAppend(fid, i);
+    this.append(createAnchor(fid, 'javascript:showCal("' + fid + '")', 'cal'));
+  },
+  /*
+   * Append client picker
+   * - a: <a> tag with text defaulted, no href necessary
+   * Props assigned to <a> upon selection:
+   *   value: cid
+   *   innerText: name
+   *   client: JClient
+   */
+  appendClientPicker:function(fid, a, labelText, labelClass) {
+    this.appendLabel(labelText, labelClass);
+    a.ftype = EntryForm._FTYPE_CLIENTPICKER;
+    a.defaultText = a.innerText;
+    a.href = 'javascript:';
+    var self = this;
+    a.onclick = function() {
+      self._popClientPicker(fid);
+    };
+    this._cacheAndAppend(fid, a);      
+  },
+  /*
+   * Assign onChange handler to last field appended, calling fn(value, e)
+   */
+  setOnChange:function(fn) {
+    this._e.efOnChange = fn;
+  },
+  /*
+   * Assign onDirty handler for entire form, calling fn(record)
+   */
+  setOnDirty:function(fn) {
+    this._onDirty = fn;
+  },
+  /*
+   * Assign field values by record
+   * Any fields referenced in record but not appended to form will be treated as hidden fields
+   * - record: {fid:value,..}
+   */
+  setRecord:function(record) {
+    for (fid in record) {
+      var value = record[fid];
+      this.setValue(fid, value);
+    }
+  },
+  /*
+   * Reset field values
+   */
+  reset:function() {
+    for (fid in this.fields) {
+      this.setValue(fid, null);
+    }
+  },
+  /*
+   * Renders value to cached UI element 'e' 
+   */
+  setValue:function(fid, value) {
+    if (isUndefined(this.fields[fid])) {
+     this._cacheAndAppend(fid, this._newHidden(value));
+    }
+    var e = this.fields[fid];
+    var oldValue = this._readValue(e);
+    this._renderValue(e, value);
+    var newValue = this._readValue(e);
+    if (newValue != oldValue) {
+      this._setDirty();
+      if (e.efOnChange) {
+        e.efOnChange(newValue, e);
+      }
+    }
+  },
+  /*
+   * Returns UI element
+   */
+  getField:function(fid) {
+    var e = this.fields[fid];
+    if (e.ftype == EntryForm._FTYPE_ATAB) {
+      e = e.anchorTab;
+    }
+    return e;
+  },
+  /*
+   * Returns record of field values {fid:value,..}
+   */
+  getRecord:function() {
+    var record = {};
+    for (fid in this.fields) {
+      record[fid] = this.getValue(fid);
+    }
+    return record;
+  },
+  /*
+   * Returns rendered value of cached UI element 'e'
+   */
+  getValue:function(fid) {
+    var e = this.fields[fid];
+    return this._readValue(e);
+  },
+  /*
+   * Returns true if any form field changed
+   */
+  isDirty:function() {
+    return this._dirty;
+  },
+  clearDirty:function() {
+    this._dirty = false;
+  },
+  show:function(on) {
+    Page.show(this.ul, on);
+  },
+  _setDirty:function() {
+    if (this._onDirty) {
+      this._onDirty(this.getRecord());
+    } else {
+      this._dirty = true;
+    }
+  },
+  _popClientPicker:function(fid) {
+    var self = this;
+    Includer.getPatientSelector_pop(function(client) {
+      self.setValue(fid, client);
+    });
+  },
+  _cacheAndAppend:function(fid, e, eAppend) {  // eAppend required only if different than e, e.g. a <span> surrounding <e> 
+    if (e) {
+      if (e.ftype == null) 
+        e.ftype = this._getFieldType(e);
+      if (e.ftype != EntryForm._FTYPE_HIDDEN) 
+        this._li.appendChild(denull(eAppend, e));
+    } else {
+      e = EntryForm._HIDDEN_ELEMENT;
+    }
+    this.fields[fid] = e;
+    this._e = e;
+  },
+  _renderValue:function(e, value) {  // value may be null
+    switch (e.ftype) {
+      case EntryForm._FTYPE_TEXTINPUT:
+      case EntryForm._FTYPE_TEXTAREA:
+      case EntryForm._FTYPE_COMBO:
+        setValue_(e, value);
+        break;
+      case EntryForm._FTYPE_CHECKBOX:
+        e.checked = (value == true);
+        break;
+      case EntryForm._FTYPE_ATAB:
+        e.anchorTab.setValue(value);
+        break;
+      case EntryForm._FTYPE_CALENDAR:
+        setValue_(e, formatDate(value));
+        break;
+      case EntryForm._FTYPE_CLIENTPICKER:
+        e.client = value;  // JClient
+        e.innerText = (e.client) ? e.client.name : e.defaultText;
+        break; 
+    }
+  },
+  _readValue:function(e) {
+    var value;
+    switch (e.ftype) {
+      case EntryForm._FTYPE_TEXTINPUT:
+      case EntryForm._FTYPE_TEXTAREA:
+      case EntryForm._FTYPE_COMBO:
+      case EntryForm._FTYPE_CALENDAR:
+        value = trim(e.value);
+        break;
+      case EntryForm._FTYPE_HIDDEN:
+        value = e.value;
+        break;
+      case EntryForm._FTYPE_CHECKBOX:
+        value = e.checked;
+        break;
+      case EntryForm._FTYPE_ATAB:
+        value = e.anchorTab.getValue();
+        break;
+      case EntryForm._FTYPE_CLIENTPICKER:
+        value = (e.client) ? e.client.id : null;
+        break;
+    }
+    return value;
+  },
+  _getFieldType:function(e) {
+    var ftype;
+    if (e.tagName == 'INPUT') {
+      ftype = (e.type == 'checkbox') ? EntryForm._FTYPE_CHECKBOX : EntryForm._FTYPE_TEXTINPUT; 
+    } else if (e.tagName == 'SELECT') {
+      ftype = EntryForm._FTYPE_COMBO;
+    } else if (e.tagName == 'TEXTAREA') {
+      ftype = EntryForm._FTYPE_TEXTAREA;      
+    } else if (e.tagName == 'A') {
+      ftype = EntryForm._FTYPE_ATAB;
+    }
+    return ftype;
+  },
+  _newHidden:function(value) {
+    return {
+      'ftype':EntryForm._FTYPE_HIDDEN,
+      'value':value
+      };
+  }
+}
+// Field types
+EntryForm._FTYPE_TEXTINPUT = 0;
+EntryForm._FTYPE_COMBO = 1;
+EntryForm._FTYPE_CHECKBOX = 2;
+EntryForm._FTYPE_TEXTAREA = 3;
+EntryForm._FTYPE_ATAB = 4;
+EntryForm._FTYPE_CLIENTPICKER = 5;
+EntryForm._FTYPE_CALENDAR = 6;
+EntryForm._FTYPE_HIDDEN = 99;
+// Hidden placeholder element
+EntryForm._HIDDEN_ELEMENT = {ftype:EntryForm._FTYPE_HIDDEN};
+// Instance management
+EntryForm._ict = 0;  // instance count
+EntryForm._newInstance = function(instance) {
+  instance._i = EntryForm._ict++;
+}

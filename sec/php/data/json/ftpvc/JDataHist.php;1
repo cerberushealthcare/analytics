@@ -1,0 +1,178 @@
+<?php
+require_once 'php/data/json/_util.php';
+
+/*
+ * DEPRECATED... now using data syncs
+ * 
+ * Medical History
+ * Facesheet Data Record
+ *  
+ * Organization:
+ *   ugid, cid, crel, hcat...
+ *     hpcid, date_sort, sid=NULL  // Facesheet rec 
+ *     hpcid, date_sort, sid>0     // SESSIONS rec (active=NULL is not processed by FacesheetDAO, active=0 is processed)    
+ */
+class JDataHist {
+
+  public $id;
+  public $userGroupId;
+  public $clientId;
+  public $clientRel;     // relation to client (0=self)
+  public $sessionId;
+  public $hcat;          // medical/surgical...
+  public $hprocId;       // lookup instance if selected from lookup table, else null for freetext
+  public $hproc;         // supplied from proc list if selected, else freetexted
+  public $dateText;      // 'in December of 2008'
+  public $dateSort;      // 1/1/2008 (approximation of dateText)
+  public $type;          // subtype of hproc, e.g. 'squamous cell carcinoma'
+  public $custom1;
+  public $custom2;
+  public $custom3;
+  public $updated;
+  public $active;
+  
+  // Derived
+  public $dateShort;  // 'Dec 2008' or '12-Dec-2008'
+  
+  const HCAT_MED  = 0;
+  const HCAT_SURG = 1;
+
+  const SQL_FIELDS = 'data_hist_id, user_group_id, client_id, client_relation, session_id, hcat, hproc_id, hproc, date_text, date_sort, type, custom1, custom2, custom3, active, date_updated';
+
+  public static $CLIENT_RELS = array(
+    '0' => '(Self)',
+    '100' => 'Father',
+    '200' => 'Mother',
+    '10' => 'Brother 1', 
+    '11' => 'Brother 2', 
+    '12' => 'Brother 3', 
+    '13' => 'Brother 4', 
+    '14' => 'Brother 5', 
+    '15' => 'Brother 6', 
+    '16' => 'Brother 7', 
+    '17' => 'Brother 8', 
+    '18' => 'Brother 9', 
+    '20' => 'Sister 1', 
+    '21' => 'Sister 2', 
+    '22' => 'Sister 3', 
+    '23' => 'Sister 4', 
+    '24' => 'Sister 5', 
+    '25' => 'Sister 6', 
+    '26' => 'Sister 7', 
+    '27' => 'Sister 8', 
+    '28' => 'Sister 9',
+    '110' => 'Paternal Uncle 1', 
+    '111' => 'Paternal Uncle 2', 
+    '112' => 'Paternal Uncle 3', 
+    '113' => 'Paternal Uncle 4', 
+    '114' => 'Paternal Uncle 5', 
+    '115' => 'Paternal Uncle 6', 
+    '116' => 'Paternal Uncle 7', 
+    '117' => 'Paternal Uncle 8', 
+    '118' => 'Paternal Uncle 9', 
+    '120' => 'Paternal Aunt 1', 
+    '121' => 'Paternal Aunt 2', 
+    '122' => 'Paternal Aunt 3', 
+    '123' => 'Paternal Aunt 4', 
+    '124' => 'Paternal Aunt 5', 
+    '125' => 'Paternal Aunt 6', 
+    '126' => 'Paternal Aunt 7', 
+    '127' => 'Paternal Aunt 8', 
+    '128' => 'Paternal Aunt 9', 
+    '210' => 'Maternal Uncle 1', 
+    '211' => 'Maternal Uncle 2', 
+    '212' => 'Maternal Uncle 3', 
+    '213' => 'Maternal Uncle 4', 
+    '214' => 'Maternal Uncle 5', 
+    '215' => 'Maternal Uncle 6', 
+    '216' => 'Maternal Uncle 7', 
+    '217' => 'Maternal Uncle 8', 
+    '218' => 'Maternal Uncle 9', 
+    '220' => 'Maternal Aunt 1', 
+    '221' => 'Maternal Aunt 2', 
+    '222' => 'Maternal Aunt 3', 
+    '223' => 'Maternal Aunt 4', 
+    '224' => 'Maternal Aunt 5', 
+    '225' => 'Maternal Aunt 6', 
+    '226' => 'Maternal Aunt 7', 
+    '227' => 'Maternal Aunt 8', 
+    '228' => 'Maternal Aunt 9',
+    '1100' => 'Paternal Grandfather', 
+    '1200' => 'Paternal Grandmother', 
+    '1100' => 'Maternal Grandfather', 
+    '1200' => 'Maternal Grandmother'
+    ); 
+  
+  public function __construct($id, $userGroupId, $clientId, $clientRel, $sessionId, $hcat, $hprocId, $hproc, $dateText, $dateSort, $type, $custom1, $custom2, $custom3, $active, $updated) {
+    $this->id = $id;
+    $this->userGroupId = $userGroupId;
+    $this->clientId = $clientId;
+    $this->clientRel = $clientRel;
+    $this->sessionId = $sessionId;
+    $this->hcat = $hcat;
+    $this->hprocId = $hprocId;
+    $this->hproc = $hproc;
+    $this->setDate($dateText, $dateSort);
+    $this->type = $type;
+    $this->custom1 = $custom1;
+    $this->custom2 = $custom2;
+    $this->custom3 = $custom3;
+    $this->active = $active;
+    $this->updated = $updated;
+  }
+  public function setDate($text, $date) {
+    $this->dateText = $text;
+    $this->dateShort = calcShortDate($text);
+    $this->dateSort = $date;
+  }
+  public function out() {
+    $out = '';
+    $out = nqq($out, 'id', $this->id);
+    $out = nqq($out, 'clientId', $this->clientId);
+    $out = nqq($out, 'clientRel', $this->clientRel);
+    $out = nqq($out, 'sessionId', $this->sessionId);
+    $out = nqq($out, 'hcat', $this->hcat);
+    $out = nqq($out, 'hprocId', $this->hprocId);
+    $out = nqq($out, 'hproc', $this->hproc);
+    $out = nqq($out, 'dateText', $this->dateText);
+    $out = nqq($out, 'dateShort', $this->dateShort);
+    $out = nqqo($out, 'type', $this->type);
+    $out = nqqo($out, 'custom1', $this->custom1);
+    $out = nqqo($out, 'custom2', $this->custom2);
+    $out = nqqo($out, 'custom3', $this->custom3);
+    return cb($out);
+  }
+  public function buildProcDateKey() {
+    return "$this->hprocId,$this->dateSort";
+  }
+    
+	// Static functions
+	public static function copy($dto) {
+	  return new JDataHist(
+	     null,
+       $dto->userGroupId,
+       $dto->clientId,
+       $dto->clientRel,
+       $dto->sessionId,
+       $dto->hcat,
+       $dto->hprocId,
+       $dto->hproc,
+       $dto->dateText,
+       $dto->dateSort,
+       $dto->type,
+       $dto->custom1,
+       $dto->custom2,
+       $dto->custom3,
+       $dto->active,
+       $dto->updated
+	     );
+	}
+  public static function areDifferent($h1, $h2) {  
+    return $h1->dateText != $h2->dateText 
+        || $h1->type != $h2->type
+        || $h1->custom1 != $h2->custom1
+        || $h1->custom2 != $h2->custom2
+        || $h1->custom3 != $h2->custom3;
+  }
+}
+?>

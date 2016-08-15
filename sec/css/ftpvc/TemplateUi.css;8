@@ -1,0 +1,87 @@
+DIV.tuic {
+  background-color:white;
+  border:1px solid #c0c0c0;
+  padding:5px;
+}
+DIV.tui {
+  background-color:white;
+  background-image:none;
+  cursor:default;
+  font-family:Calibri,Arial;
+  font-size:10.5pt;
+}
+DIV.tuiwork {
+  height:20px;
+  background:url(../img/workingCircle.gif) white no-repeat center center;
+}
+DIV.tui A {
+  color:purple;
+  text-decoration:none;
+  cursor:hand;
+}
+DIV.tui A.df {
+  color:blue;
+  background-color:#E8F2FE;
+}
+DIV.tui A.blank {
+  color:red;
+}
+DIV.tuip {
+  line-height:1.2em;
+}
+DIV.tuip SPAN.ind {
+  margin-left:0.8em;
+}
+DIV.tuip SPAN.button A {
+  background:#E3E1DD;
+  color:black;
+  font-family:Calibri,Arial; 
+  font-size:9pt;
+  border:1px solid #B1A89B;
+  margin-right:5px;
+  padding:1px 2px;
+  white-space:nowrap;  
+}
+DIV.tuip SPAN.button A.erx {
+  display:inline-block;
+  border:1px solid #B1A89B;
+  border-right:2px solid #51483B;
+  border-bottom:2px solid #51483B;
+  background-color:#E3E1DD;
+  height:15px;
+  padding:5px 2px 2px 35px;
+  background:url(../img/new/erx4.png) #E3E1DD no-repeat 3px 3px;
+}
+SPAN A.ft {
+  background-color:#FFFFC0;
+}
+SPAN.noprt A.ft {
+  background:url(../img/icons/notebook.gif) no-repeat top left;
+  display:inline-block;
+  height:16px;
+  width:17px;
+  margin-right:-3px;
+}
+DIV.nofree SPAN.noprt {
+  display:none;
+}
+DIV.nofree SPAN.ft {
+  display:inline;
+}
+LABEL.tui2 {
+  width:120px;
+  text-align:right;
+  padding-right:4px;
+}
+LABEL.tui3 {
+  width:200px;
+  text-align:right;
+  padding-right:4px;
+}
+UL.entry SPAN.q A.blank {
+  color:red;
+  background-color:white;
+}
+LI.hide {
+  display:none;
+}

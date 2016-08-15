@@ -1,0 +1,27 @@
+/**
+ * Address UI Library
+ */
+var AddressUi = {
+  formatPhone:function(phone, type) {
+    if (phone) {
+      var s = phone;
+      var t = this.formatPhoneType(type);
+      if (t != '') {
+        s += '(' + t + ')';
+      }
+      return s;
+    }
+  },
+  formatPhoneType:function(type) {
+    if (! isUndefined(type)) {
+      switch (val(type)) {
+        case 0: return 'primary';
+        case 1: return 'work';
+        case 2: return 'cell';
+        case 3: return 'emergency';
+        case 4: return 'fax';
+      }
+    }
+    return '';
+  }
+}

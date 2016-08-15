@@ -1,0 +1,89 @@
+<?php
+require_once 'php/data/hl7/_HL7Rec.php';
+require_once 'php/data/hl7/msg/seg/MSH.php';
+//
+/**
+ * HL7 Message 
+ * @author Warren Hornsby
+ */
+abstract class HL7Message extends HL7Rec {
+  //
+  public /*MSH*/ $Header;
+  //
+  protected $_recs;
+  //
+  public function __construct($header, $recs) {
+    $fids = $this->getFids();
+    $segIds = $this->getSegIds();
+    $this->_recs = $recs;
+    $this->Header = $header;
+    do {
+      $segId = $this->currentSegId();
+      $fid = geta($segIds, $segId);
+      if ($fid)
+        $this->set($fids, $fid);
+    } while ($fid);
+    foreach ($fids as $fid => $value) 
+      if (is_string($this->$fid))
+        $this->$fid = null;
+  }
+  protected function set($fids, $fid) {
+    $class = $fids[$fid];
+    $this->$fid = new $class($this);
+  }
+  /**
+   * @return string '|'
+   */
+  public function getDelim() {
+    return $this->Header->_fieldDelim;
+  }
+  /**
+   * @return string 
+   */
+  public function current() {
+    return current($this->_recs);
+  }
+  /**
+   * @return string 'OBR' (or null if EOF)
+   */
+  public function currentSegId() {
+    $rec = $this->current();
+    if ($rec)
+      return substr($rec, 0, 3);
+  }
+  /**
+   * @return string[] values of current record
+   */
+  public function pop() {
+    $values = explode($this->getDelim(), current($this->_recs));
+    next($this->_recs);
+    return $values;
+  }
+  //
+  /**
+   * @param string $data
+   * @return HL7Message
+   */
+  static function from($data) {
+    $recs = explode("\n", $data);
+    $header = MSH::from(array_shift($recs));
+    $class = $header->msgType->type;
+    require_once "php/data/hl7/msg/$class.php";
+    return new $class($header, $recs);
+  }
+  //
+  protected function getSegIds() {
+    static $segIds;
+    if ($segIds == null) {
+      $segIds = array();
+      $fids = $this->getFids();
+      foreach ($fids as $fid => $class) 
+        if ($class)
+          $segIds[substr($class, 0, 3)] = $fid;
+    }
+    return $segIds;
+  }
+  protected static function isFid($var, $c1) {
+    return parent::isFid($var, $c1) && self::isUpper($c1);
+  }
+}

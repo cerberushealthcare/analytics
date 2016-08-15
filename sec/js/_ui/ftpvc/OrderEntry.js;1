@@ -1,0 +1,426 @@
+/**
+ * TableLoader TrackingTable 
+ */
+TrackingTable = {
+  /*
+   * @arg int cid (optional, to restrict table to one client)
+   */
+  create:function(parent, cid) {
+    var titles = ['Open Items By Category', 'Unscheduled Items By Date', 'Closed Items'];
+    var tabs = ['Open By Category', 'Unsched By Date', 'Closed'];
+    var self = Html.TabPanels.create(parent, titles, tabs);
+    return self.aug({
+      onchange:function() {},
+      //
+      TAB_OPEN:0,
+      TAB_UNSCHED:1,
+      TAB_CLOSED:2,
+      init:function() {
+        TrackingTable.OpenTable.create(self.panels.get(self.TAB_OPEN), cid).set('onselect', self.table_onselect);
+        TrackingTable.UnschedTable.create(self.panels.get(self.TAB_UNSCHED), cid).set('onselect', self.table_onselect);
+        TrackingTable.ClosedTable.create(self.panels.get(self.TAB_CLOSED), cid).set('onselect', self.table_onselect);
+        self.select(0);
+      },
+      setHeight:function(i) {
+        self.panels.apply(function(panel) {
+          panel.table.setHeight(i);
+        });
+      },
+      reset:function() {
+        self.panels.apply(function(panel) {
+          panel.table.reset();
+        });
+        self.select(0);
+      },
+      //
+      panel_onselect:function(panel) {
+        if (! panel.table.isLoaded())  
+          panel.table.load();
+      },
+      table_onselect:function(rec) {
+        TrackItemEntry.pop(rec).aug({
+          onsave:function(rec) {
+            self.selected().table.update(rec);
+          }
+        });
+      }
+    });
+  },
+  TableLoader:{
+    create:function(panel, cid) {
+      var self = Html.TableLoader.create(panel, 'fsb');
+      panel.table = self;
+      return self.aug({
+        onfetch:function() {},
+        //
+        init:function() {
+          self.setTopFilter();
+        },
+        rowKey:function(rec) {
+          return rec.trackItemId;
+        },
+        formatStatus:function(status) {
+          switch (status) {
+            case C_TrackItem.STATUS_ORDERED:
+              return 'Ordered Only'
+            case C_TrackItem.STATUS_SCHED:
+              return 'Scheduled/Obtained';
+            case C_TrackItem.STATUS_CLOSED:
+              return 'Closed';
+            default:
+              return null;
+          }
+        },
+        stub_onclick:function(rec) {
+          DocStubPreview.pop(rec);
+        },
+        fetch:function(callback_recs) {
+          var requestType = panel.index;
+          var criteria = (cid) ? {'cid':cid} : null;
+          Ajax.Tracking.getTrackItems(requestType, criteria, callback_recs);
+          self.onfetch();
+        }
+      });
+    }
+  },
+  OpenTable:{
+    create:function(panel, cid) {
+      var self = TrackingTable.TableLoader.create(panel, cid);
+      return self.aug({
+        init:function() {
+          if (! cid)
+            self.thead().trFixed().th('Category').w('15%').th('Item').w('30%').th('Patient').w('15%').th('Source').w('15%').th('Ordered').w('10%').th('Sched/Obtained').w('15%');
+          else
+            self.thead().trFixed().th('Category').w('15%').th('Item').w('30%').th('Source').w('15%').th('Ordered').w('10%').th('Sched/Obtained').w('30%');
+        },
+        filter:function(rec) {
+          if (! cid)
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy,'Status':self.formatStatus(rec.status),'Patient':rec._client};  
+          else
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy,'Status':self.formatStatus(rec.status)};  
+        },
+        rowBreaks:function(rec) {
+          return [rec._cat];
+        },
+        add:function(rec, tr) {
+          tr.td(rec._cat, 'histbreak').select(AnchorTrackItem);
+          if (rec.orderNotes) 
+            Html.Div.create('notes').text(rec.orderNotes).into(tr._cell);
+          if (! cid)
+            tr.td(AnchorClient_Facesheet.create(rec.ClientStub), 'nw');
+          tr.td(AnchorDocStub_Preview.create(rec.DocSession)).td(rec._orderDate, 'nw').td(rec._schedDate, 'nw');
+        }
+      });
+    }
+  },
+  UnschedTable:{
+    create:function(panel, cid) {
+      var self = TrackingTable.TableLoader.create(panel, cid);
+      return self.aug({
+        init:function() {
+          if (! cid)
+            self.thead().trFixed().th('Ordered').w('10%').th('Item').w('30%').th('Category').w('15%').th('Patient').w('15%').th('Source').w('30%');
+          else
+            self.thead().trFixed().th('Ordered').w('10%').th('Item').w('30%').th('Category').w('15%').th('Source').w('45%');
+        },
+        filter:function(rec) {
+          if (! cid) 
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy,'Patient':rec._client};
+          else
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy};
+        },
+        rowBreaks:function(rec) {
+          return [rec.orderDate];
+        },
+        add:function(rec, tr) {
+          tr.td(rec._orderDate, 'histbreak').select(AnchorTrackItem).td(rec._cat);
+          if (! cid)
+            tr.td(AnchorClient_Facesheet.create(rec.ClientStub), 'nw');
+          tr.td(AnchorDocStub_Preview.create(rec.DocSession), 'nw');
+        }
+      });
+    }
+  },
+  ClosedTable:{
+    create:function(panel, cid) {
+      var self = TrackingTable.TableLoader.create(panel, cid);
+      return self.aug({
+        init:function() {
+          if (! cid)
+            self.thead().trFixed().th('Closed').w('10%').th('Item').w('25%').th('Category').w('10%').th('Patient').w('15%').th('Source').w('15%').th('Ordered').w('10%').th('Sched/Obtained').w('15%');
+          else
+            self.thead().trFixed().th('Closed').w('10%').th('Item').w('25%').th('Category').w('10%').w('15%').th('Source').w('15%').th('Ordered').w('10%').th('Sched/Obtained').w('30%');
+        },
+        filter:function(rec) {
+          if (! cid) 
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy,'Patient':rec._client};
+          else
+            return {'Category':rec._cat,'Ordered By':rec._orderedBy}; 
+        },
+        rowBreaks:function(rec) {
+          return [rec.closedDate];
+        },
+        add:function(rec, tr) {
+          tr.td(rec.closedDate, 'histbreak').select(AnchorTrackItem).td(rec._cat);
+          if (! cid)
+            tr.td(AnchorClient_Facesheet.create(rec.ClientStub), 'nw');
+          tr.td(AnchorDocStub_Preview.create(rec.DocSession), 'nw').td(rec._orderDate, 'nw').td(rec._schedDate, 'nw');
+        }
+      });
+    }
+  }
+}
+/**
+ * Pop TrackingPop (not yet in use)
+ */
+TrackingPop = {
+  /*
+   * @arg int cid (optional, to restrict table to one client)
+   */
+  pop:function(cid) {
+    return TrackingPop = this.create(cid).pop();
+  },
+  create:function(cid) {
+    var self = Html.Pop.create('Order Tracking', 780);
+    return self.aug({
+      init:function() {
+        self.content.addClass('tabbarpopcontent');
+        self.table = TrackingTable.create(self.content, cid).setHeight(400);
+        TrackingPop.CmdBar.create(self.content, self, cid);
+      },
+      pop:function() {
+        // TODO
+      },
+      //
+      add_onclick:function() {
+        AddOrdersPop.pop();
+      }
+    });
+  },
+  CmdBar:{
+    create:function(parent, context, cid) {
+      var self = Html.CmdBar.create(parent, context);
+      if (cid) 
+        self.add('Add Item(s)...', context.add_onclick);
+      self.exit(context.close);
+    }
+  }
+}
+/**
+ * RecordEntryPop TrackingPop 
+ */
+TrackItemEntry = {
+  pop:function(rec) {
+    return TrackItemEntry = this.create().pop(rec);
+  },
+  create:function() {
+    var self = Html.RecordEntryPop.create('Tracking Item Entry', 700);
+    return self.aug({
+      buildForm:function(ef) {
+        ef.aug({
+          sched_onset:function(text) {
+            ef.showIf('li-sched1', text);
+            ef.showIf('li-sched2', text);
+          },
+          closed_onset:function(text) {
+            ef.showIf('li-close1', text);
+            ef.showIf('li-close2', text);
+          }
+        });
+        ef.li('Item').textbox('trackDesc', 40).lbl('Priority').select('priority', C_TrackItem.PRIORITIES);
+        ef.li('Ordered').ro('_ordered');
+        ef.li('Notes').textarea('orderNotes', 2);
+        ef.li('Scheduled', 'mt15').datetime('schedDate', ef.sched_onset).lblf('_sched', 'nopad');
+        ef.li('With', 'mt5').id('li-sched1').picker(ProviderPicker, 'schedWith', 'Provider').lbl('Location').picker(FacilityPicker, 'schedLoc', 'Facility').endSpan();
+        ef.li('Notes').id('li-sched2').textarea('schedNotes');
+        ef.li('Closed', 'mt15').date('closedDate', ef.closed_onset).lblf('_closed', 'nopad');
+        ef.li('Reason', 'mt5').id('li-close1').select('closedFor', C_TrackItem.CLOSED_FORS);
+        ef.li('Notes').id('li-close2').textarea('closedNotes');
+      }, 
+      save:function(rec, onsuccess, onerror) {
+        Ajax.Tracking.update(rec, onsuccess);
+      },
+      buildCmd:function(cb) {
+        cb.save(self.save_onclick).copy('Create Duplicate(s)...', self.copy_onclick).cancel(self.cancel_onclick);
+      },
+      copy_onclick:function() {
+        // TODO
+      }
+    });
+  }
+}
+/**
+ * Pop AddOrdersPop
+ */
+AddOrdersPop = {
+  /*
+   * @arg Facesheet fs
+   */
+  pop:function(fs) {
+    return AddOrdersPop = this.create(fs).pop();
+  },
+  create:function(fs) {
+    var self = Html.Pop.create('Add Orders', 650);
+    return self.aug({
+      onsave:function() {},
+      //
+      init:function() {
+        self.form = Html.TemplateUi.create(Html.Pop.Frame.create(self), fs).setHeight(200).aug({
+          onchange:function(q) {
+            //self.cmd.showIf('order', q.isSel());
+          },
+          getPid:function(callback_pid) {
+            Ajax.Tracking.getPid(callback_pid);
+          }
+        });
+        self.cmd = Html.Pop.CmdBar.create(self).button('Generate Order(s)...', self.order_onclick, 'gen-order', 'order').cancel(self.close);
+      },
+      pop:function() {
+        Includer.getTemplatePops(function() {
+          self.show();
+          if (self.form.isLoaded())
+            self.form.reset();
+          else
+            self.form.load(null, function() {
+            //self.cmd.showIf('order', false);
+            });
+        });
+        return self;
+      },
+      //
+      order_onclick:function() {
+        var items = [];
+        var rec = self.form.tui.getSelected();
+        for (var qref in rec) {
+          var q = self.form.tui.qs[qref];
+          if (q.track) {
+            var opts = rec[qref];
+            for (var i = 0; i < opts.length; i++) {
+              var opt = opts[i];
+              items.push(OrderItem.fromFs(fs, q, opt));
+            }
+          }
+        }
+        if (items)  
+          OrderSheet.pop(items).aug({
+            onsave:function() {
+              self.onsave();
+              self.close();
+            }
+          }); 
+      }
+    });
+  }
+}
+MultiIpcAtab = {
+  create:function() {
+    return Html.AnchorTab.create().checks(C_Lookups.AREAS, 3).okCancel();
+  }
+}
+/**
+ * Pop OrderSheet
+ */
+OrderSheet = {
+  /*
+   * @arg OrderItem[] recs
+   */
+  pop:function(recs) {
+    return OrderSheet = this.create().pop(recs);
+  },
+  create:function() {
+    var self = Html.Pop.create('Order Sheet', 800);
+    return self.aug({
+      onsave:function() {},
+      //
+      init:function() {
+        self.table = OrderSheet.Table.create(self.content);
+        Html.Pop.CmdBar.create(self).saveCancel('Save to Tracking Sheet');
+      }, 
+      pop:function(recs) {
+        self.table.reset();
+        self.show();
+        self.table.load(recs);
+        return self;
+      },
+      save_onclick:function() {
+        var recs = self.table.getCheckedRecs();
+        self.working(function() {
+          Ajax.Tracking.saveOrder(recs, function() {
+            self.working(false);
+            self.onsave();
+            self.close();
+          });
+        });
+      }
+    });
+  },
+  Table:{
+    create:function(parent) {
+      var self = Html.TableLoader.create(parent, 'fsgr single grid');
+      return self.aug({
+        init:function() {
+          self.setHeight(200);
+          self.thead().trFixed().th(null, 'check').th('Category').w('20%').th('Item').w('30%').th('Priority').w('10%').th('Notes').w('40%');
+        },
+        rowOffset:function(rec) {
+          return 1;
+        },
+        fetch:function(callback_recs) {
+          Ajax.Tracking.order(self.recs, 
+            function(tracksheet) {
+              callback_recs(tracksheet.items);
+            });
+        },
+        add:function(rec, tr) {
+          var checked = rec.trackItemId || rec.trackCat != C_TrackItem.TCAT_OTHER;
+          rec._selectCat = Html.Select.create(C_TrackItem.TCATS).setValue(rec.trackCat);
+          rec._selectPrior = Html.Select.create(C_TrackItem.PRIORITIES).setValue(rec.priority);
+          rec._inputNotes = Html.InputText.create().setSize(40).setValue(rec.orderNotes);
+          tr.check(rec, checked).td(rec._selectCat).td(rec.trackDesc).td(rec._selectPrior).td(rec._inputNotes);
+        },
+        getCheckedRecs:function() {
+          var recs = self.getCheckRecs();
+          Array.forEach(recs, function(rec) {
+            rec.trackCat = rec._selectCat.getValue();
+            rec.priority = rec._selectPrior.getValue();
+            rec.orderNotes = rec._inputNotes.getValue();
+          });
+          return recs;
+        }
+      });
+    } 
+  } 
+}
+/**
+ * Data OrderItem  
+ */
+OrderItem = Class.define(
+  function(cid, sid, key, tcat, tdesc, cpt) {
+    this.cid = cid;
+    this.sid = sid;
+    this.key = key;
+    this.tcat = tcat;
+    this.tdesc = tdesc;
+    this.cpt = cpt;
+  },{  // prototype
+  },{  // statics
+    /*
+     * @return string 'qidi#oix' e.g. '21600@2131#19' 
+     */
+    buildKey:function(qidi, oix) {
+      return qidi + '#' + oix;
+    },
+    /*
+     * @return OrderItem
+     */
+    fromFs:function(fs, q, opt) {
+      return new OrderItem(
+        fs.client.clientId, 
+        '0', 
+        OrderItem.buildKey(q.id, opt.oix),
+        (opt.tcat) ? opt.tcat : '99',
+        (opt.desc) ? opt.desc : opt.text,
+        opt.cpt);
+    }
+  }
+);

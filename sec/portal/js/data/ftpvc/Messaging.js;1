@@ -1,0 +1,17 @@
+/**
+ * RecArray MsgThreads
+ */
+MsgThreads = Object.RecArray.extend({
+  getItemProto:function() {
+    return MsgThread;
+  }
+})
+/**
+ * Rec MsgThread
+ */
+MsgThread = Object.Rec.extend({
+  //
+  isRead:function() {
+    return this.Inbox.isRead == C_MsgInbox.IS_READ;
+  }
+})

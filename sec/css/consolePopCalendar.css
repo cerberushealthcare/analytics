@@ -1,0 +1,98 @@
+div#popCal {
+  text-align:center;
+  padding-top:10px;
+}
+A#calcCmd {
+  display:block;
+  width:88px;
+  height:15px;
+  white-space:nowrap;
+}
+.styleMsg {
+  text-align: center; 
+  color: white; 
+  font-family:Tahoma; 
+  font-size: 8pt; 
+  font-weight: bold;
+}
+.styleBody {
+  font-family:Tahoma; 
+  font-size: 11pt;
+  color:black;
+  background-color:#264a6f;
+  padding:5px;
+}
+.styleLink {
+  cursor:hand; 
+}
+.styleTitle {
+  color: white; 
+  font-family:Tahoma; 
+  font-size:9pt; 
+  font-weight: bold;
+  width:140px;
+  white-space:nowrap;
+  padding:0;
+  display:block;
+}
+.styleTitle A {
+  display:inline;
+  color:#e0e0e0;
+  text-decoration:none;
+}
+.styleTitle A:hover {
+  color:white;
+  text-decoration:underline;
+}
+.styleDayTitle {
+  text-align: center; 
+  color: white; 
+  background-color:#264a6f; 
+  font-family: Arial;
+  font-size: 8pt; 
+  font-weight: bold;
+}
+.styleDay {
+  text-align: right; 
+  background-color:#C7DCEB; 
+  cursor:hand; 
+}
+.styleWeekend {
+  text-align: right; 
+  background-color:#DAE8F1; 
+  cursor:hand; 
+}
+.styleToday {
+  color: red; 
+  text-align: right; 
+  background-color:#C7DCEB; 
+  cursor:hand; 
+}
+.styleSetting {
+  text-align: right; 
+  background-color:#FFFF97; 
+  cursor:hand; 
+}
+.styleOffDay {
+  text-align: right; 
+  background-color:#336699;
+}
+.styleHide {
+  background-color:#336699;
+}
+.styleSelected {
+  text-align:right; 
+  color:blue; 
+  background-color:#F3F7FC; 
+  cursor:hand; 
+}
+A#calCmd {
+  width:102px;
+  height:15px;
+  white-space:nowrap;
+}
+DIV#chelp {
+  border:1px inset;
+  background-color:white;
+  padding:5px;
+}

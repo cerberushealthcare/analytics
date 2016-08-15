@@ -1,0 +1,308 @@
+P {
+  margin:0;
+  padding:0;
+}
+DIV#message-working {
+  height:70px;
+  line-height:70px;
+  text-align:center;
+  font-size:10pt;
+  padding-top:10px;
+}
+DIV#msg-inbox DIV.spacer {
+  height:10px;
+}
+DIV#msg-inbox A {
+  display:block;
+  border-right:1px solid black;
+  border-bottom:1px solid black;
+  background:#C2EAE4;
+  cursor:pointer;
+  margin-bottom:5px;
+  color:blue;
+}
+DIV#msg-inbox A DIV.layout {
+  border:1px solid #55A197; 
+  padding:2px;
+}
+DIV#msg-inbox A.read {
+  background-color:#e8e8e8;
+  border-color:#F8F8F8;
+  background-image:none;
+}
+DIV#msg-inbox A.read DIV.layout {
+  border-color:#a0a0a0;
+  border:1px dotted #a0a0a0;
+}
+DIV#msg-inbox A:hover {
+  border-color:#F42941;
+  text-decoration:none;
+  background-color:#EDF9F7;
+  color:#F42941;
+  background-image:none;
+}
+DIV#msg-inbox A:hover DIV.layout {
+  border:1px solid #F42941;
+}
+DIV#msg-inbox A.read:hover {
+  background-color:white;
+  border-color:#F8F8F8;
+}
+DIV#msg-inbox A DIV.topic {
+  font-size:11pt;
+  line-height:11pt;
+  font-family:Calibri,Arial;
+  border:1px solid #c0c0c0;
+  background-color:white;
+  margin-right:5px;
+  padding:2px 5px 2px 5px;
+  cursor:pointer;
+}
+DIV#msg-inbox A:hover DIV.topic {
+  border:1px solid #F42941;
+}
+DIV#msg-inbox A.read DIV.topic {
+  color:#404040;
+}
+DIV#msg-inbox A.read:hover DIV.topic {
+  border-color:#c0c0c0;
+}
+DIV#msg-inbox A DIV.topic DIV.subj {
+  background:url(../img/icons/email.png) no-repeat top left;
+  padding-left:18px;
+}
+DIV#msg-inbox A DIV.topic DIV.tlock {
+  background:url(../img/icons/lock.gif) no-repeat -1px left;
+  padding-left:18px;
+}
+DIV#msg-inbox A DIV.topic DIV.stat {
+  background:url(../img/icons/warning.png) no-repeat -1px left;
+  padding-left:18px;
+  color:red;
+}
+DIV#msg-inbox A.read DIV.topic DIV.stat {
+  background:url(../img/icons/warning.png) no-repeat -1px left;
+  padding-left:18px;
+  color:red;
+}
+DIV#msg-inbox A DIV.topic DIV.tag {
+  font-size:9pt;
+  font-weight:normal;
+  color:black;
+  line-height:10pt;
+  padding:3px 0 0 0;
+}
+DIV#msg-inbox A TABLE {
+  border-collapse:collapse;
+  cursor:pointer;
+  width:100%;
+}
+DIV#msg-inbox A TD.topic {  
+  vertical-align:top;
+  width:250px;
+}
+DIV#msg-inbox A TD.posts {
+  vertical-align:top;
+}
+DIV#msg-inbox A TD.posts TABLE {
+  width:100%;
+}
+DIV#msg-inbox A TD.posts TABLE TH {
+  text-align:left;
+  font-size:10pt;
+  padding:0;
+  font-weight:normal;
+}
+DIV#msg-inbox A.read TD.posts TABLE TH {
+  color:#303030;
+}
+DIV#msg-inbox A TD.posts TABLE TD {
+  vertical-align:top;
+  padding:0 0 0 1em;
+  font-size:8pt;
+  line-height:8pt;
+  color:#303030;
+}
+DIV#msg-inbox A TD.posts TABLE TH.status {
+  text-align:right;
+  font-size:8pt;
+  line-height:8pt;
+  vertical-align:top;
+}
+DIV#msg-inbox A TD.posts TABLE TD DIV {
+  font-size:10.5pt;
+  line-height:10.5pt;
+  color:black;
+}
+DIV#msg-inbox A.read TD.posts TABLE TD DIV {
+}
+H2.msg {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:11pt;
+  margin:0;
+  display:inline;
+}
+H2.thread {
+  background:url(../img/icons/email.png) no-repeat -1px 3px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  margin:0;
+  padding-left:18px;
+}
+H2.F {
+  background:url(../img/icons/portrait-pink.gif) no-repeat left 3px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  font-weight:bold;
+  margin:0;
+  padding-left:18px;
+  color:#606060;
+}
+H2.M {
+  background:url(../img/icons/portrait-blue.gif) no-repeat left 3px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  font-weight:bold;
+  margin:0;
+  padding-left:18px;
+  color:#606060;
+}
+H3 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:9pt;
+  margin:0.8em 0 0 0;
+  line-height:10pt;
+}
+DIV#thread-head {
+}
+DIV#client-info {
+  padding-bottom:10px;
+}
+DIV#thread-head TABLE {
+  border-collapse:collapse;
+  width:100%;
+}
+DIV#posts {
+}
+DIV#posts A.gogo {
+  font-size:10pt;
+  background:url(../img/icons/view.gif) no-repeat left top;
+  padding-left:18px;
+  display:block;
+  height:16px;
+}
+DIV#posts TABLE {
+  border-collapse:collapse;
+  width:100%;
+}
+DIV#posts TD#td-posts {
+  vertical-align:top;
+  padding-right:10px;
+}
+DIV#posts TD#td-client {
+  vertical-align:top;
+  padding:5px;
+  width:220px;
+  border:1px solid #c0c0c0;
+  background-color:white;
+}
+DIV#posts TD#td-client DIV {
+  font-family:Calibri,Arial;
+  font-size:10pt;
+  padding-left:10px;
+}
+DIV#thread DIV.post {
+  margin-top:10px;
+  border:1px solid #a0a0a0;
+  border:none;
+  padding:0 0 5px 0;
+}
+DIV#thread DIV.post TABLE {
+  border-collapse:collapse;
+  width:100%;
+}
+DIV#thread DIV.post TH {
+  font-family:Calibri,Arial;
+  background-color:#EEF6FC;
+  color:#404040;
+  border:1px dotted #606060;
+  padding:2px 2px 2px 5px;
+}
+DIV#thread DIV.post TH SPAN {
+  color:#404040;
+}
+DIV#thread DIV.unread TH {
+  color:blue;
+  border-right:1px dotted blue;
+}
+DIV#thread DIV.post TH.r1 {
+  background-color:#FCF3EE;
+}
+DIV#thread DIV.post TH.r2 {
+  background-color:#FCFAEE;
+}
+DIV#thread DIV.post TH.r3 {
+  background-color:#F4F0FE;
+}
+DIV#thread DIV.post TH.r4 {
+  background-color:#F2FAF0;
+}
+DIV#thread DIV.post TH DIV {
+  font-size:11pt;
+}
+DIV#thread DIV.post TH DIV.time {
+  font-size:9pt;
+  text-align:right;
+  white-space:nowrap;
+  font-weight:bold;
+  float:right;
+  padding:2px 4px;
+}
+DIV#thread DIV.post TH SPAN {
+  font-family:Calibri,Arial;
+  font-size:10pt;
+  font-weight:normal;
+  background:url(../img/icons/arrow.png) left top no-repeat;
+  padding-left:18px;
+  display:inline-block;
+  vertical-align:baseline;
+  margin-left:2px;
+}
+DIV#thread DIV.unread TH SPAN {
+  font-weight:bold;
+}
+DIV#thread DIV.post TD {
+  vertical-align:top;
+  padding:2px 5px 0 7px;
+  text-align:left;
+  font-family:Calibri,Arial;
+  font-size:10.5pt;
+  color:#404040;
+}
+DIV#thread DIV.unread TD {
+  color:black;
+  background-color:white;
+}
+DIV#thread-reply {
+  margin-top:10px;
+}
+DIV#thread-reply H2 {
+  margin:0;
+  padding:0;
+}
+TEXTAREA#ta {
+  width:99%;
+  height:100px;
+}
+TEXTAREA#new {
+  width:85%;
+  height:100px;
+}
+SPAN.recips {
+  width:150px;
+  padding-left:5px;
+  border-right:1px dashed #c0c0c0;
+}
+SPAN.norb {
+  border-right:none;
+}

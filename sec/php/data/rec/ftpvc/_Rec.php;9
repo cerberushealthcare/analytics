@@ -1,0 +1,259 @@
+<?php
+/**
+ * Data Record 
+ */
+class Rec {
+  /**
+   * Assigns fields based upon args supplied:
+   *   (value,value,..)      multiple args: each assigned in field definition order
+   *   ([value,..]  )        single arg, array: values assigned in field definition order 
+   *   ([fid=>value,..]  )   single arg, assoc array: values assigned in field definition order (fids ignored) 
+   *   ({fid:value,..})      single arg, decoded JSON object: values mapped to fids
+   * To call this from an overriden constructor, use:
+   *   $args = func_get_args(); 
+   *   call_user_func_array(array('Rec', '__construct'), $args);
+   */
+  public function __construct() {
+    $args = func_get_args();
+    $fids = $this->getFids();
+    if (count($args) == 1) {  
+      if (is_array($args[0])) {  // construct from array
+        $arr = $args[0];
+        for ($i = 0, $l = count($fids); $i < $l; $i++) {
+          $value = current($arr);
+          $this->set($fids[$i], $value);
+          next($arr);
+        }
+        $args = null;
+      } else if (is_object($args[0])) {  // construct from decoded JSON object
+        $obj = $args[0];
+        foreach ($obj as $fid => $value)
+          $this->set($fid, $value);
+        $args = null;
+      }
+    }
+    if ($args) {  // construct from arg list
+      for ($i = 0, $l = count($args); $i < $l; $i++) {
+        $value = current($args);
+        $this->set($fids[$i], $value); 
+        next($args); 
+      }
+    }
+  }
+  /**
+   * Assign field value according to type
+   * @param string $fid
+   * @param string $value: simple field assignment
+   *        object $value: child Rec assignment from decoded JSON object {fid:value,..}  
+   */
+  public function set($fid, $value) {
+    if ($value !== null) 
+      if (is_scalar($value)) {
+        $this->$fid = $value;
+      } else {
+        $class = Rec::getClassFromJsonField($fid);
+        $this->$fid = new $class($value);
+      }
+  }
+  /**
+   * Validate required fields
+   * @throws RecRequiredException
+   */
+  public function validate() {  // TODO
+//    if ($this->REQUIRED) {
+//      $required = array();
+//      foreach ($this->REQUIRED as &$fid) 
+//        if ($this->$fid === null)
+//          $required[] = $this->getFullFieldName($fid);
+//      if (count($required) > 0)
+//        throw new RecRequiredException($required);
+//    }
+  }
+  /**
+   * Invoked by Services_JSON prior to constructing JSON of this object
+   * Override to add/change properties, e.g.:
+   *   $o = parent::toJsonObject();
+   *   $o->existingProp = 'change';
+   *   unset($o->existingPropToDelete);
+   *   Rec::addProp('newProp', value);
+   * @return stdClass object
+   */
+  public function toJsonObject() {
+    $out = new stdClass();
+    $hasProps = false;
+    foreach ($this as $fid => &$value) { 
+      if ($value !== null) {
+        $hasProps = true; 
+        $out->$fid = $value;
+      }        
+    }
+    return ($hasProps) ? $out : null;
+  }
+  //
+  // Protected
+  /**
+   * @return string 'className'
+   */
+  protected function getMyName() {
+    return get_class($this);
+  }
+  //
+  protected function getFullFieldName($fid) {
+    return $this->getMyName() . ".$fid";
+  }
+  protected function getFids() {
+    static $fids;
+    if ($fids == null) 
+      $fids = array_keys(get_object_vars($this));
+    return $fids;    
+  }
+  protected function getFidCt() {
+    static $ct;
+    if ($ct == null) 
+      $ct = count($this->getFids());
+    return $ct;
+  }
+  //
+  // Statics
+  //
+  /**
+   * Build Rec objects from decoded JSON array 
+   * @param array $objects [{fid:value,..},..]
+   * @param(opt) string $class 'SomeRec' 
+   * @return array(Rec,..)
+   */
+  public static function fromJsonObjects($objects, $class) {
+    if ($class == null)
+      $class = get_called_class();
+    $recs = array();
+    foreach ($objects as $object) 
+      $recs[] = new $class($object);
+    return $recs;
+  }
+  /**
+   * Get array of class constants
+   * @deprecated
+   * @param(opt) string $class 'SomeRec' 
+   * @return array("CONSTANT_NAME"=>value,..)
+   */
+  public static function getConstants($class) {  
+    if ($class == null)
+      $class = get_called_class();
+    $rc = new ReflectionClass(Rec::getClass($class));
+    $constants = $rc->getConstants();
+    return $constants; 
+  }
+  /**
+   * Get JSON-serialized array of class constants and static lists
+   * @param(opt) string $class 'SomeRec' 
+   * @return {
+   *   'CONSTANT_NAME':value,..
+   *   'LIST_NAME':['value':'text',..],..
+   *   }
+   */
+  public static function getStaticJson($class = null) {
+    if ($class == null)
+      $class = get_called_class();
+    $rc = new ReflectionClass(Rec::getClass($class));
+    $constants = $rc->getConstants();
+    $lists = $rc->getStaticProperties();
+    return jsonencode(array_merge($constants, $lists)); 
+  }
+  /**
+   * Add JSON helper prop (prefixed by '_') to supplied JSON object
+   * @param stdClass $object
+   * @param string $fid
+   * @param mixed $value
+   */
+  protected static function addProp(&$object, $fid, $value) {
+    $prop = "_$fid";
+    $object->$prop = $value;
+  }
+  /**
+   * Add formatted JSON helper props for supplied fids to supplied JSON object
+   * @param stdClass $object
+   * @param string/array $fids to format
+   * @param string $fn format function e.g. "formatInformalDate"
+   * @param(opt) string $suffix to append to helper prop 
+   */
+  protected static function addFormattedProps(&$object, $fids, $fn, $suffix = '') {
+    arrayify($fids);
+    foreach ($fids as &$fid) {
+      $value = get($object, $fid);
+      if ($value != null) 
+        Rec::addProp($object, $fid . $suffix, $fn($value));
+    }
+  }
+  protected static function addDateProps(&$object, $fids) {
+    Rec::addFormattedProps($object, $fids, 'formatInformalDate');
+  }
+  protected static function addDateTimeProps(&$object, $fids) {
+    Rec::addFormattedProps($object, $fids, 'formatInformalTime');
+  }
+  protected static function getClassFromJsonField($fid) {
+    $a = explode('_', $fid);
+    return $a[0];
+  }
+  protected static function getClass($class) {
+    if (is_object($class)) 
+      $class = get_class($class);
+    return $class;
+  }
+  /**
+   * Sort record set
+   * @param [Rec,..] $recs
+   * @param RecSort $order
+   * @param bool $preserveKeys
+   */
+  protected static function sort(&$recs, $order, $preserveKeys = false) {
+    if ($preserveKeys)
+      uasort($recs, array($order, 'compare'));
+    else
+      usort($recs, array($order, 'compare'));
+    return $recs;
+  } 
+}
+/**
+ * Record Comparator
+ */
+class RecSort {
+  public $fids;  
+  //
+  const ASC = 1;
+  const DESC = -1;
+  /**
+   * @param array $fids [fid=>int,..] where int=RecSort::ASC or RecSort::DESC
+   */
+  public function __construct($fids) {
+    $this->fids = $fids;
+  } 
+  /**
+   * @param Rec $r1
+   * @param Rec $r2
+   */
+  public function compare($r1, $r2) {
+    $a = array();
+    foreach ($this->fids as $fid => $dir) {
+      $icmp = $dir * icmp(get_recursive($r1, $fid), get_recursive($r2, $fid));
+      if ($icmp != 0)
+        return $icmp;
+    }
+    return 0;
+  }
+}
+/**
+ * Exceptions
+ */
+class RecException extends Exception {
+}
+class RecRequiredException extends RecException {
+  public $required;
+  /**
+   * @param array $required ['class.fid',..]
+   */
+  public function __construct($required) {
+    $this->required = $required;
+    $this->message = 'Missing fields: ' . implode($required, ', ');
+  }
+}
+?>

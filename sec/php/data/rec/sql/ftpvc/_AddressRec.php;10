@@ -1,0 +1,359 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Address Record Base Class
+ * @author Warren Hornsby 
+ */
+abstract class AddressRec extends SqlRec {
+  /*  
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $phone3;
+  public $phone3Type;
+  public $email1;
+  public $email2;
+  public $name;
+  */  
+  const TABLE_USERS = 'U';
+  const TABLE_USER_GROUPS = 'G';
+  const TABLE_CLIENTS = 'C';
+  //
+  const TYPE_SHIP = '0';
+  const TYPE_BILL = '1';
+  const TYPE_EMER = '2';
+  const TYPE_SPOUSE = '3';
+  const TYPE_RX = '4';
+  const TYPE_MOTHER = '5';  
+  const TYPE_FATHER = '6';
+  const TYPE_BIRTH = '8';  
+  const TYPE_WORK = '7';  
+  const TYPE_FACILITY = '9';  
+  //
+  const PHONE_TYPE_PRIMARY = '0';
+  const PHONE_TYPE_WORK = '1';
+  const PHONE_TYPE_CELL = '2';
+  const PHONE_TYPE_EMER = '3';
+  const PHONE_TYPE_FAX = '4';
+  const PHONE_TYPE_OTHER = '9';
+  public static $PHONE_TYPES = array(
+    self::PHONE_TYPE_PRIMARY => 'Primary',
+    self::PHONE_TYPE_WORK => 'Work',
+    self::PHONE_TYPE_CELL => 'Cell',
+    self::PHONE_TYPE_EMER=> 'Emergency',
+    self::PHONE_TYPE_FAX => 'Fax',
+    self::PHONE_TYPE_OTHER => 'Other');
+  //
+  public static $STATES = array(
+    'AK' => 'AK',
+    'AL' => 'AL',
+    'AR' => 'AR',
+    'AZ' => 'AZ',
+    'CA' => 'CA',
+    'CO' => 'CO',
+    'CT' => 'CT',
+    'DC' => 'DC',
+    'DE' => 'DE',
+    'FL' => 'FL',
+    'GA' => 'GA',
+    'HI' => 'HI',
+    'IA' => 'IA',
+    'ID' => 'ID',
+    'IL' => 'IL',
+    'IN' => 'IN',
+    'KS' => 'KS',
+    'KY' => 'KY',
+    'LA' => 'LA',
+    'MA' => 'MA',
+    'MD' => 'MD',
+    'ME' => 'ME',
+    'MI' => 'MI',
+    'MN' => 'MN',
+    'MO' => 'MO',
+    'MS' => 'MS',
+    'MT' => 'MT',
+    'NC' => 'NC',
+    'ND' => 'ND',
+    'NE' => 'NE',
+    'NH' => 'NH',
+    'NJ' => 'NJ',
+    'NM' => 'NM',
+    'NY' => 'NY',
+    'NV' => 'NV',
+    'OH' => 'OH',
+    'OK' => 'OK',
+    'OR' => 'OR',
+    'PA' => 'PA',
+    'RI' => 'RI',
+    'SC' => 'SC',
+    'SD' => 'SD',
+    'TN' => 'TN',
+    'TX' => 'TX',
+    'UT' => 'UT',
+    'VA' => 'VA',
+    'VT' => 'VT',
+    'WA' => 'WA',
+    'WI' => 'WI',
+    'WV' => 'WV',
+    'WY' => 'WY');
+  //
+  public function getSqlTable() {
+    return 'addresses';
+  }
+  public function setPrimaryPhone($phone) {
+    $this->setPhone1(self::PHONE_TYPE_PRIMARY, $phone);
+  }
+  public function setPhone1($type, $phone) {
+    $this->phone1Type = $type;
+    $this->phone1 = $phone;
+  }
+  public function setPhone2($type, $phone) {
+    $this->phone2Type = $type;
+    $this->phone2 = $phone;
+  }
+  //
+  public static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }
+}
+/**
+ * Editable Address Base Class
+ */
+class Address extends AddressRec {
+  //
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $phone3;
+  public $phone3Type;
+  public $email1;
+  public $email2;
+  public $name;
+  //
+  public function getAuditClientId() {
+    if ($this->tableCode == self::TABLE_CLIENTS)
+      return $this->tableId;
+    else
+      return null;
+  }
+  public function toJsonObject(&$o) {
+    $o->csz = self::formatCsz($this);
+    unset($o->_empty);
+  }
+  public function authenticateAsCriteria() {
+    if ($this->tableCode)
+      $this->authenticate();
+  }
+  public function authenticate() {
+    switch ($this->tableCode) {
+      case self::TABLE_CLIENTS:
+        LoginDao::authenticateClientId($this->tableId);
+        break;
+      case self::TABLE_USERS:
+        LoginDao::authenticateUserId($this->tableId);
+        break;
+      case self::TABLE_USER_GROUPS:
+        LoginDao::authenticateUserGroupId($this->tableId);
+        break;
+      default:
+        throw new InvalidDataException("Invalid address table code '$address->tableCode'");
+    }
+  }
+  protected function getTableCode() {
+    // @abstract, required
+  }
+  protected function getType() {
+    // @abstract, not required
+  }
+  public function format() {
+    $a = array();
+    pushIfNotNull($a, $this->addr1);
+    pushIfNotNull($a, $this->addr2);
+    pushIfNotNull($a, self::formatCsz($this));
+    pushIfNotNull($a, $this->phone1);
+    pushIfNotNull($a, $this->email1);
+    return join(' ', $a); 
+  }
+  /**
+   * @param int $tableId
+   */
+  public function save($tableId) {
+    $this->tableCode = $this->getTableCode();
+    $this->tableId = $tableId;
+    if ($this->getType()) 
+      $this->type = $this->getType();
+    return parent::save();
+  }
+  public function isEmpty() {
+    return isset($this->_empty);
+  }
+  //
+  /**
+   * @param int $id
+   * @return Address
+   */
+  static function fetch($id) {
+    $address = parent::fetch($id, __CLASS__);
+    $address->authenticate();
+  }
+  static function formatCsz($addr) {
+    $a = "";
+    if ($addr->city != "") {
+      $a = $addr->city;
+      if ($addr->state != "") 
+        $a .= ", " . $addr->state;
+      if ($addr->zip != "") 
+        $a .= " " . $addr->zip;
+    }
+    return trim($a);
+  }
+}
+/**
+ * Clients 
+ */
+class ClientAddress extends Address {
+  //
+  public function getTableCode() {
+    return self::TABLE_CLIENTS;
+  }
+  public function save($cid) {
+    return parent::save($cid);
+  }
+  //
+  /**
+   * @param int $cid
+   * @param string $type AddressRec::TYPE_
+   * @param bool $returnEmpty true to return empty Address rather than null (optional)
+   * @return Address
+   */
+  static function fetch($cid, $type, $returnEmpty = false) {
+    $c = self::asCriteria($cid, $type);
+    $address = self::fetchOneBy($c);
+    if ($returnEmpty && $address == null) {
+      $address = self::asCriteria($cid, $type);
+      $address->_empty = true;
+    }
+    return $address;
+  }
+  static function fetchHome($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_SHIP, $returnEmpty);
+  }
+  static function fetchEmergency($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_EMER, $returnEmpty);
+  }
+  static function fetchSpouse($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_SPOUSE, $returnEmpty);
+  }
+  static function fetchFather($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_FATHER, $returnEmpty);
+  }
+  static function fetchMother($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_MOTHER, $returnEmpty);
+  }
+  static function fetchRx($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_RX, $returnEmpty);
+  }
+  static function fetchBirth($cid, $returnEmpty = false) {
+    return self::fetch($cid, self::TYPE_BIRTH, $returnEmpty);
+  }
+  static function asCriteria($cid = null, $type = Address::TYPE_SHIP) {
+    $c = new self();
+    $c->tableCode = $c->getTableCode();
+    $c->tableId = $cid;
+    $c->type = $type;
+    return $c;
+  }
+}
+/**
+ * User Groups
+ */
+class UserGroupAddress extends Address {
+  //
+  public function getTableCode() {
+    return self::TABLE_USER_GROUPS;
+  }
+  public function getType() {
+    return self::TYPE_SHIP;
+  }
+  public function save($ugid) {
+    return parent::save($ugid);
+  }
+  //
+  /**
+   * @param int $ugid
+   * @return UserGroupAddress
+   */
+  static function fetch($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchOneBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->tableCode = $c->getTableCode();
+    $c->tableId = $ugid;
+    $c->type = $c->getType();
+    return $c;
+  }
+}
+/**
+ * Facilities
+ */
+class FacilityAddress extends Address {
+  //
+  public function getTableCode() {
+    return self::TABLE_USER_GROUPS;
+  }
+  public function getType() {
+    return self::TYPE_FACILITY;
+  }
+  public function save($ugid) {
+    return parent::save($ugid);
+  }
+  //
+  /**
+   * @param int $id
+   * @return FacilityAddress
+   */
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  /**
+   * @param int $ugid
+   * @return array(FacilityAddress,..)
+   */
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->tableCode = $c->getTableCode();
+    $c->tableId = $ugid;
+    $c->type = $c->getType();
+    return $c;
+  }
+}

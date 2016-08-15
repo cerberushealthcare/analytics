@@ -1,0 +1,178 @@
+<?php
+require_once 'php/data/hl7/msg/ORUMessage.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Procedures.php';
+//
+/**
+ * HL7 Lab Interface
+ * @author Warren Hornsby
+ */
+class HL7_Labs {
+  //
+  /**
+   * Match lab message to potential client(s)
+   * @param ORUMessage $msg
+   * @return array(cid=>Client,..) or null 
+   */
+  public function match($msg) {
+    $rec = ClientSearch_Lab::from($msg);
+    if ($rec)
+      $recs = $rec->search();
+    return $recs;
+  }
+  /**
+   * Import lab message data
+   * @param int $cid
+   * @param ORUMessage $msg
+   */
+  public function import($cid, $msg) {
+    
+  }
+}
+/**
+ * Rec LabUpdate
+ */
+class LabUpdate extends Rec {
+  //
+  public /*Client_Lab*/ $Client;
+  public /*TrackItem_Lab[]*/ $TrackItems;
+  public /*Proc_Lab*/ $Procs;
+}
+/**
+ * Client_Lab
+ */ 
+class Client_Lab extends Client {
+  //
+  static function fetch($cid) { 
+    return self::fetchWithDemo($cid);
+  }
+}
+/**
+ * TrackItem_Lab
+ */
+class TrackItem_Lab extends TrackItem {
+  /*
+   * public $_checked;
+   */
+  //
+  public function markReceived() {
+    $this->status = self::STATUS_CLOSED;
+    $this->closedFor = self::CLOSED_FOR_RECEIVED;
+    $this->closedDate = nowNoQuotes();
+    $this->save();
+  } 
+  //
+  /**
+   * @return array(TrackItem_Lab,..) of open lab tracking items
+   */
+  static function fetchAll($ugid, $cid) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->clientId = $cid;
+    $c->trackCat = self::TCAT_LAB;
+    $c->status = CriteriaValue::lessThanNumeric(self::STATUS_CLOSED);
+    $recs = self::fetchAllBy($c);
+    $recs = self::check($recs);
+    return $recs;
+  }
+  /**
+   * @param TrackItem_Lab[] $recs
+   */
+  static function updateChecked($recs) {
+    foreach ($recs as $rec) {
+      if ($rec->_checked)   
+        $rec->markReceived();
+    }
+  }
+  //
+  protected static function check($recs) {
+    foreach ($recs as &$rec) 
+      $rec->_checked = true;
+    return $recs;
+  }
+}
+/**
+ * Proc_Lab
+ */ 
+class Proc_Lab extends Proc {
+  //
+  /**
+   * @param int $ugid
+   * @param int $cid
+   * @param ORUMessage $message
+   * @return array(Proc_Lab,..)
+   */
+  static function from($ugid, $cid, $message) {
+    $recs = array();
+    $codeSystem = $message->Header->sendApp;
+    $obsRequests = $message->getObsRequests();
+    foreach ($obsRequests as $obsRequest) 
+      $recs[] = self::fromObsRequest($ugid, $cid, $codeSystem, $obsRequest);
+    return $recs;
+  }
+  //
+  protected static function fromObsRequest($ugid, $cid, $codeSystem, $obsRequest) {
+    $me = new static();
+    $me->ipc = null;  // TODO: try to get ipc xref from IPC_XREF   
+    $me->userGroupId = $ugid;
+    $me->clientId = $cid;
+    $me->date = $header->timestamp->asSqlValue();
+    $observations = $obsRequest->getObservations();
+    $me->ProcResults = ProcResult_Lab::from($me, $codeSystem, $observations);
+    return $me;
+  }
+}
+class ProcResult_Lab extends ProcResult {
+  //
+  /**
+   * @param Proc_Lab $proc
+   * @param string codeSystem
+   * @param OBX[] $observations
+   * @return array(ProcResult_Lab,..)
+   */
+  static function from($proc, $codeSystem, $observations) {
+    $recs = array();
+    foreach ($observations as $index => $observation) 
+      $recs[] = self::fromObservation($proc, $codeSystem, $observation, $index);
+    return $recs;
+  }
+  //
+  protected static function fromObservation($proc, $codeSystem, $obx, $i) {
+    $me = new static();
+    $me->clientId = $proc->clientId;
+    $me->seq = $i;
+    $me->date = $proc->date;
+    $me->ipc = null;  // TODO try to default from IPC_XREF
+    $me->value = $obx->get('value');
+    $me->valueUnit = $obx->get('units.id');
+    $me->range = $obx->get('range');
+    $me->interpretCode = self::makeInterpretCode($obx);
+    $me->comments = self::makeComments($obx);
+    return $me;
+  }
+  protected static function makeInterpretCode($obx) {
+    return $obx->get('abnormal');
+  }
+  protected static function makeComments($obx) {
+    return implode('\r\n', $obx->getComments());
+  }
+}
+/**
+ * ClientSearch_Lab
+ */
+class ClientSearch_Lab extends ClientSearch {
+  //
+  static function from($oru) {
+    if ($oru == null)
+      return;
+    $patient = $oru->getPatientId();
+    if ($patient == null)
+      return;
+    $me = new static();
+    $me->last = $patient->name->last;
+    $me->first = $patient->name->first;
+    $me->dob = $patient->birthDate->asSqlValue();
+    $me->sex = $patient->gender;
+    return $me;
+  }
+}

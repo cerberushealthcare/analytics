@@ -1,0 +1,15 @@
+/**
+ * Client UI Library
+ */
+var ClientUi = {
+  formatName:function(c) {
+    return c.lastName + ', ' + c.firstName;
+  },
+  isMale:function(c) {
+    return c.sex == 'M';
+  },
+  createClientAnchor:function(c) {
+    var cls = (ClientUi.isMale(c)) ? 'action umale' : 'action ufemale';
+    return createAnchor(null, Page.url(Page.PAGE_FACESHEET, c.clientId), cls, ClientUi.formatName(c));
+  }
+}

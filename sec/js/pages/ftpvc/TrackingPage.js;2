@@ -1,0 +1,62 @@
+/**
+ * Tracking Page
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var TrackingPage = {
+  /*
+   * Loader
+   */
+  load:function(query, lists) {
+    Page.setEvents();
+    CriteriaTile.load(lists);
+  }
+};
+/**
+ * Criteria Tile
+ */
+var CriteriaTile = {
+  form:null,
+  //
+  load:function(lists) {
+    var criteria = this._loadCriteriaForm(lists);
+    ResultsTile.load(criteria);
+  },
+  onChange:function(criteria) {
+    ResultsTile.load(criteria);
+  },
+  /*
+   * Build criteria entry form
+   * Returns {'cat':$,'cid':$} 
+   */
+  _loadCriteriaForm:function(lists) {
+    var form = new EntryForm($('criteria-ul'));
+    this.form = form;
+    form.addLi();
+    form.appendField('cat', createSelect(null, null, lists.cats, null, '[All Categories]'), 'Category');
+    var a = createAnchor(null, null, 'client', '[All Patients]');
+    form.appendClientPicker('cid', a, 'Patient');
+    var self = this;
+    form.setOnDirty(function(record){self.onChange(record)});
+    return form.getRecord();
+  }
+}
+/**
+ * Results Tile
+ */
+var ResultsTile = {
+  load:function(criteria) {
+    this.table = new TableLoader('results-tbody', 'off', 'results-tbl');
+    overlayWorking(true, $('box'));
+    Ajax.post(Ajax.SVR_POP, 'getTracking', criteria,
+      function(records) {
+        alert(Json.encode(records));
+      } 
+    );
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = TrackingPage;  

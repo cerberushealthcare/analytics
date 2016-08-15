@@ -1,0 +1,107 @@
+/**
+ * Tab Bar (multi-page pop controller)
+ * Required html setup:
+ * <div class='pop-content'>  
+ *   <div class='tabbar'></div>  // leave blank (this class fills)
+ *   <div class='tabpanels'>
+ *     <div class='tabpanel'>
+ *       // page 1 contents  
+ *     </div>
+ *     <div class='tabpanel'>
+ *       // page 2 contents
+ *     </div>
+ *   </div>
+ *   // rest of pop contents
+ * </div>
+ */
+/*
+ * Constructor
+ * - p: either pop <div> or pop ID
+ * - titles: ['Documentation History',..]  
+ *           title to display on bar left for selected tab 
+ *           one for each tabpanel
+ * - tabCaptions: ['Documents',..]
+ *                tab captions to display on bar right
+ *                optional; if omitted, will use titles
+ * - selIndex: optional, default=0
+ */
+function TabBar(p, titles, tabCaptions, selIndex) {
+  p = isString(p) ? $(p) : p;
+  this.pop = p;
+  this.bar = $$$$("tabbar", p, "DIV")[0];
+  this.panels = $$$$("tabpanel", p, "DIV");
+  this.titles = titles;
+  this.tabCaptions = denull(tabCaptions, titles);
+  if (this.titles.length != this.tabCaptions.length) {
+    Page.error(TabBar.ERR_TABBAR, 'Unequal lengths: titles/tabCaptions');
+  }
+  if (this.panels.length != this.titles.length) {
+    Page.error(TabBar.ERR_TABBAR, 'Unequal lengths: panels/titles');
+  }
+  this._loadBar();
+  this.select(denull(selIndex, 0));
+  p.tabBar = this;
+}
+/*
+ * Class defs
+ */
+TabBar.prototype = {
+  selIndex:null,         // currently selected index
+  pop:null,         // parent pop
+  bar:null,         // <div class='tabbar'>
+  panels:null,      // <div class='tabpanels'>
+  titles:null,      // ['text',..]
+  tabCaptions:null, // ['text',..]
+  _h2s:null,        // [<h2>,..] for titles
+  _as:null,         // [<a>,..] for tabs
+  /*
+   * Select a tab
+   */
+  select:function(index) {
+    if (this.selIndex != index) {
+      for (var i = 0; i < this.panels.length; i++) {
+        this._h2s[i].className = (i == index) ? "checked" : "";
+        this._as[i].className = (i == index) ? "checked" : "";
+        this.panels[i].style.display = (i == index) ? "" : "none";
+      }
+      this.selIndex = index; 
+    }
+  },
+  //
+  _loadBar:function() {
+    clearChildren(this.bar);
+    var t = createTable();
+    var tr = appendTr(t);
+    tr.appendChild(this._appendTitles(createTh()));
+    tr.appendChild(this._appendTabs(createTd()));
+    this.bar.appendChild(t);
+  },
+  _appendTitles:function(th) {
+    this._h2s = [];
+    for (var i = 0; i < this.titles.length; i++) {
+      var h2 = createH2(this.titles[i]);
+      this._h2s.push(h2);
+      th.appendChild(h2);
+    }
+    return th;
+  },
+  _appendTabs:function(td) {
+    this._as = [];
+    for (var i = 0; i < this.tabCaptions.length; i++) {
+      if (i > 0) {
+        td.appendChild(createSpan(null, null, null, '&nbsp;&nbsp;&bull;&nbsp;&nbsp;'));
+      }
+      with ({index:i}) { 
+        var self = this;
+        var a = createAnchor(null, null, null, this.tabCaptions[i], null, function(){self.select(index)});
+      }
+      this._as.push(a);
+      td.appendChild(a);
+    }
+    return td;
+  }
+}
+/*
+ * Statics
+*/
+TabBar.ERR_TABBAR = 'TabBar.TabBar';

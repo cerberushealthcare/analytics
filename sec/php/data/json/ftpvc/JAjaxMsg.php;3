@@ -1,0 +1,35 @@
+<?php
+require_once "php/data/json/_util.php";
+require_once "php/data/rec/ExceptionRec.php";
+
+/*
+ * Ajax return value wrapper
+ * Returns {
+ *    'id':id,
+ *    'obj':value
+ *   }
+ */
+class JAjaxMsg {
+	public $id;
+	public $obj;
+	public function __construct($id, $obj) {
+		$this->id = $id;
+		$this->obj = $obj;
+	}
+	public function out() {
+		return cb(qq("id", $this->id) . C . qqo("obj", $this->obj));
+	}
+	/*
+	 * Returns {
+	 *    'id':'error',
+	 *    'obj':{
+	 *      'type':errorClass, 
+	 *      'message':errorMessage}
+	 *   }
+	 */
+	public static function constructError($e) {
+	  $ex = ExceptionRec::from($e);
+	  return new JAjaxMsg('error', $ex->toJson());
+	}
+}
+?>

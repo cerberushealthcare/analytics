@@ -1,0 +1,623 @@
+/**
+ * Ajax 
+ * Requires: yahoo-min.js, connection-min.js
+ * @author Warren Hornsby
+ */
+var Ajax = {
+  // 
+  SVR_ENGINE:'Engine',
+  SVR_ICD:'Icd',
+  SVR_JSON:'Json',
+  SVR_LOOKUP:'Lookup',
+  SVR_MSG:'Message',
+  SVR_POP:'Pop',
+  SVR_SCHED:'Sched',
+  SVR_SESSION:'Session',
+  SVR_TIANI:'Tiani',
+  //
+  NO_CALLBACK:false,
+  //
+  ERR_GET:'Ajax.get',
+  ERR_POST:'Ajax.post',
+  ERR_CALLBACK:'Ajax.callback',
+  //
+  txs:null,
+  callback:null,
+  _sur:['.php?', '.htm?', '.gif?', 'server', 'client'],
+  //
+  /*
+   * Send 'GET' request
+   * - server: Ajax.SVR_x
+   * - action: string to provide server
+   * - arg: optional, in form:
+   *    {field:value,..}  // field names and string values
+   *    'value'           // single value to pass as field 'id' 
+   * - success: optional callback, in form:
+   *    null: calls page.actionCallback(data) by default
+   *    false (Ajax.NO_CALLBACK): no callback
+   *    function: calls function(data)
+   *    object (i.e. 'this'): calls object.actionCallback(data)
+   *    [function]: calls page.function(data)
+   *    [scope, function]: calls scope.function(data)
+   * - error: optional callback; if null, Page.showAjaxError called
+   * - failure: optional callback when AJAX fails or times out
+   * - timeout: optional in seconds
+   */
+  get:function(server, action, arg, success, error, failure, timeout) {
+    var url = this._fixGetUrl(server, action, arg);
+    try {
+      var scb = this.buildScopedCallback(success, action);
+      var scbErr = this._buildScopedErrorCallback(action, success, error);
+      var scbFail = this.buildScopedCallback(failure);
+      this._async('GET', url, this._yuiCallbacks(scb, scbErr, scbFail, url, timeout));
+    } catch (e) {
+      throw Page.error(Ajax.ERR_GET, 'Ajax.get(' + server + ', ' + action + ')', e);
+    }
+  },
+  /*
+   * Send 'POST' request
+   * - see get function for arg description
+   */
+  post:function(server, action, arg, success, error, failure, timeout) {
+    var url = this._fixPostUrl(server);
+    var params = this._buildPostParams(action, arg);
+    try {
+      var scb = this.buildScopedCallback(success, action);
+      var scbErr = this._buildScopedErrorCallback(action, success, error);
+      var scbFail = this.buildScopedCallback(failure);
+      this._async('POST', url, this._yuiCallbacks(scb, scbErr, scbFail, url, timeout), params);
+    } catch (e) {
+      throw Page.error(Ajax.ERR_POST, 'Ajax.post(' + server + ', ' + action + ')', e);
+    }
+  },
+  /*
+   * Fetch HTML include
+   * - url: location of HTML or javascript
+   * - container: <e> to put include contents if HTML; if null, javascript will be attached to global 
+   * - callback: optional; if not supplied, no callback (see get/post for forms) 
+   */
+  include:function(url, container, callback) {
+    var yuic = {
+      success:Ajax._yuiIncludeSuccess, 
+      failure:Ajax._yuiIncludeFailure, 
+      scope:Ajax, 
+      argument:{
+        'url':url,
+        'container':container,
+        'scb':this.buildScopedCallback(callback)}};
+    url += '?' + Math.random();
+    this._async('GET', url, yuic);
+  },
+  /*
+   * callback(bool) true=call(s) in progress, false=idle  
+   */
+  setWorkingCallback:function(callback) {
+    this.callback = callback;
+  },
+  /*
+   * Build scoped callback object
+   * - callback: optional, in form:
+   *     'function': for calling page.function(data)
+   *     function: for calling function(data)
+   *     [function]: for calling page.function(data)
+   *     [function, scope]: for calling scope.function(data)
+   *     ['function', scope]: for calling scope.function(data)
+   * - defaultAction: optional, defaults callback if null (see Ajax.defaultCallback)
+   * Returns {  
+   *  'scope':scope, 
+   *  'fn':function
+   *   }  // or null if callback was null
+   */
+  buildScopedCallback:function(callback, defaultAction) {
+    if (defaultAction) {
+      callback = this.defaultCallback(callback, defaultAction);
+    }
+    var scb = null;
+    if (callback) {
+      scb = {};
+      if (isString(callback)) {
+        scb.scope = page;
+        scb.fn = callback;
+      } else if (isArray(callback)) {
+        scb.scope = (callback.length == 2) ? callback[1] : page;
+        scb.fn = callback[0];
+      } else {
+        scb.scope = null;
+        scb.fn = callback;
+      }
+      if (isString(scb.fn)) {
+        var method = scb.fn
+        scb.fn = scb.scope[method];
+        if (scb.fn == null) {
+          throw Page.error(Ajax.ERR_CALLBACK, 'Ajax.buildScopedCallback: Undefined callback "' + method + '"');
+        }
+      }
+      if (isUndefined(scb.fn)) {
+        throw Page.error(AJAX.ERR_CALLBACK, 'Ajax.buildScopedCallback: Undefined callback');
+      }
+    }
+    return scb;
+  },
+  /*
+   * - suffix: optional, default 'Callback'
+   * Returns
+   *    if callback=false (Ajax.NO_CALLBACK): null
+   *    if callback=null:                     'actionCallback'
+   *    if callback=object (i.e. "this"):     ['actionCallback',object]
+   *    otherwise:                            callback (unchanged)  
+   */
+  defaultCallback:function(callback, action, suffix) {
+    var suffix = denull(suffix, 'Callback');
+    if (callback === Ajax.NO_CALLBACK) {
+      callback = null;
+    } else if (callback == null) {
+      callback = action + suffix;
+    } else if (isObject(callback) && ! isFunction(callback)) {
+      callback = [action + suffix, callback];
+    }
+    return callback;
+  },
+  /*
+   * Send return data to caller
+   */
+  callScopedCallback:function(scb, data) {
+    if (scb) {
+      if (scb.scope) 
+        scb.fn.call(scb.scope, data);
+      else 
+        scb.fn(data);
+    }
+  },
+  /*
+   * Abort all active transactions
+   * Automatically done on page unload @see _async()
+   */
+  abortAll:function() {
+    try {
+      if (Ajax.txs) {
+        var txs = Ajax.txs.values();
+        for (var i = 0, j = txs.length; i < j; i++) 
+          YAHOO.util.Connect.abort(txs[i]);
+      }
+    } catch (e) {
+    }
+  },
+  //
+  _async:function(method, url, callback, post) {
+    var tx = YAHOO.util.Connect.asyncRequest(method, url, callback, post);
+    this._addTx(tx);
+  },
+  _buildScopedErrorCallback:function(action, success, error) {
+    if (error == null) {
+      if (success == Ajax.NO_CALLBACK) 
+        error = Ajax.NO_CALLBACK;
+      else 
+        error = Page.showAjaxError;
+    }
+    return this.buildScopedCallback(this.defaultCallback(error, action, 'Error'));
+  },
+  _yuiCallbacks:function(scb, scbErr, scbFail, url, timeout) {
+    timeout = denull(timeout, 20);
+    return {
+      success:Ajax._yuiSuccess, 
+      failure:Ajax._yuiFailure, 
+      scope:Ajax, 
+      timeout:timeout * 1000,
+      argument:{
+        'scb':scb, 
+        'scbErr':scbErr,
+        'scbFail':scbFail,
+        'url':url}
+      };
+  },
+  _addTx:function(tx) {
+    if (this.txs == null) {
+      this.txs = new Collection();
+      Page.attachEvent('onunload', Ajax.abortAll);
+    }
+    var wasEmpty = this.txs.isEmpty();
+    this.txs.add(tx, tx.tId);
+    if (this.callback && wasEmpty) 
+      this.callback(true);
+  },
+  _removeTx:function(tId) {
+    this.txs.remove(tId);
+    if (this.callback && this.txs.empty) 
+      this.callback(false);
+  },
+  _yuiSuccess:function(yuiResponse) {
+    this._removeTx(yuiResponse.tId);
+    var response = trim(yuiResponse.responseText);
+    var arg = yuiResponse.argument;
+    var scbSuccess = arg.scb;
+    var scbError = arg.scbErr;
+    var url = arg.url;
+    if (scbSuccess && response && response.length > 0) {
+      var ajaxMsg = '(' + response  + ')';
+      try {
+        ajaxMsg = eval(ajaxMsg);
+      } catch (e) {
+        this._badResponse(1, response, url);
+        return;
+      }
+      if (ajaxMsg.id != null) {
+        if (ajaxMsg.id == 'save-timeout') {
+          Page.sessionTimeout();
+          return;
+        }
+        if (ajaxMsg.id == 'error') {
+          this.callScopedCallback(scbError, ajaxMsg.obj);
+        } else {
+          this.callScopedCallback(scbSuccess, ajaxMsg.obj);
+        }
+      } else {
+        this._badResponse(2, response, url);
+      }
+    }
+  },
+  _yuiFailure:function(yuiResponse) {
+    this._removeTx(yuiResponse.tId);
+    var response = trim(yuiResponse.responseText);
+    var arg = yuiResponse.argument;
+    var scbFail = arg.scbFail;
+    if (scbFail)
+      this.callScopedCallback(scbFail, response);
+  },
+  _yuiIncludeSuccess:function(yuiResponse) {
+    this._removeTx(yuiResponse.tId);
+    var arg = yuiResponse.argument;
+    var container = arg.container;
+    var scb = arg.scb;
+    if (container) 
+      container.innerHTML = yuiResponse.responseText;
+    else 
+      window.execScript(yuiResponse.responseText);  // IE-only
+    if (scb) 
+      this.callScopedCallback(scb, arg.url);
+  },
+  _yuiIncludeFailure:function(yuiResponse) {
+    this._removeTx(yuiResponse.tId);
+    var msg = 'Include failed.\n\n' + yuiResponse.argument.url + '\n' + yuiResponse.status + ' - ' + yuiResponse.statusText;
+    alert(msg);
+  },  
+  _badResponse:function(code, response, url) {
+    var msg = 'Error ' + code + ': Server response not recognized.\n' + url + '\n\n' + response.substr(0, 1200);
+    alert(msg);
+  },
+  _fixPostUrl:function(server) {
+    return this._sur[3] + server + this._sur[0] + Math.random();
+  },
+  _buildPostParams:function(action, arg) {
+    var a = ['action=' + action];
+    a.push('obj=' + Json.uriEncode(arg));
+    return a.join('&');
+  },
+  _fixGetUrl:function(server, action, arg) {
+    return this._sur[3] + server + this._sur[0] + this._buildGetParams(action, arg);
+  },
+  _buildGetParams:function(action, arg) {
+    var a = ['action=' + action];
+    if (arg) {
+      if (isObject(arg)) {
+        for (var fid in arg) 
+          a.push(fid + '=' + encodeURIComponent(arg[fid]));
+      } else {
+        a.push('id=' + encodeURIComponent(arg));
+      }
+    }
+    a.push(Math.random());
+    return a.join('&');
+  },
+  _isJavascript:function(url) {
+    return (url.split('.').pop()) == 'js';
+  }
+};
+/**
+ * Server Invocations
+ */
+Ajax.Tracking = {
+  _SVR:'Tracking',
+  /*
+   * @arg [OrderItem,..] orderItems
+   * @callback(tracksheet)
+   */
+  order:function(orderItems, callback) {
+    Ajax.post(this._SVR, 'order', orderItems, callback);
+  },
+  /*
+   * @arg [TrackItems,..] trackItems
+   * @callback()
+   */
+  saveOrder:function(trackItems, callback) {
+    Ajax.post(this._SVR, 'saveOrder', trackItems, callback);
+  },
+  /*
+   * @arg TrackItem rec
+   * @callback()
+   */
+  update:function(rec, callback) {
+    Ajax.post(this._SVR, 'update', rec, callback);
+  },
+  /*
+   * @callback(pid)
+   */
+  getPid:function(callback) {
+    Ajax.post(this._SVR, 'getPid', null, callback);
+  },
+  /*
+   * @arg int type 0=open by cat, 1=unsched by date, 2=closed
+   * @callback([TrackItem,..])
+   */
+  getTrackItems:function(type, criteria, callback) {
+    Ajax.post(this._SVR, this._requestFromType(type), criteria, callback);
+  },
+  //
+  _requestFromType:function(type) {
+    switch (type) {
+      case 0:
+        return 'getOpen';
+      case 1:
+        return 'getUnsched';
+      case 2:
+        return 'getClosed';
+    } 
+  }
+}
+Ajax.Erx = {
+  _SVR:'Erx',
+  /*
+   * @arg int cid
+   * @callback(['required-field',..]) 
+   */
+  validate:function(cid, callback) {
+    Ajax.get(this._SVR, 'validate', cid, callback);
+  },
+  /*
+   * @arg int cid
+   * @arg string since 'yyyy-mm-dd hh:mm:ss' (optional)
+   * callback(Facesheet)
+   */
+  refresh:function(cid, since, callback) {
+    args = {'id':cid, 'since':since};
+    Ajax.get(this._SVR, 'refresh', args, callback);
+  },
+  /*
+   * @arg int timeout in seconds (optional)
+   * @callback(ErxStatusCount) @see NewCrop::pullAcctStatus
+   */
+  getStatusCount:function(timeout, callback) {
+    Ajax.get(this._SVR, 'getStatusCount', null, callback, null, null, timeout);
+  },
+  /*
+   * @callback([ErxStatus,..])
+   */
+  getStatusDetails:function(callback) {
+    Ajax.get(this._SVR, 'getStatusDetail', null, callback);
+  },
+  /*
+   * @callback([ErxPharm,..]) for logged-in LP
+   */
+  getPharmReqs:function(callback) {
+    Ajax.get(this._SVR, 'getPharmReqs', null, callback);
+  },
+  /*
+   * @callback([ErxPharm,..]) for all LPs
+   */
+  getAllPharmReqs:function(callback) {
+    Ajax.get(this._SVR, 'getAllPharmReqs', null, callback);
+  },
+  /*
+   * @arg ErxPharm req
+   * @callback([Client,..])
+   */
+  matchClients:function(req, callback) {
+    Ajax.post(this._SVR, 'matchClients', req, callback);
+  }
+}
+Ajax.Facesheet = {
+  _SVR:'Facesheet',
+  /*
+   * @arg int cid
+   * @callback(Facesheet)
+   */
+  get:function(cid, callback) {
+    Ajax.get(Ajax.Facesheet._SVR, 'get', cid, callback);
+  },
+  /*
+   * @arg string timestamp SQL format 
+   * @callback(Facesheet) if facesheet changed since timestamp
+   */
+  getIfUpdated:function(cid, timestamp, callback) {
+    var args = {'id':cid, 'cu':denull(timestamp)};
+    Ajax.get(Ajax.Facesheet._SVR, 'getIfUpdated', args, callback);
+  },
+  /*
+   * @arg int cid
+   * @callback(timestamp) in SQL format
+   */
+  pollCuTimestamp:function(cid, callback) {
+    Ajax.get(Ajax.Facesheet._SVR, 'pollCuTimestamp', cid, callback);
+  },
+  Patients:{
+    /*
+     * @arg Client client
+     * @callback(Client) 
+     * @callbackError(e) on error
+     */
+    save:function(client, callback, callbackError) {
+      Ajax.post(Ajax.Facesheet._SVR, 'savePatient', client, callback, callbackError);
+    },
+    /*
+     * @arg {'id':cid,'address':Address} object
+     * @callback(Client) 
+     */
+    saveAddress:function(object, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'savePatientAddress', object, callback);
+    },
+    /*
+     * @arg {'id':cid,'icard':ICard} object
+     * @callback(Client) 
+     */
+    saveICard:function(object, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'savePatientICard', object, callback);
+    },
+    /*
+     * @arg int cid
+     * @arg string text
+     * @callback(Facesheet)
+     */
+    saveNotes:function(cid, text, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'savePatientNotes', {'cid':cid, 'text':text}, callback);
+    }
+  },
+  Meds:{
+    /*
+     * @arg int cid
+     * @callback(Facesheet)
+     */
+    getHist:function(cid, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'getMedHist', cid, callback);
+    },
+    /*
+     * @arg [int,..] ids
+     * @callback(Facesheet)
+     */
+    deactivateMany:function(ids, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'deactivateMeds', ids, callback);
+    },
+    /*
+     * @arg Med med
+     * @callback(Facesheet)
+     */
+    save:function(med, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'saveMed', med, callback);
+    },
+    /*
+     * @arg int cid
+     * @callback(Facesheet)
+     */
+    deleteLegacy:function(cid, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'deleteLegacyMeds', cid, callback);
+    },
+    /*
+     * @arg [Med,..] meds
+     * @callback(Facesheet)
+     */
+    printRx:function(meds, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'printRxMeds', meds, callback);
+    }
+  },
+  Allergies:{
+    /*
+     * @callback(JQuestion)
+     */
+    getQuestion:function(callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'getAllergyQuestion', null, callback);
+    },
+    /*
+     * @arg Allergy allergy
+     * @callback(Facesheet)
+     */
+    save:function(allergy, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'saveAllergy', allergy, callback);
+    },
+    /*
+     * @arg int id
+     * @callback(Facesheet)
+     */
+    deactivate:function(id, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'deactivateAllergy', id, callback);  
+    },
+    /*
+     * @arg [int,..] ids
+     * @callback(Facesheet)
+     */
+    deactivateMany:function(ids, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'deactivateAllergies', ids, callback);
+    },
+    /*
+     * @arg int cid
+     * @callback(Facesheet)
+     */
+    deleteLegacyAllergies:function(cid, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'deleteLegacyAllergies', cid, callback);
+    }
+  },
+  Vitals:{
+    /*
+     * @callback({'prop'=>JQuestion,..})
+     */
+    getQuestions:function(callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'getVitalQuestions', null, callback);
+    },
+    /*
+     * @arg Vital vital
+     * @callback(Facesheet)
+     */
+    save:function(vital, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'saveVital', vital, callback);
+    },
+    /*
+     * @arg int id
+     * @callback(Facesheet)
+     */
+    deactivate:function(id, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'deactivateVital', id, callback);
+    },
+    /*
+     * @arg Client client
+     * @callback([{'id':$,'title':$},..])
+     */
+    getCharts:function(client, callback) {
+      var args = {'age':client.ageYears,'sex':client.sex};
+      Ajax.get(Ajax.Facesheet._SVR, 'getCharts', args, callback);
+    }
+  },
+  Immuns:{
+    /*
+     * @arg Immun immun
+     * @callback(Facesheet)
+     */
+    save:function(immun, callback) {
+      Ajax.post(Ajax.Facesheet._SVR, 'saveImmun', immun, callback);
+    },
+    /*
+     * @arg int id
+     * @callback(Facesheet)
+     */
+    remove:function(id, callback) {
+      Ajax.get(Ajax.Facesheet._SVR, 'deleteImmun', id, callback);
+    }
+  }
+}
+Ajax.Audit = {
+  _SVR:'Audit',
+  /*
+   * @arg int cid
+   */
+  printFacesheet:function(client) {
+    Ajax.get(this._SVR, 'printFacesheet', {'cid':client.clientId, 'name':client.name}, Ajax.NO_CALLBACK);
+  },
+  /*
+   * @arg int cid
+   */
+  printPop:function(cid, tableId, title) {
+    Ajax.get(this._SVR, 'printPop', {'cid':cid, 'tableId':tableId, 'title':title}, Ajax.NO_CALLBACK);
+  },
+  /*
+   * @arg int cid
+   * @arg string chartId
+   */
+  printVitalsChart:function(cid, chart) {
+    Ajax.get(this._SVR, 'printVitalsChart', {'cid':cid, 'chartId':chart.id, 'title':chart.title}, Ajax.NO_CALLBACK);
+  }
+}
+Ajax.Messaging = {
+  _SVR:'Message',
+  /*
+   * @callback(int) unread message count
+   */
+  getMyInboxCt:function(callback) {
+    Ajax.get(this._SVR, 'getMyInboxCt', null, callback);
+  }
+}

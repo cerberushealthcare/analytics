@@ -1,0 +1,430 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+/**
+ * Role
+ */
+abstract class Role extends Rec {
+  //
+  /* Perms */
+  public /*Perms_Profile*/ $Profile;
+  public /*Perms_Account*/ $Account;
+  public /*Perms_Patient*/ $Patient;
+  public /*Perms_Artifact*/ $Artifact;
+  public /*Perms_Report*/ $Report;
+  public /*Perms_Message*/ $Message;
+  //
+  protected static function byName($name) {
+    $me = new static();
+    foreach ($me->getPermFids() as $fid) {
+      $class = "Perms_$fid";
+      $me->$fid = $class::byRoleName($name);
+    }
+    return $me;
+  }
+  //
+  protected function getPermFids() {
+    return array_keys($this->getPerms());
+  }
+  protected function getPerms() {
+    return get_object_vars($this);
+  }
+}
+/**
+ * User Role 
+ */
+class UserRole extends Role {
+  //
+  const TYPE_PROVIDER_PRIMARY = 1;
+  const TYPE_CLINICAL = 2;
+  const TYPE_CLERICAL = 3;
+  const TYPE_PROVIDER = 10;
+  static $TYPES = array(
+    self::TYPE_PROVIDER_PRIMARY => 'Provider (Primary)',
+    self::TYPE_PROVIDER => 'Provider',
+    self::TYPE_CLINICAL => 'Clinical',
+    self::TYPE_CLERICAL => 'Clerical');
+  //
+  const USAGE_LEVEL_ERX = 2;
+  //
+  /**
+   * @param UserRec.TYPE $type
+   * @param bool $active
+   * @param string mixinString 'AD|RB'
+   * @param UserGroup.USAGE_LEVEL $level
+   */
+  static function from($type, $active, $mixinString, $level) {
+    $me = ($active) ? static::asActive($type, $mixinString) : static::asInactive($type);
+    $me->erx = ($level == self::USAGE_LEVEL_ERX) ? 1 : 0;
+    return $me;
+  }
+  //
+  protected static function asActive($type, $mixinIds) {
+    $mixins = MixinRole::fromIdString($mixinIds);
+    switch ($type) {
+      case static::TYPE_PROVIDER_PRIMARY:
+        return PrimaryRole::asPrimaryProvider();
+      case static::TYPE_PROVIDER:
+        return PrimaryRole::asProvider($mixins);
+      case static::TYPE_CLINICAL:
+        return PrimaryRole::asClinical($mixins);
+      case static::TYPE_CLERICAL:
+        return PrimaryRole::asClerical($mixins);
+      default:
+        return PrimaryRole::asInactive();
+    }
+  }
+  protected static function asInactive($type) {
+    switch ($type) {
+      case static::TYPE_PROVIDER_PRIMARY:
+        return PrimaryRole::asInactivePrimaryProvider();
+      default:
+        return PrimaryRole::asInactive();
+    }
+  }
+}
+/**
+ * Primary Roles
+ */
+class PrimaryRole extends Role {
+  //
+  const NAME_PROVIDER = 'Provider';
+  const NAME_CLINICAL = 'Clinical';
+  const NAME_CLERICAL = 'Clerical';
+  const NAME_INACTIVE_PRIMARY = 'InactivePrimaryProvider';   
+  const NAME_INACTIVE = 'Inactive';   
+  //
+  static function asPrimaryProvider() {
+    $mixins = MixinRole::asPrimaryProvider();
+    return static::asProvider($mixins);
+  }
+  static function asInactivePrimaryProvider() {
+    return static::byName(static::NAME_INACTIVE_PRIMARY);
+  }
+  static function asProvider($mixins) {  
+    return static::byName(static::NAME_PROVIDER, $mixins);
+  }
+  static function asClinical($mixins) {
+    return static::byName(static::NAME_CLINICAL, $mixins);
+  }
+  static function asClerical($mixins) {
+    return static::byName(static::NAME_CLERICAL, $mixins);
+  }
+  static function asInactive() {
+    return static::byName(static::NAME_INACTIVE);
+  }
+  //
+  protected static function byName($name, $mixins = null) {
+    $me = parent::byName($name);
+    if ($mixins)
+      $me->blend($mixins);
+    return $me;
+  }
+  protected function blend($mixins) {
+    foreach ($mixins as $role) { 
+      foreach ($role->getPerms() as $fid => $perm)
+        if ($perm) 
+          $this->$fid = $this->$fid->blend($perm);
+    }
+    return $this;
+  }
+}
+/**
+ * Additional (Mixin) Roles
+ */
+class MixinRole extends Role {
+  //
+  const NAME_ADMIN = 'Admin';
+  const NAME_PAYER = 'Payer';
+  const NAME_AUDITOR = 'Auditor';
+  const NAME_BUILDER = 'ReportBuilder';
+  //
+  static $NAME_BY_ID = array(
+    'AD' => self::NAME_ADMIN,
+    'PA' => self::NAME_PAYER,
+    'AU' => self::NAME_AUDITOR,
+    'RB' => self::NAME_BUILDER);
+  //
+  /**
+   * @param string $s 'AD|RB'
+   * @return array(MixinRole,..)
+   */
+  static function fromIdString($s) {
+    $recs = array();
+    if (! empty($s)) {
+      $ids = explode('|', $s);
+      foreach ($ids as $id)
+        $recs[] = self::byId($id);
+    }
+    return $recs;
+  }
+  static function asPrimaryProvider() {
+    return array(
+      static::byName(self::NAME_ADMIN),
+      static::byName(self::NAME_PAYER),
+      static::byName(self::NAME_AUDITOR),
+      static::byName(self::NAME_BUILDER));
+  }
+  //
+  protected static function byId($id) {
+    $name = self::$NAME_BY_ID[$id];
+    $role = static::byName($name);
+    return $role;
+  }
+}
+/** 
+ * Permissions
+ */
+class Perms {
+  //
+  /* Flags */
+  /**
+   * @param (Perm,..)
+   * @return static set by augmenting supplied perms  
+   */
+  public function blend() {
+    $perms = func_get_args();
+    foreach ($perms as $perm)
+      foreach ($perm->getFlags() as $flag => $set)
+        if ($set)
+          $this->$flag = 1;
+    return $this;
+  }
+  //
+  /**
+   * @param string $name 'Provider'
+   * @return static
+   */
+  static function byRoleName($name) {
+    $method = "as$name";
+    if (method_exists(get_called_class(), $method))
+      return static::$method();
+  }
+  //
+  protected static function asNone() {
+    return new static();
+  }
+  private function getFlags() {
+    return get_object_vars($this);
+  }
+}
+class Perms_Profile extends Perms {
+  public $license;   // can update
+  public $practice;  // can update
+  public $billing;   // can update
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->license = 1;
+    return $me;
+  }
+  static function asClinical() {
+    return static::asNone();
+  }
+  static function asClerical() {
+    return static::asNone();
+  }
+  static function asInactivePrimaryProvider() {
+    $me = new static();
+    $me->billing = 1;
+    return $me;
+  }
+  static function asInactive() {
+    return static::asNone();
+  }
+  // Mixins 
+  static function asAdmin() {
+    $me = new static();
+    $me->practice = 1;
+    return $me;
+  }
+  static function asPayer() {
+    $me = new static();
+    $me->billing = 1;
+    return $me;
+  }
+}
+class Perms_Account extends Perms {
+  public $provider;  // manage
+  public $support;   // manage
+  public $portal;    // manage
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    return static::asClerical();
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->portal = 1;
+    return $me;
+  }
+  static function asInactivePrimaryProvider() {
+    return static::asNone();
+  }
+  static function asInactive() {
+    return static::asNone();
+  }
+  // Mixins 
+  static function asAdmin() {
+    $me = new static();
+    $me->provider = 1;
+    $me->support = 1;
+    return $me;
+  }
+}
+class Perms_Patient extends Perms {
+  public $create;     // create
+  public $facesheet;  // open
+  public $demo;       // record
+  public $vitals;     // record
+  public $diagnoses;  // record
+  public $immuns;     // record
+  public $track;      // record
+  public $cds;        // customize
+  public $sched;      // record
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->vitals = 1;
+    $me->diagnoses = 1;
+    $me->immuns = 1;
+    $me->cds = 1;
+    return $me->blend(static::asClerical());
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->create = 1;
+    $me->facesheet = 1;
+    $me->demo = 1;
+    $me->track = 1;
+    $me->sched = 1;
+    return $me;
+  }
+  static function asInactivePrimaryProvider() {
+    return static::asProvider();
+  }
+  static function asInactive() {
+    $me = new static();
+    $me->facesheet = 1;
+    return $me;
+  }
+}
+class Perms_Artifact extends Perms {
+  public $markReview;    // for all artifacts
+  public $markPortal;    // for all artifacts 
+  public $notesCreate;    
+  public $noteSign;      
+  public $noteAddendum;  
+  public $templates;     // manage
+  public $scan;           
+  public $labs;          // reconcile  
+  public $hl7;           // create and download
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->markReview = 1;
+    $me->noteSign = 1;
+    $me->noteAddendum = 1;
+    return $me->blend(static::asClinical(), static::asClerical());
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->markPortal = 1;
+    $me->notesCreate = 1; 
+    return $me->blend(static::asClerical());
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->templates = 1;
+    $me->scan = 1; 
+    $me->labs = 1; 
+    $me->hl7 = 1;
+    return $me;
+  }
+  static function asInactivePrimaryProvider() {
+    return static::asNone();
+  }
+  static function asInactive() {
+    return static::asNone();
+  }
+} 
+class Perms_Report extends Perms {
+  public $patient;  // can
+  public $cds;      // can
+  public $audit;    // can
+  public $builder;  // can
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    return static::asClerical();
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->patient = 1;
+    $me->cds = 1;
+    return $me;
+  }
+  // Mixins 
+  static function asReportBuilder() {
+    $me = new static();
+    $me->custom = 1;
+    return $me;
+  }
+  static function asAuditor() {
+    $me = new static();
+    $me->patient = 1;
+    $me->cds = 1;
+    $me->audit = 1;
+    return $me;
+  } 
+  static function asInactivePrimaryProvider() {
+    return static::asNone();
+  }
+  static function asInactive() {
+    return static::asNone();
+  }
+}
+class Perms_Message extends Perms { 
+  public $general;  // general messages
+  public $patient;  // patient messages
+  public $portal;   // portal messages
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->portal = 1;
+    return $me->blend(static::asClerical());
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->general = 1;
+    $me->patient = 1;
+    return $me;
+  }
+  static function asInactivePrimaryProvider() {
+    return static::asNone();
+  }
+  static function asInactive() {
+    return static::asNone();
+  }
+}
+class Perms_NewCrop extends Perms {
+  public $can;  // NewCrop user type
+  //
+  static function asErx() {
+    $me = new static();
+    $me->can = 1;
+    return $me;
+  }
+  static function asNone() {
+    return null;
+  }
+}

@@ -1,0 +1,30 @@
+DIV.ScrollTile {
+  border:1px solid #c0c0c0;
+  padding:10px;
+  background:white;
+  overflow-y:scroll;
+}
+H2 {
+  margin:0;
+}
+H3 {
+  color:black;
+  margin:13px 0 0 1em;
+}
+UL.eform LABEL.first {
+  width:60px;
+}
+TABLE.h TD {
+  padding-right:20px;
+  padding-bottom:1px;
+  vertical-align:bottom; 
+}
+TABLE.t2c TH {
+  padding-right:5px;
+}
+TABLE.t2c TD {
+  padding-left:5px;
+}
+DIV.Comment {
+  margin:0 0 5px 13px;
+}

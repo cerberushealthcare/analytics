@@ -1,0 +1,42 @@
+<?
+require_once "php/data/LoginSession.php";
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'inc/uiFunctions.php';
+//
+LoginSession::verify_forUser()->requires($login->Role->Artifact->markReview);
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? HEAD('Item Review', 'ReviewPage') ?>
+    <? HEAD_UI('DocHistory', 'Scanning') ?>
+    <? HEAD_PortalUserEntry() ?>
+    <script type='text/javascript' src='js/jquery/jquery-1.7.1.min.js'></script>
+    <script type='text/javascript' src='js/jquery/imagepanner.js'></script>
+<style type="text/css">
+
+/*Default CSS for pan containers*/
+.pancontainer{
+position:relative; /*keep this intact*/
+overflow:hidden; /*keep this intact*/
+width:300px;
+height:300px;
+border:1px solid black;
+
+}
+
+</style>
+  </head>
+  <body>
+    <? BODY() ?>
+      <h1>Item Review</h1>
+      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <div id='tile'>
+          <div class='spacer'>&nbsp;</div>
+        </div>
+      <? renderBoxEnd() ?>
+    <? _BODY() ?>
+  </body>
+  <? CONSTANTS('DocHistory', 'Scanning') ?>
+  <? START() ?>
+</html>

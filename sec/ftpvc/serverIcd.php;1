@@ -1,0 +1,37 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/IcdSearchResult.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverIcd.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverIcd.php (posted)');
+  logit_r($_POST);
+}
+switch ($action) {
+  /**
+   * Search for ICD codes
+   * @param $_GET{'text']
+   * @return IcdSearchResult
+   */
+  case 'search':
+    $result = IcdSearchResult::search($_GET['text']);
+    $m = new JAjaxMsg($action, jsonencode($result));
+    break;
+  //
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) 
+  echo $m->out();
+?>

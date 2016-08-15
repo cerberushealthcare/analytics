@@ -1,0 +1,50 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Faces
+ * @author Warren Hornsby
+ */
+class GroupFolder_Faces extends GroupFolder {
+  /**
+   * @param int $cid
+   * @return string filename 'C12_Fred.jpeg'
+   */
+  public function upload($cid) {
+    $upload = GroupUpload_Face::fromPost($cid);
+    parent::upload($upload);
+    return $upload->name;
+  }
+  /**
+   * @param string $filename
+   */
+  public function output($filename) {
+    $file = GroupFile::from($this, $filename);
+    return parent::output($file);
+  }
+  //
+  static function open() {
+    global $login;
+    return parent::open($login->userGroupId, 'faces');
+  }
+}
+/**
+ * GroupUpload_Face
+ */
+class GroupUpload_Face extends GroupUpload {
+  /**
+   * @return GroupUpload_Face
+   */
+  public static function fromPost($cid) {
+    $me = parent::fromSinglePost();
+    $me->name = "C$cid-" . $me->name;
+    return $me;
+  }
+  //
+  protected static function getValidTypes() {
+    return self::$TYPE_IMAGES;
+  }  
+  protected static function getInvalidTypeMessage() {
+    return 'File is not of an allowable type. Only image files (e.g. JPEG, GIF, PGN) may be used.';
+  }
+}

@@ -1,0 +1,223 @@
+/**
+ * NewCrop Page Helper
+ * Global static
+ * @author Warren Hornsby
+ */
+var NewCrop = {
+  cid:null,
+  auditsSince:null,
+  // 
+  SENT_CURRENT:1,  // Sent to NewCrop to update current meds
+  SENT_PLAN:2,     // Sent to NewCrop to update med plan
+  SENT_ALLERGY:3,  // Sent to NewCrop to update allergies
+  SENT_ANY:9,      // Sent from facesheet
+  sent:null,
+  //
+  NC_ADD:'nc.add',  // Audit keys
+  NC_RX:'nc.rx',
+  NC_DC:'nc.dc',
+  NC_CURRENT:'nc.current',
+  NC_ALLERGY:'nc.allergy',  
+  qs:null,  // {auditKey:JQuestion,..}
+  //
+  DEST_COMPOSE:'compose',
+  DEST_MEDENTRY:'medentry',
+  DEST_RENEWAL:'renewal',
+  //
+  _loaded:false,
+  _warned:false,
+  _sending:false,
+  /*
+   * Loader
+   */
+  load:function(er, cid, auditsSince) {
+    if (er) {
+      this._loaded = true;
+      this.cid = cid;
+      this.auditsSince = auditsSince;
+      this.qs = (auditsSince) ? {} : null;
+    }
+  },
+  loadFromFacesheet:function(er, client) {
+    this.load(er, client.id);
+  },
+  loadFromSession:function(er, session) {
+    this.load(er, session.clientId, session.dcsql);
+  },
+  loadFromMsg:function(er, client) {
+    this.load(er, client.id, now);
+  },
+  /*
+   * Validate required erx fields
+   * - callback() if valid
+   */
+  validate:function(callback) {
+    if (this._loaded) {
+      var self = this;
+      Ajax.get(Ajax.SVR_ERX, 'validNewCropXml', self.cid,
+        function(required) {
+          if (required == null) 
+            callback();
+          else {
+            var a = ['The following information is required for e-prescribing:<ul><li>'];
+            a.push(required.join('</li><li>'));
+            a.push('</li></ul>');
+            showErrorMsg(a.join(''), null, true);
+          }
+        });
+    }
+  },
+  /*
+   * Send to New Crop
+   */
+  send:function(dest, sentReason, args, callback) {
+    if (this._loaded) {
+      this.sent = denull(sentReason, NewCrop.SENT_ANY);
+      this._sending = true;
+      args = denull(args, {});
+      if (args.id == null)
+        args.id = this.cid;
+      if (dest) 
+        args.dest = dest;
+      var self = this;
+      self._warned = false;
+      Page.pop(Page.PAGE_NEWCROP, args, Page.HIDE_MENU, null, 
+        function() {
+          if (isPopUp('pop-msg')) 
+            closeOverlayPop('pop-msg');
+          self._sending = false;
+          args = {'id':self.cid};
+          if (self.sent == NewCrop.SENT_PLAN) 
+            args.since = self.auditsSince;
+          if (self.cid == null) {
+            callback(null);
+          } else {
+            showOverlayWorking('Requesting updates from ePrescribe partner site...');
+            Ajax.get(Ajax.SVR_ERX, 'refreshFromNewCrop', args,
+              function(o) {
+                closeOverlayWorking();
+                callback(o);
+              },
+              function(errorMsg) {
+                closeOverlayWorking();
+                Page.showErrorDetails('There was a problem retrieving updates.', errorMsg);
+              });
+          }
+        }, 
+        function(p) {
+          if (! self._warned) {
+              self._warned = true;
+              showErrorMsg('The NewCrop window is still open. Please close it to refresh facesheet.', function() {
+                p.focus();
+              });
+          }
+        });
+    }
+  },
+  sendFromFacesheet:function(dest, callback) {
+    this.send(dest, null, null, callback);
+  },
+  sendFromStatus:function(dest, callback) {
+    this.send(dest, null, null, callback);
+  },
+  sendFromPharm:function(id, rxguid, callback) {
+    this._loaded = true;
+    var args = {
+      'id':id,
+      'rxguid':rxguid};
+    var dest = NewCrop.DEST_RENEWAL;
+    this.send(dest, null, args, callback);
+  },
+  sendFromConsole:function(q, callback) {
+    if (q.erx == NewCrop.SENT_CURRENT || q.erx == NewCrop.SENT_ALLERGY) 
+      dest = NewCrop.DEST_MEDENTRY;
+    else 
+      dest = NewCrop.DEST_COMPOSE;
+    this.send(q.erdest, q.erx, null, callback);
+  },
+  sendFromTui:function(q, tui, callback) {
+    var args = null;
+    var refills = null;
+    if (tui.data) {
+      refills = tui.data.refill.meds;
+      if (refills) {
+        var m = [];
+        for (var name in refills) 
+          m.push(name);
+        args = {'rf':Json.encode(m)};
+      }
+    }
+    this.send(q.erdest, q.erx, args, callback);
+  },
+  /*
+   * Determine whether med question should defer to NewCrop
+   * If so, q.erx assigned to proper NewCrop.SENT_ reason and question cached 
+   * - q: JQuestion
+   * - inTable: par's IN_TABLE (required for med, null for allergy)
+   * - outData: question's OUT_DATA (required for med, null for allergy)
+   */
+  setQuestionErx:function(q, inTable, outData) {
+    if (this._loaded) {
+      if (q.type == Q_TYPE_ALLERGY) {
+        q.erx = NewCrop.SENT_ALLERGY;
+        q.erdest = NewCrop.DEST_MEDENTRY;
+      } else if (outData || inTable) { 
+        if (outData && inTable) {
+          q.erx = NewCrop.SENT_CURRENT;
+          q.erdest = NewCrop.DEST_MEDENTRY;
+        } else {
+          q.erx = NewCrop.SENT_PLAN;
+          q.erdest = NewCrop.DEST_COMPOSE;
+        } 
+        q.ncmeds = {};
+      }
+      if (q.erx)
+        this._cacheQuestion(q);
+    }
+  },
+  _cacheQuestion:function(q) {
+    switch (q.erx) {
+      case NewCrop.SENT_CURRENT:
+        this.qs[NewCrop.NC_CURRENT] = q;
+        break;
+      case NewCrop.SENT_ALLERGY:
+        this.qs[NewCrop.NC_ALLERGY] = q;
+        break;
+      case NewCrop.SENT_PLAN:
+        this.qs[this._auditKeyFromQ(q)] = q;
+        break;
+    }
+  },
+  /*
+   * Get cached med question 
+   */
+  getQuestion:function(key) {
+    return this.qs[key];
+  },
+  getOppositeMedQuestion:function(key) {
+    switch (key) {
+      case NewCrop.NC_ADD:
+        return this.qs[NewCrop.NC_CURRENT];
+      case NewCrop.NC_CURRENT:
+        return this.qs[NewCrop.NC_ADD];
+    }
+    return null;
+  },
+  /*
+   * Returns true if was sent to NewCrop
+   */
+  wasSent:function() {
+    return (this._loaded && this._sending);
+  },
+  //
+  _auditKeyFromQ:function(q) {
+    switch (q.uid.substr(0, 3)) {
+      case '@ad': 
+        return NewCrop.NC_ADD;
+      case '@rf':
+        return NewCrop.NC_RX;
+      case '@dc':
+        return NewCrop.NC_DC;
+    }
+  }
+}

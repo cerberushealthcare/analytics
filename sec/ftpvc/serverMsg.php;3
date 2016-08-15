@@ -1,0 +1,115 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/dao/UserDao.php';
+require_once 'php/dao/MsgDao.php';
+require_once 'php/data/json/JAjaxMsg.php';
+require_once 'php/data/rec/sql/MsgInbox.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  $id = geta($_GET, 'id');
+  if ($action != 'getMyInboxCt') logit('serverMsg.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverMsg.php (posted)');
+  logit_r($_POST);
+}
+switch ($action) {
+  case 'getMyInboxCt':
+    $ct = MsgInbox::fetchMyInboxCt();
+    $m = new JAjaxMsg($action, $ct);
+    break;
+  case 'getMyInbox':
+    $recs = MsgThread::fetchAllFromInbox();
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  case 'getMySent':
+    $recs = MsgThread::fetchAllFromSent();
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  case 'getClientThreads':
+    $recs = MsgThread::fetchAllByClient($id);
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  case 'getThread':
+    $rec = MsgThread::fetchForReading($id);
+    if ($rec->Client) 
+      $rec->facesheet = jsondecode(FacesheetDao::getMsgFacesheet($rec->Client->clientId)->out());
+    $m = new JAjaxMsg($action, jsonencode($rec));
+    break;
+  case 'getFacesheet':
+    $facesheet = FacesheetDao::getMsgFacesheet($id);
+    return $facesheet->out();
+    break;
+  case 'newThread':
+    $m = new JAjaxMsg($action, ServerMsg::newThread($obj));
+    break;
+  case 'reply':
+    $m = new JAjaxMsg($action, ServerMsg::reply($obj));
+    break;
+  case 'complete':
+    $m = new JAjaxMsg($action, ServerMsg::complete($obj));
+    break;
+  case 'getTemplatePar': 
+    $m = new JAjaxMsg($action, ServerMsg::getTemplatePar($id));
+    break;
+  case 'getSessionStubs': 
+    $m = new JAjaxMsg($action, ServerMsg::getSessionStubs($id));
+    break;
+  case 'previewThread':
+    $m = new JAjaxMsg($action, ServerMsg::previewThread($id));
+    break;
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) {
+  echo $m->out();
+}
+
+class ServerMsg {
+  public static function getThread($mtid) {
+    $thread = MsgDao::getThread($mtid);
+    if ($thread['cid']) {
+      $thread['facesheet'] = jsondecode(ServerMsg::getFacesheet($thread['cid']));
+    }
+    return jsonencode($thread);
+  }
+  public static function getFacesheet($cid) {
+    $facesheet = FacesheetDao::getMsgFacesheet($cid);
+    return $facesheet->out();
+  }
+  public static function reply($post) {
+    MsgDao::addPost($post->id, $post->to, $post->html, $post->data);
+    return ServerMsg::getThread($post->id);
+  }
+  public static function complete($post) {
+    MsgDao::complete($post->id, $post->html, $post->data);
+    return ServerMsg::getThread($post->id);
+  }
+  public static function newThread($thread) {
+    $mtid = MsgDao::createThread($thread->subject, $thread->to, $thread->html, $thread->data, $thread->cid, MsgDao::TYPE_GENERAL, $thread->priority);
+    return $mtid;
+  }
+  public static function getTemplatePar($pid) {
+    return JsonDao::getJParInfosByPid($pid);
+  }
+  public static function getSessionStubs($cid) {
+    $stubs = SchedDao::getJSessionStubsForClient($cid);
+    return assocOutArray($stubs);
+  }
+  public static function getClientThreads($cid) {
+    $threads = MsgDao::getThreadsForClient($cid);
+    return jsonencode($threads);
+  }
+  public static function previewThread($mtid) {
+    return jsonencode(MsgDao::previewThread($mtid));
+  }
+}
+?>

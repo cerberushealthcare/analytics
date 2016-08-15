@@ -1,0 +1,161 @@
+/**
+ * Page LoginPage
+ */
+LoginPage = Html.Page.extend(function(self) {
+  return {
+    init:function() {
+      self.loginbox = _$('login');
+      self.authbox =_$('auth') 
+      self.id = _$('id').setFocus().aug(Events.onkeypresscr).bubble('onkeypresscr', self.login_onclick);
+      self.pw = _$('pw').aug(Events.onkeypresscr).bubble('onkeypresscr', self.login_onclick);
+      self.anchor = _$('alog').aug(Html.Anchor._proto);
+    },
+    login_onclick:function() {
+      var id = String.nullify(self.id.value);
+      var pw = String.nullify(self.pw.value);
+      if (id && pw) {
+        self.anchor.working(true);
+        Ajax.Login.login(id, pw, self.sess_onupdate);
+      }
+    },
+    sess_onupdate:function(sess) {
+      self.loginbox.hide();
+      if (sess.needsChallenge()) {
+        self.authbox.show();
+        AuthTile.create().load(sess);
+      } else if (sess.needsPassword()) {
+        self.authbox.show();
+        PassTile.create().load(sess);
+      } else {
+        self.go('welcome.php'); 
+      }
+    }
+  }
+})
+AuthTile = {
+  create:function() {
+    var container = _$('auth-tile').clean();
+    var My = this;
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        load:function(sess) {
+          self.questions = My.QuestionBoxes.create(self).load(sess.cqs).setFocus().bubble('onkeypresscr', self.submit_onclick);
+          self.submit = Html.Anchor.create('big', 'Submit').into(self).bubble('onclick', self.submit_onclick);
+        },
+        //
+        submit_onclick:function(a) {
+          var responses = self.questions.getResponses();
+          self.submit.working(true);
+          Ajax.Login.respond(responses, function(sess) {
+            self.submit.working();
+            LoginPage.sess_onupdate(sess);
+          })
+        }
+      }
+    })
+  },
+  QuestionBoxes:{
+    create:function(container, cqs) {
+      var My = this;
+      return Html.Tile.create(container).aug(Events.onkeypresscr).extend(function(self) {
+        return {
+          onkeypresscr:function() {},
+          //
+          init:function() {
+            self.boxes = [];
+          },
+          load:function(cqs) {
+            cqs.forEach(function(cq) {
+              self.boxes.push(My.QuestionBox.create(self, cq));
+            })
+            return self;
+          },
+          getResponses:function() {
+            var responses = [];
+            self.boxes.forEach(function(box) {
+              responses.push(box.getValue());
+            })
+            return responses;
+          },
+          setFocus:function() {
+            self.boxes[0].input.setFocus();
+            return self;
+          }
+        }
+      })
+    },
+    QuestionBox:{
+      create:function(container, cq) {
+        return Html.Tile.create(container).extend(function(self) {
+          return {
+            init:function() {
+              Html.Label.create(null, cq).into(self);
+              self.input = Html.InputText.create().into(self).setSize(25);
+            },
+            getValue:function() {
+              return String.nullify(self.input.getValue());
+            }
+          }
+        })
+      }
+    }
+  }
+}
+PassTile = {
+  create:function() {
+    var container = _$('auth-tile').clean();
+    var My = this;
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        load:function(sess) {
+          self.clean();
+          var qs = ['New Password', 'New Password (repeat)'];
+          self.questions = My.QuestionBoxes.create(self).load(qs).setFocus().bubble('onkeypresscr', self.submit_onclick);
+          self.submit = Html.Anchor.create('big', 'Submit').into(self).bubble('onclick', self.submit_onclick);
+        },
+        //
+        submit_onclick:function(a) {
+          var responses = self.questions.getResponses();
+          self.submit.working(true);
+          Ajax.Login.setPassword(responses, function(sess) {
+            self.submit.working();
+            LoginPage.sess_onupdate(sess);
+          })
+        }
+      }
+    })
+  },
+  QuestionBoxes:{
+    create:function(container, qs) {
+      var My = this;
+      return AuthTile.QuestionBoxes.create(container, qs).extend(function(self) {
+        return {
+          init:function() {
+            _$('auth-msg').setText('A new password is required to continue.');
+          },
+          load:function(cqs) {
+            cqs.forEach(function(cq) {
+              self.boxes.push(My.QuestionBox.create(self, cq));
+            })
+            return self;
+          }
+        }
+      })
+    },
+    QuestionBox:{
+      create:function(container, cq) {
+        return Html.Tile.create(container).extend(function(self) {
+          return {
+            init:function() {
+              Html.Label.create(null, cq).into(self);
+              self.input = Html.InputPassword.create().into(self).setSize(25);
+            },
+            getValue:function() {
+              return String.nullify(self.input.getValue());
+            }
+          }
+        })
+      }
+    }
+  }
+}

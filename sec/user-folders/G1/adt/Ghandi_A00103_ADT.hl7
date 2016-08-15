@@ -1,0 +1,6 @@
+MSH|^~\&|Clicktate|1|||20140601155405||ADT^A01|1-3811-20140601155405|P|2.3.1
+PID|||3811^^^1^MR||Ghandi^Michael||19430512|M||U^Unknown^HL70005|^^^^^^H|||||||||||U^Unknown^HL70189
+PV1|1|O|||||1^Papyrus Admin|||||||||||||||||||||||||||||||||||||20140601
+OBX|1|NM|21612-7^REPORTED PATIENT AGE^LN||71|a^year^UCUM|||||F
+DG1|0|I9|441.4^Abdominal Aortic Aneurysm^ICD-9-CM|Abdominal Aortic Aneurysm|20140531|F
+DG1|1|I9|272.4^Hyperlipidemia^ICD-9-CM|Hyperlipidemia|20140531|F

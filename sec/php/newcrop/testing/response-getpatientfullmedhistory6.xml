@@ -1,0 +1,163 @@
+<NewDataSet>
+  <Table>
+    <AccountGuid>ef15afce-9b50-4b65-a00a-bb0b8ac499fd</AccountGuid>
+    <AccountName>Clicktate Practice</AccountName>
+    <ExternalAccountID>L1</ExternalAccountID>
+    <SiteID>1</SiteID>
+    <PatientGUID>22e53bf4-a75b-4eec-8b99-ce3f3106b1ee</PatientGUID>
+    <FullName> John D. Stuart </FullName>
+    <ExternalPatientID>4046</ExternalPatientID>
+    <PrescriptionDate>2014-12-28T20:53:00-06:00</PrescriptionDate>
+    <DrugID>185605</DrugID>
+    <DrugTypeID>F</DrugTypeID>
+    <DrugName>potassium chloride</DrugName>
+    <DrugInfo>potassium chloride 25 mEq oral packet</DrugInfo>
+    <Strength>25</Strength>
+    <StrengthUOM>mEq</StrengthUOM>
+    <DosageNumberDescription>1</DosageNumberDescription>
+    <DosageForm>unit</DosageForm>
+    <Route>by mouth</Route>
+    <DosageFrequencyDescription>DAILY</DosageFrequencyDescription>
+    <Dispense>1</Dispense>
+    <TakeAsNeeded>N</TakeAsNeeded>
+    <DispenseAsWritten>N</DispenseAsWritten>
+    <Refills>0</Refills>
+    <Status>C</Status>
+    <SubStatus>S</SubStatus>
+    <Archive>N</Archive>
+    <PrescriptionGuid>a57a1e09-7901-46e5-9c7d-487e93a4f1c0
+    </PrescriptionGuid>
+    <OrderGUID>00000000-0000-0000-0000-000000000000</OrderGUID>
+    <PrescriptionNotes />
+    <PharmacistNotes />
+    <ExternalPhysicianID>1</ExternalPhysicianID>
+    <PhysicianName> Doctor Clicktate </PhysicianName>
+    <DateMovedToPreviousMedications
+      xml:space="preserve"> </DateMovedToPreviousMedications>
+    <FormularyTypeID>S</FormularyTypeID>
+    <ModifiedSig>false</ModifiedSig>
+    <ExternalPrescriptionID />
+    <EpisodeIdentifier />
+    <EncounterIdentifier />
+    <ExternalSource />
+    <DosageNumberTypeID>2</DosageNumberTypeID>
+    <DosageFormTypeId>14</DosageFormTypeId>
+    <DosageRouteTypeId>2</DosageRouteTypeId>
+    <DosageFrequencyTypeID>2</DosageFrequencyTypeID>
+    <DaysSupply>0</DaysSupply>
+    <PrescriptionTimestamp>2014-12-28T20:52:31.287-06:00
+    </PrescriptionTimestamp>
+    <OriginalPrescriptionGuid>a57a1e09-7901-46e5-9c7d-487e93a4f1c0
+    </OriginalPrescriptionGuid>
+    <ExternalUserID>1</ExternalUserID>
+    <ExternalUserType />
+    <DeaGenericNamedCode>2</DeaGenericNamedCode>
+    <Diagnosis />
+    <DiagnosisSource>ICD9CM</DiagnosisSource>
+    <DiagnosisName />
+    <DispenseNumberQualifier>ML</DispenseNumberQualifier>
+    <DispenseNumberQualifierDescription>Milliliter
+    </DispenseNumberQualifierDescription>
+    <LocationName>Clicktate Practice</LocationName>
+    <GenericName />
+    <PatientFriendlySIG>1 unit by mouth daily</PatientFriendlySIG>
+    <PrintLeaflet>F</PrintLeaflet>
+    <DeaClassCode>0</DeaClassCode>
+    <PharmacyType>0</PharmacyType>
+    <PharmacyDetailType>0</PharmacyDetailType>
+    <FinalDestinationType>0</FinalDestinationType>
+    <FinalStatusType>4</FinalStatusType>
+    <PharmacyNCPDP />
+    <PharmacyFullInfo />
+    <SourcePrescriptionGuid>00000000-0000-0000-0000-000000000000
+    </SourcePrescriptionGuid>
+    <DeaLegendDescription>Rx</DeaLegendDescription>
+    <ExternalMidLevelID />
+    <DrugSubID1>1263</DrugSubID1>
+    <FormularyChecked>true</FormularyChecked>
+    <StrengthUnknown>N</StrengthUnknown>
+    <PatientID>4046</PatientID>
+    <PatientIDType />
+  </Table>
+  <Table>
+    <AccountGuid>ef15afce-9b50-4b65-a00a-bb0b8ac499fd</AccountGuid>
+    <AccountName>Clicktate Practice</AccountName>
+    <ExternalAccountID>L1</ExternalAccountID>
+    <SiteID>1</SiteID>
+    <PatientGUID>22e53bf4-a75b-4eec-8b99-ce3f3106b1ee</PatientGUID>
+    <FullName> John D. Stuart </FullName>
+    <ExternalPatientID>4046</ExternalPatientID>
+    <PrescriptionDate>2014-12-28T20:53:00-06:00</PrescriptionDate>
+    <DrugID>152894</DrugID>
+    <DrugTypeID>F</DrugTypeID>
+    <DrugName>furosemide</DrugName>
+    <DrugInfo>furosemide 40 mg tablet</DrugInfo>
+    <Strength>40</Strength>
+    <StrengthUOM>mg</StrengthUOM>
+    <DosageNumberDescription>1</DosageNumberDescription>
+    <DosageForm>tablet</DosageForm>
+    <Route>by mouth</Route>
+    <DosageFrequencyDescription>DAILY</DosageFrequencyDescription>
+    <Dispense>30</Dispense>
+    <TakeAsNeeded>N</TakeAsNeeded>
+    <DispenseAsWritten>N</DispenseAsWritten>
+    <Refills>0</Refills>
+    <Status>C</Status>
+    <SubStatus>S</SubStatus>
+    <Archive>N</Archive>
+    <PrescriptionGuid>63eab6cd-459f-4eff-8900-bc37ea5fd9f3
+    </PrescriptionGuid>
+    <OrderGUID>00000000-0000-0000-0000-000000000000</OrderGUID>
+    <PrescriptionNotes />
+    <PharmacistNotes />
+    <ExternalPhysicianID>1</ExternalPhysicianID>
+    <PhysicianName> Doctor Clicktate </PhysicianName>
+    <DateMovedToPreviousMedications
+      xml:space="preserve"> </DateMovedToPreviousMedications>
+    <FormularyTypeID>S</FormularyTypeID>
+    <ModifiedSig>false</ModifiedSig>
+    <ExternalPrescriptionID />
+    <EpisodeIdentifier />
+    <EncounterIdentifier />
+    <ExternalSource />
+    <DosageNumberTypeID>2</DosageNumberTypeID>
+    <DosageFormTypeId>12</DosageFormTypeId>
+    <DosageRouteTypeId>2</DosageRouteTypeId>
+    <DosageFrequencyTypeID>2</DosageFrequencyTypeID>
+    <DaysSupply>0</DaysSupply>
+    <PrescriptionTimestamp>2014-12-28T20:52:41.74-06:00
+    </PrescriptionTimestamp>
+    <OriginalPrescriptionGuid>63eab6cd-459f-4eff-8900-bc37ea5fd9f3
+    </OriginalPrescriptionGuid>
+    <ExternalUserID>1</ExternalUserID>
+    <ExternalUserType />
+    <DeaGenericNamedCode>1</DeaGenericNamedCode>
+    <Diagnosis />
+    <DiagnosisSource>ICD9CM</DiagnosisSource>
+    <DiagnosisName />
+    <DispenseNumberQualifier>U2</DispenseNumberQualifier>
+    <DispenseNumberQualifierDescription>Tablet
+    </DispenseNumberQualifierDescription>
+    <LocationName>Clicktate Practice</LocationName>
+    <GenericName />
+    <PatientFriendlySIG>1 tablet by mouth daily</PatientFriendlySIG>
+    <PrintLeaflet>F</PrintLeaflet>
+    <DeaClassCode>0</DeaClassCode>
+    <PharmacyType>0</PharmacyType>
+    <PharmacyDetailType>0</PharmacyDetailType>
+    <FinalDestinationType>0</FinalDestinationType>
+    <FinalStatusType>4</FinalStatusType>
+    <PharmacyNCPDP />
+    <PharmacyFullInfo />
+    <SourcePrescriptionGuid>00000000-0000-0000-0000-000000000000
+    </SourcePrescriptionGuid>
+    <DeaLegendDescription>Rx</DeaLegendDescription>
+    <ExternalMidLevelID />
+    <DrugSubID1>8209</DrugSubID1>
+    <FormularyChecked>true</FormularyChecked>
+    <StrengthUnknown>N</StrengthUnknown>
+    <PatientID>4046</PatientID>
+    <PatientIDType />
+    <rxcui>313988</rxcui>
+  </Table>
+</NewDataSet>

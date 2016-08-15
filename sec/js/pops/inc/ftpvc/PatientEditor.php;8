@@ -1,0 +1,302 @@
+<?
+set_include_path('../../../');
+require_once "inc/uiFunctions.php";
+require_once "php/forms/utils/CommonCombos.php";
+/**
+ * Patient Editor
+ */
+?>
+<div id="pop-po" class="pop">
+  <div id="pop-po-cap" class="pop-cap">
+    <div id="pop-po-cap-text">
+      Clicktate - Patient 
+    </div>
+    <a href="javascript:PatientEditor.poClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:550px">
+    <div class="pop-frame">
+      <div class="pop-frame-content" style="padding-top:5px">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <h1 id="po-name" class="big" style="font-size:13pt; margin:0 0 5px 0"></h1>
+            </td>
+            <td style="text-align:right; vertical-align:top">
+              <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe1Edit()">Edit</a>
+            </td>
+          </tr>
+        </table>
+        <div id="demoform">
+        </div>
+      </div>
+    </div>
+    <div class="sflinks">
+      <a href="javascript:PatientEditor.peScroll(1)">Contact</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:PatientEditor.peScroll(2)">Insurance</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:PatientEditor.peScroll(3)">Family</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:PatientEditor.peScroll(4)">Custom</a>
+    </div>
+    <div id="csf" class="scrollform">
+      <div class="sfcontent">
+        <h1 id="csf-contact">Contact</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-address" class="first4"></label>
+            <span id="po-address" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(2)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-emer" class="first4"></label>
+            <span id="po-emer" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(6)">Edit</a>
+          </li>
+        </ul>
+        <ul class="entry" style="margin-bottom:20px">
+          <li>
+            <label id="po-lbl-pharm" class="first4"></label>
+            <span id="po-pharm" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(7)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-insurance">Insurance</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-ins" class="first4"></label>
+            <span id="po-ins" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(3)">Edit</a>
+          </li>
+        </ul>
+        <ul id="po-ins-ul-2" class="entry">
+          <li>
+            <label id="po-lbl-ins2" class="first4"></label>
+            <span id="po-ins2" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(4)">Edit</a>
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-ichecks" class="first4"></label>
+            <span id="po-ichecks" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(11)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-family" style="margin-top:10px">Family</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-father" class="first4">Parent</label>
+            <span id="po-father" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(8)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-mother" class="first4">Parent</label>
+            <span id="po-mother" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(9)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-spouse" class="first4">Spouse</label>
+            <span id="po-spouse" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(10)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-custom" style="margin-top:20px">Custom Data</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-custom" class="first4"></label>
+            <span id="po-custom" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="PatientEditor.pe2Edit(5)">Edit</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd cmd-right">
+      <a href="javascript:PatientEditor.poClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>
+<div id="pop-addr" class="pop">
+  <div id="pop-addr-cap" class="pop-cap">
+    <div id="pop-addr-cap-text">
+      Address 
+    </div>
+    <a href="javascript:PatientEditor.paClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li id="pa-li-name" style="margin-bottom:8px">
+            <label class="first">Name</label>
+            <input id="pa-name" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">Address</label>
+            <input id="pa-addr1" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">&nbsp;</label>
+            <input id="pa-addr2" type="text" size="66" value="" />
+          </li>
+          <li style="display:none">
+            <label class="first">&nbsp;</label>
+            <input id="pa-addr3" type="text" size="66" value="" />
+          </li>
+          <li style="margin-top:8px; margin-bottom:8px">
+            <label class="first">City</label>
+            <input id="pa-city" type="text" size="30" value="" />
+            <label>State</label>
+            <? renderCombo("pa-state", CommonCombos::states()) ?>
+            <label>Zip</label>
+            <input id="pa-zip" type="text" size="8" value="" />
+          </li>
+        </ul>
+        <ul class="entry" style="margin-bottom:8px">
+          <li>
+            <label class="first">Phone 1</label>
+            <input id="pa-phone1" type="text" size="20" value="" />
+            <? $phoneTypes = CommonCombos::phoneTypes() ?>
+            <? renderCombo("pa-phone1Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 2</label>
+            <input id="pa-phone2" type="text" size="20" value="" />
+            <? renderCombo("pa-phone2Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 3</label>
+            <input id="pa-phone3" type="text" size="20" value="" />
+            <? renderCombo("pa-phone3Type", $phoneTypes) ?>
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label class="first">Email</label>
+            <input id="pa-email1" type="text" size="66" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:PatientEditor.paSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:PatientEditor.paClose()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-addr" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-icard" class="pop">
+  <div id="pop-icard-cap" class="pop-cap">
+    <div id="pop-icard-cap-text">
+      Insurance
+    </div>
+    <a href="javascript:PatientEditor.picClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Plan</label>
+            <input id="pic-ic-plan" type="text" size="40" value="" />
+          </li>
+          <li>
+            <label class="first">Group #</label>
+            <input id="pic-ic-group" type="text" size="30" value="" />
+          </li>
+          <li>
+            <label class="first">Policy #</label>
+            <input id="pic-ic-policy" type="text" size="30" value="" />
+          </li>
+          <li class="push">
+            <label class="first">Subscriber</label>
+            <input id="pic-ic-subscriber" type="text" size="40" value="" />
+          </li>
+          <li>
+            <label class="first">Name on Card</label>
+            <input id="pic-ic-name" type="text" size="40" value="" />
+          </li>
+          <li class="push">
+            <label class="first">Effective</label>
+            <? renderCalendar("pic-ic-effective", "", false) ?>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:PatientEditor.picSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:PatientEditor.picClose()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-icard" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-custom" class="pop">
+  <div id="pop-custom-cap" class="pop-cap">
+    <div id="pop-custom-cap-text">
+      Patient Editor
+    </div>
+    <a href="javascript:PatientEditor.pcuClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Custom 1</label>
+            <input id="pcu-custom1" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 2</label>
+            <input id="pcu-custom2" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 3</label>
+            <input id="pcu-custom3" type="text" size="80" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:PatientEditor.pcuSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:PatientEditor.pcuClose()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-custom" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-onfile" class="pop">
+  <div id="pop-onfile-cap" class="pop-cap">
+    <div id="pop-onfile-cap-text">
+      Patient Editor
+    </div>
+    <a href="javascript:PatientEditor.pofClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first5">Living Will on File?</label>
+            <input id="pof-living-will" type="checkbox" />
+          </li>
+          <li>
+            <label class="first5">Healthcare Power of Attorney on File?</label>
+            <input id="pof-poa" type="checkbox" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:PatientEditor.pofSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:PatientEditor.pofClose()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-custom" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>

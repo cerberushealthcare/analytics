@@ -1,0 +1,50 @@
+DIV.ParPreviewTrigger {
+  position:absolute;
+  height:20px;
+  width:20px;
+  border:1px solid #c0c0c0;
+  background:url(../../img/icons/mag.png) #fafafa center center no-repeat;
+  cursor:pointer;
+  z-index:100;
+}
+DIV.ParPreviewPop {
+  position:absolute;
+  border:1px solid #404040;
+  background-color:#fafafa;
+  padding:10px;
+  z-index:99;
+  width:660px;
+}
+DIV.ParPreviewPop TABLE.h {
+  display:block;
+}
+DIV.ParPreviewPop TD {
+  vertical-align:top;
+}
+DIV.BrowserTile {
+  margin-top:10px;
+}
+DIV.BrowserTile TABLE.h {
+  width:auto;
+}
+DIV.BrowserTile TH {
+  vertical-align:top;
+  width:140px;
+}
+DIV.BrowserTile TD {
+  text-align:left;
+}
+DIV.BrowserTile UL {
+  margin-top:1em;
+}
+DIV.BrowserTile DIV.browser {
+  background-color:white;
+  padding:10px;
+  overflow-y:scroll;
+  border:1px solid #c0c0c0;
+  width:500px;
+}
+DIV.previewing {
+  border:1px solid #404040;
+  border-right:1px solid white;
+}

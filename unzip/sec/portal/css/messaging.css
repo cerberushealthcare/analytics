@@ -1,0 +1,117 @@
+SPAN.none {
+  font-weight:bold;
+}
+DIV.Stub {
+  padding:5px;
+  background-color:#FFF8C6;
+  border-right:1px solid black;
+  border-bottom:1px solid black;
+  margin-bottom:5px;
+}
+DIV.read {
+  background-color:#e8e8e8;
+}
+DIV.Stub DIV.Topic {
+  border:1px solid #c0c0c0;
+  padding:4px 4px 4px 29px;
+  background:url(../img/envelope.png) white no-repeat 9px center;
+  font-size:14pt;
+  font-weight:bold;
+}
+DIV.Stub DIV.Post {
+  padding-left:30px;
+}
+DIV.Message DIV.Author {
+  background-color:#EEF6FC;
+}
+DIV.Message DIV.self {
+  background-color:#FFF8C6;
+}
+DIV.Message DIV.Author TABLE.t2c {
+  width:100%;
+}
+DIV.Message DIV.Author TH {
+  text-align:left;
+  font-size:13pt;
+  padding-left:2px;
+}
+DIV.Message DIV.Author TD {
+  text-align:right;
+  font-size:11pt;
+  padding-right:2px;
+}
+DIV.Message DIV.Body {
+  padding-left:3px;
+}
+DIV.Message P {
+  margin:0.5em 0;
+}
+DIV.Actions A.action {
+  display:block;
+  margin-left:18px;
+  margin-top:20px;
+  font-weight:bold;
+}
+DIV.Actions {
+  margin-top:15px;
+  padding-left:18px;
+}
+DIV.EditorC {
+  padding-left:3px; 
+}
+DIV.Editor TEXTAREA {
+  width:95%;
+}
+DIV.Editor DIV.Author {
+  margin-top:10px;
+  margin-bottom:10px;
+  background-color:#FFF8C6;
+}
+DIV.Editor LABEL {
+  display:inline-block;
+  color:#004B52;
+  padding-right:5px;
+  margin-bottom:5px;
+}
+DIV.Preview {
+  border:1px solid #c0c0c0;
+  padding:10px;
+  margin-bottom:10px;
+}
+DIV.ScanImage {
+  text-align:center;
+}
+DIV#sig TABLE {
+  width:100%;
+  border:1px solid #d0d0d0;
+  margin-top:2em;
+}
+DIV.Attachments {
+  margin-bottom:2px;
+}
+DIV.Post {
+  margin-top:1em;
+}
+TABLE.ResultTable TBODY TH {
+  padding:2px;
+  text-align:right;
+  vertical-align:top;
+  padding:2px 5px 2px 2px;
+}
+TABLE.ResultTable TR TD {
+  border:1px solid #c0c0c0;
+  padding:2px 4px;
+  vertical-align:top;
+}
+TABLE.ResultTable TR.row1 TD {
+  background-color:#F5F5F5;
+}
+TABLE.ResultTable TD.L, DIV.dsp TABLE.ResultTable TD.LL {
+  color:green;
+}
+TABLE.ResultTable TD.H, DIV.dsp TABLE.ResultTable TD.HH {
+  color:red;
+}
+TABLE.ResultTable TD.A, DIV.dsp TABLE.ResultTable TD.AA {
+  color:orange;
+}

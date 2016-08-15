@@ -1,0 +1,220 @@
+/**
+ * Scanning Page
+ * @author Warren Hornsby
+ */
+ScanningPage = {
+  //
+  init:function(query) {
+    Page.setEvents();
+    overlayWorking(true, $('box'));
+    ScanIndexing.create(_$('scan-indexing'), function() {
+      overlayWorking(false);
+    });
+  }
+};
+/** 
+ * Tile ScanIndexing 
+ *   Tile folders
+ *     Tile entryFolder
+ *       EntryForm form
+ *       Div list
+ *   Tile files
+ *     
+ */
+ScanIndexing = {
+  create:function(parent, callback) {
+    parent.clean();
+    var self = Html.Tile.create(parent);
+    return self.augment({
+      init:function() {
+        self.folders = ScanIndexing.Folders.create(self).setHeight(540);
+        self.files = ScanIndexing.Files.create(self, callback).setHeight(540);
+        var t = Html.Table.create('w100 c2').into(self).tbody();
+        t.tr().td(self.folders).w('55%').rowspan(2).td(Html.H2.create('Unindexed File(s)')).w('45%');
+        t.tr().td(self.files);
+      },
+      ScanFile_check:function(scanFile, checked) {
+        if (checked)
+          self.folders.entryFolder.add(scanFile);
+        else
+          self.files.add(scanFile);
+      }
+    });
+  },
+  Folders:{
+    create:function(parent) {
+      var self = Html.Tile.create(parent);
+      return self.augment({
+        init:function() {
+          self.entryFolder = ScanIndexing.Folders.EntryFolder.create(self);
+          //self.savedFolders = ScanIndexing.Folders.SavedFolders.create(self);
+        }
+      });
+    },
+    EntryFolder:{
+      create:function(parent) {
+        var self = Html.Tile.create(parent).addClass('EntryFolder'); 
+        return self.augment({
+          init:function() {
+            self.form = ScanIndexing.Folders.EntryFolder.EntryForm.create(self);
+            self.list = Html.Div.create('EntryFolderList').into(self);
+            ScanIndexing.Folders.EntryFolder.CmdBar.create(self);
+          },
+          pSave:function() {
+            alert('save'); 
+          },
+          add:function(scanFile) {
+            self.list.append(scanFile); 
+          }
+        });
+      },
+      EntryForm:{
+        create:function(parent) {
+          var ef = Html.EntryForm.create(parent, 'first50');
+          ef.li().client('client', 'New Index for (Select Patient)');
+          ef.li('Type', 'mt5').select('scanType', C_ScanIndex.TYPES, '').lbl('for', 'nopad').picker(IpcPicker, 'ipc');
+          ef.li('Provider', 'mt10').textbox('provider').lbl('at', 'nopad').textbox('addrFacility');
+          ef.li('Date', 'nopad').date('datePerformed');
+          ef.li('Area', 'mt5').select('area', C_Lookups.AREAS, '');
+          return ef;
+        }
+      },
+      CmdBar:{
+        create:function(parent) {
+          return Html.CmdBar.create(parent).save(parent.pSave).cancel(parent.pCancel);
+        }
+      }
+    }
+  },
+  Files:{
+    create:function(parent, callback) {
+      var self = Html.Tile.create(parent).addClass('ScanIndex');
+      return self.augment({
+        init:function() {
+          Ajax.Scanning.getUnindexed(function(recs) {
+            Array.forEach(recs, function(rec) {
+              self.append(Html.ScanFile.create(rec, self.ScanFile_check));
+            });
+            callback();
+          });
+        },
+        add:function(scanFile) {
+          self.append(scanFile); 
+        },
+        ScanFile_check:function(scanFile, checked) {
+          parent.ScanFile_check(scanFile, checked);
+        }
+      });
+    }
+  }
+};
+/**
+ * Div ScanFile
+ *   ImageScanThumb thumb
+ *   InputCheck check
+ *   Label label
+ */
+Html.ScanFile = {
+  create:function(rec, onCheckCallback) {
+    var self = Html.Div.create('ScanFile');
+    return self.augment({
+      init:function() {
+        self.thumb = Html.ImageScanThumb.create(rec, 70).into(self);
+        self.check = Html.InputCheck.create().into(self).augment({
+          onclick:function() {
+            self.toggle();
+          }});
+        self.label = Html.Label.create(null, rec.origFilename).into(self);
+      },
+      toggle:function() {
+        self.addClassIf('check', self.check.checked);
+        if (onCheckCallback)
+          onCheckCallback(self, self.check.checked);
+      },
+      onclick:function() {
+        self.check.checked = ! self.check.checked;
+        self.toggle();
+      },
+      isChecked:function() {
+        return self.ck.checked;
+      }
+    });
+  }
+};
+/**
+ * Image ImageScanThumb
+ *   Image zoom
+ */
+Html.ImageScanThumb = {
+  create:function(rec, maxh, maxw) {
+    var src = 'scan-image.php?id=' + rec.scanFileId;
+    var h = String.toInt(rec.height || maxh);
+    var w = String.toInt(rec.width || maxw);
+    var size = this.resize(h, 500, w, 400);
+    var zoom = Html.Image.create(null, src, size.h, size.w).hide();
+    zoom.style.position = 'absolute';
+    Html.Window.append(zoom);
+    size = this.resize(h, maxh || 100, w, maxw || 50);
+    var self = Html.Image.create(null, src, size.h, size.w);
+    return self.augment({
+      init:function() {
+        self.ImageZoom = zoom;
+      },
+      onclick:function() {
+        self.preview();
+      },
+      preview:function() {
+        self.ImageZoom.show();
+      }});
+  },
+  resize:function(h, maxh, w, maxw) {
+    var r = h / w;
+    if (h > maxh || w > maxw) {
+      if (r > 1 && h > maxh) {
+        r = maxh / h;
+        h = maxh;
+        w = w * r;
+      } else {
+        r = maxw / w;
+        w = maxw;
+        h = h * r;
+      }
+    }
+    return {'h':h, 'w':w};
+  }
+};
+/**
+ * RecordPicker IpcPicker
+ */
+IpcPicker = {
+  create:function(parent) {
+    var self = Html.RecordPicker.create(parent, 'Test/Procedure Selector');
+    return self.augment({
+      init:function() {
+        self.thead().tr('fixed head').th('Name').w('35%').th('Desc').w('45%').th('Category').w('20%');
+      },
+      fetch:function(callback) {
+        Ajax.get('AdminIpc', 'getAll', null, callback);
+      },
+      applies:function(rec, search) {
+        if (search)
+          return rec.name.match(search);
+        return true;
+      },
+      add:function(rec, tr) {
+        var cat = C_Ipc.CATS[rec.cat];
+        tr.select(rec, rec.name).td(rec.desc).td(cat);
+      },
+      getValueFrom:function(rec) {
+        return rec.ipc;
+      },
+      getTextFrom:function(rec) {
+        return rec.name;
+      }
+    });
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = ScanningPage;  

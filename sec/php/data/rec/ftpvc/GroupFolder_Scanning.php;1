@@ -1,0 +1,96 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Scanning
+ * UserFile_Scanning
+ * @author Warren Hornsby
+ */
+class GroupFolder_Scanning extends GroupFolder {
+  /**
+   * @param UploadFile_Scanning[] $files
+   * @param int $count current file count
+   */
+  public function upload($files, $count) {
+    foreach ($files as &$file) {
+      $file->setNewName($this->ugid, $count++);
+      $filename = $this->getCompleteFilename($file->newName);
+      move_uploaded_file($file->tmpName, $filename);
+      $file->setImageInfo(getimagesize($filename));
+    }
+    return $files;
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function output($file) {
+    parent::output($file->filename, $file->mime);
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function delete($file) {
+    parent::delete($file->filename);
+  } 
+  //
+  /**
+   * @param int $ugid
+   * @return GroupFolder_Scanning
+   */
+  static function open($ugid) {
+    return parent::open($ugid, 'scan');
+  }
+}
+class UploadFile_Scanning extends UploadFile {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  public $newName;  // 'S00000012'
+  public $ext;      // 'jpg'
+  public $mime;     // 'image/jpeg'
+  public $width;    // 306
+  public $height;   // 205
+  //
+  const MIME_PDF = 'application/pdf';
+  //
+  public function validate() {
+    parent::validate();
+    $this->ext = $this->getExt();
+    if (empty($this->ext)) 
+      throw new UploadFileException($this, "$this->name is an invalid type; only image and PDF files accepted");
+  }
+  public function setNewName($ugid, $i) {
+    $this->newName = "G$ugid" . sprintf("S%07d", $i);
+  }
+  public function setImageInfo($info) {  // from php getimagesize()
+    if (isset($info['mime'])) {
+      $this->width = $info[0];
+      $this->height = $info[1];
+      $this->mime = $info['mime'];
+    } else {
+      $this->mime = $this->type;
+    }
+  }
+  //
+  private function getExt() {
+    switch ($this->type) {
+      case 'image/jpeg':
+      case 'image/pjpeg':
+        return 'jpg';
+      case 'image/bmp':
+      case 'image/x-windows-bmp':
+        return 'bmp';
+      case 'image/gif':
+        return 'gif';
+      case 'image/x-png':
+        return 'png';
+      case self::MIME_PDF:
+        return 'pdf';
+    }
+  }
+}
+?>

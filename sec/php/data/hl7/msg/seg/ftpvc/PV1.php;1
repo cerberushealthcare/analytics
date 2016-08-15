@@ -1,0 +1,7 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+class PV1 extends HL7Segment {
+  //
+  public $seq;
+}

@@ -1,0 +1,50 @@
+/*
+ * Show ICD popup from IMPR paragraph's ICD <a>
+ */
+function showPopIcd(pid, qid) {
+  if (session.closed)
+    return;
+  var desc = getParText(pid, true);
+  showIcd(null, desc,
+    function(code, desc) {
+      setIcd(qid, code, desc);
+    } 
+  );  
+}
+/*
+ * Saved session action
+ * Assign code and desc to ICD <a>
+ * - code: pass null to clear ICD 
+ */
+function setIcd(qid, code, desc) {
+  var a = $icd(qid);
+  if (a) {
+    if (code) {
+      pushAction("setIcd('" + qid + "','" + esc(code) + "','" + esc(desc) + "')", "Set ICD");
+      a.icd = code;
+      a.title = desc;
+      a.innerText = "(" + code + ")";
+      a.className = "icdset";
+      a.parentElement.style.display = "inline";
+    } else {
+      pushAction("setIcd('" + qid + "',null,null)", "Clear ICD");
+      a.icd = null;
+      a.title = '';
+      a.innerText = "ICD";
+      a.className = "icd";
+    }
+  }
+}
+/*
+ * Return <a> of paragraph ICD code
+ */
+function $icd(qid) {
+  return $(qidify(qid) + 'icd');
+}
+/*
+ * Return ICD code assigned to question
+ */
+function getIcd(qid) {
+  var a = $icd(qid);
+  return (a && a.icd) ? a.icd : null;
+}

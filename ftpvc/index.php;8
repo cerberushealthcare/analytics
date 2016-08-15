@@ -1,0 +1,307 @@
+<?php 
+require_once "sec/php/dao/HomeDao.php";
+require_once "sec/inc/uiFunctions.php";
+$tip = HomeDao::getLatestMikeTip();
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2010 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>
+      Medical office SOAP notes - Web-based EMR - Easy-to-use and affordable - Clicktate
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation, medical office notes, medical transcription, emr, ehr, medical documentation, progress notes, medical progress notes, soap notes, medical soap notes, medical note generation, medical notes, medical dictation, medical transcription, family practice notes, internal medicine notes, pediatric notes, urgent care notes, urgent care documentation, internal medicine documentation, pediatric documentation, family practice documentation, small office emr, small office ehr" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/home.css" media="screen" />
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/home-ie6.css" media="screen" />
+<![endif]-->    
+    <style>
+DIV#odo SPAN {
+  background-color:black;
+  color:#B3FFF5;
+  font-family:'Lucida Grande','Trebuchet MS','Arial';
+  font-size:30pt;
+  margin:0 1px 0 0;
+  padding:0 3px;
+}
+DIV#odo TD {
+  width:80px;
+  font-family:'Lucida Grande','Trebuchet MS','Arial';
+  font-size:8pt;
+  letter-spacing:1px;
+  padding-top:1px;
+}
+UL {
+  margin-top:0;
+}
+LI {
+  font-weight:bold;
+  font-family:Arial;
+  font-size:10.5pt; 
+}
+    </style>
+  </head>
+  <body>
+    <div id='curtain'></div>
+    <? include "inc/hheader.php" ?>
+    <div id="belt">
+      <div class="content">
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td id="belt-left">
+              <div id="logo">
+                <span></span>
+              </div>
+              <div id="tag">
+                A better way to<br/>practice medicine
+              </div>
+              <div id="tag2">
+                <p>
+                  Clicktate is a revolutionary EMR and documentation system that is unlike anything you've ever seen. 
+                </p>
+              </div>
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td><a href="https://www.clicktate.com/sec/registerTrial.php" class="trial">Free Trial ></a></td>
+                  <td width=5></td>
+                  <td><a href="tour.php" class="itour">Learn More ></a></td>
+                </tr>
+              </table>
+            </td>
+            <td id="belt-right">
+              <img src="img/docs2.jpg" />
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div id="leg">
+      <div class="content">
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td id="col1">
+              <h3>EFFICIENT DATA MANAGEMENT</h3>
+              <p style='margin-bottom:0.5em'>
+                Clicktate provides seamless integration between the documentation you create and patient data management. 
+                <b>Health data flows automatically</b> between patient documentation and the facesheet, where the patient's health record is organized and at your fingertips:
+              </p>
+              <ul>
+                <li>Allergies</li>
+                <li>Medications</li>
+                <li>Immunizations</li>
+                <li>Diagnoses</li>
+                <li>Health Maintenance</li>
+                <li>Recurring Tests and Procedures</li>
+                <li>Vital Signs</li>
+                <li>Documentation/Visit History</li>
+                <li>Electronic Prescribing</li>
+              </ul>
+              <h3 class="drop">READY WHEREVER YOU ARE</h3>
+              <p>
+                Because Clicktate is <b>web-based</b>, your documentation
+                and patient information is easily retrievable when you need it,
+                where you need it: in the office, an exam room, or anywhere
+                with Internet access.
+              </p>
+              <h3 class="drop">SECURE AND HIPAA COMPLIANT</h3>
+              <p>
+                All Clicktate sessions use SSL encryption and 256-bit encryption
+                to ensure the safety and security of your medical data.
+              </p>
+            </td>
+            <td id="col2">
+              <h3>STATE OF THE ART NOTE BUILDER</h3>
+              <p>
+                Clicktate builds your documents in <b>paragraph form</b>  
+                on-the-fly, while interacting with patients.
+                Data entry is <b>amazingly intuitive</b>, and 
+                your completed notes will be <b>organized and legible.</b> 
+              </p>
+              <p>
+                With over <b>2,000 templates</b> in our ever-expanding library,
+                you'll find templates for most patient problems that you encounter.
+                And our physician-created templates use real-world defaults for every 
+                option to keep <b>your clicks to a minimum.</b> 
+              </p> 
+              <h3 class='drop'>SAVE TIME AND MONEY</h3>
+              <p>
+                If you're like most physicians, you spend countless hours dictating or 
+                hand-writing medical progress notes and reviewing transcription.  
+                Add to that the cost of your dictation service, or the difficulty reading 
+                illegible handwritten SOAP notes, and it's easy to see why medical 
+                documentation is one of the least efficient parts of any medical practice. 
+              </p>
+              <p>
+                Turn your <b>dictation</b> into <b>Clicktation</b>, and
+                say goodbye to expensive transcription. 
+              </p>
+              <h3 class="drop">BETTER CARE</h3>
+              <p>
+                Take a <a href="https://www.clicktate.com/sec/registerTrial.php" style='color:blue'>risk-free 14-day trial</a> and you'll see that
+                Clicktate is much more than a means to improve your bottom line. 
+                It's a way to give your patients <b>better care.</b>
+                Our solution allow you to focus on what matters most: <b>your patients</b>.  
+              </p>
+              <? if ($tip) { ?>
+                <h3 class="drop">DID YOU KNOW?</h3>
+                <p>
+                  <?=$tip["post_text"] ?>
+                </p>
+              <? } ?>
+            </td>
+          </tr>
+        </table>
+        <div id="verisign">
+          <script src=https://seal.verisign.com/getseal?host_name=www.clicktate.com&size=M&use_flash=YES&use_transparent=YES&lang=en></script><br />
+          <a href="http://www.verisign.com/ssl/ssl-information-center/" target="_blank"  style="color:#000000; text-decoration:none; font:bold 7px verdana,sans-serif; letter-spacing:.5px; text-align:center; margin:0px; padding:0px;">ABOUT SSL CERTIFICATES</a>
+        </div>
+      </div>
+    </div>
+    <? include "inc/hfooter.php" ?>
+    <div id='working-float'>
+    </div>
+    <div id='trial-pop'>
+      <div id='trial-pop-c'>
+        <div id='trial-pop-h'>
+        Try a risk-free<br>14 day trial.
+        </div>
+        <form id="form" method="post" action="sec/trial.php" style='margin:0' onkeypress='if (event.keyCode == 13) sub()'>
+          <div>
+            <label>Name</label>
+            <span class='ok'><input id='uname' type='text' size='30' name='uname' /></span>
+          </div>
+          <div>
+            <label>Practice Name</label>
+            <span class='ok'><input id='pname' type='text' size='40' name='pname' /></span>
+          </div>
+          <div>
+            <label>Email</label>
+            <span class='ok'><input id='email' type='text' size='35' name='email' /></span>
+          </div>
+          <div id='warn'>Name, practice name, and a valid email are required.<br/>Please correct.</div>
+          <div style='text-align:center;'>
+            <a href="javascript:sub()" class="tour">Let's Get Started ></a>
+          </div>
+        </form>
+      </div>
+    </div>
+<script type='text/javascript'>
+String.prototype.trim = function(){return this.replace('\xa0',' ').replace(/^\s+|\s+$/g, '')};
+function $(id) {
+  return document.getElementById(id);
+}
+function value(id) {
+  return $(id).value.trim();
+}
+function sub() {
+  if (validate()) {
+    _p.style.display = 'none';
+    _wk.style.visibility = 'visible';
+    _f.submit();
+  }
+}
+function pop() {
+  _f = $('form');
+  _c = $('curtain');
+  _p = $('trial-pop');
+  _w = $('warn');
+  _ws = _w.style;
+  _wk = $('working-float');
+  _c.style.display = 'block';
+  resizeCurtain();
+  _p.style.display = 'block';
+  center(_p);
+  center(_wk);
+  focus('uname');
+}
+function center(e) {
+  var top = document.documentElement.clientHeight / 2 - e.clientHeight / 2;
+  if (top < 0) top = 0;
+  var left = document.documentElement.clientWidth / 2 - e.clientWidth / 2;
+  if (left < 0) left = 0;
+  var width = e.style.width;
+  e.style.width = e.clientWidth;
+  e.style.top = (top + document.documentElement.scrollTop) + 'px';
+  e.style.left = (left + document.documentElement.scrollLeft) + 'px';
+}
+function resizeCurtain() {
+  var h = document.body.offsetHeight;
+  var w = document.body.offsetWidth;
+  if (document.documentElement.clientHeight > h) 
+    h = document.documentElement.clientHeight;
+  if (document.documentElement.clientWidth > w) 
+    w = document.documentElement.clientWidth;
+  _c.style.height = h;
+  _c.style.width = w;
+}
+function validate() {
+  _ws.visibility = 'hidden';
+  setStyle('uname', value('uname') == '');
+  setStyle('pname', value('pname') == '');
+  setStyle('email', ! isEmail(value('email')));
+  return _ws.visibility == 'hidden'; 
+}
+function setStyle(id, err) {
+  $(id).parentElement.className = (err) ? 'err' : 'ok';
+  if (err && _ws.visibility == 'hidden') {
+    _ws.visibility = 'visible';
+    focus(id);
+  }
+}
+function isEmail(c) {
+  return /^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/.test(c);
+}
+function focus(id) {
+  var e = $(id);
+  setTimeout(function(){try{e.focus();e.select()}catch(ex){}},10);
+}
+</script>    
+
+  </body>
+</html>
+<?php
+try {
+$f = @fopen("page-hits.csv", "a");
+$a = array();
+$a[] = date("d-M-Y, g:i:s A");
+$a[] = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "";
+$a[] = isset($_SERVER["QUERY_STRING"]) ? $_SERVER["QUERY_STRING"] : "";
+$a[] = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "";
+$a[] = isset($_SERVER["HTTP_USER_AGENT"]) ? $_SERVER["HTTP_USER_AGENT"] : "";
+$a[] = isset($_SERVER["HTTP_COOKIE"]) ? $_SERVER["HTTP_COOKIE"] : "";
+$line = "\"" . implode("\",\"", $a) . "\"\r\n"; 
+@fwrite($f, $line);
+@fclose($f);
+} catch (Exception $e) {}
+?>
+<script type="text/javascript">
+var lbls = {
+  'd':[$('d1'),$('d2')],
+  'h':[$('h1'),$('h2')],
+  'm':[$('m1'),$('m2')],
+  's':[$('s1'),$('s2')]
+  };
+var then = new Date(2010, 11, 12, 21, 0, 0);
+function countdown() {
+  var now = new Date();
+  var dd = then - now;
+  if (dd > 0) {
+    cset('d', Math.floor(dd/(60*60*1000*24)*1));
+    cset('h', Math.floor((dd%(60*60*1000*24))/(60*60*1000)*1));
+    cset('m', Math.floor(((dd%(60*60*1000*24))%(60*60*1000))/(60*1000)*1));
+    cset('s', Math.floor((((dd%(60*60*1000*24))%(60*60*1000))%(60*1000))/1000*1));
+  }
+  setTimeout(countdown,1000);
+}
+function cset(lbl, value) {
+  lbls[lbl][0].innerText = Math.floor(value / 10);  
+  lbls[lbl][1].innerText = value % 10;  
+}
+</script>

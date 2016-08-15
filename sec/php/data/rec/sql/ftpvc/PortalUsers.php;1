@@ -1,0 +1,123 @@
+<?php
+require_once 'php/data/rec/sql/PortalUsers_Session.php';
+require_once 'php/data/rec/sql/Clients.php';
+//
+/**
+ * Patient Portal Users Administration
+ * @author Warren Hornsby 
+ */
+class PortalUsers {
+  /**
+   * @return array(PortalUserStub,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = PortalUserStub::fetchAll($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @param int $clientId
+   * @return PortalUserStub or null
+   */
+  static function getFor($clientId) {
+    $rec = PortalUserStub::fetchFor($clientId);
+    return $rec;
+  }
+  /**
+   * @param stdClass $json PortalUser
+   * @return PortalUser_A
+   */
+  static function create($json) {
+    global $myLogin;
+    $rec = PortalUser_A::fromUiAsCreate($json, $myLogin->userGroupId, $myLogin->userId);
+    $rec->save();
+    return $rec;
+  }
+}
+/**
+ * PortalUser PortalUser_A
+ */
+class PortalUser_A extends PortalUserRec {
+  //
+  public $portalUserId;
+  public $userGroupId;
+  public $clientId;
+  public $uid;
+  public $pw;  
+  public $active;
+  public $status;
+  public $createdBy;
+  public $dateCreated;
+  public $pwSet;
+  public $cq1;
+  public $ca1;
+  public $cq2;
+  public $ca2;
+  public $cq3;
+  public $ca3;
+  public /*Client*/ $Client;
+  //
+  static $FRIENDLY_NAMES = array(
+    'uid' => 'Login ID',
+    'cq1' => 'Challenge Question 1',
+    'ca1' => 'Challenge Answer 1',
+    'cq2' => 'Challenge Question 2',
+    'ca2' => 'Challenge Answer 2',
+    'cq3' => 'Challenge Question 3',
+    'ca3' => 'Challenge Answer 3');
+  // 
+  public function validate(&$rv) {
+    $rv->requires('uid', 'pw', 'cq1', 'ca1', 'cq2', 'ca2', 'cq3', 'ca3');
+  }
+  //
+  static function fromUiAsCreate($json, $ugid, $userId) {
+    $rec = self::fromUi($json, $ugid);
+    $rec->setPassword($json->pw);
+    $rec->active = true;
+    $rec->status = self::STATUS_RESET;
+    $rec->createdBy = $userId;
+    $rec->dateCreated = nowNoQuotes();
+    $rec->pwSet = null;
+    return $rec;
+  }
+  static function fromUi($json, $ugid) {
+    $rec = new self($json);
+    $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  static function fetch($id) {
+    $c = self::asCriteria(null);
+    $c->portalUserId = $id;
+    return self::fetchOneBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Client = new Client();
+    return $c;
+  }
+} 
+class PortalUserStub extends PortalUserRec implements ReadOnly {
+  //
+  public $portalUserId;
+  public $userGroupId;
+  public $clientId;
+  public $uid;
+  //
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return SqlRec::fetchAllBy($c);
+  }
+  static function fetchFor($cid) {
+    $c = self::asCriteria(null);
+    $c->clientId = $cid;
+    return self::fetchOneBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Client = new ClientStub();
+    return $c;
+  }
+}
+?>

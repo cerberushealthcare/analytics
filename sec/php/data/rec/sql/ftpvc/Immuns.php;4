@@ -1,0 +1,125 @@
+<?php
+require_once 'php/dao/JsonDao.php';
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+/**
+ * Immunizations 
+ * DAO for DataImmun
+ * @author Warren Hornsby
+ *
+ */
+class Immuns {
+  //
+  /**
+   * @param int $cid
+   * @return array(Immun,..)
+   */
+  static function getActive($cid) {
+    return Immun::fetchAll($cid);
+  }
+  /**
+   * @param stdClass $o JSON object
+   * @return Immun
+   */
+  static function save($o) {
+    global $myLogin;
+    $rec = new Immun($o);
+    $rec->userGroupId = $myLogin->userGroupId;
+    $rec->save();
+    return $rec;
+  }
+  /**
+   * @param int $id
+   * @return int client ID
+   */
+  static function delete($id) {
+    $rec = Immun::fetch($id);
+    if ($rec) {
+      $cid = $rec->clientId;
+      Immun::delete($rec);
+      return $cid;
+    }
+  }
+  /**
+   * @return int PID of immunization template
+   */
+  static function getPid() {
+    $ref = 'immCert.+immunRecord';
+    $tid = 12;
+    return JsonDao::toPid($ref, $tid);
+  }
+}
+//
+/**
+ * Immunization
+ */
+class Immun extends SqlRec {
+  //
+  public $dataImmunId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $dateGiven;
+  public $name;
+  public $tradeName;
+  public $manufac;
+  public $lot;
+  public $dateExp;
+  public $dateVis;
+  public $dateVis2;
+  public $dateVis3;
+  public $dateVis4;
+  public $dose;
+  public $route;
+  public $site;
+  public $adminBy;
+  public $comment;
+  public $dateUpdated;
+  //
+  public function getSqlTable() {
+    return 'data_immuns';
+  }
+  public function getJsonFilters() {
+    return array(
+      'dateGiven' => JsonFilter::editableDateApprox(),
+      'dateExp' => JsonFilter::editableDate(),
+      'dateUpdated' => JsonFilter::informalDate(),
+      'dateVis' => JsonFilter::editableDate(),
+      'dateVis2' => JsonFilter::editableDate(),
+      'dateVis3' => JsonFilter::editableDate());
+  }
+  public function getAuditRecName() {
+    return 'Immun';
+  }
+  public function getAuditLabel() {
+    return $this->name;
+  }
+  public function validate(&$v) {
+    $v->requires('dateGiven', 'tradeName');
+  }
+  public function getCvxCode() {
+    switch ($this->name) {
+      case 'Pneumococcal':
+        switch ($this->tradeName) {
+          case 'Pneumovax 23':
+            return '33';
+          default:
+            return '109';
+        }
+      case 'OPV':
+        return '02'; 
+    }
+    // TODO: Can we configure these into the trade name option?
+  }
+  //
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  static function fetchAll($cid, $class = __CLASS__) {
+    $c = new $class();
+    $c->clientId = $cid;
+    $c->sessionId = CriteriaValue::isNull();
+    return SqlRec::fetchAllBy($c, new RecSort('-dateGiven', 'name'));
+  }
+}
+?>

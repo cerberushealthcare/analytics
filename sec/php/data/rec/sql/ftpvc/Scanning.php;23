@@ -1,0 +1,489 @@
+<?php
+require_once 'php/data/rec/GroupFolder_Scanning.php';
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Providers.php';
+require_once 'php/data/rec/sql/IProcCodes.php';
+//
+/**
+ * Scanning DAO
+ * @author Warren Hornsby
+ */
+class Scanning {
+  //
+  /**
+   * @throws UploadFileException
+   */
+  static function upload($uploads = null) {
+    global $login;
+    $ugid = $login->userGroupId;
+    if ($uploads == null)
+      $uploads = GroupUpload_Scanning::fromPost();
+    $fileIndex = ScanFile::nextFileIndex($ugid);
+    $folder = GroupFolder_Scanning::open($ugid);
+    $uploads = $folder->uploadAll($uploads, $fileIndex);
+    ScanFile::saveUploads($uploads, $ugid);
+  }
+  /**
+   * @return string filename 'file.pdf'
+   */
+  static function uploadBatch() {
+    $folder = GroupFolder_Batch::open();
+    $file = $folder->upload();
+    return $file->filename;
+  }
+  /**
+   * @param string filename
+   */
+  static function splitBatch($filename) {
+    $folder = GroupFolder_Batch::open();
+    $file = GroupFile::from($folder, $filename);
+    $bat = SplitBat::from($file);
+    $uploads = GroupUpload_Split::getAllFor($file);
+    logit_r($uploads, 'uploads');
+    sleep(1);  // http://www.php.net/manual/en/function.rename.php#102274
+    static::upload($uploads);
+  }
+  static function uploadXml() {
+    require_once 'php/newcrop/data/_DomData.php';
+    global $login;
+    $ugid = $login->userGroupId;
+    $upload = GroupUpload_ScanningXml::fromSinglePost();
+    $fileIndex = ScanFile::nextFileIndex($ugid);
+    $folder = GroupFolder_Scanning::open($ugid);
+    $upload = $folder->upload($upload, $fileIndex);
+    $file = GroupFile::from($folder, $upload->newName);
+    $password = geta($_POST, 'pw');
+    $contents = $file->readContents($password);
+    $file->save($contents);
+    $xml = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $contents);
+    try {
+      $dom = @DomData::parse($xml);
+      ScanFile::saveUploads(array($upload), $ugid);
+    } catch (DomParseException $e) {
+      throw new GroupUploadException(null, 'The file could not be read as XML data.');
+    }
+  }
+  /**
+   * @return array(ScanFile,..)
+   */
+  static function getUnindexedFiles() {
+    global $login;
+    $recs = ScanFile::fetchAllUnindexed($login->userGroupId);
+    return $recs;
+  }
+  /**
+   * @return array(ScanIndex+ClientStub,..)
+   */
+  static function getIndexedToday() {
+    global $login;
+    $recs = ScanIndex::fetchAllByDate($login->userGroupId, nowShortNoQuotes());
+    return Rec::sort($recs, new RecSort('-dateUpdated'));
+  }
+  /**
+   * @param int $sfid
+   * @return ScanFile
+   */
+  static function getFile($sfid) {
+    return ScanFile::fetch($sfid);
+  }
+  /**
+   * @param stdClass $oScanIndex criteria
+   * @return array(ScanIndex,..)
+   */
+  static function getAllIndexesBy($oScanIndex) {
+    $scanIndex = new ScanIndex($oScanIndex);
+    $recs = ScanIndex::fetchAllBy($scanIndex);
+    return $recs;
+  }
+  /**
+   * @param stdClass $oScanIndex 
+   * @param int[] $sfids ScanFile id array to index
+   * @return ScanIndex+ScanFiles
+   */
+  static function saveIndex($oScanIndex, $sfids) {
+    global $login;
+    $scanIndex = new ScanIndex($oScanIndex);
+    $scanIndex->ScanFiles = $sfids;
+    $scanIndex->save($login->userGroupId);
+    $scanIndex->index($sfids);
+    return $scanIndex;
+  }
+  /**
+   * @param int $sxid
+   * @return int sxid
+   */
+  static function deleteIndex($sxid) {
+    $rec = static::getIndex($sxid);
+    if ($rec) {
+      $rec->dropIndex();
+      SqlRec::delete($rec);
+    }
+    return $sxid;
+  }
+  /**
+   * @param int $sxid
+   * @return ScanIndex+ScanFiles
+   */
+  static function getIndex($sxid) {
+    $scanIndex = ScanIndex::fetch($sxid);
+    return $scanIndex;
+  }
+  /**
+   * @param int $sfid
+   */
+  static function output($sfid) {
+    global $login;
+    $file = static::getFile($sfid);
+    $folder = GroupFolder_Scanning::open($login->userGroupId);
+    $folder->output($file);
+  }
+  /**
+   * @param int $sfid
+   * @return int sfid
+   */
+  static function deleteFile($sfid) {
+    global $login;
+    $file = static::getFile($sfid);
+    $folder = GroupFolder_Scanning::open($login->userGroupId);
+    $folder->delete($file);
+    ScanFile::delete($file);
+    return $sfid;
+  }
+}
+/**
+ * Scan Index 
+ */
+class ScanIndex extends SqlRec {
+  //
+  public $scanIndexId;
+  public $userGroupId;
+  public $clientId;
+  public $scanType;
+  public $ipc;
+  public $area1;
+  public $area2;
+  public $area3;
+  public $providerId;
+  public $addrFacility;
+  public $datePerformed;
+  public $dateUpdated;
+  public $recipient;
+  public $reviewed;
+  public $tag1;
+  public $tag2;
+  public $tag3;
+  public /*Ipc*/ $Ipc_ipc;
+  public /*Provider*/ $Provider;
+  public /*FacilityAddress*/ $Address_addrFacility;
+  public /*ClientStub*/ $Client;
+  public /*ScanFile[]*/ $ScanFiles;
+  //
+  const TYPE_RESULT = 1;
+  const TYPE_LETTER = 2;
+  const TYPE_OUTSIDE = 3;
+  const TYPE_INSUR = 4;
+  const TYPE_CARE = 5;
+  const TYPE_RX = 6;
+  const TYPE_DME = 7;
+  const TYPE_PT = 8;
+  public static $TYPES = array(
+    self::TYPE_RESULT => 'Test/Procedure Result',
+    self::TYPE_LETTER => 'Letter/Note',
+    self::TYPE_OUTSIDE => 'Outside Records',
+    self::TYPE_INSUR => 'Insurance',
+    self::TYPE_CARE => 'Care Supervision',
+    self::TYPE_RX => 'Pharmacy Communication',
+    self::TYPE_DME => 'DME/Supplies',
+    self::TYPE_PT => 'PT/OT',
+    self::TYPE_XML => 'Clinical XML');
+  //
+  const TYPE_XML = 100;  // electronic documents uploaded
+  const TYPE_LEGAL_LW = 1000;  // legal docs scanned via facesheet  
+  const TYPE_LEGAL_POA = 1001;
+  //
+  static $FRIENDLY_NAMES = array(
+    'clientId' => 'Patient',
+    'scanType' => 'Type');
+  //
+  public function getSqlTable() {
+    return 'scan_index';
+  }
+  public function toJsonObject(&$o) {
+    $o->areas = $this->getAreas();
+  }
+  public function fromJsonObject($o) {
+    $this->areas = get($o, 'areas');
+    $this->setAreas($this->areas);
+    if (empty($this->datePerformed))
+      $this->datePerformed = nowNoQuotes();
+  }
+  public function getJsonFilters() {
+    return array(
+      'datePerformed' => JsonFilter::editableDate(),
+    	'dateUpdated' => JsonFilter::informalDate(),
+      'reviewed' => JsonFilter::boolean());
+  }
+  public function validate(&$rv) {
+    $rv->requires('clientId', 'scanType');
+    if (empty($this->ScanFiles))
+      $rv->setRequired('ScanFiles', 'At least one file');
+    if ($this->areas && count($this->areas) > 3) 
+      $rv->set('areas', ': No more than 3 may be selected', 'Area');
+  }
+  public function getLabel() {
+    $label = static::getTypeName();
+    if ($this->Ipc_ipc)
+      $label .= ': ' . $this->Ipc_ipc->name;
+    return $label;
+  }
+  public function getTypeName() {
+    switch ($this->scanType) {
+      case self::TYPE_XML:
+        return 'XML Clinical Document';
+      case self::TYPE_LEGAL_LW:
+        return 'Living Will';
+      case self::TYPE_LEGAL_POA:
+        return 'Power of Attorney';
+      default:
+        return self::$TYPES[$this->scanType];
+    }
+  }
+  public function getAreas() {
+    return array_filter(array($this->area1, $this->area2, $this->area3));
+  }
+  public function setAreas($areas) {
+    $arr = ($areas) ? $areas : array();
+    $this->area1 = geta($arr, 0);
+    $this->area2 = geta($arr, 1);
+    $this->area3 = geta($arr, 2);
+  }
+  /**
+   * Add files to this
+   * @param int[] $sfids
+   */
+  public function index($sfids) {
+    $this->dropIndex();
+    $this->ScanFiles = ScanFile::indexAllTo($sfids, $this->scanIndexId, $this->userGroupId);
+  }
+  /**
+   * Drop all files from this 
+   */
+  public function dropIndex() {
+    ScanFile::dropIndexTo($this->scanIndexId, $this->userGroupId);
+  }
+  //
+  static function fetch($sxid) {
+    $c = new static();
+    $c->scanIndexId = $sxid;
+    $c->ScanFiles = array(new ScanFile);
+    $c->Provider = new Provider();
+    return static::fetchOneBy($c);
+  }
+  static function fetchAllByDate($ugid, $date) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->dateUpdated = CriteriaValue::greaterThanOrEquals($date);
+    $c->Client = new ClientStub();
+    $c->Provider = new Provider();
+    $c->Ipc_ipc = new Ipc();
+    $c->Address_addrFacility = new FacilityAddress();
+    $c->ScanFiles = array(new ScanFile);
+    return static::fetchAllBy($c);
+  }
+}
+class ScanIndex_Xml extends ScanIndex {
+  //
+  public function getGroupFile() {
+    return GroupFile_Scanning::from($this->ScanFile->filename);
+  }
+  //
+  static function fetch($sxid) {
+    $c = new static();
+    $c->scanIndexId = $sxid;
+    $c->ScanFile = new ScanFile;
+    return static::fetchOneBy($c);
+  }
+}
+/**
+ * Scan File
+ */
+class ScanFile extends SqlRec {
+  //
+  public $scanFileId;
+  public $userGroupId;
+  public $filename;
+  public $fileseq;
+  public $origFilename;
+  public $height;
+  public $width;
+  public $mime;
+  public $scanIndexId;
+  public $seq;
+  //
+  public function getSqlTable() {
+    return 'scan_files';
+  }
+  public function toJsonObject(&$o) {
+    if ($this->isPdf()) {
+      $o->_pdf = 1;
+      $o->src = 'img/adobe-pdf.png';
+      $o->pdfsrc = "scan-image.php?id=$this->scanFileId";
+      $o->height = 80;
+      $o->width = 80;
+    } else if ($this->isXml()) {
+      $o->_xml = 1;
+      $o->src = 'img/xml.png';
+      $o->xmlsrc = "scan-image.php?id=$this->scanFileId";
+      $o->height = 80;
+      $o->width = 80;
+    } else {
+      $o->src = "scan-image.php?id=$this->scanFileId";
+    }
+  }
+  public function resetIndex() {
+    $this->scanIndexId = null;
+    $this->seq = null;
+  } 
+  public function setIndex($sxid, $seq) {
+    $this->scanIndexId = $sxid;
+    $this->seq = $seq;
+  } 
+  public function isPdf() {
+    return $this->mime == GroupFolder::MIME_PDF; 
+  }
+  public function isXml() {
+    return $this->mime == GroupFolder::MIME_XML; 
+  }
+  //
+  /**
+   * @param int $ugid
+   * @return int
+   */
+  static function nextFileIndex($ugid) {
+    $sql = "SELECT MAX(fileseq) FROM scan_files WHERE user_group_id=$ugid";
+    return intval(Dao::fetchValue($sql)) + 1;
+  }
+  /**
+   * @param int $ugid
+   * @return array(ScanFile,..)
+   */
+  static function fetchAllUnindexed($ugid) {
+    $c = static::asCriteria($ugid);
+    $c->scanIndexId = CriteriaValue::isNull();
+    return static::fetchAllBy($c);
+  }
+  /**
+   * @param int $scanIndexId
+   * @param int $ugid
+   * @return array(ScanFile,..)
+   */
+  static function fetchAllIndexedTo($sxid, $ugid) {
+    $c = static::asCriteria($ugid);
+    $c->scanIndexId = $sxid;
+    return static::fetchAllBy($c);
+  }
+  /**
+   * @param int $sfids
+   * @param int $ugid
+   * @return array(ScanFile,..)
+   */
+  static function fetchAllIn($sfids, $ugid) {
+    $c = static::asCriteria($ugid);
+    $c->scanFileId = CriteriaValue::in($sfids);
+    return static::fetchAllBy($c);    
+  }
+  /**
+   * @param int $scanIndexId
+   * @param int $ugid
+   */
+  static function dropIndexTo($sxid, $ugid) {
+    $recs = static::fetchAllIndexedTo($sxid, $ugid);
+    foreach ($recs as $rec) {
+      $rec->resetIndex();
+      $rec->save();
+    }
+  }
+  /**
+   * @param int[] $sfids 
+   * @param int $scanIndexId
+   * @param int $ugid
+   * @return array(ScanFile,..)
+   */
+  static function indexAllTo($sfids, $sxid, $ugid) {
+    $recs = static::fetchAllIn($sfids, $ugid);
+    $seq = 0;
+    foreach ($recs as &$rec) {
+      $rec->setIndex($sxid, $seq++);
+      $rec->save();
+    }
+    return $recs;
+  }
+  /**
+   * @param GroupUpload_Scanning[] $files
+   * @param int $ugid
+   */
+  static function saveUploads($files, $ugid) {
+    $recs = static::fromUploads($files, $ugid);
+    static::saveAll($recs);
+  }
+  /**
+   * @param GroupUpload_Scanning[] $files
+   * @param int $ugid
+   * @return array(ScanFile,..)
+   */
+  static function fromUploads($files, $ugid) {
+    $recs = array();
+    foreach ($files as $file)
+      $recs[] = static::fromUpload($file, $ugid); 
+    return $recs;
+  }
+  /**
+   * @param GroupUpload_Scanning[] $files
+   * @param int $ugid
+   * @return ScanFile
+   */
+  static function fromUpload($file, $ugid) {
+    $rec = new static();
+    $rec->userGroupId = $ugid;
+    $rec->filename = $file->newName;
+    $rec->fileseq = $file->fileseq;
+    $rec->origFilename = $file->name;
+    $rec->height = $file->height;
+    $rec->width = $file->width;
+    $rec->mime = $file->mime;
+    logit_r($rec, 'rec fromupload');
+    return $rec;
+  }
+  /**
+   * @param int $ugid
+   * @return ScanFile
+   */
+  static function asCriteria($ugid) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+/**
+ * Split Bat
+ * @author Warren Hornsby
+ */
+class SplitBat {
+  //
+  public $path;
+  public $output;
+  public $return;
+  //
+  public function __construct($ugid, $filename) {
+    $this->path = '"' . realpath("split.bat") . '" ' . $ugid . ' ' . $filename . ' 2>&1';  // 2>&1 sends warnings to stdout
+    exec($this->path, $this->output, $this->return);
+    logit_r($this, 'SplitBat');
+  }
+  //
+  static function from($file) {
+    $ugid = $file->folder->ugid;
+    $filename = $file->filename;
+    return new static($ugid, $filename);
+  }
+}

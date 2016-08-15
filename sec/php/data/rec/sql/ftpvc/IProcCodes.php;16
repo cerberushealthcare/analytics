@@ -1,0 +1,161 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+require_once 'php/data/rec/sql/Reporting.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  /**
+   * @return array(Ipc,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = Ipc::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('name'));
+  }
+  /**
+   * @return Ipc
+   */
+  static function getByName($name) {
+    return geta(self::mapByName($myLogin->userGroupId), $name);
+  }
+  /**
+   * @return Ipc
+   */
+  static function getBySurgProc($proc) {
+    return geta(self::mapSurgByDesc($myLogin->userGroupId), $proc);
+  }
+  /**
+   * @return array(IpcHm,..)
+   */
+  static function getIpcHms() {
+    global $myLogin;
+    $recs = IpcHm::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('Ipc.cat', 'Ipc.name'));
+  }
+  /**
+   * @return RepCrit_Hm
+   */
+  static function getEmptyCriteria() {
+    $rec = new RepCrit_Hm();
+    return $rec; 
+  }
+  //
+  private static function mapByName($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName($ugid);
+    return $map;
+  }
+  private static function mapSurgByDesc($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap($ugid);
+    return $map;
+  } 
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends IpcRec {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $name;
+  public $desc;
+  public $cat;
+  //
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return parent::fetchAllBy($c, null, 2000);
+  }
+  static function fetchMapByName($ugid) {
+    return parent::fetchMapBy(self::asCriteria($ugid), 'name');
+  }
+  static function fetchSurgMap($ugid) {
+    $c = self::asCriteria($ugid);
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = self::getAllLevelsCriteria($ugid);
+    return $c; 
+  }
+  static function asRequiredJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+  static function asOptionalJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+}
+class IpcHm extends SqlLevelRec {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $auto;
+  public $criteria;  // serialized RepCrit_Hm
+  public /*Ipc*/ $Ipc;
+  //
+  public function getSqlTable() {
+    return 'ipc_hm';
+  }
+  public function getJsonFilters() {
+    return array(
+    	'auto' => JsonFilter::boolean());
+  }
+  //
+  static function fetchAll($ugid) {
+    $c = new self();
+    $c->userGroupId = self::getAllLevelsCriteria($ugid);
+    $c->Ipc = Ipc::asRequiredJoin();
+    return self::fetchAllBy($c);
+  }
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }
+}  
+class RepCrit_Hm extends RepCritRec {
+  //
+  public $sex;
+  public $age;
+  public $race;
+  public $ethnicity;
+  //
+  static $JOINS_TO = array(
+    self::T_ADDRESS, 
+    self::T_DIAGNOSES,
+    self::T_MEDS,
+    self::T_ALLERGIES,
+    self::T_PROCS,
+    self::T_RESULTS,
+    self::T_IMMUNS,
+    self::T_VITALS,
+    self::T_SESSIONS);
+  //
+  public function getSqlClass() {
+    return 'Client_Rep';
+  }
+  public function getTable() {
+    return self::T_CLIENTS;
+  }
+  protected function assignSqlCriteriaValue(&$criteria, $fid, $value) {
+    if ($fid == 'age') 
+      $fid = 'birth';
+    parent::assignSqlCriteriaValue($criteria, $fid, $value);
+  }
+  //
+  static function getStaticJson() {
+    return Rec::getStaticJson(__CLASS__);
+  }
+}
+?> 

@@ -1,0 +1,89 @@
+/**
+ * Facesheet
+ */
+Facesheet = Object.Rec.extend({
+  //
+  onupdate:function() {
+    alert(123);
+  },
+  onstale:function() {},
+  //
+  onload:function() {
+    this.cid = this.client.clientId;
+    this.procedures = Procedures.revive(this.procedures);
+    this.docstubs = DocStubs.bubble('onupdate', this).revive(this.docstubs);
+    Polling.StaleFacesheet.load(this.onstale).start(this);
+  },
+  /*
+   * @arg int cid
+   * @arg fn(Facesheet) callback
+   */
+  fetch:function(cid, callback) {
+    Ajax.Facesheet.get(cid, callback);
+  },
+  /*
+   * @arg fn(Facesheet|null) callback non-null only if facesheet updated
+   */
+  refetch:function(callback) {
+    Polling.StaleFacesheet.stop();
+    Ajax.Facesheet.getIfUpdated(this.cid, this.cuTimestamp, function(fs) {
+      if (fs) {
+        callback(fs);
+      } else {
+        Polling.StaleFacesheet.start(this);
+        callback(null);
+      }
+    })
+  },
+  /*
+   * @arg bool on
+   */
+  stalePolling:function(on) {
+    if (on)
+      Polling.StaleFacesheet.resume();
+    else
+      Polling.StaleFacesheet.stop();
+  }
+})
+/**
+ * DocStubs
+ */
+DocStubs = Object.RecArray.extend({
+  //
+  onupdate:function() {},
+  //
+  getItemProto:function() {
+    return DocStub;
+  },
+  /*
+   * @arg int cid
+   * @arg fn(DocStubs) callback
+   */
+  fetch:function(cid, callback) {
+    var self = this;
+    Ajax.Facesheet.Documentation.getAll(cid, function(recs) {
+      self.onupdate();
+      callback(recs);
+    })
+  }
+})
+//
+DocStub = Object.Rec.extend({
+  /*
+   * @arg fn(Rec) callback e.g. DocSession, DocMsg, etc.
+   */
+  fetchPreview:function(callback) {
+    if (this._preview) {
+      callback(this._preview);
+    } else {
+      var self = this;
+      Ajax.Facesheet.Documentation.preview(self, function(rec) {
+        self._preview = rec;
+        callback(rec);
+      });
+    }
+  },
+  resetPreview:function(callback) {
+    this._preview = null;
+  }
+})

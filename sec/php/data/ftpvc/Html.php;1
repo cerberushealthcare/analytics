@@ -1,0 +1,71 @@
+<?php
+/**
+ * HTML Builder 
+ * @author Warren Hornsby
+ */
+class Html {
+  //
+  private $h;
+  private $tags;
+  //
+  public function __construct() {
+    $this->h = array();
+    $this->tags = array();
+  }
+  public function out() {
+    return implode('', $this->h);
+  }
+  public function add($html) {
+    $this->h[] = $html;
+    return $this;
+  }
+  public function _($count = 1) {
+    for ($i = 0; $i < $count; $i++) {
+      $name = array_pop($this->tags);
+      $this->h[] = "</$name>";
+    }
+    return $this;
+  }
+  public function p_() {
+    return $this->tag_('P');
+  }
+  public function h1($inner) {
+    return $this->tag_add('H1', $inner);
+  }
+  public function h2($inner) {
+    return $this->tag_add('H2', $inner);
+  }
+  public function h3($inner) {
+    return $this->tag_add('H3', $inner);
+  }
+  public function br($beforeText) {
+    return $this->add($beforeText)->tag('BR');
+  }
+  public function ul_() {
+    return $this->tag_('UL');
+  }
+  public function ul($lis) {
+    $this->ul_()->lis($lis)->_();
+  }
+  public function li($inner) {
+    return $this->tag_add('LI', $inner);
+  }
+  public function lis($inners) {
+    foreach ($inners as $inner)
+      $this->li($inner);
+    return $this;
+  }
+  //
+  protected function tag_($name) {
+    $this->h[] = "<$name>";
+    $this->tags[] = $name;
+    return $this;
+  }
+  protected function tag($name) {
+    $this->h[] = "<$name />";
+    return $this;
+  }
+  protected function tag_add($name, $body) {
+    return $this->tag_($name)->add($body)->_();
+  }
+}

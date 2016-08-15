@@ -1,0 +1,236 @@
+<?php
+/**
+ * GroupFolder
+ * @author Warren Hornsby
+ */
+class GroupFolder {
+  //
+  public $ugid;
+  public $dir;
+  //
+  static $EXT_TO_MIME = array(
+    'ai'   => 'application/postscript',
+    'asf'  => 'video/x-ms-asf',
+    'asx'  => 'video/x-ms-asf',
+    'avi'  => 'video/x-msvideo',
+    'bmp'  => 'image/bmp',
+    'doc'  => 'application/msword',
+    'dvi'  => 'application/x-dvi',
+    'eps'  => 'application/postscript',
+    'gif'  => 'image/gif',
+    'htm'  => 'text/html',
+    'html' => 'text/html',
+    'jpeg' => 'image/jpeg',
+    'jpg'  => 'image/jpeg',
+    'mov'  => 'video/quicktime',
+    'mp2'  => 'audio/mpeg',
+    'mp3'  => 'audio/mpeg',
+    'mpe'  => 'video/mpeg',
+    'mpeg' => 'video/mpeg',
+    'mpg'  => 'video/mpeg',
+    'mpga' => 'audio/mpeg',
+    'pdf'  => 'application/pdf',
+    'png'  => 'image/png',
+    'ppt'  => 'application/vnd.ms-powerpoint',
+    'ps'   => 'application/postscript',
+    'qt'   => 'video/quicktime',
+    'ras'  => 'image/x-cmu-raster',
+    'rgb'  => 'image/x-rgb',
+    'rm'   => 'audio/x-pn-realaudio',
+    'rtf'  => 'text/rtf',
+    'swf'  => 'application/x-shockwave-flash',
+    'tif'  => 'image/tiff',
+    'tiff' => 'image/tiff',
+    'txt'  => 'text/plain',
+    'wm'   => 'video/x-ms-wm',
+    'wma'  => 'audio/x-ms-wma',
+    'wmv'  => 'video/x-ms-wmv',
+    'xls'  => 'application/vnd.ms-excel',
+    'xml'  => 'text/xml',
+    'zip'  => 'application/zip');
+  //
+  const MIME_PDF = 'application/pdf';
+  const MIME_XML = 'text/xml';
+  //
+  public function __construct($ugid, $dir) {
+    if (! is_dir($dir))
+      if (! mkdir($dir))
+        throw new GroupFolderException($dir, 'Unable to access directory');
+    $this->dir = $dir;
+    $this->ugid = $ugid;
+  }
+  /**
+   * @param UploadFile[] $files
+   * @param int $count current file count
+   */
+  public function upload($files) {
+    foreach ($files as &$file) {
+      $filename = $this->getCompleteFilename($file->name);
+      move_uploaded_file($file->tmpName, $filename);
+    }
+  }
+  /**
+   * @param string $filename 'file.jpeg'
+   * @param string $mime 'image/jpeg' (optional, determined from extension if omitted)
+   */
+  public function output($filename, $mime = null) {
+    if ($mime == null)
+      $mime = self::getMime($filename);
+    header("Content-type: $mime");
+    readfile($this->getCompleteFilename($filename));
+  }
+  /**
+   * @param string $filename 'file.xml'
+   * @param string $contents '<xml>contents</xml>';
+   */
+  public function save($filename, $contents) {
+    file_put_contents($this->getCompleteFilename($filename), $contents);
+  }
+  /**
+   * @param string $filename 'file.jpeg'
+   * @param string $mime 'image/jpeg' (optional, determined from extension if omitted)
+   */
+  public function download($filename, $mime = null) {
+    if ($mime == null)
+      $mime = self::getMime($filename);
+    header('Cache-Control: public');
+    header("Content-type: $mime");
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    readfile($this->getCompleteFilename($filename));
+  }
+  /**
+   * @param string $filename 'file.jpeg'
+   */
+  public function delete($filename) {
+    $filename = $this->getCompleteFilename($filename);
+    unlink($filename);
+  }
+  /**
+   * @param string $filename
+   * @return string
+   */
+  public function getHash($filename) {
+    return sha1_file($filename);
+  }
+  /**
+   * @param string $filename 'file.xml'
+   * @return string 'complete\path\file.xml'
+   */
+  public function getCompleteFilename($filename) {
+    return "$this->dir\\$filename";
+  }
+  //
+  /**
+   * @param int $ugid
+   * @param string $dir subdirectory
+   * @return UploadFolder
+   */
+  static function open($ugid, $dir = null) {
+    $root = "user-folders\\G$ugid";
+    if ($dir)
+      $root .= "\\$dir";
+    return new static($ugid, $root);
+  }
+  /**
+   * @param $httpPostFile $_FILES field array('name'=>..,'type'=>..,'tmp_name'=>..,'error'=>..,'size'=>)
+   * @return UploadFile[]
+   * @throws UploadFileException
+   */
+  static function getUploadFiles($httpPostFile) {
+    $files = UploadFile::fromHttpPostFile($httpPostFile);
+    if (empty($files))
+      throw new UploadFileException(null, 'No files were selected');
+    return $files;
+  }
+  /**
+   * @param string $filename 'file.jpeg'
+   * @return string 'image/jpeg'
+   * @throws GroupFolderException
+   */
+  static function getMime($filename) {
+    $mime = geta(self::$EXT_TO_MIME, end(explode('.', $filename)));
+    if ($mime == null)
+      throw new GroupFolderException($this->dir, "Unable to determine MIME of $filename");
+    return $mime;
+  }
+}
+//
+class GroupFolderException extends DisplayableException {
+  public $dir;
+  public function __construct($dir, $message) {
+    $this->dir = $dir;
+    $this->message = $message;
+  }
+}
+/**
+ * UploadFile
+ */
+class UploadFile extends Rec {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  const MIME_PDF = 'application/pdf';
+  //
+  public function __construct() {
+    $args = func_get_args();
+    call_user_func_array(array('Rec', '__construct'), $args);
+    $this->validate();
+  }
+  public function validate() {
+    $this->validateType();
+    $this->validateSize();
+  }
+  protected function validateType() {
+    // override if necessary
+  }
+  protected function validateSize() {
+    if ($this->size > 1000000)
+      throw new UploadFileException($this, "$this->name is too large; files must be less than 1M in size");
+  }
+  /**
+   * @param $f $_FILES field array
+   * return array(UploadFile,..)
+   */
+  static function fromHttpPostFile($f) {
+    $recs = array();
+    arrayifyEach($f);
+    for ($i = 0, $j = count($f['name']); $i < $j; $i++)
+      if ($f['name'][$i])
+        $recs[] = new static($f['name'][$i], $f['type'][$i], $f['tmp_name'][$i], $f['error'][$i], $f['size'][$i]);
+    return $recs;
+  }
+}
+//
+class UploadFileException extends DisplayableException {
+  public $uploadFile;
+  public function __construct($uploadFile, $message) {
+    $this->uploadFile = $uploadFile;
+    $this->message = $message;
+  }
+}
+/**
+ * DownloadFile
+ */
+class DownloadFile extends Rec {
+  //
+  public $filename;  // 'file.xml'
+  public $contents;  // '<xml>contents</xml>'
+  public $hash;
+  //
+  public function __construct($filename, $contents) {
+    $this->filename = $filename;
+    $this->contents = $contents;
+    $this->hash = sha1($contents);
+  }
+  public function getJsonFilters() {
+    return array(
+      'contents' => JsonFilter::omit());
+  }
+  public function save($folder) {
+    file_put_contents($folder->getCompleteFilename($this->filename), $this->contents);
+  }
+}

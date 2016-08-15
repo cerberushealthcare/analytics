@@ -1,0 +1,133 @@
+<?php
+require_once '../inc/JsonConstants.php';
+set_include_path('../');
+require_once "php/dao/_util.php";
+//
+function PBOX($class = '', $id = '') {
+  echo <<<END
+<table class='box $class' cellpadding='0' cellspacing='0'>
+  <tr class='box-tb'>
+    <td class='tl'></td>
+    <td class='t'></td>
+    <td class='tr'></td>
+  </tr>
+  <tr>
+    <td class='l' nowrap></td>
+    <td class='content'>
+      <div class='box-content' id='$id'>
+END;
+}
+function _PBOX() {
+  echo <<<END
+      </div>
+    </td>
+    <td class='r' nowrap></td>
+  </tr>
+  <tr class='box-tb'>
+    <td class='bl'></td>
+    <td class='b'></td>
+    <td class='br'></td>
+  </tr>
+</table>
+END;
+}
+function PHEAD($title, $css = null) {
+  $v = PVersion::getUrlSuffix();
+  $css = ($css) ? "<link rel='stylesheet' type='text/css' href='css/$css?$v' />" : '';
+  echo <<<END
+<!-- Copyright (c)2011-12 by LCD Solutions, Inc. -->
+<!-- http://www.clicktate.com -->
+<title>$title</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Language" content="en-us" />
+<link rel='stylesheet' type='text/css' href='css/_portal.css?$v' />
+<link rel='stylesheet' type='text/css' href='css/pop.css?$v' />
+$css
+<script type='text/javascript' src='../js/_lcd_core.js?$v'></script>
+<script type='text/javascript' src='../js/_lcd_html.js?$v'></script>
+<script type='text/javascript' src='../js/yui/yahoo-min.js?$v'></script>
+<script type='text/javascript' src='../js/yui/event-min.js?$v'></script>
+<script type='text/javascript' src='../js/yui/connection-min.js?$v'></script>
+<script type='text/javascript' src='../js/pages/Ajax.js?$v'></script>
+<script type='text/javascript' src='../js/pages/Pop.js?$v'></script>
+<script type='text/javascript' src='../js/pages/Page.js?$v'></script>
+<script type='text/javascript' src='../js/components/CmdBar.js?$v'></script>
+<script type='text/javascript' src='js/AjaxPortal.js?$v'></script>
+END;
+}
+function PPAGE($controller, $me = null) {
+  if ($me) {
+    $m = jsonencode($me);
+    echo "\n<script type='text/javascript'>var me=$m</script>";
+  }
+  $args = jsonencode($_GET);
+  if ($args == '[]' || $args == '')
+    $args = '{}';
+  echo "\n<script type='text/javascript'>var _get=$args;</script>";
+  $v = PVersion::getUrlSuffix();
+  echo "\n<script type='text/javascript' src='js/page/Page.js?$v'></script>";
+  echo "\n<script type='text/javascript' src='js/page/$controller.js?$v'></script>";
+}
+function PHEAD_UI() {
+  $names = func_get_args();
+  foreach ($names as $name) 
+    call_user_func("HEAD_$name");
+}
+function PHEAD_UI_CSSJS($name) {
+  $v = PVersion::getUrlSuffix();
+  echo "\n<script type='text/javascript' src='js/ui/$name.js?$v'></script>";
+  echo "\n<link rel='stylesheet' type='text/css' href='js/ui/$name.css?$v' />";
+}
+function PHEAD_UI_JS($name) {
+  $v = PVersion::getUrlSuffix();
+  echo "\n<script type='text/javascript' src='js/ui/$name.js?$v'></script>";
+}
+function PHEAD_DATA($name) {
+  $v = PVersion::getUrlSuffix();
+  echo "\n<script type='text/javascript' src='js/data/$name.js?$v'></script>";
+}
+function PPAGEHEAD($me) {
+  $ug = $me->UserGroup->name;
+  echo <<<END
+<div id='header'>
+  <div id='htitle'>$ug</div>
+</div>
+<div id='header-nav'>
+  <div id='hnav'>
+    <table>
+      <tr>
+        <td><a href='messaging.php'>Messages</a></td>
+        <td><a href='facesheet.php'>Profile</a></td>
+        <td><a href='index.php?logout=1'>Sign Out</a></td>
+        </tr>
+    </table>
+  </div>
+</div>
+<div id='curtain'></div>
+END;
+}
+function PPAGEFOOT() {
+  echo <<<END
+<div id='footer'>
+</div>
+END;
+}
+/**
+ * Version
+ */
+class PVersion {
+  //
+  const MAJOR = "1.0";
+  const PROD_DEPLOY = "0";
+  const TEST_DEPLOY = "3";
+  //
+  public static function getLabel() {
+    return self::MAJOR . "." . self::PROD_DEPLOY;
+  }
+  public static function getUrlSuffix() {
+    return self::MAJOR . "p" . self::PROD_DEPLOY . "t" . self::TEST_DEPLOY;
+  }
+}
+?>

@@ -1,0 +1,168 @@
+<?php
+class Curl {
+  //
+  public $ch;
+  public /*CurlResponse*/$Response;
+  //
+  protected $_withHeader;
+  protected $_debug;
+  //
+  public function init($url = null) {
+    $this->ch = curl_init($url);
+    return $this;
+  }
+  public function exec() {
+    $r = curl_exec($this->ch);
+    if ($this->_debug) 
+      print_r(curl_getinfo($this->ch));
+    if ($this->_debug) 
+      print_r("\n[Response]\n" . $r . "\n[/Response]\n");
+    $this->response = $this->_withHeader ? 
+      CurlResponse_All::from($this->ch, $r) : CurlResponse::from($this->ch, $r);
+    return $this->response;
+  }
+  public function close() {
+    curl_close($this->ch);
+  }
+  public function getResponse() {
+    return $this->Response;
+  }
+  /* Options */
+  public function debug() {
+    $this->_debug = true;
+    return $this;
+  }
+  public function returnTransfer() {
+    curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
+    return $this;
+  }
+  public function withHeader() {
+    $this->_withHeader = true;
+    curl_setopt($this->ch, CURLOPT_HEADER, true);
+    return $this;
+  } 
+  public function ssl() {
+    curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 2);
+    return $this;
+  }
+  public function followLocation() {
+    curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
+    return $this;
+  }
+  public function freshConnect() {
+    curl_setopt($this->ch, CURLOPT_FRESH_CONNECT, true);
+    return $this;
+  }
+  public function autoReferer() {
+    curl_setopt($this->ch, CURLOPT_AUTOREFERER, true);
+    return $this;
+  }
+  public function cookieSession() {
+    curl_setopt($this->ch, CURLOPT_COOKIESESSION, true);
+    return $this;
+  }
+  public function cookieFile($file) {
+    curl_setopt($this->ch, CURLOPT_COOKIEFILE, $file);
+    return $this;
+  }
+  public function post() {
+    curl_setopt($this->ch, CURLOPT_POST, true);
+    return $this;
+  }
+  public function cookie($cookie) {
+    curl_setopt($this->ch, CURLOPT_COOKIE, $cookie);
+    return $this;
+  }
+  public function url($url) {
+    curl_setopt($this->ch, CURLOPT_URL, $url);
+    return $this;
+  }
+  public function port($port) {
+    curl_setopt($this->ch, CURLOPT_PORT, $port);
+    return $this; 
+  }
+  public function httpHeader($headers) {
+    if ($headers)
+      curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
+    return $this;
+  }
+  public function postFields($data) {
+    curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data);
+    return $this;
+  }
+  public function verbose() {
+    curl_setopt($this->ch, CURLOPT_VERBOSE, true);
+    return $this;
+  }
+  //
+  static function asReturn($url = null) {
+    $me = new static();
+    $me->init($url);
+    if ($url && substr($url, 0, 5) == 'https')
+      $me->ssl();
+    return $me->returnTransfer();
+  }
+} 
+class Curl_Post extends Curl {
+  //
+  public function exec() {
+    $response = parent::exec();
+    $this->close();
+    return $response;
+  }
+  //
+  static function create($url, $data, $headers = null) {
+    return static::asReturn($url)
+      ->post()
+      ->httpHeader($headers)
+      ->postFields($data);
+  } 
+}
+/** Response */
+class CurlResponse {
+  //
+  public $body;
+  public $status;  /*e.g. '200'*/
+  //
+  public function isStatusOk() {
+    return $this->status == '200';
+  }
+  //
+  static function from($ch, $response) {
+    $me = new static();
+    $me->body = $response;
+    $me->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    return $me;
+  }
+}
+class CurlResponse_All extends CurlResponse {
+  //
+  public $body;
+  public $header;
+  //
+  public function getCookies() {
+    $pattern = "#Set-Cookie: (.*?);#";
+    preg_match_all($pattern, $this->header, $matches);
+    array_shift($matches);
+    $cookies = static::flattenCookies($matches[0]);
+    $string = implode(";", $cookies);
+    return $string;
+  }
+  //
+  static function from($ch, $response) {
+    $me = parent::from($ch, $response);
+    $size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $me->body = substr($response, $size);
+    $me->header = substr($response, 0, $size);
+    return $me;
+  }
+  protected static function flattenCookies($cookies) {
+    $a = array();
+    foreach ($cookies as $cookie) {
+      $c = explode('=', $cookie); 
+      $a[trim($c[0])] = $cookie;
+    }
+    return $a;
+  }
+}

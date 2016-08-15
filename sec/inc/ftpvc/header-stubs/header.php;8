@@ -1,0 +1,181 @@
+<? 
+require_once "php/dao/MsgDao.php";
+//
+$page = currentPage();
+$noAlert = ($page == "registerCard.php");
+?>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Header.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
+      <div id="logo-head">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td><a href="welcome.php"><img src="img/lhdLogoTop.bmp" /></a></td>
+            <td class="logo-right" />
+              <div style="float:left;margin-top:15px;">
+              <? if (! $myLogin->isOnProd()) { ?>
+                <?=LoginResult::testingLabel() ?>
+              <? } ?>
+              </div>
+              <div class="loginfo">
+                <? if (isset($myLogin)) { ?>
+                  Logged in as <b><?=$myLogin->uid ?></b>
+                  | <a href=".?logout=Y">Logout</a>
+                <? } ?>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <table border=0 cellpadding=0 cellspacing=0 width="100%">
+          <tr>
+            <td class="logoBottom">
+              <a href="welcome.php"><img src="img/lhdLogoBottom.bmp" /></a>
+            </td>
+            <td class="loginfo2">
+              <table border=0 cellpadding=0 cellspacing=0 width="100%">
+                <tr>
+                  <td style="vertical-align:top">
+                    <div class="loginfo2">
+                      <? if (isset($myLogin)) { ?>
+                        <a href="welcome.php">Home</a>
+                        <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                          | <a href="patients.php">Patients</a>
+                        <? } ?>
+                        | <a href="documents.php">Documents</a>
+                        <? if ($myLogin->permissions->accessSchedule > Permissions::ACCESS_NONE) { ?>
+                          | <a href="schedule.php">Scheduling</a>
+                        <? } ?>
+                        <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                          | <a href="tracking.php">Tracking</a>
+                        <? } ?>
+                        <? if ($myLogin->permissions->accessProfile > Permissions::ACCESS_NONE) { ?>
+                          | <a href="profile.php">My Profile</a>
+                        <? } else { ?>
+                          | <a href="profile.php?cp=1">Change Password</a>
+                        <? } ?>
+                        | <a href="javascript:Header.icdLook()">ICD Lookup</a>
+                        <? if ($myLogin->admin) { ?>
+                          | <a href="serverAdm.php">Admin</a>
+                        <? } ?>
+                      <? } ?>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="loginfo2" style="text-align:right">
+                      <img id="img-mail" style="display:none;position:absolute;z-index:100" src='img/icons/message-t.png' />
+                      <a id="a-mail" href="messages.php">&nbsp;</a>
+                      <div id='nc-status' style='display:none'>
+                        <b style='color:black'>R</b><b style='color:#800000'>x</b>
+                        <a id='a-nc' href="javascript:Header.ncStatus()"></a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <div id="stickies">
+        <? if (1 == 2 && ! isset($myLogin->hideStickies["downnote"])) { ?>
+          <div id="downnote" class="sticky">
+            <span>
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <b>Note</b>: Clicktate will undergo scheduled maintenance at 9:30PM EST tonight.
+                  <br/>
+                  The website will be down for approximately 2-3 hours.
+                </td>
+                <td style="padding-left:10px; vertical-align:top; font-family:Verdana; font-weight:bold; font-size:8pt">
+                  <a title="Close" href="javascript:Header.closeSticky('downnote')">X</a>
+                </td>
+              </tr>
+            </table>
+            </span>
+          </div>
+        <? } ?>
+        <? if (! isset($myLogin->hideStickies["browser"]) && ($myLogin->ie && $myLogin->ie != "6" && $myLogin->ie != "7" && $myLogin->ie != "8")) { ?>
+          <div id="browser" class="sticky">
+            <span>
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <b>Warning</b>: Clicktate only supports Internet Explorer (6, 7, 8)
+                  <br/>
+                  Some features will not work properly on other browsers.
+                </td>
+                <td style="padding-left:10px; vertical-align:top; font-family:Verdana; font-weight:bold; font-size:8pt">
+                  <a title="Close" href="javascript:Header.closeSticky('browser')">X</a>
+                </td>
+              </tr>
+            </table>
+            </span>
+          </div>
+        <? } ?>
+        <? if ($myLogin->userType == User::USER_TYPE_DOCTOR && ! $noAlert && $myLogin->onTrial && $myLogin->daysLeft < 25) { ?>
+	        <div id="countdown">
+	          <span>
+              <? if ($myLogin->daysLeft < 1) { ?>
+                You have no days remaining in your trial account.
+              <? } else { ?>       
+                You have <?=daysLeft($myLogin) ?> remaining in your trial account.
+              <? } ?> 
+	            <a href="registerCard.php">Activate now</a>
+	          </span>
+	        </div>
+        <? } else if (! $noAlert && $myLogin->isInactiveDoctor()) { ?>
+          <div id="countdown">
+            <span>
+              <?=$myLogin->getInactiveReason() ?><br/>
+              At present you have limited (read-only) access to your information.<br/>
+              <a href="registerCard.php">Update billing info and restore full access ></a>
+            </span>
+          </div>
+        <? } else if (! $noAlert && ! $myLogin->onTrial && $myLogin->daysLeft < 60) { ?>   
+          <div id="countdown">
+            <span>
+              Your credit card on file expires in <?=daysLeft($myLogin) ?>. 
+              <a href="registerCard.php">Update card</a>
+            </span>
+          </div>
+          <div id="countdown" style="height:5px"></div>
+        <? } else { ?>
+        <? } ?>
+        </div>
+      </div>
+          <div id='legacy-sticky' class="sticky" style='display:none;text-align:left'>
+            <span>
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  This patient has <i>legacy medications/allergies</i> that may need to be transferred to our partner ePrescribing system.
+                  <br><a href='javascript:Facesheet.pNewCrop("medentry")'>Click here to do this now</a>
+                </td>
+                <td style="padding-left:10px; vertical-align:top; font-family:Verdana; font-weight:bold; font-size:8pt">
+                  <a title="Close" href="javascript:Header.closeSticky('legacy-sticky')">X</a>
+                </td>
+              </tr>
+            </table>
+            </span>
+          </div>
+      
+<?
+function daysLeft($myLogin) {
+	$s = $myLogin->daysLeft;
+	if ($s == 1) {
+		$s .= " day";
+	} else {
+		$s .= " days";
+	}
+	return $s;
+}
+?>
+<script>
+var today = "<?=date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
+var now = <?=now() ?>;
+var me = <?=UserDao::getMyUserAsJson() ?>;
+me.perm = <?=$myLogin->permissions->toJson() ?>;
+Header.load(<?=MsgDao::getMyInboxCt() ?>);
+</script>

@@ -1,0 +1,101 @@
+<?
+set_include_path('../../../');
+require_once "inc/uiFunctions.php";
+/**
+ * Facesheet Meds
+ * Controller: FaceMeds.js
+ */
+?>
+<div id="fsp-med" class="pop" onmousedown="event.cancelBubble = true" style='width:700px'>
+  <div id="fsp-med-cap" class="pop-cap">
+    <div id="fsp-med-cap-text">
+      Medications
+    </div>
+    <a href="javascript:FaceMeds.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style='padding:0'>
+    <div class='tabbar'></div>
+    <div class='tabpanels'>
+      <div class='tabpanel'>
+        <div id="fsp-med-div" class="fstab" style="height:350px">
+          <table id="fsp-med-tbl" class="fsb single">
+            <tbody id="fsp-med-tbody">
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="med-cmd-erx" class="pop-cmd cmd-right" style="display:none">
+          <a href='javascript:page.pNewCrop()' class="cmd erx">Update Meds/Prescribe...</a>
+          <span>&nbsp;</span>
+          <a href="javascript:FaceMeds.fpClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+        </div>
+        <table id="med-cmd" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td nowrap="nowrap">
+              <div class="pop-cmd">
+                <label>
+                  With checked:
+                </label>
+                <a id="med-cmd-toggle" href='javascript:' onclick="FaceMeds.fpDeleteMeds()" class="cmd delete-red">Remove from List</a>
+              </div>
+            </td>
+            <td style="width:100%">
+              <div class="pop-cmd cmd-right">
+                <a id="med-cmd-rx" href="javascript:FaceMeds.fpPrint()" class="cmd rx">Print...</a>
+                <span>&nbsp;</span>
+                <a id="med-cmd-add" href="javascript:FaceMeds.fpAddMed()" class="cmd new">Add a Med...</a>
+                <span>&nbsp;</span>
+                <a href="javascript:FaceMeds.fpClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class='tabpanel'>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="vertical-align:top;">
+              <ul id="medh-filter-ul" class="filter fwidth" style="width:110px"></ul>
+            </td>
+            <td style="padding-left:5px; vertical-align:top; width:100%">
+              <div id="fsp-medh-div-1" class="fstab" style="height:350px;">
+                <table id="fsp-medh-tbl-1" class="fsb single">
+                  <thead>
+                    <tr class="fixed head">
+                      <th>Date</th>
+                      <th>Source</th>
+                      <th>Action: Medication</th>
+                      <th>RX</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fsp-medh-tbody-1">
+                  </tbody>
+                </table>
+              </div>
+              <div id="fsp-medh-div-2" class="fstab" style="height:350px; display:none">
+                <table id="fsp-medh-tbl-2" class="fsb single">
+                  <thead>
+                    <tr class="fixed head">
+                      <th>Medication</th>
+                      <th>Date</th>
+                      <th>Action</th>
+                      <th>Source</th>
+                      <th>RX</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fsp-medh-tbody-2">
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="pop-cmd cmd-right">
+          <a href="javascript:FaceMeds.fpClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

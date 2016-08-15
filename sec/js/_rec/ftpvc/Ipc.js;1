@@ -1,0 +1,22 @@
+/**
+ * RecArray Ipcs
+ */
+Ipcs = Object.RecArray.extend({
+  getItemProto:function() {
+    return Ipc;
+  }
+})
+/**
+ * Rec Ipc
+ */
+Ipc = Object.Rec.extend({
+  getProto:function(json) {
+    return (json.ugid) ? MyIpc : this;
+  }
+})
+/**
+ * Rec MyIpc (Custom IPC)
+ */
+MyIpc = Ipc.extend({
+  custom:1
+})

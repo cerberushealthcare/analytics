@@ -1,0 +1,133 @@
+<?php
+require_once 'php/data/rec/sql/_DataRec.php';
+require_once 'php/data/rec/sql/MedsLegacy.php';
+require_once 'php/data/rec/sql/MedsNewCrop.php';
+//
+/**
+ * Medications DAO Base 
+ * @see MedsLegacy and MegsNewCrop for implementations 
+ * @author Warren Hornsby
+ */
+class Meds {
+  /**
+   * Build face recs from unprocessed session history
+   * @param int cid
+   */
+  public static function rebuildFromSessions($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Build face recs from NewCrop status
+   * @param int $cid
+   * @param object $current @see NewCrop::pullCurrentMedAllergy()
+   */
+  public static function rebuildFromNewCrop($cid, $current) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceMed,..)
+   */
+  public static function getActive($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get facesheet records by name
+   * @param int $cid
+   * @return array(name=>FaceMed,..)
+   */
+  public static function getByName($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  public static function getHistoryByDate($cid, $actives = null) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get history by name
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  public static function getHistoryByName($cid, $actives = null) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  public static function getNewCropAudits($cid, $since) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Med
+   */
+  public static function save($o) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Med
+   */
+  public static function deactivate($id) { 
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate records from UI
+   * @param [int,..] $id
+   * @return Med last one deactivated
+   */
+  public static function deactivateAll($ids) {
+    $med = null;
+    foreach ($ids as $id) 
+      $med = self::deactivate($id);
+    return $med;
+  }
+  /**
+   * Deactivate all legacy-sourced meds
+   * @param int $cid
+   */
+  public static function deactivateLegacy($cid) {
+    $meds = FaceMed::fetchAllActive($cid);
+    foreach ($meds as $med) 
+      if ($med->isSourceLegacy()) 
+        $med->deactivate();
+  }
+  /**
+   * Save audit records for printing RX
+   * @param [Med,..] $meds
+   * @return Med last one updated
+   */
+  public static function auditRxPrint($meds) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * @return string static JSON of Med data object 
+   */
+  public static function getStaticJson() {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  //
+  private static function getDao($method) {
+    global $myLogin;
+    $class = ($myLogin->isErx()) ? 'MedsNewCrop' : 'MedsLegacy';
+    return array($class, $method);
+  }
+}
+?>

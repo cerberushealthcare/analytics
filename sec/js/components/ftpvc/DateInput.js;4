@@ -1,0 +1,181 @@
+/**
+ * Date/Time Input
+ * Requires: Pop.js, Calendar.css
+ */
+/*
+ * Date Input
+ * @arg string text: '23-Nov-2011' default date value (optional)
+ * @arg <e> container: to append this after construction (optional)
+ * 
+ * Builds component as:
+ *   <span dateInput=this>
+ *     <input type='text' /><a class='dical' />
+ *   </span> 
+ */
+function DateInput(text, container) {
+  this.span = createSpan();
+  this.textbox = createTextbox(null, null, 8);
+  this.a = createAnchor(null, 'javascript:', 'dical');
+  var self = this;
+  this.a.onclick = function(){self._pop()};
+  this.setText(text);
+  this.span.appendChild(this.textbox);
+  this.span.appendChild(this.a);
+  this.span.dateInput = this;
+  if (container) 
+    this.appendTo(container);
+}
+//
+DateInput.prototype = {
+  span:null,
+  textbox:null,
+  a:null,
+  /*
+   * @arg string text 
+   */
+  setText:function(text) {
+    this.setValue(new DateValue(text));
+  },
+  /*
+   * @arg DateValue dataValue
+   */
+  setValue:function(dateValue) {
+    this.textbox.value = dateValue.toString();
+  },
+  /*
+   * @return string '23-Nov-2011'
+   */
+  getText:function() {
+    var dv = new DateValue(this.textbox.value);
+    return dv.toString();
+  },
+  /*
+   * Set focus to textbox
+   */
+  focus:function() {
+    this.textbox.focus();
+    this.textbox.select();
+  },
+  /*
+   * Append this to container
+   */
+  appendTo:function(container) {
+    container.appendChild(this.span);
+  },
+  //
+  _pop:function() {
+    var self = this;
+    Includer.getCalendar_pop(self.getText(),
+      function(dateValue) {
+        if (dateValue == '')
+          self.setText(dateValue);
+        else if (dateValue)
+          self.setValue(dateValue);
+        self.focus();
+      });
+  }
+}
+//
+/*
+ * DateTime Input
+ * @arg string text: '23-Nov-2011 04:30PM' default datetime value (optional)
+ * @arg <e> container: to append this after construction (optional)
+ * 
+ * Builds component as:
+ *   <span dateTimeInput=this>
+ *     <span dateInput>
+ *       <input type='text' /><a class='dical' />
+ *     </span>
+ *     <input type='text' /><a class='diclock' />
+ *   </span> 
+ */
+function DateTimeInput(text, container) {
+  this.span = createSpan();
+  this.di = new DateInput(null, this.span); 
+  this.textbox = createTextbox(null, null, 5);
+  this.a = createAnchor(null, 'javascript:', 'diclock');
+  var self = this;
+  this.a.onclick = function(){self._pop()};
+  this.span.appendChild(this.textbox);
+  this.span.appendChild(this.a);
+  this.span.dateTimeInput = this;
+  this.setText(text);
+  if (container) 
+    this.appendTo(container);
+  //
+  function splitText(text) {  // return ['23-Nov-2011','04:30PM']
+    if (text == null) {
+      return [null, null];
+    } else {
+      var a = text.split(' ');
+      if (a.length == 1)
+        return [text, null];
+      else 
+        return [a[0], a[1]];
+    }
+  }
+}
+DateTimeInput.prototype = {
+  span:null,
+  di:null,
+  textbox:null,
+  a:null,
+  /*
+   * @arg string text e.g. '04-Nov-2011 04:30PM', '04-Nov-2011'
+   */
+  setText:function(text) {
+    text = trim(denull(text));
+    var dt = text.split(' ');
+    var date = dt[0];
+    var time = (dt.length > 1) ? dt[1] : ''; 
+    this.di.setText(date);
+    this.setValue(new TimeValue(time));
+  },
+  /*
+   * @arg TimeValue timeValue
+   */
+  setValue:function(timeValue) {
+    this.textbox.value = timeValue.toString();
+    if (this.textbox.value != '' && this.di.getText() == '') {
+      dv = DateValue.now();
+      this.di.setText(dv.toString());
+    }
+  },
+  /*
+   * @return string, e.g. '04-Nov-2011 04:30PM' or '04-Nov-2011' 
+   */
+  getText:function() {
+    return trim(this.di.getText() + ' ' + this.getTimeText());
+  },
+  /*
+   * @return string 
+   */
+  getTimeText:function() {
+    return new TimeValue(this.textbox.value).toString();
+  },
+  /*
+   * Set focus to textbox
+   */
+  focus:function() {
+    this.textbox.focus();
+    this.textbox.select();
+  },
+  /*
+   * Append this to container
+   */
+  appendTo:function(container) {
+    container.appendChild(this.span);
+  },
+  //
+  _pop:function() {
+    var self = this;
+    Includer.getClock_pop(self.getTimeText(), 
+      function(timeValue) {
+        if (timeValue == '')
+          self.setText(null);
+        else if (timeValue)
+          self.setValue(timeValue);
+        self.focus();
+      });
+  }
+}

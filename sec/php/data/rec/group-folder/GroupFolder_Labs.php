@@ -1,0 +1,34 @@
+<?php
+require_once 'php/data/rec/group-folder/GroupFolder.php';
+//
+/**
+ * GroupFolder_Labs
+ * @author Warren Hornsby
+ */
+class GroupFolder_Labs extends GroupFolder {
+  /**
+   * @return GroupFile
+   */
+  public function upload() {
+    $upload = GroupUpload_Lab::asUpload();
+    return parent::upload($upload);
+  }
+  /**
+   * @param string $filename
+   */
+  public function output($filename) {
+    $file = GroupFile::from($this, $filename);
+    return parent::output($file);
+  }
+  //
+  static function open() {
+    global $login;
+    return parent::open($login->userGroupId, 'labs');
+  }
+}
+/**
+ * GroupUpload_Lab
+ */
+class GroupUpload_Lab extends GroupUpload {
+  //
+}

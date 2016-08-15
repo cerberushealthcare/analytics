@@ -1,0 +1,106 @@
+/**
+ * Accounts Page
+ * @author Warren Hornsby
+ */
+AccountsPage = page = {
+  //
+  load:function(query) {
+   AccountsPageTile.create(_$('tile')).show();
+    Page.setEvents();
+  },
+  onresize:function() {
+    var i = Html.Window.getViewportDim().height - 200;
+    if (i != self.maxHeight) {
+      self.maxHeight = i;
+      AccountsTile.setMaxHeight(i);
+    }
+  }
+}
+/**
+ * Tile AccountsPageTile
+ */
+AccountsPageTile = {
+  create:function(container) {
+    container.clean();
+    return AccountsTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.table = PortalUsersTable.create(self);
+          self.table.load();
+        },
+        setMaxHeight:function(i) {
+          self.table.setMaxHeight(i);
+        }
+      }
+    })
+  }
+}
+/**
+ * Tile PortalUsersTable
+ */
+PortalUsersTable = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        onselect:function(stub) {},
+        //
+        init:function() {
+          self.table = My.Table.create(self).bubble('onselect', self);
+          self.cb = Html.CmdBar.create(self).add('New Account...', self.add_onclick);
+          self._pad = self.cb.height();
+        },
+        load:function() {
+          self.table.load();
+        },
+        setMaxHeight:function(i) {
+          self.table.setMaxHeight(i - self._pad);
+        },
+        //
+        add_onclick:function() {
+          async(function() {
+            PatientSelector.pop(function(client) {
+              self.working(true);
+              Ajax.UserGroup.getPortalUserFor(client.clientId, function(puser) {
+                self.working(false);
+                if (puser)
+                  Pop.Msg.showImportant('That patient already has an ID.'); 
+                else
+                  NewPortalUserEntry.pop(client, self.table.update);
+              })
+            })
+          })
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container) {
+      return Html.TableLoader.create(container, 'fsy grid').extend(function(self) {
+        return {
+          onselect:function(report) {},
+          //
+          init:function() {
+            self.thead().trFixed().th('Account').w('20%').th('Patient').w('30%').th('Status').w('50%');
+          },
+          //
+          rowKey:function(rec) {
+            return rec.portalUserId; 
+          },
+          rowBreaks:function(rec) {
+            return [rec.portalUserId];
+          },
+          fetch:function(callback_recs) {
+            Ajax.UserGroup.getPortalUsers(callback_recs);
+          },
+          add:function(rec, tr) {
+            tr.select(Html.AnchorAction.create('patient', rec.uid)).td(rec.Client.name).td(rec.formatStatus());
+          },
+          setMaxHeight:function(i) {
+            self.setHeight(i);
+          }
+        }
+      })
+    }
+  }
+}

@@ -1,0 +1,255 @@
+<?php
+//error_reporting(E_ALL);
+ini_set('display_errors', '1');
+require_once 'php/data/LoginSession.php';
+require_once 'php/dao/LookupAdminDao.php';
+require_once 'php/data/json/JAjaxMsg.php';
+require_once 'php/data/rec/sql/Templates_AdminSearch.php';
+//
+LoginSession::verify_forServer()->requires($login->admin);
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+} else if (isset($_POST['action'])) {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+} else {
+  $ug = LookupAdminDao::getGroup($login->userGroupId);
+  $name = $ug['NAME'];
+  $color = ($login->userGroupId != 1) ? 'color:red' : '';
+  echo "<h2 style='margin:0'>ADMIN HOME</h2>";
+  echo "<h3 style='$color;margin-top:0'>Logged into $name</h3>";
+  echo "<a href='adminDashboard.php'><b>Templates</b></a>";
+  echo " &bull; ";
+  echo "<a href='adminLookup.php'><b>Lookup Data</b></a><br><br>";
+  adminOut();
+  /*
+  <a href="serverAdm.php?action=usersByGroup&g=3">McKinney</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=22">Axis Med</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=18">Ayoub</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=14">Berk</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=24">Lidagoster</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=1094">Khani</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=23">Morris-Chr</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=1115">O'Brien</a> &bull;
+  <a href="serverAdm.php?action=usersByGroup&g=1346">Sadiq</a>
+  */
+  echo <<<END
+  <a href="serverAdm.php?action=setCtUgid&ugid=1">(Reset)</a><br>
+  <br><b>Other Lookups</b>
+  <ul>
+    <li><a href="serverAdm.php?action=userCount">Trial accounts by date</a></li>
+    <li><a href="serverAdm.php?action=icd">Unassigned ICDs</a></li>
+    <li><a href="serverAdm.php?action=zero">Zero option IMPR questions</a></li>
+    <li><a href="admin-setdefault.html">Report: setDefault(pe.sl.skinLes.yes)</a></li>
+    <li><a href="serverAdm.php?action=subp">Subp</a></li>
+    <li><a href="adminIpc.php">IPC (Proc) Codes</a></li>
+    <li><a href="adminSnomed.php">Snomed Codes</a></li>
+    <li><a href="adminDrugClass.php">Drug Classification</a></li>
+    <li><a href="adminLoginReqs.php">Login Requirements</a></li>
+    <li><a href="adminTestDeploy.php">Test Deploy</a></li>
+    <li><a href="welcome.php">Exit</a></li>
+    </ul>
+END;
+  exit;
+}
+$m = null;
+$s = '91a639533644c6f0c4226c13ecb41f69712609c08ffa23bda';
+switch ($action) {
+
+  case 'getLookupDataForTable':
+    $ltid = $_GET['id'];
+    $rows = LookupAdminDao::getLookupDataForTable($ltid);
+    $m = new JAjaxMsg('getLookupDataForTable', jsonencode($rows));
+    break;
+
+  case 'getLookupDataForTable':
+    $ltid = $_GET['id'];
+    $rows = LookupAdminDao::getLookupDataForTable($ltid);
+    $m = new JAjaxMsg('getLookupDataForTable', jsonencode($rows));
+    break;
+
+  case 'saveLookupData':
+    $ltid = LookupAdminDao::saveLookupData(jsondecode($_POST['obj']));
+    $rows = LookupAdminDao::getLookupDataForTable($ltid);
+    $m = new JAjaxMsg('saveLookupData', jsonencode($rows));
+    break;
+
+  case 'deleteLookupData':
+    $ltid = $_GET['ltid'];
+    LookupAdminDao::deleteLookupData($_GET['id']);
+    $rows = LookupAdminDao::getLookupDataForTable($ltid);
+    $m = new JAjaxMsg('saveLookupData', jsonencode($rows));
+    break;
+
+  case 'usersByName':
+    $n = geta($_GET, 'n');
+    $rows = $n ? LookupAdminDao::getUsersByName($n) : null;
+    echo "<h2>Names matching '$n'</h2>";
+    adminOut($rows, $n);
+    break;
+
+  case 'usersByGroup':
+    $n = geta($_GET, 'g');
+    $rows = $n ? LookupAdminDao::getUsersByUgid($n) : null;
+    $g = $rows[0]['user_group_nm'];
+    echo "<h2>Users of group '$g'</h2>";
+    adminOut($rows);
+    break;
+
+  case 'usersByCreated':
+    $d = $_GET['d'];
+    $rows = LookupAdminDao::getUsersByDateCreated($d);
+    $ct = count($rows);
+    echo "<h2>Trial accounts created on $d ($ct total)</h2>";
+    rowsOut($rows);
+    break;
+
+  case 'confirmp':
+    $id = $_GET['id'];
+    $a = $_GET['a'];
+    echo <<<END
+    <form method='post' action='serverAdm.php'>
+      <input type='hidden' name='action'' value='$a' />
+      <input type='hidden' name='id' value='$id' />
+      <input type='hidden' name='obj' value='' />
+      <input type='password' id='pw' name='pw' />
+      <input type='submit' value='Submit' />
+    </form>
+    <script>document.getElementById('pw').focus();</script>
+END;
+    break;
+
+  case 'setCtUgid':
+    $ugid = geta($_GET, 'ugid');
+    if ($ugid == 1) {
+      $rows = LookupAdminDao::setCtUgid($ugid);
+      $login->refresh();
+      echo "<h3><a href='serverAdm.php'>Reset, go to Admin Home</a></h3>";
+    } else {
+      if (LoginDao::generateHash($_POST['pw'], $s) == $s) {
+        $ugid = $_POST['id'];
+        $rows = LookupAdminDao::setCtUgid($ugid);
+        $login->refresh();
+        echo "<h3><a href='welcome.php'>Changed, go to user's Welcome Page</a></h3>";
+        rowsOut($rows);
+      } else {
+        echo "<h3>Wrong password.";
+      }
+    }
+    break;
+
+  case 'confirm':
+    $id = $_GET['id'];
+    $a = $_GET['a'];
+    $desc = $_GET['d'];
+    $row = LookupAdminDao::getUserById($id);
+    echo "<h3><a href='serverAdm.php?action=$a&id=$id'>Confirm $desc</a></h3>";
+    adminOut($row);
+    break;
+
+  case 'confirmCancel':
+    $id = $_GET['id'];
+    $row = LookupAdminDao::getUserById($id);
+    echo "<h2>Confirm reason:</h2>";
+    echo "<h3><a href='serverAdm.php?action=cancel&id=$id&x=1'>User-requested cancellation</a></h3>";
+    echo "<h3><a href='serverAdm.php?action=cancel&id=$id&x=7'>Invalid registration</a></h3>";
+    adminOut($row);
+    break;
+
+  case 'resetPw':
+    $id = $_GET['id'];
+    $row = LookupAdminDao::resetPw($id);
+    echo "<h2>Successfully changed to standard reset password.</h2>";
+    adminOut($row);
+    break;
+
+  case 'extendTrial':
+    $id = $_GET['id'];
+    $row = LookupAdminDao::extendTrial($id);
+    echo "<h2>Successfully extended trial.</h2>";
+    adminOut($row);
+    break;
+
+  case 'cancel':
+    $id = $_GET['id'];
+    $reason = $_GET['x'];
+    $row = LookupAdminDao::deactivate($id, $reason);
+    echo "<h2>Successfully deactivated.</h2>";
+    adminOut($row);
+    break;
+
+  case 'zero':
+    echo "<h2>Zero option IMPR questions</h2>";
+    $rows = LookupAdminDao::getZeroOpts(1, 12);
+    rowsOut($rows);
+    break;
+
+  case 'icd':
+    echo "<h2>Unassigned ICD</h2>";
+    $rows = LookupAdminDao::getIcds();
+    echo "<table>";
+    foreach ($rows as $row) {
+      echo "<tr><td>${row['uid']}</td><td>${row['ct']}</td></tr>";
+    }
+    echo "</table>";
+    break;
+
+  case 'userCount':
+    echo "<h2>Trial accounts by date</h2>";
+    $rows = LookupAdminDao::getUserCountByDateCreated();
+    rowsOut($rows);
+    break;
+
+  case 'subp':
+    $rows = LookupAdminDao::getSubp();
+    rowsOut($rows);
+    break;
+
+  case 'templateSearch':
+    $for = $_GET['for'];
+    echo "<h2>Searching for '$for'</h2>";
+    $recs = Templates_AdminSearch::search($for);
+    echo "<ul>";
+    foreach ($recs as $rec)
+      echo "<li>" . $rec->asLink() . "</li>";
+    echo "</ul>";
+    adminOut(null, null, $for);
+    break;
+
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) {
+  echo $m->out();
+} else {
+  echo <<<END
+  <a href="serverAdm.php"><b>Admin Home</b></a>
+END;
+  exit;
+}
+function rowsOut($rows) {
+  if ($rows) {
+    echo "<pre>";
+    print_r($rows);
+    echo "</pre>";
+  }
+}
+function adminOut($rows = null, $n = "", $for = "") {
+  rowsOut($rows);
+  echo "<table><tr><td>";
+  echo "<form method='get' action='serverAdm.php'>";
+  echo "Get users by name: ";
+  echo "<input type='hidden' name='action' value='usersByName'>";
+  echo "<input type='text' name='n' value = '$n'>";
+  echo "<input type='submit' value='Submit'>";
+  echo "</form>";
+  echo "</td><td style='padding-left:20px'>";
+  echo "<form method='get' action='serverAdm.php'>";
+  echo "Search templates for: ";
+  echo "<input type='hidden' name='action' value='templateSearch'>";
+  echo "<input type='text' name='for' value = '$for'>";
+  echo "<input type='submit' value='Submit'>";
+  echo "</form>";
+  echo "</td></tr></table>";
+}
+?>

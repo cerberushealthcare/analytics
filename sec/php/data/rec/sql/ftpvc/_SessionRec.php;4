@@ -1,0 +1,57 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Session Base Class
+ * @author Warren Hornsby
+ */
+abstract class SessionRec extends SqlRec {
+  //
+  public $sessionId;
+  public $userGroupId;
+  public $clientId;
+  public $templateId;
+  public $dateCreated;
+  public $dateUpdated;
+  public $dateService;
+  public $closed;
+  public $closedBy;
+  public $dateClosed;
+  public $billed;
+  public $schedId;
+  public $data;
+  public $createdBy;
+  public $updatedBy;
+  public $sendTo;
+  public $assignedTo;
+  public $html;
+  public $title;
+  public $standard;
+  public $noteDate;
+  //
+  public function getSqlTable() {
+    return 'sessions';
+  }
+  public function toJsonObject(&$o) {
+    $o->label = $this->getLabel();
+    if ($this->closed == 2) {
+      $o->_html = $this->actions;
+      $o->actions = null;
+    } else {
+      $o->_html = $this->html;
+      $o->html = null;
+    }
+  }
+  //
+  public function isClosed() {
+    return $this->closed > 0;
+  }
+  public function getLabel() {
+    $label = $this->title;
+    if ($this->closed)
+      $label .= " (Signed)";
+    return $label;
+  }
+  public function getHtml() {
+    return ($this->closed == 2) ? $this->actions : $this->html;
+  }
+}

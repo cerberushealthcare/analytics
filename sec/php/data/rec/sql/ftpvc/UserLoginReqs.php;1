@@ -1,0 +1,216 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/LoginReq.php';
+/**
+ * User Login Requirements
+ * DAO for UserLoginReq
+ */
+class UserLoginReqs {
+  //
+  const REQ_ACTION_NOTIFY = 'NOTIFICATION';  // not yet received
+  const REQ_ACTION_WARN = 'WARNING';      // good now but <30 days until expiration
+  const REQ_ACTION_EXPIRE = 'EXPIRATION';  // expired
+  //
+  /**
+   * Fetch all for user mapped into REQ_ACTION
+   * @param int UserId
+   * @return array(                    // or null if none   
+   *   REQ_ACTION=>[UserLoginReq,..],  
+   *   ..)            
+   */
+  public function fetchAll($userId) {
+    $reqs = UserLoginReq::fetchAllForUser($userId);
+    $reqsByAction = array();
+    foreach ($reqs as $req) {
+      switch ($req->status) {
+        case UserLoginReq::STATUS_NOTIFIED:
+          $reqsByAction[UserLoginReqs::REQ_ACTION_NOTIFY][] = $req;
+          break;
+        case UserLoginReq::STATUS_GOOD:
+          if ($req->dateExpires && $req->_daysLeft <= 30)
+            $reqsByAction[UserLoginReqs::REQ_ACTION_WARN][] = $req;
+          break;
+        case UserLoginReq::STATUS_EXPIRED:
+        case UserLoginReq::STATUS_PAST_GRACE:
+          $reqsByAction[UserLoginReqs::REQ_ACTION_EXPIRE][] = $req;
+          break;
+      }
+    } 
+    return (empty($reqsByAction)) ? null : $reqsByAction; 
+  }
+}
+/**
+ * User Login Requirement
+ */
+class UserLoginReq extends SqlRec {
+  //
+  public $userLoginReqId;
+  public $userId;
+  public $loginReqId;
+  public $active;
+  public $status;
+  public $dateNotified;
+  public $dateRcvd;
+  public $dateExpires;
+  public $dateUpdated;
+  public $updatedBy;
+  public $comments;
+  public /*LoginReq*/ $LoginReq;
+  //
+  public $_daysLeft;  // days until expiration
+  public $_daysSince; // days since notification
+  //
+  const STATUS_NOTIFIED = '1';
+  const STATUS_PAST_GRACE = '2';
+  const STATUS_EXPIRED = '3';
+  const STATUS_GOOD = '9';
+  //
+  public function getSqlTable() {
+    return 'user_login_reqs';
+  }
+  /**
+   * @see SqlRec::save()
+   */
+  public function save() {
+    global $myLogin;
+    $this->dateUpdated = nowNoQUotes();
+    $this->updatedBy = $myLogin->userId;
+    parent::save();
+  }
+  /**
+   * Save record as user-notified (STATUS_NOTIFIED)
+   */
+  public function saveAsNotified() {
+    $loginReq = LoginReq::fetch($this->loginReqId);
+    if ($this->status != null) 
+      $this->deactivateAndNew();
+    $this->status = UserLoginReq::STATUS_NOTIFIED;
+    $this->dateNotified = nowNoQuotes();
+    $this->dateExpires = futureDate($loginReq->grace + 1);
+    $this->save();
+  }
+  /**
+   * Save record as received (STATUS_GOOD)
+   * @param(opt) string $dateExpires 
+   * @param(opt) string $comments
+   */
+  public function saveAsReceived($dateExpires = null, $comments = null) {
+    $this->deactivateAndNew();
+    $this->status = UserLoginReq::STATUS_IN_EFFECT;
+    $this->dateRcvd = nowNoQuotes();
+    $this->dateExpires = SqlRec::formatSqlDate($dateExpires);
+    $this->comments = $comments;
+    $this->save();
+  }
+  /**
+   * Save record as expired (STATUS_EXPIRED or STATUS_PAST_GRACE)
+   */
+  public function saveAsExpired() {
+    $status = ($this->status == UserLoginReq::STATUS_NOTIFIED) ? UserLoginReq::STATUS_PAST_GRACE : UserLoginReq::STATUS_EXPIRED; 
+    $this->deactivateAndNew();
+    $this->status = $status;
+    $this->save();
+  }
+  //
+  private function deactivateAndNew() {
+    $this->active = false;
+    $this->save();
+    $this->userLoginReqId = null;
+    $this->active = true;
+    $this->status = null;
+    $this->dateNotified = null;
+    $this->dateRcvd = null;
+    $this->dateExpires = null;
+    $this->comments = null;
+  }
+  //
+  /**
+   * Fetch existing UserLoginReqs 
+   * Create any that need added
+   * Expire any that need expired
+   * @param int $userId
+   * @return array(UserLoginReq,..)
+   */
+  public static function fetchAllForUser($userId) {
+    $user = UserLogin::fetch($userId);
+    $allReqs = LoginReq::fetchMapActive();
+    $userReqs = UserLoginReq::fetchMapUser($userId);
+    $recs = array();
+    foreach ($allReqs as $loginReqId => $allReq) {
+      $userReq = geta($userReqs, $loginReqId);
+      if ($userReq == null) 
+        $userReq = UserLoginReq::create($userId, $allReq);
+      $userReq->LoginReq = $allReq;
+      $recs[] = $userReq;    
+    }
+    $recs = UserLoginReq::checkExpiration($recs);
+    return $recs;
+  }
+  //
+  private static function create($userId, $loginReq) {
+    $rec = new UserLoginReq();
+    $rec->userId = $userId;
+    $rec->loginReqId = $loginReq->loginReqId;
+    $rec->active = true;
+    $rec->saveAsNotified();
+    return $rec; 
+  }
+  private static function checkExpiration($recs) {
+    foreach ($recs as &$rec) { 
+      if ($rec->status == UserLoginReq::STATUS_NOTIFIED) 
+        $rec->_daysSince = -daysUntil($rec->dateNotified);
+      if ($rec->dateExpires) {
+        $rec->_daysLeft = daysUntil($rec->dateExpires) - 1;
+        if ($rec->_daysLeft < 0) 
+          $rec->saveAsExpired();
+      }
+    }
+    return $recs;
+  }
+  private static function fetchMapUser($userId) {
+    $c = new UserLoginReq();
+    $c->userId = $userId;
+    $c->active = true;
+    return SqlRec::fetchMapBy($c, 'loginReqId');
+  }
+}
+/**
+ * User Login 
+ */
+class UserLogin extends SqlRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  //
+  const SUBSCRIPTION_TRIAL = 0;
+  const SUBSCRIPTION_PAYING = 1;
+  const SUBSCRIPTION_FREE = 2;
+  const SUBSCRIPTION_INVOICE = 3;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  public function isOnTrial() {
+    return $this->subscription == UserLogin::SUBSCRIPTION_TRIAL;
+  }
+  //
+  public static function fetch($userId) {
+    return SqlRec::fetch($userId, 'UserLogin');
+  }
+} 
+?>

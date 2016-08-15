@@ -1,0 +1,171 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/_SqlLevelRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+//
+/**
+ * Providers/Facilities DAO
+ * @author Warren Hornsby
+ */
+class Providers {
+  //
+  /**
+   * @return array(Provider,..)
+   */
+  public function getAll($activeOnly = false) {
+    global $login;
+    $recs = Provider::fetchAll($login->userGroupId, $activeOnly);
+    $recs = Rec::sort($recs, new RecSort('-active', 'last'));
+    return $recs;
+  }
+  /**
+   * @param stdClass $obj
+   * @return Provider+FacilityAddress updated rec
+   */
+  public function save($obj) {
+    global $login;
+    $rec = new Provider($obj);
+    $rec->save($login->userGroupId);
+    return Provider::fetch($rec->providerId);
+  }
+  /**
+   * @return array(FacilityAddress,..)
+   */
+  public function getFacilities() {
+    global $login;
+    $recs = FacilityAddress::fetchAll($login->userGroupId);
+    return $recs;
+  }
+  /**
+   * @param stdClass $obj
+   * @return Facility updated rec
+   */
+  public function saveFacility($obj) {
+    global $login;
+    $rec = new FacilityAddress($obj);
+    $rec->save($login->userGroupId);
+    return $rec;
+  }
+  /**
+   * @param stdClass $id
+   * @return int
+   */
+  public function deleteFacility($id) {
+    $rec = FacilityAddress::fetch($id);
+    if ($rec) {
+      FacilityAddress::delete($rec);
+      return $id;
+    }
+  }
+}
+//
+/**
+ * Provider
+ */
+class Provider extends SqlRec implements AutoEncrypt {
+  //
+  public $providerId;
+  public $userGroupId;
+  public $last;
+  public $first;
+  public $middle;
+  public $suffix;
+  public $prefix;
+  public $area;
+  public $addrFacility;
+  public $active;
+  public /*FacilityAddress*/ $Address_addrFacility;
+  //
+  static $FRIENDLY_NAMES = array(
+    'last' => 'Last Name',
+    'first' => 'First Name');  
+  //
+  public function getSqlTable() {
+    return 'providers';
+  }
+  public function getEncryptedFids() {
+    return array();
+  }
+  public function fromJsonObject($o) {
+    if (! isset($o->providerId))
+      $this->active = true;
+  }
+  public function toJsonObject(&$o) {
+    $o->name = $this->formatName();
+    if ($this->Address_addrFacility)
+      $o->address = FacilityAddress::formatName($this->Address_addrFacility);
+  }
+  public function getJsonFilters() {
+    return array(
+      'active' => JsonFilter::boolean());
+  }
+  public function validate(&$rv) {
+    $rv->requires('last', 'first');
+  }
+  public function formatName() {
+    $a = array();
+    if ($this->last) {
+      $b = array($this->last);
+      if ($this->suffix)
+        $b[] = $this->suffix;
+      if ($this->first)
+        $b[] = ',';
+      $a[] = implode('', $b);
+    } 
+    if ($this->first) 
+      $a[] = $this->first;
+    if ($this->middle)
+      $a[] = $this->middle;
+    return implode(' ', $a);
+  }
+  //
+  static function fetchAll($ugid, $activeOnly) {
+    $c = self::asCriteria($ugid);
+    if ($activeOnly)
+      $c->active = true;
+    return self::fetchAllBy($c, null, 1000);
+  }
+  static function fetch($id) {
+    $c = self::asCriteria();
+    $c->providerId = $id;
+    return self::fetchOneBy($c); 
+  }
+  static function asCriteria($ugid = null) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Address_addrFacility = new FacilityAddress();
+    return $c;
+  }
+  static function asOptionalJoin($fid = null) {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fid);
+  }
+  /**
+   * @param SqlRec $rec
+   * @return string
+   */
+  static function formatProviderFacility($rec) {
+    $a = array();
+    if (isset($rec->Provider)) 
+      $a[] = $rec->Provider->formatName();
+    if (isset($rec->Address_addrFacility) && $rec->Address_addrFacility->name) 
+      $a[] = $rec->Address_addrFacility->name;
+    if (isset($rec->Facility) && $rec->Facility->name) 
+      $a[] = $rec->Facility->name;
+    return implode(' @ ', $a);                                                                                                            
+  }
+}
+//
+class Areas extends SqlGroupLevelRec {
+  //
+  public $areaId;
+  public $userGroupId;
+  public $name;
+  public $active;
+  //
+  static $FIRST_CUSTOM_ID = 1000;
+  //
+  public function getSqlTable() {
+    return 'areas';
+  }
+}

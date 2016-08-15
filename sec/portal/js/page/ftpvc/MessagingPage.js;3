@@ -1,0 +1,230 @@
+/**
+ * PortalPage MessagingPage
+ */
+MessagingPage = Html.Page.extend(function(self) {
+  return {
+    onbodyload:function() {
+      PageTile.create();
+    }
+  }
+})
+PageTile = {
+  create:function() {
+    return Html.Tile.create(window.content).extend(function(self) {
+      return {
+        STATES:{LISTING:0,EDITING:1},
+        //
+        init:function() {
+          self.tiles = Html.Tiles.create(self, [
+            self.list = ListTile.create(self).bubble('onselect', self.list_onselect),
+            self.edit = EditTile.create(self).bubble('onpost', self.drawAsListing).bubble('onreturn', self.drawAsListing)]);
+          self.draw(self.STATES.LISTING); 
+        },
+        draw:function(state) {
+          if (state == self.STATES.LISTING) 
+            self.list.select().load();
+          else
+            self.edit.select().load(self.thread);
+        },
+        drawAsListing:function() {
+          self.draw(self.STATES.LISTING);
+        },
+        list_onselect:function(thread) {
+          self.thread = thread;
+          self.draw(self.STATES.EDITING);
+        }
+      }
+    })
+  }
+}
+EditTile = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'Message').extend(function(self) {
+      return {
+        onpost:function() {},
+        onreturn:function() {},
+        //
+        init:function() {
+          self.head = Html.H1.create().into(self);
+          self.posts = Html.Tile.create(self, 'Posts');
+          self.reply = My.ReplyTile.create(self).bubble('onpost', self);
+          self.back = ReturnAnchor.create(self, 'Back to Messages');
+        },
+        load:function(thread) {
+          self.head.setText(thread.subject);
+          self.back.hide();
+          self.posts.clean().setHeight(100).working(true);
+          Ajax.Messaging.openThread(thread.threadId, function(thread) {
+            self.thread = thread;
+            self.reply.load(thread);
+            self.posts.setHeight().working(false);
+            self.draw();
+            self.back.show();
+          })
+        },
+        draw:function() {
+          self.posts.clean();
+          self.thread.MsgPosts.forEach(function(post) {
+            My.Post.create(post).into(self.posts);
+          })
+        }
+      }
+    })
+  },
+  ReplyTile:{
+    create:function(container) {
+      var My = this;
+      return Html.Tile.create(container).extend(function(self) {
+        return {
+          onpost:function() {},
+          //
+          init:function() {
+            self.tiles = Html.Tiles.create(self, [
+              self.reply = Html.AnchorAction.asNote('Post a reply').into(self).bubble('onclick', self.reply_onclick),
+              self.editor = My.Editor.create(self).bubble('onpost', self).bubble('oncancel', self.editor_oncancel)]);
+          },
+          load:function(thread) {
+            self.thread = thread;
+            self.editor.load(self.thread);
+            self.reply.select();
+          },
+          reply_onclick:function() {
+            self.editor.select();
+          },
+          editor_oncancel:function() {
+            self.reply.select();
+          }
+        }
+      })
+    },
+    Editor:{
+      create:function(container) {
+        return Html.Tile.create(container, 'Editor').extend(function(self) {
+          return {
+            onpost:function() {},
+            oncancel:function() {},
+            //
+            init:function() {
+              Html.Table2Col.create(Html.Div.create('Author').into(self)).left.setText('New Reply');
+              var div = Html.Tile.create(self, 'EditorC');
+              Html.Label.create(null, 'Send To:').into(div);
+              self.sendto = Html.Select.create(C_SendTos).into(div);
+              self.input = Html.DirtyTextArea.create().setRows(6).into(div);
+              self.cmd = Html.CmdBar.create(self).button('Send Now', self.send_onclick, 'send').cancel(self.cancel_onclick);
+            },
+            load:function(thread) {
+              self.thread = thread;
+              self.input.clean();
+            },
+            ontileselect:function() {
+              self.input.setFocus();
+            },
+            send_onclick:function() {
+              if (! self.input.isDirty()) {
+                alert('Please type a message before sending.');
+                return;
+              }
+              self.working(true);
+              Ajax.Messaging.postReply(self.thread.threadId, [self.sendto.getValue()], '<p>' + self.input.getValue() + '</p>', function() {
+                self.working(false);
+                self.onpost();
+              })
+            },
+            cancel_onclick:function() {
+              self.oncancel();
+            }
+          }
+        })
+      }
+    }
+  },
+  Post:{
+    create:function(post) {
+      return Html.Div.create('Post').extend(function(self) {
+        return {
+          //
+          init:function() {
+            self.authorc = Html.Div.create('Author').into(self);
+            self.author = Html.Table2Col.create(self.authorc);
+            self.body = Html.Div.create('Body').into(self);
+            self.draw();
+          },
+          draw:function() {
+            self.authorc.addClassIf('self', post.authorId == me.portalUserId);
+            self.author.left.setText(post.author);
+            self.author.right.setText(post.dateCreated);
+            self.body.html(post.body);
+          }
+        }
+      })
+    }
+  }
+}
+ListTile = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'ListTile').extend(function(self) {
+      return {
+        onselect:function(thread) {},
+        oncompose:function() {},
+        //
+        init:function() {
+          self.head = Html.H1.create('Messages').into(self);
+          self.stubs = Html.Tile.create(self, 'Stubs');
+          var actions = Html.Tile.create(self, 'Actions');
+          self.compose = Html.AnchorAction.asNote('Compose a new message').into(actions).hide().bubble('onclick', self.oncompose),
+          self.back = ReturnAnchor.create(self);
+        },
+        load:function() {
+          self.back.hide();
+          self.stubs.clean().setHeight(100).working(true);
+          Ajax.Messaging.getMyInboxThreads(function(threads) {
+            self.threads = threads;
+            self.stubs.setHeight().working(false);
+            self.draw();
+            self.back.show();
+          })          
+        },
+        draw:function() {
+          self.stubs.clean();
+          if (self.threads.isEmpty()) {
+            self.stubs.add(Html.Span.create('none', 'You have no messages.'));
+          } else { 
+            self.threads.forEach(function(thread) {
+              My.Stub.create(thread).into(self.stubs).bubble('onselect', self);
+            })
+          }
+        }
+      }
+    })
+  },
+  Stub:{
+    create:function(thread) {
+      var My = this;
+      return Html.HoverableDiv.create('Stub').extend(function(self) {
+        return {
+          onselect:function(thread) {},
+          //
+          init:function() {
+            self.topic = Html.Div.create('Topic').into(self);
+            self.post = Html.Div.create('Post').into(self);
+            self.draw();
+          },
+          draw:function() {
+            self.addClassIf('read', thread.isRead());
+            self.topic.setText(thread.subject);
+            self.post.add(Html.Span.create('bold').setText('Last post:'));
+            self.post.add(Html.Span.create('ml5').setText(self.getPostText(thread.Inbox.MsgPost)));
+          },
+          getPostText:function(p) {
+            return p.dateCreated + ' by ' + p.author;
+          },
+          onclick:function() {
+            self.onselect(thread);
+          }
+        }
+      })
+    }
+  }
+}

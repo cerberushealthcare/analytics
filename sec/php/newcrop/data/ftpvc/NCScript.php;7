@@ -1,0 +1,400 @@
+<?php
+require_once '_DomData.php';
+require_once '_NameParser.php';
+/**
+ * NewCrop's <NCScript> structure 
+ * For supplying to clickthru post
+ */
+class NCScript extends DomData {
+  public /*CredentialsType*/ $Credentials;         
+  public /*UserRoleType*/ $UserRole;            
+  public /*DestinationType*/ $Destination;     
+  public /*AccountType*/ $Account;             
+  public /*LocationType*/ $Location;            
+  public /*LicensedPrescriberType*/ $LicensedPrescriber;  
+  public /*PatientType*/ $Patient;
+  public /*[OutsidePrescriptionType]*/ $OutsidePrescription;             
+  public $_xmlns = 'http://secure.newcropaccounts.com/interfaceV7';
+  /**
+   * Static
+   * @param string $date
+   * @return 'CCYYMMDD'
+   */
+  public static function formatDate($date) {
+    return date('Ymd', strtotime($date));
+  }
+}
+// Types
+//
+class AccountType extends DomData {
+  public $_ID;
+  //
+  public $accountName;
+  public $siteID;
+  public /*AddressType*/ $AccountAddress;  
+  public $accountPrimaryPhoneNumber;
+  public $accountPrimaryFaxNumber = '0';  // TODO
+  /**
+   * Static builder
+   * @param User $user
+   * @return AccountType
+   */
+  public static function fromUser($user) {
+    $ug = $user->userGroup;
+    return new AccountType(
+      $ug->id,
+      $ug->name,
+      1,  // acctSite
+      AddressType::fromAddress($ug->address),
+      $ug->address->phone1,
+      $ug->address->getFax());
+  }
+}  
+//
+class AddressType extends DomData {
+  public $address1 = DomData::REQUIRED;
+  public $address2;
+  public $city = DomData::REQUIRED;
+  public $state = DomData::REQUIRED;
+  public $zip = DomData::REQUIRED;
+  public $zip4 = '0000';
+  public $country = 'US';
+  /**
+   * Static builder
+   * @param Address $addr
+   * @return AddressType
+   */
+  public static function fromAddress($addr) {
+    return new AddressType(
+      $addr->addr1,
+      $addr->addr2,
+      $addr->city,
+      $addr->state,
+      $addr->zip
+      );
+  }
+}
+//
+class ContactType extends DomData {
+  public $homeTelephone;
+  public $workTelephone;
+  public $cellularTelephone;
+  public $pagerTelephone;
+  public $fax;
+  public $email;
+  public $backOfficeTelephone;
+  public $backOfficeFax;
+  /**
+   * Static builder
+   * @param Client $client
+   * @return ContactType
+   */
+  public static function fromClient($client) {
+    return new ContactType(
+      $client->shipAddress->phone1,
+      $client->shipAddress->phone2,
+      $client->shipAddress->phone3,
+      null,
+      null,
+      $client->shipAddress->email1
+      );
+  }
+}
+//
+class CredentialsType extends DomData {
+  public $partnerName;
+  public $name;
+  public $password;
+  public $productName;
+  public $productVersion;
+  /**
+   * Static builder
+   * @param NewCrop.Credentials $cred
+   * @return CredentialsType
+   */
+  public static function fromCredentials($cred) {
+    return new CredentialsType(
+      $cred->partner,
+      $cred->name, 
+      $cred->password, 
+      'SuperDuperSoftware', 
+      'V5.3'
+      );
+  }
+}
+//
+class DestinationType extends DomData {
+  const DEST_COMPOSE = 'compose';
+  const DEST_STATUS = 'status';
+  const DEST_MEDENTRY = 'medentry';
+  //
+  public $requestedPage;
+  public $logoutPage;
+  public $sessionTimeoutInMinutes;
+  public $messageTransactionId;
+}
+//
+class LicensedPrescriberType extends DomData {
+  public $_ID;
+  //
+  public /*PersonNameType*/ $LicensedPrescriberName;  
+  public $dea;
+  public $prescriberStatus;
+  public $upin;
+  public $licenseState;
+  public $licenseNumber;
+  public $prescriberNetwork;
+  public $prescriberStartDateTime;
+  public $prescriberStopDateTime;
+  public $npi;
+  public $freeformCredentials;
+  /**
+   * Static builder
+   * @param User $user
+   * @return LicensedPrescriberType
+   */
+  public static function fromUser($user) {
+    return new LicensedPrescriberType(
+      $user->uid,
+      PersonNameType::fromFullName($user->name),
+      $user->dea,
+      null,  // prescriberStatus
+      null,  // upin
+      $user->licenseState,
+      $user->license,
+      null,  // prescriberNetwork
+      null,  // prescriberStartDateTime
+      null,  // prescriberStopDateTime
+      $user->npi
+      );    
+  }
+}
+//
+class LocationType extends DomData {
+  public $_ID;
+  //
+  public $locationName;
+  public $locationShortName;
+  public /*AddressType*/ $LocationAddress = DomData::REQUIRED;  
+  public $primaryPhoneNumber;
+  public $primaryFaxNumber = '0';  // TODO
+  public $pharmacyContactNumber = DomData::REQUIRED;
+  /**
+   * Static builder
+   * @param User $user
+   * @return LocationType
+   */
+  public static function fromUserClient($user, $client) {
+    $ug = $user->userGroup;
+    $rxContact = ($client == null) ? '0' : $client->pharmAddress->phone1;
+    return new LocationType(
+      $ug->id,
+      $ug->name,
+      null,  // shortName
+      AddressType::fromAddress($ug->address),
+      $ug->address->phone1,
+      $ug->address->getFax(),
+      $rxContact);
+  }
+}
+//
+class OutsidePrescriptionType extends DomData {
+  public $externalId;
+  public $date;
+  public $doctorName;
+  public $drug;
+  public $dispenseNumber;
+  public $sig;
+  public $refillCount;
+  public $prescriptionType = 'reconcile';
+  /**
+   * Static builder
+   * @param [JDataMed] $meds
+   * @param array(OutsidePrescriptionType,..)
+   * @return OutsidePrescriptionType
+   */
+  public static function fromMeds($meds) {
+    if ($meds && count($meds) > 0) {
+      $recs = array();
+      foreach ($meds as $med) {
+        if ($med->name) 
+          $recs[] = OutsidePrescriptionType::fromMed($med);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromMed($med) {
+    $refills = null;
+    if ($med->rx != null) {
+      $a = explode('Refills: ', $med->rx);
+      if (count($a) > 1) {
+        $refills = substr($a[1], 0, -1);
+      }
+    }
+    return new OutsidePrescriptionType(
+      $med->id,
+      NCScript::formatDate($med->date),
+      null,
+      OutsidePrescriptionType::fixName($med->name),
+      intval($med->disp),
+      $med->buildSig(),
+      intval($refills)
+      );
+  }
+  private static function fixName($name) {
+    return str_replace(';', '-', $name);
+  }
+}
+// 
+class PatientDiagnosisType extends DomData {
+  public $diagnosisID = DomData::REQUIRED;
+  public $diagnosisType;
+  public $onsetDate;
+  public $diagnosisName;
+  public $recordedDate;
+  /**
+   * Static builder
+   * @param [JDataDiagnosis] $diagnoses
+   * @return array(PatientDiagnosisType,..)
+   */
+  public static function fromDiagnoses($diagnoses) {
+    if ($diagnoses && count($diagnoses) > 0) {
+      $recs = array();
+      foreach ($diagnoses as $diagnosis) {
+        if ($diagnosis->icd) 
+          $recs[] = PatientDiagnosisType::fromDiagnosis($diagnosis);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromDiagnosis($diagnosis) {
+    return new PatientDiagnosisType(
+      $diagnosis->icd,
+      'ICD9',
+      null,
+      $diagnosis->text
+      );
+  }
+}
+//
+class PatientAllergyFreeformType extends DomData {
+  public $allergyName = DomData::REQUIRED;
+  public $allergySeverityTypeId;
+  public $allergyComment;
+  /**
+   * Static builder
+   * @param [JDataAllergy] $allergies
+   * @param [PatientAllergyFreeformType,..]
+   */
+  public static function fromAllergies($allergies) {
+    if ($allergies && count($allergies) > 0) {
+      $recs = array();
+      foreach ($allergies as $allergy) {
+        if ($allergy->agent) 
+          $recs[] = PatientAllergyFreeformType::fromAllergy($allergy);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromAllergy($allergy) {
+    return new PatientAllergyFreeformType(
+      $allergy->agent,
+      null,
+      implode(' - ', $allergy->getReactions())
+      );
+  }
+}
+//
+class PatientCharacteristicsType extends DomData {
+  public $dob;
+  public $gender;
+  public $height;
+  public $heightUnits;
+  public $weight;
+  public $weightUnits;
+  public $language;
+  /**
+   * Static builder
+   * @param Client $client
+   * @return PatientChacteristicsType
+   */
+  public static function fromClient($client) {
+    return new PatientCharacteristicsType(
+      NCScript::formatDate($client->birth),
+      $client->sex
+      );
+  }
+}
+//
+class PatientType extends DomData {
+  public $_ID;
+  //
+  public /*PersonNameType*/ $PatientName = DomData::REQUIRED;          
+  public $medicalRecordNumber;
+  public $socialSecurityNumber;
+  public $memo;
+  public /*AddressType*/ $PatientAddress;          
+  public /*ContactType*/ $PatientContact;           
+  public /*PatientCharacteristicsType*/ $PatientCharacteristics = DomData::REQUIRED;
+  public /*[PatientAllergyFreeformType]*/ $PatientFreeformAllergy;
+  public /*[PatientDiagnosisType]*/ $PatientDiagnosis;
+  /**
+   * Static builder
+   * @param Client $client
+   * @param [JDataAllergy] $allergies
+   * @return PatientType
+   */
+  public static function fromClient($client, $allergies, $diagnoses) {
+    $return = null;
+    if ($client) 
+      $return = new PatientType(
+        $client->uid,
+        new PersonNameType(
+          $client->lastName,
+          $client->firstName),
+        $client->id,
+        null,  // ssn
+        null,  // memo
+        AddressType::fromAddress($client->shipAddress),
+        ContactType::fromClient($client),
+        PatientCharacteristicsType::fromClient($client),
+        PatientAllergyFreeformType::fromAllergies($allergies),
+        PatientDiagnosisType::fromDiagnoses($diagnoses)
+        );
+    return $return;    
+  }
+}
+//
+class PersonNameType extends DomData {
+  public $last;
+  public $first;
+  public $middle;
+  public $prefix;
+  public $suffix;
+  /**
+   * Static builder
+   * @param string $fullname 'Dr. Henry S. Collier Jr'
+   * @return PersonNameType
+   */
+  public static function fromFullName($fullname) {
+    $parser = new NameParser($fullname);
+    return new PersonNameType(
+      $parser->last,
+      $parser->first,
+      $parser->middle,
+      $parser->title,
+      $parser->suffix
+      );
+  }
+}
+//
+class UserRoleType extends DomData {
+  public $user;  
+  public $role;
+  public $name;
+  public $password;
+}
+?>

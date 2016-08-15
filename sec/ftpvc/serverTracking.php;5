@@ -1,0 +1,67 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/sql/OrderEntry.php'; 
+require_once 'php/data/json/JAjaxMsg.php'; 
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverTracking.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = json_decode($_POST['obj']);
+  logit('serverTracking.php (posted)');
+  logit_r($_POST);
+}
+switch ($action) {
+  /**
+   * Get track items
+   */
+  case 'getOpen':
+  case 'getUnsched':
+  case 'getClosed':
+    $action .= 'Items';
+    $recs = OrderEntry::$action(get($obj, 'cid'));
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  /**
+   * Update a track item
+   */
+  case 'update':
+    OrderEntry::saveItem($obj);
+    $m = new JAjaxMsg($action, null);
+    break;
+  /**
+   * Generate from ordersheet  
+   */
+  case 'order':
+    $orderItems = $obj;
+    $trackCatItems = OrderEntry::order($orderItems);
+    $m = new JAjaxMsg($action, jsonencode($trackCatItems));
+    break;
+  /**
+   * Save ordersheet items
+   */
+  case 'saveOrder':
+    OrderEntry::saveOrder($obj);
+    $m = new JAjaxMsg($action, null);
+    break;
+  /**
+   * Get add tracking template
+   */
+  case 'getPid':
+    $pid = OrderEntry::getPid();
+    $m = new JAjaxMsg($action, $pid);
+    break;
+  //
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) 
+  echo $m->out();
+?>

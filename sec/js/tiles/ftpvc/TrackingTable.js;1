@@ -1,0 +1,172 @@
+var C_TrackItem;
+/**
+ * Tracking Table
+ * Requires: TableLoader, ClientUi, DocUi
+ * 
+ *   <div id='track-filter' class='mb5'>
+ *     <ul id='track-filter-ul' class='topfilter'></ul>
+ *   </div>
+ *   <div id='track-div' class='fstab'>  
+ *     <table id='track-table' class='fsb'>
+ *       <thead>
+ *         <tr id='track-head' class='fixed head'>
+ *           <th style=''></th>
+ *           <th style=''>Patient</th>
+ *           <th style=''>Source</th>
+ *           <th style='width:12%'>Ordered</th>
+ *           <th style='width:12%'>Scheduled</th>
+ *           <th style='width:12%'>Closed</th>
+ *         <tr>
+ *       </thead>
+ *       <tbody id='track-tbody'>
+ *       </tbody>
+ *     </table>
+ *   </div>
+ */
+var TrackingTable = {
+  criteria:null,
+  callback:null,
+  parent:null,
+  table:null,
+  recs:null,  // {id:TrackItem,..}
+  //
+  /*
+   * @arg divId 'id' of parent <div>
+   * @arg clientId to restrict table to one client (optional)
+   * @arg height '450px' of table (optional)
+   * @callback() when loaded
+   */
+  load:function(divId, clientId, height, callback) {
+    this.parent = $(divId);
+    this.callback = callback;
+    if (clientId) {
+      this.cid = clientId;
+      this.criteria = {'cid':clientId};
+    }
+    this._loadHtml(height);
+    this._loadResults();
+  },
+  /*
+   * @arg Facesheet fs
+   */
+  popTrackingAdd:function(fs) {
+    var self = this;
+    Includer.getTrackingAdd_pop(fs,
+      function() {
+        self._loadResults();
+      });
+  },
+  pEdit:function(trackItemId) {
+    var rec = this.recs[trackItemId];
+    var filter = this.table.buildFilterFromTopbar();
+    var self = this;
+    Includer.getTrackingEntry_pop(rec, 
+      function(id) {
+        self._loadResults(filter, id);
+      });
+  },
+  //
+  _loadResults:function(filter, updatedId) {
+    if (this.callback == null) 
+      overlayWorking(true, this.parent);
+    var t = new TableLoader('track-tbody', 'off', 'track-table', 'track-head');
+    t.defineFilter(filter ? filter : this._getFilter());
+    var self = this;
+    Ajax.post(Ajax.SVR_TRACKING, 'getTracking', self.criteria,
+      function(recs) {
+        self.recs = {};
+        var lastCat = null;
+        var scrollTo = null;
+        for (var i = 0, j = recs.length; i < j; i++) {
+          var rec = recs[i];
+          self.recs[rec.trackItemId] = rec;
+          var client = rec.ClientStub;
+          var session = rec.SessionStub;
+          var cat = C_TrackItem.TCATS[rec.trackCat];
+          if (cat != lastCat) {
+            t.createTr(true, null, self._getFilter(cat));
+            t.createTd('histbreak', cat);
+            t.td.colSpan = 6;
+            lastCat = cat;
+          }
+          t.createTr(false, null, self._getFilter(cat, rec.UserStub_OrderBy.name, rec.status, ClientUi.formatName(client)));
+          t.createTdAppend(null, self._createTrackingAnchor(rec, rec.trackDesc));
+          t.createTdAppend('nowrap', ClientUi.createClientAnchor(client));
+          if (session) 
+            t.createTdAppend('nowrap', DocUi.createPreviewAnchor(client.clientId, session));
+          else 
+            t.createTd('nowrap', 'Facesheet');
+          t.createTd('nowrap', rec.orderDate);
+          t.createTd('nowrap', rec.schedDate);
+          t.createTd('nowrap', rec.closedDate);
+          if (rec.trackItemId == updatedId) 
+            scrollTo = t.tr;
+        }
+        t.loadFilterTopbar('track-filter-ul', filter);
+        if (scrollTo) 
+          fade(scrollToTr_(scrollTo));
+        if (self.callback) {
+          self.callback();
+          self.callback = null;
+        } else {
+          overlayWorking(false);
+        }
+      }
+    );
+    this.table = t;
+  },
+  _getFilter:function(cat, orderedBy, status, patient) {
+    var filter = {
+      'Categories':cat,
+      'Ordered By':orderedBy,
+      'Status':this._formatStatus(status)};
+    if (this.criteria == null) 
+      filter['Patient'] = patient;
+    return filter;
+  },
+  _formatStatus:function(status) {
+    switch (status) {
+      case C_TrackItem.STATUS_ORDERED:
+      case C_TrackItem.STATUS_SCHED:
+        return 'Open';
+      case C_TrackItem.STATUS_CLOSED:
+        return 'Closed';
+      default:
+        return null;
+    }
+  },
+  _createTrackingAnchor:function(rec, text) {
+    var href = 'javascript:TrackingTable.pEdit(' + rec.trackItemId + ')';
+    var a = createAnchor(null, href, 'action track', text);
+    if (rec.priority == C_TrackItem.PRIORITY_STAT)
+      a.style.color = 'red';
+    return a;
+  },
+  _loadHtml:function(height) {
+    clearChildren(this.parent);
+    this._appendFilter();
+    this._appendTable(height);
+  },
+  _appendFilter:function() {
+    var div = createDiv('track-filter', 'topfilter');
+    var ul = createList(div, 'track-filter-ul', 'topfilter');
+    this.parent.appendChild(div);
+  },
+  _appendTable:function(height) {
+    var div = createDiv('track-div', 'fstab');
+    var table = createTable('track-table', 'fsb', 'track-tbody', true);
+    appendHeaderRow(table, 'track-head', 'fixed head', [
+      {'text':''},
+      {'text':'Patient'},
+      {'text':'Source'},
+      {'text':'Ordered','style':'width:12%'},
+      {'text':'Scheduled','style':'width:12%'},
+      {'text':'Closed','style':'width:12%'}]);
+    div.appendChild(table);
+    this.parent.appendChild(div);
+    if (height) {
+      div.style.height = height;
+      this.parent.style.height = 'auto';
+    }
+  }
+}

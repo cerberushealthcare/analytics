@@ -1,0 +1,392 @@
+<?php
+require_once 'php/data/xml/_XmlRec.php';
+//
+/**
+ * Clinical XML Readers
+ * @author Warren Hornsby
+ */
+class ClinicalXmls {
+  //
+  function parse($xml) {
+    if (strpos($xml, 'ContinuityOfCareRecord'))
+      return ClinicalXml_Ccr::parse($xml);
+    if (strpos($xml, 'ClinicalDocument'))
+      return ClinicalXml_Ccd::parse($xml);
+    throw new XmlParseException('XML document type not recognized.');
+  }
+}
+abstract class ClinicalXml extends XmlRec {
+  public $Patient;
+  public $Problems;
+  public $Meds;
+  public $Alerts;
+  public $Results;
+  //
+  public $_type;
+  public $_root;
+  //
+  static function parse($xml) {
+    $me = new static();
+    $me->_root = parent::parse($xml);
+    $me->onparse($me->_root);
+    $me->format();
+    return $me;
+  }
+  public function concat($node, $field = null) {
+    if ($field)  
+      $node = getr($node, $field);
+    $a = array();
+    if (! is_null($node))
+      if (is_scalar($node)) 
+        $a[] = $node;
+      else 
+        foreach ($node as $e) 
+          $a[] = $this->concat($e);
+    return implode(' ', $a);
+  }
+  public function concata() {
+    $args = func_get_args();
+    return $this->concat($args);
+  }
+  public function cleanr(&$node, $fields) {
+    if (! is_null($node))
+      if (! is_scalar($node)) 
+        foreach ($node as $fid => $e) 
+          if (is_string($fid) && array_search($fid, $fields) !== false) 
+            unset($node->$fid);
+          else if (! is_scalar($e)) 
+            $this->cleanr($e, $fields);
+  }
+  protected function onparse($root) {}
+  abstract protected function format();
+  protected function sanitize() {
+    unset($this->_root);
+  } 
+}
+/**
+ * Continuity of Care
+ */
+class ClinicalXml_Ccr extends ClinicalXml {
+  public $_type = 'CCR';
+  public $_actors;
+  //
+  public function getr($rec, $field, $suffix = '', $prefix = '') {
+    $text = getr($rec, $field);
+    if ($text && is_string($text)) 
+      return "$prefix$text$suffix";
+  }
+  public function getTypeConcat($rec, $field = null) {
+    if ($field) 
+      $rec = getr($rec, $field);
+    if ($rec) {
+      $type = $this->getr($rec, 'Type.Text', ':');
+      if ($type) 
+        unset($rec->Type);
+      return $this->concata($type, $this->concat($rec));
+    }
+  }
+  public function getActor($actorId) {
+    return geta($this->_actors, $actorId);
+  }
+  public function getPerson($actorId) {
+    $actor = $this->getActor($actorId);
+    if ($actor)
+      return getr($actor, 'Person');
+  }
+  public function getPersonName($person) {
+    $rec = get($person, 'Name');
+    if ($rec) {
+      if (isset($rec->DisplayName))
+        return $rec->DisplayName;
+      else
+        return $this->concat($rec);
+    }
+  }
+  public function getDescription($rec) {
+    return $this->concat($rec, 'Description');
+  }
+  public function getId($rec) {
+    $rec = getr($rec, 'IDs');
+    if ($rec) {
+      return $this->concata(
+        getr($rec, 'Type.Text'),
+        getr($rec, 'ID'),
+        $this->getSourceCite($rec));
+    }
+  }
+  public function getAddress($rec) {
+    return $this->getTypeConcat($rec, 'Address');
+  }
+  public function getSourceCite($rec) {
+    $name = $this->getSourceName($rec);
+    if ($name) 
+      return "(Source: $name)";
+  }
+  public function getSourceName($rec) {
+    $actor = getr($rec, 'Source.Actor');
+    if ($actor) 
+      return $this->getActorName($actor);
+  }
+  public function getActorName($rec) {
+    $id = getr($rec, 'ActorID');
+    $person = $this->getPerson($id);
+    if ($person) 
+      $id = $this->getPersonName($person);
+    $role = $this->getr($rec, 'ActorRole.Text', ')', '(');
+    return $this->concata($id, $role);
+  }
+  public function getDateTimes($rec) {
+    $recs = arrayify(getr($rec, 'DateTime'));
+    foreach ($recs as &$rec) {
+      $rec->ExactDateTime = $this->getExactDate($rec);
+      $rec = $this->getTypeConcat($rec);
+    }
+    return $this->concat($recs);
+  }
+  public function getExactDate($rec) {
+    $rec = getr($rec, 'ExactDateTime');
+    if ($rec) 
+      return formatDateTime($rec);
+  }
+  public function getBirth($person) {
+    $rec = getr($person, 'DateOfBirth');
+    $dob = $this->getExactDate($rec);
+    return ($dob) ? $dob : $this->concat($rec);
+  }
+  public function getProductName($rec) {
+    $rec = getr($rec, 'Product');
+    if ($rec) {
+      $name = $this->getr($rec, 'ProductName.Text', ')', '(');
+      $brand = getr($rec, 'BrandName.Text');
+      return $this->concata($brand, $name);
+    }
+  }
+  public function getMedDirections($rec) {
+    $recs = getr($rec, 'Directions.Direction');
+    if ($recs) {
+      $this->cleanr($recs, array('InternalCCRLink', 'DirectionSequencePosition'));
+      return $this->concat($recs);
+    }
+  }
+  public function getDescOrCode($rec) {
+    $rec = getr($rec, 'Description');
+    if ($rec) {
+      $text = getr($rec, 'Text');
+      if ($text)
+        return $text;
+      else
+        return $this->getCode($rec);
+    }
+  }
+  public function getAlertReaction($rec) {
+    $rec = getr($rec, 'Reaction');
+    if ($rec) 
+      return $this->concata(
+        $this->getr($rec, 'Description.Text'),
+        $this->getr($rec, 'Severity.Text', ')', '('));
+  }
+  public function getCode($rec) {
+    $rec = getr($rec, 'Code');
+    if ($rec)
+      return $this->concata(
+        getr($rec, 'CodingSystem'),
+        getr($rec, 'Value')); 
+  }
+  //
+  protected function onparse($root) {
+    $this->_actors = $this->buildActorsMap($root);
+  }
+  protected function format() {
+    $this->Patient = CxPatient_Ccr::from($this, $this->_root);
+    $this->Problems = CxProblem_Ccr::from($this, $this->_root->Body);
+    $this->Meds = CxMed_Ccr::from($this, $this->_root->Body);
+    $this->Alerts = CxAlert_Ccr::from($this, $this->_root->Body);
+    $this->Results = CxResult_Ccr::from($this, $this->_root->Body);
+    $this->sanitize();
+  }
+  protected function sanitize() {
+    parent::sanitize();
+    unset($this->_actors);
+  }
+  //
+  private function buildActorsMap($root) {
+    $recs = array();
+    $actors = getr($root, 'Actors');
+    if ($actors) {
+      foreach ($actors->Actor as $actor) 
+        $recs[$actor->ActorObjectID] = $actor;
+    }
+    return $recs; 
+  }
+}
+/**
+ * CCD Document
+ */
+class ClinicalXml_Ccd extends ClinicalXml {
+  public $_type = 'CCD';
+  //
+  protected function format() {
+  }
+}
+class CxPatient {
+  public $id;
+  public $name;
+  public $birth;
+  public $gender;
+  public $altId;
+  public $address;
+}
+class CxPatient_Ccr extends CxPatient {
+  static function from($xml, $root) {
+    $me = new static();
+    $me->id = getr($root, 'Patient.ActorID');
+    if ($me->id) {
+      $actor = $xml->getActor($me->id);
+      $person = getr($actor, 'Person');
+      if ($person) {
+        $me->name = $xml->getPersonName($person);
+        $me->birth = $xml->getBirth($person);
+        $me->gender = getr($person, 'Gender.Text');
+        $me->altId = $xml->getId($actor);
+        $me->address = $xml->getAddress($actor); 
+      }
+    }
+    return $me;
+  }
+}
+class CxProblem {
+  public $dates;
+  public $type;
+  public $desc;
+  public $source;
+  public $status;
+}
+class CxProblem_Ccr extends CxProblem {
+  static function from($xml, $body) {
+    $mes = array();
+    $problems = arrayify(getr($body, 'Problems.Problem'));
+    foreach ($problems as $problem)
+      $mes[] = static::fromProblem($xml, $problem);
+    return $mes;
+  }
+  static function fromProblem($xml, $rec) {
+    $me = new static();
+    $me->dates = $xml->getDateTimes($rec);
+    $me->type = getr($rec, 'Type.Text');
+    $me->desc = $xml->getDescription($rec);
+    $me->source = $xml->getSourceName($rec);
+    $me->status = getr($rec, 'Status.Text');
+    return $me;  
+  }
+}
+class CxMed {
+  public $dates;
+  public $name;
+  public $strength;
+  public $form;
+  public $qty;
+  public $directions;
+  public $refills;
+  public $source;
+  public $status;
+} 
+class CxMed_Ccr extends CxMed {
+  static function from($xml, $body) {
+    $mes = array();
+    $meds = arrayify(getr($body, 'Medications.Medication'));
+    foreach ($meds as $med)
+      $mes[] = static::fromMed($xml, $med);
+    return $mes;
+  }
+  static function fromMed($xml, $rec) {
+    $me = new static();
+    $me->dates = $xml->getDateTimes($rec);
+    $me->name = $xml->getProductName($rec);
+    $me->strength = $xml->concat($rec, 'Product.Strength');
+    $me->form = $xml->concat($rec, 'Product.Form.Text');
+    $me->qty = $xml->concat($rec, 'Quantity');
+    $me->directions = $xml->getMedDirections($rec);
+    $me->source = $xml->getSourceName($rec);
+    $me->status = getr($rec, 'Status.Text');
+    return $me;
+  }
+}
+class CxAlert {
+  public $dates;
+  public $type;
+  public $desc;
+  public $reaction;
+  public $source;
+  public $status;
+} 
+class CxAlert_Ccr extends CxAlert {
+  static function from($xml, $body) {
+    $mes = array();
+    $alerts = arrayify(getr($body, 'Alerts.Alert'));
+    foreach ($alerts as $alert)
+      $mes[] = static::fromAlert($xml, $alert);
+    return $mes;
+  }
+  static function fromAlert($xml, $rec) {
+    $me = new static();
+    $me->dates = $xml->getDateTimes($rec);
+    $me->type = getr($rec, 'Type.Text');
+    $me->desc = $xml->getDescOrCode($rec);
+    $me->reaction = $xml->getAlertReaction($rec);
+    $me->source = $xml->getSourceName($rec);
+    $me->status = getr($rec, 'Status.Text');
+    return $me;
+  }
+}
+class CxResult {
+  public $dates;
+  public $desc;
+  public $source;
+  public $Tests;
+}
+class CxResult_Ccr extends CxResult {
+  static function from($xml, $body) {
+    $mes = array();
+    $results = arrayify(getr($body, 'Results.Result'));
+    foreach ($results as $result)
+      $mes[] = static::fromResult($xml, $result);
+    return $mes;
+  }
+  static function fromResult($xml, $rec) {
+    $me = new static();
+    $me->dates = $xml->getDateTimes($rec);
+    $me->desc = $xml->getDescOrCode($rec);
+    $me->source = $xml->getSourceName($rec);
+    $me->Tests = CxTest_Ccr::from($xml, $rec);
+    return $me;
+  }
+}
+class CxTest {
+  public $dates;
+  public $type;
+  public $desc;
+  public $result;
+  public $normal;
+  public $flag;
+  public $source;
+}
+class CxTest_Ccr extends CxTest {
+  static function from($xml, $result) {
+    $mes = array();
+    $tests = arrayify(getr($result, 'Test'));
+    foreach ($tests as $test)
+      $mes[] = static::fromTest($xml, $test);
+    return $mes;
+  }
+  static function fromTest($xml, $rec) {
+    $me = new static();
+    $me->dates = $xml->getDateTimes($rec);
+    $me->type = getr($rec, 'Type.Text');
+    $me->desc = $xml->getDescOrCode($rec);
+    $me->result = $xml->concat($rec, 'TestResult');
+    $me->normal = $xml->concat($rec, 'Normal');
+    $me->flag = getr($rec, 'Flag.Text');
+    $me->source = $xml->getSourceName($rec);
+    return $me;
+  }
+}

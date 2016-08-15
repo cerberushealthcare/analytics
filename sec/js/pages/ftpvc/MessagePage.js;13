@@ -1,0 +1,877 @@
+var C_MsgInbox;
+var C_MsgThread;
+/**
+ * Message Page
+ * Global static
+ * Instance assigned to global variable: page
+ */
+var MessagePage = {
+  pageTile:null,
+  workingTile:null,
+  newThreadTile:null,
+  newPostTile:null,
+  postsTile:null,
+  clientTile:null,
+  //sendingTile:null,
+  replyTile:null,
+  thread:null,
+  facesheet:null,
+  state:null,  // page state
+  _PS_LOADING:0,
+  _PS_SHOW_THREAD:1,
+  _PS_REPLY:2,
+  _PS_SAVING_REPLY:3,
+  _PS_COMPLETE:4,
+  _PS_NEW_THREAD:5,
+  /*
+   * Loader 
+   */
+  load:function(query, dao, cInbox, cThread) {
+    Page.setEvents();
+    C_MsgInbox = cInbox;
+    C_MsgThread = cThread;
+    this._loadTiles(dao);
+    if (query.id) {
+      this.getThread(query.id);
+    } else {
+      this.newThread(query);
+    }
+  },
+  pNewComplete:function() {
+    this._new(MessagePage._PS_COMPLETE);
+  },
+  pNewPost:function() {
+    this._new(MessagePage._PS_REPLY);
+  },
+  _new:function(state) {
+    page._loadMedPopHistory();
+    page._setState(state);
+  },
+  pCancel:function() {
+    var self = this;
+    Pop.Confirm.showYesNo('Are you sure you want to cancel this post?', function() {
+      if (self.state == MessagePage._PS_NEW_THREAD) {
+        overlayWorking(true);
+        self._goInbox(); 
+      } else {
+        self.newPostTile.reset();
+        self._setState(MessagePage._PS_SHOW_THREAD);
+      }
+    });
+  },
+  pSend:function() {
+    Page.workingCmd(true);
+    var self = this;
+    if (this.state == MessagePage._PS_REPLY) {
+      var post = this._getValidatedPost();
+      if (post) {
+        self._setState(MessagePage._PS_SAVING_REPLY);
+        Ajax.post(Ajax.SVR_MSG, 'reply', post, function(thread) {
+          self._goInbox();
+        });
+      }
+    } else {
+      var thread = this._getValidatedThread();
+      if (thread) {
+        this._setState(MessagePage._PS_SAVING_REPLY);
+        Ajax.post(Ajax.SVR_MSG, 'newThread', thread, function(thread) {
+          //self.getThreadCallback(thread);
+          self._goInbox();
+        });
+      }
+    }
+  },
+  pComplete:function() {
+    Page.workingCmd(true);
+    page._setState(MessagePage._PS_COMPLETE);
+    var self = this;
+    var post = self.newPostTile.getRecord();
+    self._setState(MessagePage._PS_SAVING_REPLY);
+    Ajax.post(Ajax.SVR_MSG, 'complete', post, function(thread) {
+      self.getThreadCallback(thread);
+      Page.workingCmd(false);
+    });
+  },
+  pClearClient:function() {
+    this.clientTile.clearClient();
+  },
+  pEditClient:function(popEdit) {
+    this.clientTile.editClient(popEdit);
+  },
+  pEditMeds:function() {
+    this.clientTile.editMeds();
+  },
+  setFacesheet:function(fs) {
+    page.facesheet = fs;
+    page._loadMedPopHistory();
+  },
+  getThread:function(mtid) {
+    this._setState(MessagePage._PS_LOADING);
+    Ajax.get(Ajax.SVR_MSG, 'getThread', mtid);
+  },
+  getThreadCallback:function(thread) {
+    this.reset();
+    if (thread == null) {
+      this._goInbox();
+    } else {
+      Header.setUnread(thread._unreadCt);
+      this.thread = thread;
+      this.setFacesheet(thread.facesheet);
+      this._consolidateData();
+      this._loadMedPopHistory();
+      this._setTitle(thread.subject, thread._closed);
+      this._setTag(thread);
+      this.clientTile.loadThread(thread);
+      this.newPostTile.loadThread(thread);
+      this.postsTile.load(thread);
+      if (thread.MsgInbox.isRead == C_MsgInbox.IS_SENT || thread._closed)
+        this._setState(MessagePage._PS_SHOW_THREAD);
+      else
+        this.pNewPost();
+    }
+  },
+  newThread:function(query) {
+    this.reset(query);
+    this.clientTile.showAdd();
+    this._setTitle('New Message');
+    page._loadMedPopHistory();
+    this._setState(MessagePage._PS_NEW_THREAD);
+  },
+  _loadMedPopHistory:function() {
+    if (page.facesheet && window.loadMedHistory) {
+      loadMedHistory(page.facesheet.meds);
+    }
+  },
+  medsChangedCallback:function(facesheet) {
+    this.clientTile.medsChangedCallback(facesheet);
+  },
+  reset:function(query) {
+    this._setState(MessagePage._PS_LOADING);
+    this.thread = null;
+    this.facesheet = null;
+    this.syncs = null;
+    this.newThreadTile.reset(query);
+    this.newPostTile.reset(query);
+    this.postsTile.reset();
+    //this.sendingTile.reset();
+    this.clientTile.reset(query);
+    this._setTitle();
+  },
+  _loadTiles:function(dao) {
+    this.workingTile = new Tile('message-working');
+    this.pageTile = new Tile('thread');
+    this.newThreadTile = NewThreadTile.getInstance();
+    this.newPostTile = NewPostTile.getInstance(dao);
+    //this.sendingTile = new Tile('send-post');
+    this.replyTile = new Tile('post-reply');
+    this.postsTile = PostsTile.getInstance();
+    this.clientTile = ClientTile.getInstance();
+  },
+  _setState:function(state) {
+    if (this.state != state) {
+      this.state = state;
+      switch (state) {
+        case MessagePage._PS_LOADING:
+          this.pageTile.show(false);
+          this.workingTile.show(true);
+          overlayWorking(true, this.workingTile.div);
+          break;
+        default:
+          overlayWorking(false);
+          this.pageTile.show(true);
+          this.workingTile.show(false);
+          switch (state) {
+            case MessagePage._PS_SHOW_THREAD:
+              this.newThreadTile.show(false);
+              this.newPostTile.show(false);
+              this.replyTile.show(! this.thread._closed);
+//              this.newPostTile.show(! this.thread.closed);
+//              this.replyTile.show(false);
+              this.postsTile.show(true);
+              Page.show($('new-post-reply'), false);
+              break;
+            case MessagePage._PS_NEW_THREAD:
+              this.newThreadTile.show(true);
+              this.newPostTile.show(true);
+              this.replyTile.show(false);
+              this.postsTile.show(false);
+              show('cmd-send');
+              hide('cmd-save-complete');
+              Page.show($('new-post-reply'), false);
+              break;
+            case MessagePage._PS_REPLY:
+              this.newThreadTile.show(false);
+              this.newPostTile.show(true);
+              this.replyTile.show(false);
+              this.postsTile.show(true)
+              setText('new-post-reply-h2', 'New Post');
+              show('cmd-send');
+              hide('cmd-save-complete');
+//              Page.show($('new-post-reply'), true);
+              Page.show($('new-post-reply'), false);
+              break;
+            case MessagePage._PS_COMPLETE:
+              this.newThreadTile.show(false);
+              this.newPostTile.show(true);
+              this.replyTile.show(false);
+              this.postsTile.show(true);
+              setText('new-post-reply-h2', 'Post as Complete');
+              hide('cmd-send');
+              show('cmd-save-complete');
+//            Page.show($('new-post-reply'), true);
+              Page.show($('new-post-reply'), false);
+              break;
+            case MessagePage._PS_SAVING_REPLY:
+              //this.newPostTile.show(false);
+              //this.replyTile.show(false);
+              //this.sendingTile.show(true);
+              overlayWorking(true, $('new-post'));
+              break;
+          }
+      }
+    }
+  },
+  onFirstTemplateWindowAdd:function(w) {
+    this.newThreadTile.defaultSubject(w.caption);
+  },
+  _getValidatedPost:function() {
+    var post;
+    try {
+      post = this.newPostTile.getRecord();
+    } catch (e) {
+      Page.workingCmd(false);
+      Page.showError(e);
+      post = null;
+    }
+    return post;
+  },
+  _getValidatedThread:function() {
+    var thread;
+    try {
+      thread = this.newThreadTile.getRecord();
+      mergeInto(thread, this.newPostTile.getRecord());
+      mergeInto(thread, this.clientTile.getRecord());
+    } catch (e) {
+      Page.workingCmd(false);
+      Page.showError(e);
+      thread = null;
+    }
+    return thread;
+  },
+  _goInbox:function() {
+    Page.Nav.goMessages();
+  },
+  _consolidateData:function() {  // create consolidate thread.data from individual [post.data]
+    var thread = this.thread;
+    thread.data = {
+      'qsyncs':{},  // {qsid:[seltext,..],..}
+      'osyncs':{},  // {osid:1,..}  // only 'on' osyncs
+      'dsyncs':{}   // {dsyncij:[seltext,..],..}  // j=tui instance, to allow multi refill requests, e.g. 'refillMed+1@0'
+      };
+    for (var i = 0; i < thread.MsgPosts.length; i++) {
+      var post = thread.MsgPosts[i];
+      if (post.data) {
+        var data = eval(post.data);
+        for (var j = 0; j < data.length; j++) {
+          var syncs = data[j].syncs;
+          this._consolidateQsyncs(syncs.qsyncs);
+          this._consolidateOsyncs(syncs.osyncs);
+          this._consolidateDsyncs(syncs.dsyncs, j);
+        }
+      }
+    }
+  },
+  _consolidateQsyncs:function(qsyncs) {
+    var cache = this.thread.data.qsyncs;
+    if (qsyncs) {
+      for (var qsid in qsyncs) {
+        if (cache[qsid] == null) {
+          cache[qsid] = qsyncs[qsid]; 
+        }
+      }
+    }
+  },  
+  _consolidateOsyncs:function(osyncs) {
+    var cache = this.thread.data.osyncs;
+    if (osyncs) {
+      for (var i = 0; i < osyncs.length; i++) {
+        var osync = osyncs[i];
+        if (cache[osync] == null) {
+          cache[osync] = 1;
+        }
+      }
+    }
+  },
+  _consolidateDsyncs:function(dsyncs, j) {  // j=tui instance
+    var cache = this.thread.data.dsyncs;
+    if (dsyncs) {
+      for (var dsynci in dsyncs) {
+        var dsyncij = dsynci + '@' + j;
+        cache[dsyncij] = dsyncs[dsynci]; 
+      }
+    }
+  },
+  _setTag:function(thread) {
+    var h = [];
+    h.push('Started by <b>');
+    h.push(thread.creator);
+    h.push('</b>: ');
+    h.push(thread.dateCreated);
+    if (thread._closed) {
+      //h.push('<br>Closed by <b>');
+      //h.push(thread.closedBy);  TODO
+      //h.push('</b>: ');
+      //h.push(thread.dateClosed); TODO
+    }
+    setHtml('thread-head-tag', h.join('')); 
+  },
+  _setTitle:function(text, closed) {
+    if (text) {
+      setText('h2', text);
+    } else {
+      setHtml('h2', '&nbsp');
+    }
+    h2.className = (closed) ? 'closed' : 'thread';
+  }
+};
+/**
+ * Posts Tile
+ * Singleton: getInstance()
+ */
+var PostsTile = {
+  authors:null,
+  div:null,
+  topPost:null,
+  getInstance:function() {
+    this.div = $('posts'); 
+    return this;
+  },
+  load:function(thread) {
+    this.authors = [];
+    this.reset();
+    for (var i = 0; i < thread.MsgPosts.length; i++) {
+      var post = this._createPost(thread.MsgPosts[i]);
+      if (i == 0) {
+        this.topPost = post;
+      }
+      this.div.appendChild(post);
+    }
+  },
+  fadeTopPost:function() {
+    fade(this.topPost);
+  },
+  reset:function() {
+    Tile.clear(this.div);
+  },
+  show:function(on) {
+    Page.show(this.div, on);
+  },
+  _createPost:function(post) {
+    var table = createTable();
+    var tr = appendTr(table);
+    var th = createTh(null, 'r' + this._getAuthorIx(post));
+    th.appendChild(createDiv(null, 'time', post.dateCreated));
+    th.appendChild(createDiv(null, null, post.author));
+    if (post.action == C_MsgThread.POST_ACTION_CLOSE) {
+      th.appendChild(createSpan('lock', 'Closed')); 
+    } else {
+      th.appendChild(createSpan(null, this._splitRecips(post.sendTo)));
+    }
+    tr.appendChild(th);
+    tr = appendTr(table);
+    tr.appendChild(createTdHtml(post.body));
+    var div = createDivAppend('post', null, table);
+    return div;
+  },
+  _splitRecips:function(sendTo) {
+    return (sendTo) ? sendTo.split(';').join(', ') : '';    
+  },
+  _getAuthorIx:function(post) {
+    for (var i = 0; i < this.authors.length; i++) {
+      if (this.authors[i] == post.author) {
+        return i;
+      }
+    }
+    this.authors.push(post.author);
+    return i;
+  }
+};
+/**
+ * New Thread Tile
+ * Singleton: getInstance()
+ */
+var NewThreadTile = {
+  entryForm:null,
+  F_SUBJECT:'subject',
+  F_PRIORITY:'priority',
+  getInstance:function() {
+    this.entryForm = this._loadEntryForm(C_MsgThread.PRIORITIES);
+    return this;
+  },
+  reset:function(query) {
+    this.entryForm.reset();
+    if (query) {
+      this.entryForm.setValue(this.F_SUBJECT, query.subject);
+      this.entryForm.setValue(this.F_PRIORITY, query.priority);
+    }
+  },
+  show:function(on) {
+    showIf(on, 'new-thread');
+    this.entryForm.focus('subject');
+  },
+  /*
+   * Returns {
+   *   'subject':subject,
+   *   'priority':priority
+   *   }
+   */
+  getRecord:function() {
+    var rec = this.entryForm.getRecord();
+    if (rec.subject.length == 0) {
+      throw new Error('Subject cannot be blank.');
+    }
+    return rec;
+  },
+  defaultSubject:function(text) {
+    if (this.entryForm.getValue(this.F_SUBJECT) == '') {
+      this.entryForm.setValue(this.F_SUBJECT, text);
+    }
+  },
+  _loadEntryForm:function(priorities) {
+    var ef = new EntryForm($('new-thread-ul'), 'first2');
+    ef.li();
+    ef.appendTextbox(this.F_SUBJECT, 30, 'Subject');
+    ef.appendField(this.F_PRIORITY, createSelect(null, null, priorities), 'Priority');
+    return ef;
+  }
+};
+/**
+ * New Post Tile
+ * Singleton: getInstance()
+ */
+var NewPostTile = {
+  entryForm:null,
+  templateWindows:null,
+  free:null,
+  thread:null,
+  F_TO:'to',
+  getInstance:function(dao) {
+    this.entryForm = this._loadEntryForm(dao.recips);
+    this.templateWindows = TemplateWindows.getInstance(dao.sections);
+    this.free = $('post-free');
+    return this;
+  },
+  reset:function(query) {
+    this.entryForm.reset();
+    this.templateWindows.reset();
+    this.free.value = '';
+    this.recipsDefaulted = false;
+    this.thread = null;
+    if (query) {
+      if (query.to) {
+        var to = Json.decode(query.to);
+        this.entryForm.setValue(this.F_TO, to);
+        this.recipsDefaulted = true;
+      }
+      if (query.pids) {
+        var pids = Json.decode(query.pids);
+        this.templateWindows.add(pids);
+      }
+    }
+  },
+  loadThread:function(thread) {
+    this.thread = thread;
+    this.templateWindows.loadThread(thread);
+    this.defaultRecips(thread);
+  },
+  defaultRecips:function(thread) {
+    if (thread.MsgPosts.length > 0) {
+      var id = thread.MsgPosts[0].authorId;
+      if (id != me.id) {
+        this.entryForm.setValue(this.F_TO, [id]);
+        this.recipsDefaulted = true;
+      }      
+    }
+  },
+  /*
+   * Returns {
+   *   'id':mtid,  // if reply
+   *   'to':[id,..],
+   *   'data':'[{'pid':pid,'syncs':syncs},..]',  // serialized; see TemplateUi.getSyncValues
+   *   'html':html  
+   *   }
+   */
+  getRecord:function() {
+    var to = this.entryForm.getRecord().to;
+    var dataOut = this.templateWindows.getDataOut();
+    var freeText = value_(this.free);
+    if (freeText != '') {
+      dataOut.out.push(freeText);
+    }
+    var html = '<p>' + dataOut.out.join('</p><p>') + '</p>';
+    if (page.state != MessagePage._PS_COMPLETE) {
+      if (to.length == 0) {
+        throw new Error('No recipient(s) are selected.');
+      }
+      if (dataOut.out.length == 0) {
+        throw new Error('Message cannot be blank.');
+      }
+    } else {
+      if (dataOut.out.length == 0) {
+        html = '(No message)';
+      }
+    }
+    var rec = {
+      'to':to,
+      'data':dataOut.data,
+      'html':html
+      };
+    if (this.thread) {
+      rec.id = this.thread.threadId;
+    }
+    return rec;
+  },
+  show:function(on) {
+    showIf(on, 'new-post');
+    this.entryForm.show(page.state != MessagePage._PS_COMPLETE);
+    if (on && page.state != MessagePage._PS_NEW_THREAD) 
+      focus('post-free');
+//    if (on && this.recipsDefaulted) {
+//      this.entryForm.getField('to').pop();
+//      this.recipsDefaulted = false;
+//    }
+  },
+  _loadEntryForm:function(recips) {
+    var ef = new EntryForm($('new-post-ul'), 'first2');
+    ef.li();
+    var at = new AnchorTab('Select Recipient(s)', 'recips');
+    at.loadChecks(recips, 'userId', 'name');
+    at.appendCmd();
+    ef.appendAnchorTab(this.F_TO, at);
+    return ef;
+  }
+};
+/**
+ * Template Windows
+ * Singleton: getInstance()
+ */
+var TemplateWindows = {
+  sections:null,
+  container:null,
+  atabs:null,
+  div:null,
+  pars:null,
+  thread:null,
+  getInstance:function(sections) {
+    this.sections = sections;
+    this.container = $('templates');
+    this.atabs = $('tchooser-atabs');
+    this.div = $('tuis');
+    this.pars = {};  // {pid:{'desc':pdesc,'pi':JParInfo,'tuis':[tuis,..]},..}
+    this.loadTemplateChooser();
+    this.reset();
+    return this;
+  },
+  reset:function() {
+    Tile.clear(this.div);
+    this.thread = page.thread;
+  },
+  loadThread:function(thread) {
+    this.thread = thread;
+  },
+  /*
+   * Returns {
+   *   'data':"[{'pid':pid,'syncs':syncs},..]",  // serialized; see TemplateUi.getSyncValues
+   *   'out':[html,..]  // see TemplateUi.out  
+   *   }
+   */
+  getDataOut:function() {
+    var dataOut = {
+      'data':null,
+      'out':[]};
+    var windows = this.getWindows();
+    if (windows.length > 0) {
+      var data = [];
+      var out = [];
+      for (var i = 0; i < windows.length; i++) {
+        var w = windows[i];
+        data.push({
+          'pid':w.pid,
+          'syncs':w.tui.getSyncValues(true)});
+        out.push(w.tui.out());
+      }
+      dataOut.data = Json.encode(data);
+      dataOut.out = out;
+    }
+    return dataOut;
+  },
+  /* 
+   * Returns [<div>,..]
+   */
+  getWindows:function() {
+    return this.div.children;
+  },
+  loadTemplateChooser:function() {
+    var self = this;
+    for (var sid in this.sections) {
+      var s = this.sections[sid];
+      var at = new AnchorTab(s.name, 'templates');
+      at.loadChecks(s.ParMsgs, 'parId', 'desc', AnchorTab.SEL_TEXT_AS_NONE);
+      at.appendCmd(null, function(atab){self.templateOk(atab)}, 'Insert'); 
+      this.atabs.appendChild(at.anchor);
+      for (var pid in s.ParMsgs) {
+        this.pars[pid] = {'desc':s.ParMsgs[pid].desc};
+      }
+    }
+  },
+  templateOk:function(atab) {
+    var pids = atab.getValue();
+    atab.resetChecks();
+    this.add(pids);
+  },
+  add:function(pids) {
+    var wc = this.getWindows().length;
+    for (var i = 0; i < pids.length; i++) {
+      var pid = pids[i];
+      var w = this.createTuiWindow(pid);
+      this.div.appendChild(w);
+      if (wc == 0 && i == 0) {
+        page.onFirstTemplateWindowAdd(w);
+      } 
+    }
+  },
+  createTuiWindow:function(pid) {
+    var par = this.pars[pid];
+    var window = createDiv(null, 'post-entry');
+    var caption = par.desc;
+    window.appendChild(this.createTuiCap(caption));
+    var tui;
+    if (this.thread) {
+      tui = new TemplateUi(null, this.thread.facesheet, this.thread.data, pid);
+    } else {
+      tui = new TemplateUi(null, null, null, pid);
+    }
+    window.appendChild(tui.doc);
+    window.tui = tui;
+    window.pid = pid;
+    window.caption = caption;
+    return window;
+  },
+  createTuiCap:function(caption) {
+    var self = this;
+    var t = createTable();
+    var tr = appendTr(t);
+    tr.appendChild(createTh(caption));
+    var a = createAnchor(null, null, null, 'X', null, function(){self.closeTui(this)});
+    tr.appendChild(createTdAppend(null, a));
+    return createDivAppend('pcap', null, t);
+  },
+  closeTui:function(a) {
+    var div = findAncestorWith(a, 'className', 'post-entry');
+    Pop.Confirm.showDelete(null, 'template section', function(confirmed) {
+      if (confirmed) {
+        TemplateUi.clearInstance(div.tui);
+        deflate(div);
+      }
+    });
+  }
+};
+/**
+ * ClientTile
+ * Singleton: getInstance()
+ */
+ClientTile = {
+  td:null,
+  facesheet:null,
+  client:null,
+  addTile:null,
+  entryForm:null,
+  existingTile:null,
+  _state:null,  // tile state
+  _TS_HIDDEN:0,
+  _TS_ADD:1,  
+  _TS_ADD_LOADING:2,
+  _TS_ADD_VERIFY:3,
+  _TS_EXISTING:4,
+  getInstance:function() {
+    this.td = $('td-client');
+    this.addTile = new Tile('client-add');
+    this.entryForm = this._loadEntryForm();
+    this.existingTile = new Tile('client-existing');
+    this._setState(ClientTile._TS_HIDDEN);
+    return this;
+  },
+  reset:function(query) {
+    this.facesheet = null;
+    this.client = null;
+    this.entryForm.reset();
+    if (query && query.cid) {
+      this.loadClient(query.cid);
+    }
+  },
+  getRecord:function() {
+    var cid = (this.facesheet && this.facesheet.client) ? this.facesheet.client.clientId : null;
+    return {'cid':cid};
+  },
+  clearClient:function() {
+    this.reset();
+    this._setState(ClientTile._TS_ADD);
+  },
+  _setState:function(state) {
+    this.state = state;
+    switch (state) {
+      case ClientTile._TS_HIDDEN:
+        Page.show(this.td, false);
+        break;
+      case ClientTile._TS_ADD:
+        Page.show(this.td, true);
+        this.addTile.show(true);
+        hide('client-clear-a');
+        hide('client-edit-a');
+        this.existingTile.show(false);
+        break;
+      case ClientTile._TS_ADD_LOADING:
+        this.addTile.working(true);
+        break;
+      case ClientTile._TS_ADD_VERIFY:
+        this.addTile.working(false);
+        Page.show(this.td, true);
+        this.addTile.show(false);
+        show('client-clear-a');
+        hide('client-edit-a');
+        this.existingTile.show(true);
+        break;
+      case ClientTile._TS_EXISTING:
+        Page.show(this.td, true);
+        this.addTile.show(false);
+        hide('client-clear-a');
+        show('client-edit-a');
+        this.existingTile.show(true);
+        break;
+    }
+  },
+  showAdd:function() {
+    this._setState(ClientTile._TS_ADD); 
+  },
+  loadThread:function(thread) {
+    if (thread.clientId) {
+      this._loadFacesheet(thread.facesheet);
+      this._setState(ClientTile._TS_EXISTING);
+    } else {
+      this._setState(ClientTile._TS_HIDDEN);
+    }
+  },
+  loadClient:function(cid) {
+    if (cid) {
+      this._setState(ClientTile._TS_ADD_LOADING);
+      var self = this;
+      Ajax.get(Ajax.SVR_MSG, 'getFacesheet', cid, function(facesheet) {
+        self._loadFacesheet(facesheet);
+        self._setState(ClientTile._TS_ADD_VERIFY);
+      });
+    }
+  },
+  editClient:function(popEdit) {
+    var self = this;
+    Includer.get(Includer.PATIENT_EDITOR, function() {
+      PatientEditor.pop(self.client, popEdit, self);
+    });
+  },
+  patientEditorCallback:function(client) {
+    this.facesheet.client = client;
+    this._loadFacesheet(this.facesheet);
+  },
+  editMeds:function() {
+    Includer.getFaceMeds_pop(this.facesheet);
+  },
+  medsChangedCallback:function(facesheet) {
+    this.facesheet.meds = facesheet.meds;
+    this.facesheet.activeMeds = facesheet.activeMeds;
+    this.facesheet.medsHistByMed = facesheet.medsHistByMed;
+    this.facesheet.medsHistByDate = facesheet.medsHistByDate;
+    this._loadFacesheet(this.facesheet);    
+  },
+  _loadFacesheet:function(facesheet) {
+    if (facesheet) {
+      var c = facesheet.client;
+      setText('h2-client', c.name).className = c.sex;
+      setText('client-uid', c.uid);
+      setText('client-dob', c.birth + ' (' + c.age + ')');
+      this._formatAddress('client-contact', c.Address_Home);
+      this._formatAddress('client-emer', c.Address_Emergency);
+      this._formatAddress('client-rx', c.Address_Rx);
+      setHtml('allergies', this._joinData(facesheet.allergies, 'agent', ' &bull; '));
+      setHtml('meds', this._joinData(facesheet.activeMeds, 'name', '<br>'));
+      this._formatVitals(facesheet.vitals);
+      var links = clearChildren($('client-links'));
+      links.appendChild(createAnchor(null, 'face.php?id=' + c.clientId, 'gogo', 'Patient Facesheet'));
+      //var self = this;
+      //var a = createAnchor(null, null, 'gogo', 'Testing! Edit', null, function(){self.editClient(8)});
+      //links.appendChild(a);
+      this.client = c;
+      NewCrop.loadFromMsg(me.perm.er, c);
+    }
+    this.facesheet = facesheet;
+    page.setFacesheet(facesheet);
+  },
+  _formatAddress:function(id, a) {
+    var e = $(id);
+    var h = [];
+    h.push(a.addr1);
+    h.push(a.addr2);
+    h.push(a.csz);
+    if (a && a.name) {
+      h.unshift(a.name);
+    }
+    h.push(AddressUi.formatPhone(a.phone1, a.phone1Type));
+    h.push(AddressUi.formatPhone(a.phone2, a.phone2Type));
+    var s = removeNullsFromArray(h).join('<br>');
+    if (s == '') {
+      e.innerHTML = '[None on file]';
+      e.style.color = 'red';
+    } else {
+      e.innerHTML = s;
+      e.style.color = '';
+    }
+  },
+  _loadEntryForm:function() {
+    var ef = new EntryForm($('client-add-ul'));
+    ef.li();
+    var a = createAnchor(null, null, 'client', 'Select a Patient');
+    ef.appendClientPicker('cid', a);
+    var self = this;
+    ef.setOnChange(function(value, a){self.loadClient(value)});
+    return ef;
+  },
+  _formatVitals:function(vitals) {
+    var v = null;
+    for (var d in vitals) {
+      v = vitals[d];
+      break; 
+    }
+    if (v && v.all) {
+      setText('h3-vitals', 'Vitals (' + v.dateText.substr(0, 6) + ')');
+      setHtml('vitals', bulletJoin(v.all));
+    } else {
+      setText('h3-vitals', 'Vitals');
+      setHtml('vitals', '');
+    }
+  },
+  _joinData:function(a, field, glue) {
+    var text;
+    if (a) {
+      var v = [];
+      for (var i = 0; i < a.length; i++) {
+        v.push(a[i][field]);
+      }
+      text = v.join(glue);
+    } else {
+      text = '(None)';
+    }
+    return text;
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = MessagePage;  

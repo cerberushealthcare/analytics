@@ -1,0 +1,370 @@
+IpcPickerPop = {
+  /*
+   * @arg string value
+   * @arg string text
+   * @arg int cat Ipc.CAT (optional)
+   */
+  pop:function(value, text, cat) {
+    return IpcPicker.Pop = this.create().pop(value, text, cat);
+  },
+  create:function() {
+    var My = this;
+    return Html.PickerPop.create('Test/Procedure Selector').extend(My, function(self, parent) {
+      return {
+        POP_POS:Pop.POS_CENTER,
+        onselect:function(rec) {},
+        //
+        init:function() {
+          self.table.thead().tr('fixed head').th('Test/Procedure').w('35%').th('Description').w('45%').th('Category').w('20%');
+        },
+        cmdbar_buttons:function(cb) {
+          cb.add('Add Custom...', self.add_onclick).cancel(self.close);
+        },
+        onbeforeshow:function(value, text, cat) {
+          self.cat = cat;
+        },
+        table_fetch:function(callback_recs) {
+          Ajax.Ipc.getAll(self.cat, callback_recs);
+        },
+        table_applies:function(rec, search) {
+          if (search)
+            return rec.name.match(search);
+          else
+            return true;
+        },
+        table_add:function(rec, tr) {
+          var a = (rec.custom) ? Html.AnchorAction.asSelect2(rec.name) : Html.AnchorAction.asSelect(rec.name);
+          tr.select(rec, a).td(rec.desc).td(rec._cat);
+        },
+        add_onclick:function() {
+          var rec = {
+            'cat':self.cat,
+            'name':self.getSearchText(),
+            'desc':self.getSearchText()};
+          IpcCustomEntry.pop(rec, self.entry_onupdate);
+        },
+        entry_onupdate:function(rec) {
+          self.close();
+          self.onselect(rec);
+        }
+      }
+    })
+  }
+}
+/**
+ * RecPicker IpcPicker
+ */
+IpcPicker = {
+  create:function() {
+    return Html.RecPicker.create(26, IpcPickerPop).extend(function(self) {
+      return {
+        getValueFrom:function(rec) {
+          return rec.ipc;
+        },
+        getTextFrom:function(rec) {
+          return rec.name;
+        }
+      }
+    })
+  }
+}
+IpcPicker_Lab = {
+  create:function(defaultText) {
+    return IpcPicker.create(26, IpcPickerPop).extend(function(self) {
+      return {
+        showPop:function(value, text) {
+          text = text || defaultText; 
+          self.pop.pop(value, text, C_Ipc.CAT_LAB).bubble('onselect', self.pop_onselect);
+        }
+      }
+    })
+  }
+}
+/**
+ * Pop IpcHmSelector 
+ */
+IpcHmSelector = {
+  /*
+   * @arg fn(IpcHm) callback_onselect
+   */
+  pop:function(callback_onselect) {
+    return IcpHmSelector = this.create().pop(callback_onselect);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('IPC Health Maintenance Selector', 700).extend(function(self) {
+      return {
+        onselect:function(rec) {},
+        //
+        init:function() {
+          self.table = My.Table.create(self.content).bubble('onselect', self.table_onselect);
+          Html.CmdBar.create(self.content).button('Customize This List', self.custom_onclick, 'customcmd').cancel(self.close);
+        },
+        onshow:function(callback_onselect) {
+          if (callback_onselect)
+            self.onselect = callback_onselect;
+          self.load();
+        },
+        load:function() {
+          self.table.load();
+        },
+        table_onselect:function(rec) {
+          self.onselect(rec);
+        },
+        custom_onclick:function() {
+          IpcHmCustomizer.pop(self.table.recs).bubble('onupdate', self.load);
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container) {
+      return Html.TableLoader.create(container, 'fsb').extend(function(self) {
+        return {
+          //
+          init:function() {
+            self.setHeight(400);
+            self.thead().trFixed().th('Category').w('20%').th('Name').w('40%').th('Auto Apply Criteria').w('40%');
+          },
+          rowBreaks:function(rec) {
+            return [rec.Ipc.cat];
+          },
+          rowOffset:function(rec) {
+            return rec.Ipc.cat;
+          },
+          add:function(rec, tr) {
+            tr.td(rec.Ipc._cat, 'fs').select(rec.Ipc.name).td(rec.summary());
+          },
+          fetch:function(callback_recs) {
+            Ajax.Ipc.getIpcHms(callback_recs);
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * Pop IpcHmCustomizer 
+ */
+IpcHmCustomizer = {
+  //
+  /*
+   * @arg IcpHm[] recs (optional)
+   */
+  pop:function(recs) {
+    return IcpHmCustomizer = this.create().pop(recs);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('IPC Health Maintenance Customization', 750).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          self.table = My.Table.create(self.content).bubble('onupdate', self);
+          Html.SplitCmdBar.create(self.content).add('Select Test/Procedure...', self.ipc_onclick).split().exit(self.close);
+        },
+        onshow:function(recs) {
+          self.load(recs);
+        },
+        load:function(recs) {
+          self.table.load(recs);
+        },
+        ipc_onclick:function() {
+          IpcPickerPop.pop().bubble('onselect', function(ipc) {
+            self.table.edit(IpcHm.asNew(ipc));
+          })
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container) {
+      return Html.TableLoader.create(container, 'fsgr grid').extend(function(self) {
+        return {
+          onupdate:function() {},
+          //
+          init:function() {
+            self.setHeight(400);
+            self.thead().trFixed().th('Category').w('20%').th('Name').w('40%').th('Auto Apply Criteria').w('40%');
+          },
+          rowBreaks:function(rec) {
+            return [rec.Ipc.cat];
+          },
+          rowOffset:function(rec) {
+            return rec.ipc;
+          },
+          rowKey:function(rec) {
+            return rec.getKey();
+          },
+          add:function(rec, tr) {
+            tr.td(rec.Ipc._cat, 'fs').edit(rec.Ipc.name).select(Html.Anchor.create(null, rec.summary()));
+          },
+          fetch:function(callback_recs) {
+            Ajax.Ipc.getIpcHms(callback_recs);
+          },
+          onselect:function(rec) {
+            self.edit(rec);
+          },
+          edit:function(rec) {
+            IpcHmEditor.pop(rec).bubble('onupdate', self.editor_onupdate);
+          },
+          //
+          editor_onupdate:function(rec) {
+            self.update(rec);
+            self.onupdate();
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * RecEntryPop IpcCustomEntry
+ */
+IpcCustomEntry = {
+  pop:function(rec, callback) {
+    IpcCustomEntry = this.create().pop(rec, callback);
+  },
+  create:function() {
+    return Html.RecEntryPop.create('Custom Test/Procedure Code Entry').extend(function(self) {
+      return {
+        onshow:function(rec) {
+          self.form.focus((rec.cat) ? 'name' : 'cat');
+        },
+        buildForm:function(ef) {
+          ef.line().lbl('Category').select('cat', C_Ipc.CATS, '');
+          ef.line('mt10').lbl('Name').textbox('name', 25, 25);
+          ef.line().lbl('Desc').textbox('desc', 60);
+        },
+        isDeletable:function(rec) {
+          return rec && rec.ipc;
+        },
+        save:function(rec, callback_rec) {
+          Ajax.post('Ipc', 'saveCustom', rec, callback_rec);
+        }
+      }
+    })
+  }
+}
+/**
+ * DirtyPop IpcHmEditor 
+ */
+IpcHmEditor = {
+  //
+  /*
+   * @arg IcpHm rec
+   */
+  pop:function(rec) {
+    return IpcHmEditor = this.create().pop(rec);
+  },
+  create:function() {
+    var My = this;
+    return Html.DirtyPop.create('Test/Procedure Customization', 600).extend(function(self) {
+      return {
+        onupdate:function(rec) {},
+        //
+        init:function() {
+          self.h2 = Html.H2.create().nbsp().into(self.content);
+          self.applybox = My.ApplyBox.create(self.content);
+          Html.CmdBar.create(self.content).save(self.save_onclick).delc(self.delc_onclick).cancel(self.close);
+        },
+        onpop:function(rec) {
+          self.h2.setText(rec.Ipc.name);
+          self.load(rec);
+        },
+        isDirty:function() {
+          return self.applybox.isDirty();
+        },
+        load:function(rec) {
+          self.rec = rec;
+          self.applybox.load(rec);
+          self.draw();
+        },
+        draw:function() {
+          self.applybox.draw();
+        },
+        save_onclick:function() {
+          var rec = self.applybox.getRecord();
+          self.working(true);
+          Ajax.Ipc.saveIpcHm(rec, function(rec) {
+            self.onupdate(rec);
+            self.working();
+            self.close(true);
+          })
+        },
+        delc_onclick:function() {
+          var rec = self.applybox.getRecord();
+          self.working(true);
+          Ajax.Ipc.delIpcHm(rec, function() {
+            self.onupdate(rec.getKey());
+            self.working();
+            self.close(true);
+          })
+        }
+      }
+    })
+  },
+  ApplyBox:{
+    create:function(container) {
+      var My = this;
+      return Html.Tile.create(container, 'Tree').extend(function(self) {
+        return {
+          //
+          init:function() {
+            self.entry = My.Entry.create(self).invisible().bubble('onupdateauto', self.draw);
+            self.tile = Html.Tile.create(self, 'TreeContainer');
+            self.tree = ReportTree.create(self.tile).bubble('onupdate', self.tree_onupdate).hide();
+          },
+          load:function(rec) {
+            self.rec = rec;
+            self.report = DummyReportCriteria.from(rec.criteria);
+            self.tree.set('_dirty', false).load(self.report);
+            self.entry.load(rec).visible();
+          },
+          draw:function() {
+            self.tree.showIf(self.rec.auto);
+            self.entry.draw();
+          },
+          tree_onupdate:function() {
+            self.tree._dirty = true;
+          },
+          isDirty:function() {
+            return self.tree._dirty || self.entry.isDirty();
+          },
+          getRecord:function() {
+            var rec = self.entry.applyTo();
+            rec.criteria = self.report.Rec;
+            rec.Ipc = null;
+            return rec;
+          }
+        }
+      })
+    },
+    Entry:{
+      create:function(container) {
+        return Html.UlEntry.create(container).extend(function(self) {
+          var ef = self.ef;
+          return {
+            onupdateauto:function() {},
+            //
+            init:function() {
+              ef.line().check('auto', 'Auto apply', self.auto_onclick).startSpan('freq').lbl('every', 'nopad').textbox('every', 2).lbl('', 'spacer').select('interval', C_IpcHm.INTERVALS).lbl('for patient(s) matching:').endSpan();
+            },
+            onload:function(rec) {
+              rec.every = rec.every || 1;
+              rec.interval = rec.interval || C_IpcHm.INT_YEAR;
+            },
+            draw:function() {
+              ef.freq.visibleIf(self.rec.auto);
+            },
+            auto_onclick:function() {
+              self.rec.auto = ef.getValue('auto');
+              self.onupdateauto();
+            }
+          }
+        })
+      }
+    }
+  }
+}

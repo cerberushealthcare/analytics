@@ -1,0 +1,25 @@
+Ajax.Login = {
+  _SVR:'Login',
+  /*
+   * @arg string id
+   * @arg string pw
+   * @arg fn(PortalSession) onsuccess
+   */
+  login:function(id, pw, onsuccess) {
+    Ajax.postr(this._SVR, 'login', {'id':id,'pw':pw}, PortalSession, onsuccess);
+  },
+  /*
+   * @arg string[] responses
+   * @arg fn(PortalSession) onsuccess
+   */
+  respond:function(responses, onsuccess) {
+    Ajax.postr(this._SVR, 'respond', responses, PortalSession, onsuccess);
+  },
+  /*
+   * @arg string[] responses (new password + repeat)
+   * @arg fn(PortalSession) onsuccess
+   */
+  setPassword:function(responses, onsuccess) {
+    Ajax.postr(this._SVR, 'setPassword', responses, PortalSession, onsuccess);
+  }
+}

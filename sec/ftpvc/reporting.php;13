@@ -1,0 +1,37 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'php/data/rec/sql/Procedures_Hm.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) 
+  header('Location: welcome.php');
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? HEAD('Reporting', 'ReportingPage') ?>
+    <? HEAD_UI('Entry', 'Reporting') ?>
+  </head>
+  <body onload='start()'>
+    <? BODY() ?>
+      <h1>Reporting</h1>
+      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <div id='tile'>
+          <div class='spacer'>&nbsp;</div>
+        </div>
+      <? renderBoxEnd() ?>
+    <? _BODY() ?>
+  </body>
+<? JsonConstants::write('LookupAreas') ?>
+<script type='text/javascript'>
+C_Users = <?=UserGroups::getUsersJsonList() ?>;
+C_DrugSubclasses = <?=DrugClasses::getSubclassJsonList() ?>;
+C_Templates = <?=Sessions::getTemplateJsonList() ?>;
+C_IpcHm = <?=IpcHm_Cds::getStaticJson() ?>;
+function start() {
+  //var hash = UrlHash.get('reportId');
+  ReportingPage.load();
+}
+</script>
+</html>

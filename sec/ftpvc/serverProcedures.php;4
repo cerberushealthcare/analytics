@@ -1,0 +1,50 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/Procedures_Admin.php';
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->Patient->facesheet);
+  switch ($action) {
+    //
+    case 'getAll':
+      $procs = Procedures::getAll($_GET['id']);
+      AjaxResponse::out($action, $procs);
+      exit;
+    case 'get':
+      $proc = Procedures::get($_GET['id']);
+      AjaxResponse::out($action, $proc);
+      exit;
+    case 'save':
+      $rec = Procedures::save($obj);
+      AjaxResponse::out($action, $rec);
+      exit;
+    case 'saveProc':
+      $rec = Procedures::saveProcOnly($obj);
+      AjaxResponse::out($action, $rec);
+      exit;
+    case 'delete':
+      $id = Procedures::delete($_GET['id']);
+      AjaxResponse::out($action, $id);
+      exit;
+    case 'saveResult':
+      $rec = Procedures::saveResult($obj->procId, $obj->result);
+      AjaxResponse::out($action, $rec);
+      exit;
+    case 'deleteResult':
+      $id = Procedures::deleteResult($_GET['id']);
+      AjaxResponse::out($action, $id);
+      exit;
+    case 'getResultHistory':
+      $recs = Procedures::getResultHistory($obj);
+      AjaxResponse::out($action, $recs);
+      exit;
+    case 'record':  // record administrative IPC
+      Proc_Admin::record($_GET['cid'], $_GET['ipc']);
+      AjaxResponse::out($action, null);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

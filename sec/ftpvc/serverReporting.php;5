@@ -1,0 +1,57 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/sql/Reporting.php'; 
+require_once 'php/data/json/JAjaxMsg.php'; 
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  Logger::debug(currentUrl());
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = json_decode($_POST['obj']);
+  Logger::debug(currentUrl());
+  Logger::debug_r($_POST, '$_POST');;
+}
+switch ($action) {
+  //
+  case 'newReport':
+    $report = Reporting::newReport($_GET['id']);
+    $m = new JAjaxMsg($action, jsonencode($report));
+    break;
+  case 'getJoin':
+    $join = Reporting::getJoin($_GET['id']);
+    $m = new JAjaxMsg($action, jsonencode($join));
+    break;
+  case 'getReport':
+    $report = Reporting::getReport($_GET['id']);
+    $m = new JAjaxMsg($action, jsonencode($report));
+    break;
+  case 'deleteReport':
+    $report = Reporting::deleteReport($_GET['id']);
+    $m = new JAjaxMsg($action, $_GET['id']);
+    break;
+  case 'getStubs':
+    $stubs = Reporting::getStubs();
+    $m = new JAjaxMsg($action, jsonencode($stubs));
+    break;
+  case 'save':
+    $report = Reporting::save($obj);
+    $m = new JAjaxMsg($action, jsonencode($report));
+    break;
+  case 'generate':
+    $report = Reporting::generate($obj);
+    $m = new JAjaxMsg($action, jsonencode($report));
+    break;
+  //
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) 
+  echo $m->out();
+?>

@@ -1,0 +1,29 @@
+<?php
+require_once 'php/data/hl7/_HL7Rec.php';
+require_once 'php/data/hl7/msg/seg/MSH.php';
+//
+/**
+ * HL7 Message 
+ * @author Warren Hornsby
+ */
+abstract class HL7Message extends HL7Rec {
+  //
+  public /*MSH*/ $Header;
+  //
+  public function __construct($header, $buffer) {
+    $this->Header = $header;
+    $this->setSegments($buffer, $header->encodingChars);
+  }
+  //
+  /**
+   * @param string $data
+   * @return HL7Message
+   */
+  static function from($data) {
+    $buffer = HL7Buffer::from($data);
+    $header = MSH::from($buffer->head());
+    $class = $header->msgType->type;
+    require_once "php/data/hl7/msg/$class.php";
+    return new $class($header, $buffer);
+  }
+}

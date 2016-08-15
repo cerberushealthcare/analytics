@@ -1,0 +1,164 @@
+DIV.pop-content {
+  font-family:Tahoma,Arial;
+  font-size:8pt;
+}
+A.cmd {
+  font-family:Tahoma,Arial;
+  font-size:8pt;
+  height:16px;
+}
+TABLE.data TD, TABLE.data TH {
+  font-family:Tahoma,Arial;
+  font-size:9pt;
+}
+A.action {
+  height:16px;
+  font-family:Tahoma,Arial;
+  font-size:11pt;
+}
+TD.icons A.icon {
+  height:26px;
+  font-size:10pt;
+  line-height:22px;
+}
+DIV.spreadsheet TD, DIV.spreadsheet TH {
+  padding:4px 4px;
+  font-family:Tahoma,Arial;
+  font-size:11pt;
+}
+TABLE.data TD {
+  padding-bottom:1px;
+}
+TABLE.small TH, TABLE.small TD {
+  font-size:9pt;
+}
+TABLE.small A.action {
+  padding-bottom:2px;
+  font-size:9pt;
+}
+UL.entry LABEL {
+  font-family:'Lucida Grande','Trebuchet MS';
+}
+DIV#ss-searching {
+  font-family:Tahoma,Arial;
+  font-size:10pt;
+}
+DIV.ro {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:9pt;
+  line-height:13pt;
+}
+DIV.ro-title {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:11pt;
+  line-height:16pt;
+}
+A.pencil {
+  height:15px;
+  line-height:14px;
+  font-family:Tahoma,Arial;
+  font-size:9pt;
+}
+DIV#pop-workingbar {
+  font-family:Tahoma,Arial;
+  font-size:10pt;
+}
+
+.calMsg {
+  font-family:Tahoma,Arial; 
+  font-size:10pt; 
+}
+.calBody {
+  font-family:Tahoma,Arial; 
+  font-size:10pt;
+}
+.calTitle {
+  font-family:Tahoma,Arial; 
+  font-size:10.5pt; 
+}
+.calDayTitle {
+  font-family:Tahoma,Arial; 
+  font-size:8pt;
+  width:20px; 
+}
+UL.entry SPAN {
+  margin-top:2px;
+  font-family:Arial,'Lucida Grande','Trebuchet MS';
+  vertical-align:top;
+  display:inline-block;
+  font-size:9pt;
+}
+
+A.cbig {
+  font-size:11pt;
+  height:35px;
+}
+UL.entry LABEL.subhead {
+  font-family:'Lucida Grande','Trebuchet MS';
+}
+UL.entry SELECT {
+  margin-top:1px;
+}
+DIV.pop-frame H1 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:9.5pt;
+  margin-bottom:0;
+}
+LABEL.section {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:9pt;  
+}
+UL EM {
+  font-size:9pt;
+}
+DIV.scrollform H1 {
+  font-size:10pt;
+}
+UL.filter {
+  font-size:9pt;
+}
+UL.filter LI.head {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:9pt;  
+}
+UL.filter LI A {
+  font-family:Arial;
+  font-size:8pt;
+  line-height:8pt;
+  padding:0 0 1px 19px;
+}
+UL.fwidth LI A {
+  padding:2px 0 1px 19px;
+}
+DIV#pop-dv-body {
+  font-family:Times New Roman;
+}
+DIV#pop-dv-nav TD#dv-nav-2 DIV {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+}
+DIV#pop-dv-nav TD#dv-nav-2 SPAN {
+  font-size:8pt;
+}
+DIV#pop-dv-nav A#dv-nav-prev SPAN {
+  font-size:8pt;
+}
+DIV#pop-dv-nav A#dv-nav-next SPAN {
+  font-size:8pt;
+}
+DIV#pop-mpv-body {
+  font-family:Arial;
+}
+DIV#pop-mpv-nav TD#mpv-nav-2 DIV {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+}
+DIV#pop-mpv-nav TD#mpv-nav-2 SPAN {
+  font-size:8pt;
+}
+DIV#pop-mpv-nav A#mpv-nav-prev SPAN {
+  font-size:8pt;
+}
+DIV#pop-mpv-nav A#mpv-nav-next SPAN {
+  font-size:8pt;
+}

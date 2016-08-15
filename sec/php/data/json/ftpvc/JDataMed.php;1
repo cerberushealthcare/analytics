@@ -1,0 +1,281 @@
+<?php
+require_once 'php/data/json/_util.php';
+//
+/**
+ * Med 
+ * Facesheet Data Record
+ * 
+ * Organization:
+ *   ugid, cid,..
+ *     sid>0, date=DOS, quid=quid, index=cix  // built from closed note
+ *     sid=NULL, name                         // facesheet summary record
+ *     sid=0, name, date_updated              // facesheet update history
+ */
+class JDataMed {
+  //
+  public $id;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+	public $date;  // dos
+	public $quid;
+	public $index;
+	public $name;
+	public $amt;
+	public $freq;
+	public $asNeeded;
+	public $meals;
+	public $route;
+	public $length;
+	public $disp;
+	public $text;
+	public $rx;
+	public $active;  // saved for facesheet recs (session_id=0); for history records, synced with corresponding facesheet active value 
+	public $expires;
+	public $updated;
+	public $source;
+  //
+	const SQL_FIELDS = 'data_meds_id, user_group_id, client_id, session_id, date, quid, `index`, name, amt, freq, as_needed, meals, route, length, disp, text, rx, active, expires, date_updated, source';
+  //
+  const QUID_CURRENT       = 'meds.meds.@addMed';
+  const QUID_ADD           = 'med mgr.medMgr.@addMed';
+  const QUID_DISCONTINUE   = 'med mgr.medMgr.@dcMed';
+  const QUID_REFILL        = 'med mgr.medMgr.@rfMed'; 
+  const QUID_FS_ADD        = 'fs.add'; 
+  const QUID_FS_CHANGE     = 'fs.change'; 
+  const QUID_FS_DEACTIVATE = 'fs.deactivate'; 
+  const QUID_FS_RX         = 'fs.rx';
+  const QUID_MSG_REFILL    = 'response.callInRx.@rfMed';
+  //
+  const SOURCE_INTERNAL    = 0;
+  const SOURCE_NEWCROP     = 1; 
+  //
+	public function __construct($id, $userGroupId, $clientId, $sessionId, $date, $quid, $index, $name, $amt, $freq, $asNeeded, $meals, $route, $length, $disp, $text, $rx, $active, $expires, $updated, $source) {
+    $this->id = $id;
+    $this->userGroupId = $userGroupId;
+    $this->clientId = $clientId;
+    $this->sessionId = $sessionId;
+    $this->date = $date;
+    $this->quid = $quid;
+    $this->index = $index;
+    $this->name = $name;
+    $this->amt = $amt;
+    $this->freq = $freq;
+    $this->asNeeded = ($asNeeded == 1) ? 1 : 0; 
+    $this->meals = $meals;
+    $this->route = $route;
+    $this->length = $length;
+    $this->disp = $disp;
+    $this->setText($text);
+    $this->rx = $rx;
+    $this->active = $active;
+    $this->expires = $expires;
+    $this->updated = $updated;
+    $this->source = $source;
+	}
+	public function isLongTerm() {
+	  if (trim($this->length) == '' || $this->length == 'long-term') {
+	    return true;
+	  } else {
+	    return false;
+	  }
+	}
+	public static function isDiscontinued($quid) {
+	  return JDataMed::getQuidText($quid) == 'Discontinued';
+	}
+	public static function getQuidText($quid) {
+    switch ($quid) {
+      case JDataMed::QUID_ADD:
+      case JDataMed::QUID_FS_ADD:
+      case 'plan.plan.@addMed':
+      case 'plan.meds.@addMed':
+        return 'Added';
+      case JDataMed::QUID_CURRENT:
+        return 'Listed';
+      case JDataMed::QUID_DISCONTINUE:
+      case 'plan.meds.@dcMed':
+      case 'plan.plan.@dcMed':
+        return 'Discontinued';
+      case JDataMed::QUID_FS_CHANGE:
+        return 'Changed';
+      case JDataMed::QUID_FS_DEACTIVATE:
+        return 'Deactivated';
+      case JDataMed::QUID_REFILL:
+      case JDataMed::QUID_MSG_REFILL:
+      case 'plan.plan.@rfMed':
+        return 'Refilled';
+      case JDataMed::QUID_FS_RX:
+        return 'Printed';
+    }
+	}
+	public function setText($text) {
+	  $a = explode(' (Disp:', $text);
+	  $this->text = $a[0];
+	}
+	public function setExpires($date = null) {
+	  if ($date == null) {
+	    $date = $this->date;
+	  }
+	  if ($this->isLongTerm()) {
+	    $this->expires = null;
+	    $this->length = null;
+	  } else {
+	    if (strpos($this->length, 'day') > 0) {
+        $days = intval($this->length); 
+        $dt = strtotime($date);
+	      $dt = mktime(0, 0, 0, date('n', $dt), date('j', $dt) + $days, date('Y', $dt));  // add days
+	      $this->expires = date('Y-m-d', $dt);
+	    }
+	  }
+	}
+	public function isExpired() {
+	  if ($this->expires == null) return false;
+	  return isPast($this->expires);
+	}
+	public function formatExpireText() {
+	  if ($this->expires == null) {
+	    return null;
+	  }
+	  return 'EXPIRES: ' . formatShortDate($this->expires);
+	}
+	public function buildSig() {
+    $t = '';
+    if (! isBlank($this->amt)) {
+      $t .= ' ' . $this->amt;
+    }
+    if (! isBlank($this->freq)) {
+      $t .= ' ' . $this->freq;
+    }
+    if (! isBlank($this->route)) {
+      $t .= ' ' . $this->route;
+    }
+    if ($this->asNeeded) {
+      $t .= ' as needed';
+    }
+    if ($this->meals) {
+      $t .= ' with meals';
+    }
+    if (! isBlank($this->length)) {
+      $t .= ' for ' . $this->length;
+    }
+    return trim($t);
+	}
+	public function out() {
+    $out = '';
+    $out = nqq($out, 'id', $this->id);
+    $out = nqq($out, 'clientId', $this->clientId);
+    $out = nqq($out, 'sessionId', $this->sessionId);
+    $out = nqq($out, 'date', formatDate($this->date));
+    $out = nqq($out, 'quid', JDataMed::getQuidText($this->quid));
+    $out = nqq($out, 'index', $this->index);
+    $out = aqq($out, 'name', denull($this->name));
+    $out = nqq($out, 'amt', $this->amt);
+    $out = nqq($out, 'freq', $this->freq);
+    $out = nqqo($out, 'asNeeded', $this->asNeeded);
+    $out = nqq($out, 'meals', $this->meals);
+    $out = nqq($out, 'route', $this->route);
+    $out = nqq($out, 'length', $this->length);
+    $out = nqq($out, 'disp', $this->disp);
+    $out = nqq($out, 'text', $this->text);
+    $out = nqq($out, 'rx', $this->rx);
+    $out = nqqo($out, 'active', $this->active);
+    $out = nqq($out, 'expires', $this->expires);
+    $out = nqq($out, 'expireText', $this->formatExpireText());
+    $out = nqqo($out, 'source', $this->source);
+    return cb($out);	  
+	}
+	//
+	/**
+	 * Static builder (clone)
+	 * @param JDataMed $dto 
+	 * @return JDataMed
+	 */
+	public static function copy($dto) {
+	  return new JDataMed(
+	    null,
+      $dto->userGroupId,
+      $dto->clientId,
+      $dto->sessionId,
+      $dto->date,
+      $dto->quid,
+      $dto->index,
+      $dto->name,
+      $dto->amt,
+      $dto->freq,
+      $dto->asNeeded,
+      $dto->meals,
+      $dto->route,
+      $dto->length,
+      $dto->disp,
+      $dto->text,
+      $dto->rx,
+      $dto->active,
+      $dto->expires,
+      $dto->updated,
+      $dto->source);
+	}
+	/**
+	 * Static builders
+	 * @param int $ugid
+	 * @param int $cid 
+	 * @param array $meds; see NewCrop->getCurrent()
+	 * @return array('name'->JDataMed,..)
+	 */
+	public static function fromNewCropMeds($ugid, $cid, $meds) {
+	  $dtos = array();
+	  foreach ($meds as $med) {
+	    $dto = JDataMed::fromNewCropMed($ugid, $cid, $med);
+	    $dtos[$dto->name] = $dto;
+	  }
+	  return $dtos;
+	}
+  /**
+   * Static builder
+   * @param int $ugid
+   * @param int $cid 
+   * @param object $med; see NewCrop->getCurrent()
+   * @return JDataMed
+   */
+  public static function fromNewCropMed($ugid, $cid, $med) {
+    $name = $med->DrugName;
+    if (! isblank($med->Strength)) 
+      $name .= " ($med->Strength $med->StrengthUOM)";
+    $dto = new JDataMed(
+      null,
+      $ugid,
+      $cid,
+      null,
+      $med->PrescriptionDate,
+      $med->PrescriptionGuid,
+      null,
+      $name,
+      $med->DosageNumberDescription,
+      $med->DosageFrequencyDescription,
+      $med->TakeAsNeeded,
+      null,
+      $med->Route,
+      null,
+      $med->Dispense,
+      null,
+      null,
+      true,
+      null,
+      null,
+      JDataMed::SOURCE_NEWCROP);
+    $dto->text = $dto->buildSig();
+    return $dto;
+  }
+	//
+	public static function cmp($a, $b) {
+	  if ($a->active != $b->active) {
+	    return ($a->active) ? -1 : 1;
+	  }
+	  if ($a->expires != $b->expires) {
+	    if ($a->expires == null) return -1;
+	    if ($b->expires == null) return 1;
+	    return compareDates($a->expires, $b->expires);
+	  }
+	  return ($a->name < $b->name) ? -1 : 1;
+	}
+}
+?>

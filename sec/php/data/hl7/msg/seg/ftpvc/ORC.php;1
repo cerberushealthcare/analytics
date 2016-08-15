@@ -1,0 +1,14 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+class ORC extends HL7Segment {
+  //
+  public $orderControl;
+  public $uniqueId;
+  public $fillerAccId;
+  public $placerGroupNo;
+  public $orderStatus;
+  public $responseFlag;
+  public $qty;
+  public $parent;
+}

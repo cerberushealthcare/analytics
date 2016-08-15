@@ -1,0 +1,50 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Status Count 
+ */
+class ErxStatusCount extends Rec {
+  //
+  public $pendingRxCount;
+  public $alertCount;
+  public $faxCount;
+  public $pharmComCount;  
+  //
+  public function getStatusText() {
+    $a = array();
+    if ($this->faxCount > 0) 
+      $a[] = "Fax: $this->faxCount";
+    if ($this->pendingRxCount > 0)
+      $a[] = "Pend: $this->pendingRxCount";
+    return nullify(implode(' ', $a)); 
+  }
+  public function getPharmText() {
+    $a = null;
+    if ($this->pharmComCount > 0) 
+      $a = "Pharm: $this->pharmComCount";
+    return $a; 
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    $o->_statusText = $this->getStatusText();
+    $o->_pharmText = $this->getPharmText();
+    return $o;
+  }
+  /**
+   * @param object $status @see NewCrop::pullAcctStatus
+   * @param object $pharmReqs @see NewCrop::pullRenewalRequests 
+   * @return ErxStatusCount 
+   */
+  public static function fromNewCrop($status, $pharmReqs) {
+    global $myLogin;
+    $rec =  new ErxStatusCount(get_object_vars($status));
+    if ($pharmReqs)
+      $rec->pharmComCount = count($pharmReqs);
+    else
+      $rec->pharmComCount = 0;
+    return $rec;
+  }
+}
+?>
+

@@ -1,0 +1,37 @@
+H1 {
+  margin:0;
+}
+H2 {
+  margin:1em 0 0 0;
+}
+UL {
+  margin:0;
+  padding-left:1em;
+}
+A.more {
+  padding-left:1em;
+}
+.fs {
+  text-transform:uppercase;
+  font-weight:bold;
+}
+.pad {
+  padding-left:0.5em;
+}
+LABEL {
+  font-weight:bold;
+  padding-right:5px;
+}
+DIV.Detail A {
+  display:block;
+  margin-bottom:5px;
+}
+DIV.Detail A.action {
+  margin-left:18px;
+}
+DIV.DetailTile H2 {
+  margin:0;
+}
+DIV.DetailTile H3 {
+  margin:0 0 0.5em 0;
+}

@@ -1,0 +1,219 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/IProcCodes.php';
+//
+/**
+ * Reporting DAO
+ * @author Warren Hornsby
+ */
+class Reporting {
+  //
+  /**
+   * @param string $icd 'starts with' wildcard, e.g. '786.'
+   * @param bool $active to include only active diagnoses (optional)
+   * @return array(RepClient+RepDiagnosis[],..)
+   */
+  static function patientsByIcd($icd, $active = true) {
+    global $myLogin;
+    $recs = RepDiagnosis::matchByIcd($myLogin->userGroupId, $icd);
+    $recs = RepClient::invert($recs);
+    return $recs;
+  }
+  /**
+   * @param int $startAge (optional)
+   * @param int $toAge (optional)
+   * At least one of startAge, toAge required
+   * @return array(RepClient,..)
+   */
+  static function patientsByAge($fromAge, $toAge) {
+    global $myLogin;
+    $recs = RepClient::fetchByBirth($myLogin->userGroupId, $start, $end);
+    return $recs;
+  }
+  /**
+   * @param string $med 'contains' wildcard, e.g. 'buterol'
+   * @param bool $active to include only active meds (optional)
+   * @return array(RepClient+RepMed[],..)
+   */
+  static function patientsByMed($name, $active = true) {
+    global $myLogin;
+    $recs = RepMed::matchByName($myLogin->userGroupId, $name);
+    $recs = RepClient::invert($recs);
+    return $recs;
+  }
+  /**
+   * @param string $zip (optional)
+   * @param string $city 'starts with' wildcard, e.g. 'lex' (optional) 
+   * At least one of zip, city required 
+   * @return array(RepClient+RepAddress,..)
+   */
+  static function patientsByLocation($zip, $city) {
+    global $myLogin;
+    $recs = RepAddress::matchByLocation($myLogin->userGroupId, $zip, $city);
+    $recs = RepClient::invert($recs, 'Client_tableId', false);
+    return $recs;
+  }
+  /**
+   * @param int $ipc
+   * @param $fromValue
+   * @param unknown_type $toValue
+   * @return multitype:
+   */
+  static function patientsByResults($ipc, $fromValue, $toValue) {
+    global $myLogin;
+    $recs = RepProc::fetchByResult($myLogin->userGroupId, $ipc, $fromValue, $toValue);
+    $recs = RepClient::invert($recs);
+    return $recs;
+  }
+}
+class RepClient extends ClientRec implements ReadOnly {
+  //
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $active;
+  public $middleName;
+  public $race;
+  public $ethnicity;
+  public $deceased;
+  public $language;
+  //
+  static function fetchByBirth($ugid, $from, $to) {
+    $c = self::asCriteria($ugid);
+    $c->birth = self::getBirthCriteriaValue($from, $to);
+    return self::fetchAllBy($c);
+  }
+  static function invert($recs, $fid = 'Client', $oneToMany = true) {
+    $child = current($recs)->getMyName();
+    $clients = array();
+    foreach ($recs as $rec) {
+      $c = $rec->$fid;
+      $cid = $c->clientId;
+      unset($rec->$fid);
+      if (! $oneToMany) {
+        $c->$child = $rec;
+      } else {  
+        if (isset($clients[$cid]))
+          $c = $clients[$cid];
+        else
+          $c->$child = array();
+        $c->{$child}[] = $rec;
+      }
+      $clients[$cid] = $c; 
+    }
+    return array_values($clients);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+  protected static function calcDate($age) {
+    return ($age) ? pastDate($age) : null;
+  }
+  protected static function getBirthCriteriaValue($from, $to) {
+    $from = self::calcDate($from);
+    $to = self::calcDate($to);
+    if ($from !== null && $to !== null) 
+      return CriteriaValues::_and(CriteriaValue::lessThanOrEquals($from), CriteriaValue::greaterThan($to));
+    else if ($from !== null) 
+      return CriteriaValue::lessThanOrEquals($from);
+    else
+      return CriteriaValue::greaterThan($to);
+  }
+}
+class RepProc extends Proc implements ReadOnly {
+  //
+  static function fetchByResult($ugid, $ipc, $fromValue, $toValue) {
+    $c = self::asCriteria($ugid);
+    $c->ProcResults = array(RepProcResult::asCriteria($ipc, $fromValue, $toValue));
+    $c->Client = new RepClient();
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+class RepProcResult extends ProcResult implements ReadOnly {
+  //
+  static function asCriteria($ipc, $fromValue, $toValue) {
+    $c = new self();
+    $c->ipc = $ipc;
+    $c->value = CriteriaValue::betweenNumeric($fromValue, $toValue);
+    return $c;
+  }
+}
+class RepAddress extends AddressRec implements ReadOnly {
+  //
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $email1;
+  public /*RepClient*/ $Client_tableId;
+  //
+  static function matchByLocation($ugid, $zip, $city) {
+    $c = self::asCriteria($ugid);
+    $c->zip = $zip;
+    if ($city) 
+      $c->city = CriteriaValue::startsWith($city);
+    return self::fetchAllBy($c);
+  } 
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->tableCode = Address::TABLE_CLIENTS;
+    $c->type = Address::TYPE_SHIP;
+    $c->Client_tableId = RepClient::asCriteria($ugid);
+    return $c;
+  }
+} 
+class RepDiagnosis extends Diagnosis implements ReadOnly {
+  //
+  static function matchByIcd($ugid, $icd, $active = true) {
+    $c = self::asCriteria($ugid);
+    $c->icd = CriteriaValue::startsWith($icd);
+    $c->active = $active;
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = parent::_asFaceCriteria(null, __CLASS__);
+    $c->userGroupId = $ugid;
+    $c->Client = new RepClient();
+    return $c;
+  }
+}
+class RepMed extends Med implements ReadOnly {
+  //
+  static function matchByName($ugid, $name, $active = true) {
+    $c = self::asCriteria($ugid);
+    $c->name = CriteriaValue::contains($name);
+    $c->active = $active;
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = parent::_asFaceCriteria(null, __CLASS__);
+    $c->userGroupId = $ugid;
+    $c->Client = new RepClient();
+    return $c;
+  }
+}
+?>

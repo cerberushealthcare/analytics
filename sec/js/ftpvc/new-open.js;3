@@ -1,0 +1,1050 @@
+var nnCid;
+var nnKid;
+var nnSid;
+var nnTid;
+var nnPresets;
+var nnStandards;
+var nnStandardSid;
+var nnClient; 
+var nnClients;
+var nnNextPop;  // 0=pop-nn (new note), 1=pop-on (open note), 2=facesheet
+var nniEdit;
+var nnSendToId;
+
+function showReplicate(clientId, sessionId, templateId) {
+  nnCid = clientId;
+  nnSid = sessionId;
+  nnTid = templateId;
+  setValue("rn-dos", calToday());
+  setCheck("rn-ovfs", nnug == 1094);
+  showOverlayWorking();
+  sendRequest(4, "action=getSendTos");
+}
+function getSendTosCallback(sendTos) {
+  closeOverlayWorking(); 
+  createOpts("pop-rn-sendtos", sendTos);
+  showOverlayPop("pop-rn");
+}
+function rnCreate() {
+  closeOverlayPop();
+  doWork(buildFn("finishNewSession", 
+      [nnTid, null, nnSid, nnCid, value("rn-dos"), value("pop-rn-sendtos"), nnug, isChecked("rn-ovfs")]), 
+      "Replicating Document");
+}
+function showNewNote(clientId, clientName, schedId, dos) {
+  nnCid = clientId;
+  nnKid = schedId;
+  setText("nn-client-name", clientName);
+  setValue("nn-dos", dos ? dos : calToday());
+  showWorking();
+  sendRequest(4, "action=getNewNotePopInfo&cid=" + clientId);
+}
+function getNewNotePopInfoCallback(pop) {
+  closeWorking();
+  createOpts("pop-nn-templates", pop.templates);
+  createOpts("pop-nn-sendtos", pop.sendTos);
+  var sel = createOpts("pop-nn-presets", pop.presets);
+  var a = $("pop-nn-start-custom");
+  if (sel.options.length == 0) {
+    a.style.visibility = "hidden";
+  } else {
+    a.style.visibility = "";
+  }
+  nnStandards = pop.standards;
+  nnTid = null;
+  newNoteTemplateChange();
+  showPop("pop-nn");
+}
+function newNoteTemplateChange() {
+  if (value("pop-nn-templates") == nnTid) return;
+  nnTid = value("pop-nn-templates");
+  var tname = selectedText("pop-nn-templates");
+  setText("pop-nn-start-empty", "Blank " + tname);
+  var a = $("pop-nn-replicate");
+  var std = nnStandards[nnTid];
+  if (std == null) {
+    a.style.visibility = "hidden";
+    nnStandardSid = null;
+  } else {
+    a.style.visibility = "";
+    //setText("pop-nn-replicate-text", "Replicate from " + std.label);
+    setText("pop-nn-replicate-span", std.label + " DOS: " + std.dos);
+    nnStandardSid = std.id;
+  }
+}
+function newNoteFromOpen() {
+  showNewNote(nnCid, text("on-client-name"));
+}
+function showSaveDialog(focusId) {
+  if (focusId == null) focusId = "sv-title";
+  setText("sv-client-name", session.cname);
+  setValue("sv-title", session.title);
+  setValue("sv-dos", session.dosdate);
+  setCheck("sv-standard", session.standard);
+  setText("sv-use", "Use as patient's standard " + template.name);
+  showPop("pop-sv", focusId);
+}
+function saveDialogSave() {
+  session.title = value("sv-title");
+  session.dos = value("sv-dos");
+  session.standard = isChecked("sv-standard");
+  closeOverlayPop();
+  saveDialogCallback();
+}
+function showEditHeader(sessionId, clientName, dos, sendToId) {
+  nnSid = sessionId;
+  nnSendToId = sendToId;
+  setText("eh-client-name", clientName);
+  setValue("eh-dos", dos);
+  showWorking();
+  sendRequest(4, "action=getEditHeaderPopInfo");
+}
+function getEditHeaderPopInfoCallback(pop) {
+  closeWorking();
+  createOpts("pop-eh-sendtos", pop.sendTos);
+  setValue("pop-eh-sendTos", nnSendToId);
+  showPop("pop-eh", "pop-eh-sendTos");
+}
+function saveHeader() {
+  showWorking();
+  se = newSessionEnvelope(
+      nnSid,
+      value("eh-dos"),
+      value("pop-eh-sendTos"));
+  postRequest(
+      4,
+      "action=updateNoteHeader" +
+      "&obj=" + jsonUrl(se));
+}
+function updateNoteHeaderCallback(s) {
+  closeWorking();
+  editHeaderCallback(s);
+}
+function showOpenNote(clientId) {
+  setText("on-client-name", "");
+  showWorking();
+  sendRequest(5, "action=getClient&id=" + clientId);
+}
+function clientCallback(client) {
+  nnCid = client.id;
+  setText("on-client-name", client.name);
+  buildHistoryTable(client.events);
+  client.events = null;
+  closeWorking();
+  showPop("pop-on");
+}
+function go(sid) {
+  closeOverlayPop();
+  getSession(sid);
+}
+function getSession(sid) {
+  showWorking("Retrieving document");
+  postRequest(6, "act=get&sid=" + sid);
+}
+function getSessionCallback(s) {
+  closeWorking();
+  openNoteCallback(s);
+}
+function iChooseAnother(nextPop) {
+  showPatientSelector(nextPop, true);
+}
+function showPatientSelector(nextPop, hideCreateNew, forSched) {  // 0=new note, 1=open note, 2=facesheet
+  nnNextPop = nextPop;
+  setText("working-msg-ps", "");
+  setWorking(null, false);
+  setValue("search-pid", "");
+  setValue("search-last", "");
+  setValue("search-first", "");
+  setValue("search-address", "");
+  setValue("search-phone", "");
+  setValue("search-email", "");
+  setValue("search-custom", "");
+  if (hideCreateNew) {
+    hide("pop-ps-create-new");
+  } else {
+    show("pop-ps-create-new");
+  }
+  if (forSched) {
+    setText("pop-ps-cap-text", "Create Appointment");
+    setText("pop-ps-h1", "Select patient");
+    show("pop-ps-unavail");
+  } else {
+    setText("pop-ps-cap-text", "Patient Selector");
+    setText("pop-ps-h1", "Search for a patient");
+    hide("pop-ps-unavail");
+  }
+  //if (nnNextPop == 0) {
+  //  show("pop-ps-generic");
+  //} else {
+  //  hide("pop-ps-generic");
+  //}
+  //sendRequest("serverLookup.php?action=getClientSearchCustom&id=");
+  var foc = applySearchCustom(lu_search);
+  showOverlayPop("pop-ps", foc);
+  if (nnClients == null) {
+    psSearch(foc);
+  }
+}
+function applySearchCustom(o) {
+  var foc;
+  if (o.first && o.first == 1) {
+    $("search-ul").insertBefore($("search-li-name"), $("search-li-pid"));
+    $("ccs-by-name").checked = true;
+    foc = "search-last";
+  } else {
+    $("search-ul").insertBefore($("search-li-pid"), $("search-li-name"));
+    $("ccs-by-id").checked = true;
+    foc = "search-pid";
+  }
+  hide("search-li-more");
+  if (o.incAddress) {
+    show("search-li-address");
+    show("search-li-more");
+    setCheck("ccs-inc-address", true);
+  } else {
+    hide("search-li-address");
+    setCheck("ccs-inc-address", false);
+  }
+  if (o.incPhone) {
+    show("search-li-phone");
+    show("search-li-more");
+    setCheck("ccs-inc-phone", true);
+  } else {
+    hide("search-li-phone");
+    setCheck("ccs-inc-phone", false);
+  }
+  if (o.incEmail) {
+    show("search-li-email");
+    show("search-li-more");
+    setCheck("ccs-inc-email", true);
+  } else {
+    hide("search-li-email");
+    setCheck("ccs-inc-email", false);
+  }
+  if (o.incCustom) {
+    show("search-li-custom");
+    show("search-li-more");
+    setCheck("ccs-inc-custom", true);
+  } else {
+    hide("search-li-custom");
+    setCheck("ccs-inc-custom", false);
+  }  
+  return foc;
+}
+function psSearch(foc) {
+  var s_pid = value("search-pid");
+  var s_ln = value("search-last");
+  var s_fn = value("search-first");
+  show("ss").className = "spreadsheet workingbar";
+  show("ss-searching");
+  hide("ss-table");
+  sendRequest(
+      5, "action=search" +
+      "&uid=" + s_pid +
+      "&ln=" + s_ln +
+      "&fn=" + s_fn + 
+      "&ad=" + value("search-address") + 
+      "&ph=" + value("search-phone") + 
+      "&em=" + value("search-email") + 
+      "&cu=" + value("search-custom"));
+  if (foc == null) {
+    if (s_ln != "") {
+      focus("search-last");
+    } else if (s_fn != "") {
+      focus("search-first");
+    } else {
+      focus("search-pid");
+    }
+  }
+}
+function clientsCallback(clients) {
+  nnClients = clients;
+  buildResultsTable(clients);
+  show("ss").className = "spreadsheet";
+  hide("ss-searching");
+  show("ss-table");
+}
+function buildResultsTable(clients) {
+  var tbody = $("ss-tbody");
+  clearRows(tbody);
+  var offset = false;
+  if (clients != null) {
+    for (var i = 0; i < clients.length; i++) {
+      var c = clients[i];
+      if (c.id > 0) {
+        var href = (nnNextPop != 2) ? "javascript:selectClient(" + i + ")" : "javascript:showClient(" + c.id + ")";
+        var tr = createTr(offset ? "offset" : "");
+        var id = (i == 0) ? "ss-first-a" : null;
+        var cls = (c.sex == "M") ? "action umale" : "action ufemale";
+        tr.appendChild(createTdAnchor(href, "action noimg", c.uid, null, null));
+        tr.appendChild(createTdAnchor(href, cls, c.name, id, "Select this patient"));
+        tr.appendChild(createTd(c.birth));
+        tbody.appendChild(tr);
+        offset = ! offset;
+      }
+    }
+  } 
+  if (tbody.children.length == 1) {
+    var tr = createTr("");
+    var td = createTd("No patients match your criteria.");
+    td.colSpan = 3;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  $("ss").scrollTop = 0;
+}
+function selectClient(index) {  
+  closeOverlayPop();
+  var c = nnClients[index];
+  doNextPop(c);
+}
+function doNextPop(c) {
+  if (nnNextPop == 0) {
+    showNewNote(c.id, c.name);
+  } else if (nnNextPop == 1) {
+    showOpenNote(c.id);
+  } else {
+    selectClientCallback(c);
+  }
+}
+function buildHistoryTable(events) {
+  var notesOnly = true;
+  var tbody = $("on-ss-tbody");
+  clearAllRows(tbody);
+  var offset = true;
+  var lastFd = null;
+  var lastTr;
+  if (events != null) {
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (notesOnly && e.type != "S") {
+        continue;
+      }
+      var same = false;
+      if (e.fd != lastFd) {
+        offset = ! offset;
+        lastFd = e.fd;
+      } else {
+        lastTr.className += " lb";
+        same = true;
+      }
+      var tr = createTr(offset ? "offset" : "");
+      var tdClass = "bold";
+      var ed = e.fts.substring(0, 11);
+      //if (ed == sched.date) {
+      //  tdClass += " today";
+      //}
+      tr.appendChild(createTd(e.fts, tdClass));
+      //if (same) {
+        //var span = document.createElement("span");
+        //span.innerText = e.fts.substring(0, 12);
+        //span.className = "hide";
+        //var td = document.createElement("td");
+        //td.className = "bold";
+        //td.appendChild(span);
+        //td.appendChild(document.createTextNode(e.fts.substring(12)));
+        //tr.appendChild(td);
+      //} else {
+      //}
+      var div = document.createElement("div");
+      div.className = "lpad";
+      var td = createTdAnchor(e.ahref, e.aclass, e.name, null, null);
+      div.innerHTML = denull(e.comment);
+      td.appendChild(div);
+      td.style.width = "70%";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      lastTr = tr;
+    }
+  }
+  $("on-ss").scrollTop = 0;
+}
+function showNewCustomTemplate() {
+  showWorking();
+  sendRequest(4, "action=getTemplateCombo");
+}
+function getTemplateComboCallback(kvs) {
+  closeWorking();
+  createOpts("pop-nct-templates", kvs);
+  showPop("pop-nct");
+}
+function showOpenCustomTemplate(caption, tid) {
+  setText("pop-oct-cap-text", caption);
+  showWorking();
+  postRequest(6, "act=getPresets&tid=" + (tid ? tid : ""));
+}
+function getPresetsCallback(presets) {
+  closeWorking();
+  if (presets == null || presets.length == 0) {
+    showMsg("No custom templates were found.");
+    return;
+  }
+  buildOctTable(presets);
+  show("oct-ss");
+  showPop("pop-oct");
+}
+function createEmptySession() {
+  createNewSession(value("pop-nn-templates"), null, null);
+}
+function createPrefilledSession() {
+  createNewSession(null, value("pop-nn-presets"), null);
+}
+function createStandardSession() {
+  createNewSession(value("pop-nn-templates"), null, nnStandardSid);
+}
+function createNewSession(tid, tpid, sid) {
+  closeOverlayPop();
+  doWork(buildFn("finishNewSession", [tid, tpid, sid]), "Creating Document");
+}
+function finishNewSession(tid, tpid, sid, cid, dos, st, ugid, ovfs) {
+  var s = newSessionKey();
+  s.ugid = (ugid) ? ugid : nnug;
+  s.cid = (cid) ? cid : nnCid;
+  s.kid = nnKid;
+  s.tid = tid;
+  s.tpid = tpid;
+  s.dos = (dos) ? dos : value("nn-dos");
+  s.st = (st) ? st : value("pop-nn-sendtos");
+  s.sid = sid;
+  s.ovfs = (ovfs) ? true : false;
+  postRequest(
+      5,
+      "action=addSession" +
+      "&id=" +
+      "&obj=" + jsonUrl(s));
+}
+function addSessionCallback(s) {
+  closeWorking();
+  newNoteCallback(s);
+}
+function newSessionEnvelope(id, dos, sendTo) {
+  return {
+      id:id,
+      dos:dos,
+      st:sendTo};
+}
+function newSessionKey() {
+  return {
+      ugid:null,
+      tid:null,
+      tpid:null,
+      cid:null,
+      kid:null,
+      dos:null,
+      st:null,   // send-to
+      ovfs:null  // override facesheet (meds/aller)
+      };  
+}
+function createNewCustomTemplate() {
+  var o = $("pop-nct-templates");
+  var tname = o.options[o.selectedIndex].text;
+  var tid = o.options[o.selectedIndex].value;
+  newCustomTemplate(tid, tname);
+}
+function newCustomTemplate(tid, tname) {
+  showWorking();
+  postRequest(6, "act=pnew&tid=" + tid + "&tn=" + tname);
+}
+function newPresetCallback(p) {
+  closeWorking();
+  newCustomTemplateCallback(p);
+}
+function closeNewCustomTemplate() {
+  closeOverlayPop();
+}
+function buildOctTable(presets) {
+  var tbody = $("oct-ss-tbody");
+  clearAllRows(tbody, true);
+  var offset = true;
+  if (presets != null) {
+    for (var i = 0; i < presets.length; i++) {
+      offset = ! offset;
+      var p = presets[i];
+      var tr = createTr(offset ? "offset" : "");
+      var href = "javascript:openTemplate(" + p.id + ")";
+      var td = createTdAnchor(href, "icon edit-red", p.name, null, null);
+      tr.appendChild(td);
+      tr.appendChild(createTd(p.templateName));
+      tr.appendChild(createTd(p.dateUpdated));
+      tbody.appendChild(tr);
+    }
+  }
+  $("oct-ss").scrollTop = 0;
+}
+function closeOpenCustomTemplate() {
+  closeOverlayPop();
+}
+function openTemplate(id) {
+  showWorking("Getting template");
+  postRequest(6, "act=pget&tpid=" + id);
+}
+function getPresetCallback(p) {
+  closeWorking();
+  openCustomTemplateCallback(p, text("pop-oct-cap-text"));
+}
+function setTemplateDefault() {
+  postRequest(3, "action=saveDefaultTemplate&id=&value=" + value("pop-nn-templates"));
+  showMsg("Default template set.");
+}
+function setSendToDefault(id) {
+  postRequest(3, "action=saveDefaultSendTo&id=&value=" + value(id));
+  showMsg("Default send to set.");
+}
+function showCustomClientSearch() {
+  showOverlayPop("pop-ccs");
+}
+function ccsSave() {  
+  lu_search = createClientSearchCustom();
+  postLookupSave("saveClientSearchCustom", lu_search);
+  closeOverlayPop();
+  hide("ss");
+  applySearchCustom(lu_search);
+}
+function ccsReset() {
+  showConfirm("This will reset to the default settings. Are you sure?", ccsResetConfirmed, true);
+}
+function ccsResetConfirmed(confirmed) {
+  if (confirmed) {
+    sendRequest(3, "action=deleteClientSearchCustom&id=");
+  }
+}
+function removeMyClientSearchCustomCallback(o) {
+  closeOverlayPop();
+  hide("ss");
+  lu_search = o;
+  applySearchCustom(lu_search);
+}
+function createClientSearchCustom() {
+  return {
+      "first":(isChecked("ccs-by-id") ? 0 : 1),
+      "incAddress":isChecked("ccs-inc-address"),
+      "incPhone":isChecked("ccs-inc-phone"),
+      "incEmail":isChecked("ccs-inc-email"),
+      "incCustom":isChecked("ccs-inc-custom")
+      };
+}
+function iNewPatient() {  // called internally
+  closePop();
+  //showWorking();
+  nniEdit = true;
+  showPatient();
+  //show("pop-pe-cmd-add");
+  //hide("pop-pe-cmd-update");
+  //eventlessClientCallback(newClient());
+}
+function showEditPatient(clientId, hideDelete) {
+  showWorking();
+  nniEdit = false;
+  if (clientId == null) {
+    show("pop-pe-cmd-add");
+    hide("pop-pe-cmd-update");
+    eventlessClientCallback(newClient());
+  } else {
+    hide("pop-pe-cmd-add");
+    show("pop-pe-cmd-update");
+    showIf(! hideDelete, "pop-pe-delete");
+    sendRequest(
+        5, "action=getEventlessClient" +
+        "&id=" + clientId);
+  }  
+}
+function eventlessClientCallback(client) {
+  nnClient = client;
+  resetPatientEditor();
+  showPop("pop-pe", "pid");  
+}
+function resetPatientEditor() {
+  setValue("pid", nnClient.uid);
+  setValue("lastName", nnClient.lastName);
+  setValue("firstName", nnClient.firstName);
+  setValue("sex", nnClient.sex);
+  setValue("birth", nnClient.birth);
+  setValue("cdata1", nnClient.cdata1);
+  setValue("cdata2", nnClient.cdata2);
+  setValue("cdata3", nnClient.cdata3);
+  setValue("addr1", nnClient.shipAddress.addr1);  
+  setValue("addr2", nnClient.shipAddress.addr2);  
+  setValue("addr3", nnClient.shipAddress.addr3);  
+  setValue("city", nnClient.shipAddress.city);
+  setValue("state", nnClient.shipAddress.state);
+  setValue("zip", nnClient.shipAddress.zip);
+  setValue("phone1", nnClient.shipAddress.phone1); 
+  setValue("phone1Type", nnClient.shipAddress.phone1Type); 
+  setValue("phone2", nnClient.shipAddress.phone2);
+  setValue("phone2Type", nnClient.shipAddress.phone2Type); 
+  setValue("phone3", nnClient.shipAddress.phone3);
+  setValue("phone3Type", nnClient.shipAddress.phone3Type);  
+  setValue("email1", nnClient.email1);
+  setValue("email2", nnClient.email2); 
+  hide("pop-error-pe");
+}
+function formToClient() {
+  nnClient.userGroupId = nnug;
+  nnClient.uid = value("pid");
+  nnClient.firstName = value("firstName");
+  nnClient.lastName = value("lastName");
+  nnClient.sex = value("sex");
+  nnClient.birth = value("birth");
+  nnClient.active = true;
+  nnClient.cdata1 = value("cdata1");
+  nnClient.cdata2 = value("cdata2");
+  nnClient.cdata3 = value("cdata3");
+  nnClient.shipAddress.addr1 = value("addr1");
+  nnClient.shipAddress.addr2 = value("addr2");
+  nnClient.shipAddress.addr3 = value("addr3");
+  nnClient.shipAddress.city = value("city");
+  nnClient.shipAddress.state = value("state");
+  nnClient.shipAddress.zip = value("zip");
+  nnClient.shipAddress.phone1 = value("phone1");
+  nnClient.shipAddress.phone1Type = value("phone1Type");
+  nnClient.shipAddress.phone2 = value("phone2");
+  nnClient.shipAddress.phone2Type = value("phone2Type");
+  nnClient.shipAddress.phone3 = value("phone3");
+  nnClient.shipAddress.phone3Type = value("phone3Type");
+  nnClient.email1 = value("email1");
+  nnClient.email2 = value("email2");
+}
+function closePePop() {
+  closeOverlayPop();
+  if (! nniEdit) {
+    editPatientCallback();
+  }
+}
+function newClient() {
+  return {
+      "id":null,
+      "userGroupId":null,
+      "uid":null,
+      "firstName":null,
+      "lastName":null,
+      "sex":null,
+      "birth":null,
+      "img":null,
+      "active":null,
+      "cdata1":null,
+      "cdata2":null,
+      "cdata3":null,
+      "cdata4":null,
+      "cdata5":null,
+      "cdata6":null,
+      "cdata7":null,
+      "middle":null,
+      "notes":null,
+      "shipAddress":{
+        "id":null,
+        "tableCode":"C",
+        "tableId":null,
+        "type":0,
+        "addr1":null,
+        "addr2":null,
+        "addr3":null,
+        "city":null,
+        "state":null,
+        "zip":null,
+        "country":null,
+        "phone1":null,
+        "phone1_type":null,
+        "phone2":null,
+        "phone2_type":null,
+        "phone3":null,
+        "phone3_type":null,
+        "email1":null,
+        "email2":null,
+        "name":null
+        },
+      "billAddress:":null
+      };   
+}
+function saveNewPatient() {
+  nnClient = newClient();
+  formToClient(); 
+  if (showValidateErrors("pop-error-pe", validateClient(nnClient))) {
+    return;
+  } 
+  setWorking("working-pe", false);
+  setText("working-msg-pe", "Saving new patient . . .");
+  postRequest(
+      5, 
+      "action=addClient" +
+      "&id=" +
+      "&obj=" + jsonUrl(nnClient));
+}
+function savePatient() {
+  formToClient();
+  if (showValidateErrors("pop-error-pe", validateClient(nnClient))) {
+    return;
+  } 
+  setWorking("working-pe", false);
+  setText("working-msg-pe", "Saving patient . . .");
+  postRequest(
+      5, 
+      "action=updateClient" +
+      "&id=" + nnClient.id +
+      "&obj=" + jsonUrl(nnClient));
+}
+function updateClientCallback() {
+  closeOverlayPop();
+  if (nniEdit) {
+  } else {
+    editPatientCallback(nnClient, false);
+  }
+}
+function addClientCallback(c) {
+  closeOverlayPop();
+  if (nniEdit && nnNextPop) {
+    doNextPop(c);
+  } else {
+    editPatientCallback(c, true);
+  } 
+}
+function validateClient(client) {
+  var errs = [];
+  if (client.uid == "") {
+    errs.push(errMsg("client.uid", msgReq("Patient ID")));
+  }
+  if (client.lastName == "") {
+    errs.push(errMsg("client.lastName", msgReq("Last name")));
+  }
+  if (client.firstName == "") {
+    errs.push(errMsg("client.firstName", msgReq("First name")));
+  }
+  if (client.sex == "") {
+    errs.push(errMsg("client.sex", msgReq("Gender")));
+  }
+  if (client.birth) {
+    client.birth = formatDate(client.birth); 
+  	if (! client.birth) {
+  		errs.push(errMsg("client.birth", "Birth date is not valid. Please use MM/DD/YYYY."));
+  	}
+  }
+  return errs;
+}
+function showValidateErrors(id, errMsgs) {
+  hide(id);
+  if (errMsgs.length > 0) {
+    showErrors(id, errMsgs);
+    focusError(errMsgs[0].id);
+    return true;
+  }
+}
+function focusError(id) {
+  if (id == "client.uid") {
+    focus("pid");
+  } else if (id == "client.firstName") {
+    focus("firstName");
+  } else if (id == "client.lastName") {
+    focus("lastName");
+  } else if (id == "client.sex") {
+    focus("sex");
+  }
+}
+function openConsole(sid) {
+  window.open("new-console.php?sid=" + sid + "&mid=default&" + Math.random(), "X" + sid, "height=" + (screen.availHeight - 80) + ",width=" + screen.availWidth + ",top=0,left=0,resizable=1,statusbar=0,location=no");
+}
+// Patient Overview
+var po = {
+  c:null,    // client
+  chg:false  // true if any info changed
+  };
+function showPatient(client) {  // pass null for new client
+  po.chg = false;
+  if (client == null) {
+    po.c = {};
+    pe1Edit();
+    return;
+  }
+  po.c = client;
+  renderPo();
+  showOverlayPop("pop-po");
+}
+function closePo() {
+  closeOverlayPop();
+  if (po.chg) {
+    showPatientCallback(po.c);
+  }
+}
+function renderAddress(lbl, pl, a) {
+  var addr = (a) ? [a.addr1, a.addr2, a.csz] : "";
+  if (a && a.name) {
+    addr.unshift(a.name);
+  }
+  pl.add(lbl, addr);
+  if (a && a.phone1) {
+    pl.add("", [poFormatPhone(a.phone1, a.phone1Type), poFormatPhone(a.phone2, a.phone2Type), poFormatPhone(a.phone3, a.phone3Type)], -1);
+  }
+  if (a && a.email1) {
+    pl.add("", [a.email1, a.email2], -1);
+  }  
+}
+function renderPo() {
+  var pl;
+  setText("po-name", po.c.name);
+  setText("po-cid", po.c.uid);
+  setText("po-sex", poFormatSex(po.c.sex));
+  setText("po-dob", po.c.birth);
+  setText("po-age", po.c.age);
+  pl = new ProfileLoader("po-lbl-address", "po-address");
+  renderAddress("Home", pl, po.c.shipAddress);
+  pl = new ProfileLoader("po-lbl-emer", "po-emer");
+  renderAddress("Emergency", pl, po.c.emerAddress);
+  pl = new ProfileLoader("po-lbl-pharm", "po-pharm");
+  renderAddress("Pharmacy", pl, po.c.pharmAddress);
+  pl = new ProfileLoader("po-lbl-ins", "po-ins");
+  po.c.icard = (po.c.icards && po.c.icards.length > 0) ? po.c.icards[0] : null;
+  po.c.icard2 = (po.c.icards && po.c.icards.length > 1) ? po.c.icards[1] : null;
+  poLoadInsurance(pl, po.c.icard);
+//  if (po.c.icard2) {
+    pl = new ProfileLoader("po-lbl-ins2", "po-ins2");
+    poLoadInsurance(pl, po.c.icard2);
+    show("po-ins-ul-2");
+//  } else {
+//    hide("po-ins-ul-2");
+//  }
+  pl = new ProfileLoader("po-lbl-ichecks", "po-ichecks");
+  pl.add("Living Will?", yesNo(po.c.cdata5));  
+  pl.add("POA?", yesNo(po.c.cdata6));  
+  pl = new ProfileLoader("po-lbl-father", "po-father");
+  renderAddress("Parent", pl, po.c.fatherAddress);  
+  pl = new ProfileLoader("po-lbl-mother", "po-mother");
+  renderAddress("Parent", pl, po.c.motherAddress);  
+  pl = new ProfileLoader("po-lbl-spouse", "po-spouse");
+  renderAddress("Spouse", pl, po.c.spouseAddress);  
+  pl = new ProfileLoader("po-lbl-custom", "po-custom");
+  pl.add("Custom 1", po.c.cdata1);  
+  pl.add("Custom 2", po.c.cdata2, -1);  
+  pl.add("Custom 2", po.c.cdata3, -1);    
+}
+function yesNo(s) {
+  if (s == null) return ""
+  return (s) ? "yes" : "no";
+}
+function pe1Edit() {
+  setValue("pe1-pid", po.c.uid);
+  setValue("pe1-lastName", po.c.lastName);
+  setValue("pe1-firstName", po.c.firstName);
+  setValue("pe1-sex", po.c.sex);
+  setValue("pe1-birth", po.c.birth);
+  showHideIf(po.c.id, "pe1-cmd-update", "pe1-cmd-add");
+  showOverlayPop("pop-pe1", "pe1-pid");
+}
+function pe1Save() {
+  po.c.uid = value("pe1-pid");
+  po.c.lastName = value("pe1-lastName");
+  po.c.firstName = value("pe1-firstName");
+  po.c.middleName = value("pe1-middleName");
+  po.c.sex = value("pe1-sex");
+  po.c.birth = value("pe1-birth");
+  if (showValidateErrors("pop-error-pe1", validateClient(po.c))) {
+    return;
+  } 
+  po.chg = true;
+  if (po.c.id) {
+    closeOverlayPop();
+  }
+  showOverlayWorking("Saving");
+  postRequest(5, "action=saveClient&id=" + po.c.id + "&obj=" + jsonUrl(po.c));
+}
+function addClientUidExistsCallback(dupe) {
+  closeOverlayWorking();
+  var html = "<b>A patient with ID " + dupe.uid + " already exists:</b>";
+  html += "<br/>" + dupe.name + " (DOB: " + denull(dupe.birth) + ")";
+  showError("pop-error-pe1", html);
+}
+function pe2Edit(i) {
+  switch (i) {
+    case 2:
+      pe2EditContact();
+      break;
+    case 3:
+      pe2EditInsurance(po.c.icard, 1);
+      break;
+    case 4:
+      pe2EditInsurance(po.c.icard2, 2);
+      break;
+    case 5:
+      pe2EditCustom();
+      break;
+    case 6:
+      pe2EditEmer();
+      break;
+    case 7:
+      pe2EditPharm();
+      break;
+    case 8:
+      pe2EditFather();
+      break;
+    case 9:
+      pe2EditMother();
+      break;
+    case 10:
+      pe2EditSpouse();
+      break;
+    case 11:
+      pe2EditOnFile();
+      break;
+  }
+}
+function pe2EditContact() {
+  showAddress(po.c.shipAddress, false, po.c.name + " - Home Address", pe2SaveAddress);
+}
+function pe2EditEmer() {
+  showAddress(po.c.emerAddress, true, po.c.name + " - Emergency Contact", pe2SaveAddress);
+}
+function pe2EditPharm() {
+  showAddress(po.c.pharmAddress, true, po.c.name + " - Preferred Pharmacy", pe2SaveAddress);
+}
+function pe2EditFather() {
+  showAddress(po.c.fatherAddress, true, po.c.name + " - Father", pe2SaveAddress);
+}
+function pe2EditMother() {
+  showAddress(po.c.motherAddress, true, po.c.name + " - Mother", pe2SaveAddress);
+}
+function pe2EditSpouse() {
+  showAddress(po.c.spouseAddress, true, po.c.name + " - Spouse", pe2SaveAddress);
+}
+function pe2EditOnFile() {
+  setCheck("pof-living-will", po.c.cdata5);
+  setCheck("pof-poa", po.c.cdata6);
+  showOverlayPop("pop-onfile");
+}
+function pe2EditInsurance(icard, seq) {
+  if (icard == null) {
+    icard = {clientId:po.c.id, seq:seq};
+  }
+  po.icard = icard;
+  setCaption("pop-icard-cap-text", po.c.name + " - Insurance Info");
+  setValue("pic-ic-plan", icard.planName);
+  setValue("pic-ic-group", icard.groupNo);
+  setValue("pic-ic-policy", icard.subscriberNo);
+  setValue("pic-ic-subscriber", icard.subscriberName);
+  setValue("pic-ic-name", icard.nameOnCard);
+  setValue("pic-ic-effective", icard.dateEffective);
+  showOverlayPop("pop-icard", "pic-ic-plan");
+}
+function pe2EditCustom() {
+  setCaption("pop-custom-cap-text", po.c.name + " - Custom Fields");
+  setValue("pcu-custom1", po.c.cdata1);
+  setValue("pcu-custom2", po.c.cdata2);
+  setValue("pcu-custom3", po.c.cdata3);
+  showOverlayPop("pop-custom", "pcu-custom1");  
+}
+function pe2SaveAddress(a) {
+  pe2PostSave("action=saveClientAddress&id=" + po.c.id + "&obj=" + jsonUrl(a));
+}
+function pcuSave() {
+  po.c.cdata1 = value("pcu-custom1");
+  po.c.cdata2 = value("pcu-custom2");
+  po.c.cdata3 = value("pcu-custom3");
+  pe2PostSave("action=saveClient&id=" + po.c.id + "&obj=" + jsonUrl(po.c));
+}
+function pofSave() {
+  po.c.cdata5 = isChecked("pof-living-will");
+  po.c.cdata6 = isChecked("pof-poa");
+  pe2PostSave("action=saveClient&id=" + po.c.id + "&obj=" + jsonUrl(po.c));  
+}
+function picSave() {
+  var c = po.icard;
+  c.planName = value("pic-ic-plan");
+  c.groupNo = value("pic-ic-group");
+  c.subscriberNo = value("pic-ic-policy");
+  c.subscriberName = value("pic-ic-subscriber");
+  c.nameOnCard = value("pic-ic-name");
+  c.dateEffective = nullify(value("pic-ic-effective"));
+  pe2PostSave("action=saveClientICard&id=" + po.c.id + "&obj=" + jsonUrl(c));  
+}
+function pe2PostSave(qs) {
+  po.chg = true;
+  closeOverlayPop();
+  showOverlayWorking("Saving");
+  postRequest(5, qs);
+}
+function saveClientCallback(c) {
+  closeOverlayPop();
+  if (nniEdit) {
+    nniEdit = false;
+    selectClientCallback(c);
+    return;
+  }
+  if (po.c.id) {
+    po.c = c;
+    renderPo();
+  } else {
+    window.location.href = "face.php?id=" + c.id + "&pe=1";
+  }
+}
+function poFormatSex(sex) {
+  return (sex == "F") ? "Female" : "Male";
+}
+function poFormatPhone(phone, type) {
+  if (phone) {
+    var s = phone;
+    if (! isUndefined(type)) {
+      s += " (" + poFormatPhoneType(type) + ")";
+    }
+    return s;
+  }
+}
+function poFormatPhoneType(type) {
+  switch (type) {
+    case 0: return "residence";
+    case 1: return "work";
+    case 2: return "cell";
+    case 3: return "emergency";
+    case 4: return "fax";
+  }
+}
+function poLoadInsurance(pl, icard) {
+  pl.add("Plan", icard ? icard.planName : "");
+  pl.add("Group/Policy #", icard ? denull(icard.groupNo) + " " + denull(icard.subscriberNo) : "");
+  pl.add("Effective", icard ? icard.dateEffective : "");
+  if (icard && icard.subscriber) {
+    pl.add("Subscriber", icard.subscriber.name, -1);
+  }
+  if (icard && icard.nameOnCard) {
+    pl.add("Name on Card", icard.nameOnCard);
+  }
+}
+// Address editor
+var pa;
+var paCallback;
+function showAddress(a, includeName, cap, callback) {
+  pa = a;
+  paCallback = callback;
+  setCaption("pop-addr-cap-text", cap ? cap : "Address");
+  setValue("pa-name", a.name);
+  setValue("pa-addr1", a.addr1);  
+  setValue("pa-addr2", a.addr2);  
+  setValue("pa-addr3", a.addr3);  
+  setValue("pa-city", a.city);
+  setValue("pa-state", a.state);
+  setValue("pa-zip", a.zip);
+  setValue("pa-phone1", a.phone1); 
+  setValue("pa-phone1Type", a.phone1Type); 
+  setValue("pa-phone2", a.phone2);
+  setValue("pa-phone2Type", a.phone2Type); 
+  setValue("pa-phone3", a.phone3);
+  setValue("pa-phone3Type", a.phone3Type);  
+  setValue("pa-email1", a.email1);
+  showIf(includeName, "pa-li-name"); 
+  showOverlayPop("pop-addr", includeName ? "pa-name" : "pa-addr1");
+}
+function paSave() {
+  var a = pa;
+  a.name = value("pa-name");
+  a.addr1 = value("pa-addr1");
+  a.addr2 = value("pa-addr2");
+  a.addr3 = value("pa-addr3");
+  a.city = value("pa-city");
+  a.state = value("pa-state");
+  a.zip = value("pa-zip");
+  a.phone1 = value("pa-phone1");
+  a.phone1Type = value("pa-phone1Type");
+  a.phone2 = value("pa-phone2");
+  a.phone2Type = value("pa-phone2Type");
+  a.phone3 = value("pa-phone3");
+  a.phone3Type = value("pa-phone3Type");
+  a.email1 = value("pa-email1");
+  paCallback(a);
+}
+ 

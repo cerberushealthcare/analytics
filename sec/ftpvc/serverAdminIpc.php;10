@@ -1,0 +1,59 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/IprocCodes_Admin.php';
+//
+if (! $myLogin->admin) {
+  header('Location: welcome.php');
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  Logger::debug(currentUrl());
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  Logger::debug(currentUrl());
+  Logger::debug_r($_POST, '$_POST');;
+}
+try {
+  switch ($action) {
+    //
+    case 'getAll':
+      $recs = IProcCodes_Admin::getAll();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'save':
+      $rec = IProcCodes_Admin::save($obj);
+      logit_r($rec, 'rec after saving');
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'delete':
+      IProcCodes_Admin::delete($_GET['id']);
+      $m = new JAjaxMsg($action, $_GET['id']);
+      break;
+    case 'deleteMany':
+      IProcCodes_Admin::deleteMany($obj);
+      $m = new JAjaxMsg($action, null);
+      break;
+    case 'copyOptions':
+      IProcCodes_Admin::copyToQuestion($obj->ids, $obj->qid);
+      $m = new JAjaxMsg($action, null);
+      break;
+    case 'getQuestion':
+      $rec = IProcCodes_Admin::getQuestion($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+}
+if ($m != null)  
+  echo $m->out();
+?>

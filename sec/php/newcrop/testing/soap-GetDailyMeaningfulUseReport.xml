@@ -1,0 +1,36 @@
+<!-- Request -->
+<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetDailyMeaningfulUseReport xmlns="https://secure.newcropaccounts.com/V7/webservices">
+      <credentials>
+        <PartnerName>string</PartnerName>
+        <Name>string</Name>
+        <Password>string</Password>
+      </credentials>
+      <accountRequest>
+        <AccountId>string</AccountId>
+        <SiteId>string</SiteId>
+      </accountRequest>
+      <locationId>string</locationId>
+      <licensedPrescriberId>string</licensedPrescriberId>
+      <reportDateCCYYMMDD>string</reportDateCCYYMMDD>
+      <includeSchema>string</includeSchema>
+    </GetDailyMeaningfulUseReport>
+  </soap12:Body>
+</soap12:Envelope>
+
+<!-- Response -->
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetDailyMeaningfulUseReportResponse xmlns="https://secure.newcropaccounts.com/V7/webservices">
+      <GetDailyMeaningfulUseReportResult>
+        <Status>Unknown or OK or Fail or NotFound</Status>
+        <Message>string</Message>
+        <XmlResponse>string</XmlResponse>
+        <RowCount>int</RowCount>
+        <Timing>int</Timing>
+      </GetDailyMeaningfulUseReportResult>
+    </GetDailyMeaningfulUseReportResponse>
+  </soap12:Body>
+</soap12:Envelope>

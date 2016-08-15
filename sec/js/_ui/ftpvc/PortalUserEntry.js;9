@@ -1,0 +1,234 @@
+/**
+ * PortalAnchorTile
+ */
+PortalAnchorTile = {
+  create:function(container) {
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.tiles = Html.Tiles.create(self, [
+            self.creator = Html.AnchorAction.asWarning('Portal ID not set up').bubble('onclick', self.creator_onclick),
+            self.login = Html.AnchorAction.asKey().bubble('onclick', self.login_onclick)]);
+        },
+        reset:function() {
+          self.client = null;
+          self.portalUser = null;
+          self.draw();
+        },
+        load:function(fs) {
+          if (fs) {
+            self.client = fs.client;
+            self.loadPortalUser(fs.portalUser);
+          } else {
+            self.reset();
+          }
+        },
+        loadPortalUser:function(portalUser) {
+          self.portalUser = portalUser;
+          if (portalUser) 
+            self.login.setText(portalUser.uid + ' (' + self.client.name + ')');
+          self.draw();
+        },
+        draw:function() {
+          if (self.portalUser)
+            self.login.select();
+          else
+            self.creator.select();
+        },
+        pop:function() {
+          self.tiles.selected().click();
+        },
+        //
+        creator_onclick:function() {
+          NewPortalUserEntry.pop(self.client, self.loadPortalUser);
+        },
+        login_onclick:function() {
+          PortalUserEntry.pop(self.portalUser, self.loadPortalUser);
+        }
+      }
+    })
+  }
+}
+/**
+ * RecordEntryPop PortalUserEntry
+ */
+PortalUserEntry = {
+  /*
+   * @arg PortalUser rec 
+   * @arg fn(PortalUser|null) onupdate (optional, calls back with record on save)
+   */
+  pop:function(rec, onupdate) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    return PortalUserEntry = Html.RecordEntryPop.create('Portal User', 600).extend(function(self) {
+      return {
+        onsave:function(rec) {},
+        //
+        init:function() {
+          self.form0 = Html.UlEntry.create(self.frame).before(self.form.ul).addClass('mb10');
+          self.form0.line().lbl('Login ID').ro('uid').lbl('Status').ro('_status');
+          self.cmd0 = Html.Pop.CmdBar.create(self).button('Reset Account', self.reset_onclick).button('Suspend Account', self.suspend_onclick).cancel(self.cancel_onclick);
+        },
+        onload:function() {
+          self.form.show(true);
+        },
+        buildCmd:function(cb) {
+          cb.button('Print Login Card', self.print_onclick, 'print-note').lbl('', 'spacer').save(self.save_onclick, 'Save and Exit').cancel(self.cancel_onclick);
+        },
+        onshow:function(rec, onupdate) {
+          self.form0.load(self.rec);
+          self.frame.setCaption(self.rec.Client.name);
+          if (self.rec.isSuspended() || self.rec.isActivated()) {
+            self.form.show(false);
+            self.cmd0.container().show();
+            self.cmd.container().hide();
+          } else {
+            self.form.show(true);
+            self.cmd0.container().hide();
+            self.cmd.container().show();
+            self.form.focus();
+          }
+          self.callback = onupdate;
+        },
+        buildForm:function(ef) {
+          PortalUserEntryForm.build(ef);
+        },
+        save:function(rec, onsuccess, onerror) {
+          rec.ajax().save(onsuccess);
+        },
+        close_asSaved:self.close_asSaved.append(function(rec) {
+          if (self.callback)
+            self.callback(rec);
+        }),
+        print_onclick:function() {
+          Page.popPortalPrint(self.rec.Client.clientId);
+        },
+        reset_onclick:function() {
+          Pop.Confirm.showYesNo('This will reset the account and allow you to update challenge question/answers. OK to proceed?', function() {
+            self.rec.ajax().reset(self.close_asSaved);
+          })
+        },
+        suspend_onclick:function() {
+          Pop.Confirm.showYesNo('This will suspend the account to prevent further logins. OK to proceed?', function() {
+            self.rec.ajax().suspend(self.close_asSaved);
+          })
+        }
+      }
+    })
+  }
+}
+/**
+ * RecordEntryPop NewPortalUserEntry
+ */
+NewPortalUserEntry = {
+  /*
+   * @arg Client client 
+   * @arg fn(PortalUser) onsave (optional)
+   */
+  pop:function(client, callback_onsave) {
+    this.create().pop(client, callback_onsave);
+  },
+  create:function() {
+    var My = this;
+    return NewPortalUserEntry = Html.RecordEntryPop.create('New Portal User', 600).extend(My, function(self, parent) {
+      return {
+        pop:function(client, callback_onsave) {
+          self.client = client;
+          self.callback = callback_onsave;
+          var rec = NewPortalUser.from(client);
+          parent(Html.RecordEntryPop).pop(rec);
+        },
+        onshow:function() {
+          self.frame.setCaption(self.client.name);
+        },
+        buildCmd:self.buildCmd.append(function(cb) {
+          cb.get('save').setText('Create Login ID');
+        }),
+        buildForm:function(ef) {
+          ef.line().lbl('Login ID').ro('uid').lbl('Password').ro('pwpt');
+          PortalUserEntryForm.build(ef);
+        },
+        save:function(rec, onsuccess, onerror) {
+          rec = NewPortalUser.revive(rec);
+          rec.clientId = self.client.clientId;
+          rec.ajax().create(onsuccess);
+        },
+        onsave:function(rec) {
+          if (self.callback)
+            self.callback(rec);
+        }
+      }
+    })
+  }
+}
+PortalUserEntryForm = {
+  build:function(ef) {
+    ef.aug({
+      showCustom:function(i) {
+        var li = ef['licq' + i];
+        var fid = 'cq' + i;
+        if (ef.getValue('_scq' + i) == C_PortalUser.CUSTOM) {
+          li.show();
+          //if (ef.getValue(fid) == '')
+            //ef.setValue(fid, 'Enter custom question (try for short single word answer)');
+          ef.focus(fid);
+        } else {
+          li.hide();
+        }
+      }
+    })
+    ef.line('mt10').lbl('Last Name').textbox('lastName', 20).lbl('Zip Code').textbox('zipCode', 5).lbl('Last 4 SSN').textbox('ssn4', 5);
+    ef.line().lbl('Email').textbox('email', 50);
+    ef.line('mt10').lbl('Security 1').select('_scq1', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(1));
+    ef.line().id('licq1').lbl().textbox('cq1', 60);
+    ef.line().lbl('Answer 1').textbox('ca1', 15);
+    ef.line('mt5').lbl('Security 2').select('_scq2', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(2));
+    ef.line().id('licq2').lbl().textbox('cq2', 60);
+    ef.line().lbl('Answer 2').textbox('ca2', 15);
+    ef.line('mt5').lbl('Security 3').select('_scq3', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(3));
+    ef.line().id('licq3').lbl().textbox('cq3', 60);
+    ef.line().lbl('Answer 3').textbox('ca3', 15);
+  }
+}
+/**
+ * AnchorPicker PortalUserPicker
+ */
+PortalUserPicker = {
+  create:function() {
+    return Html.AnchorPicker.create('patient', 'Select Patient Recipient', 'Patient Login Selector').extend(function(self) {
+      return {
+        init:function() {
+          self.thead().tr('fixed head').th('Patient').w('60%').th('ID').w('20%').th('Birth').w('20%');
+        },
+        buttons:function(cmd) {
+          cmd.add('Add New Patient Login...', self.new_onclick).cancel(self.pop.close);
+        },
+        fetch:function(callback_recs) {
+          PortalUsers.ajax().fetch(callback_recs);
+        },
+        applies:function(rec, search) {
+          if (search)
+            return rec.Client.name.match(search);
+          return true;
+        },
+        add:function(rec, tr) {
+          tr.select(rec, AnchorClient.create(rec.Client)).td(rec.Client.uid).td(rec.Client.birth);
+        },
+        getValueFrom:function(rec) {
+          return rec.portalUserId;
+        },
+        getTextFrom:function(rec) {
+          return rec.Client.name;
+        },
+        //
+        new_onclick:function() {
+          NewPortalUserEntry.pop(null, function(rec) { 
+            self.pop.clean();
+            self.pop.select(rec);
+          })
+        }
+      }
+    })
+  }
+}

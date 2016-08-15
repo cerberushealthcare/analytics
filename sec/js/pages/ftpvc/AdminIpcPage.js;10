@@ -1,0 +1,138 @@
+/**
+ * Admin IProc Page
+ * @author Warren Hornsby
+ */
+AdminIpcPage = {
+  //
+  init:function(query) {
+    Page.setEvents();
+    IpcAdmin.create(_$('ipc-list'));
+  }
+};
+/** 
+ * Tile IpcAdmin
+ *   TopFilterTableLoader table
+ *   CmdBar cmd
+ */
+IpcAdmin = {
+  create:function(parent, callback) {
+    parent.clean();
+    var self = Html.Tile.create(parent);
+    return self.aug({
+      init:function() {
+        self.table = IpcAdmin.Table.create(self, {
+          onselect:function(rec) {
+            self.table_onselect(rec);
+          }
+        });
+        self.cmd = Html.CmdBar.create(self).del(self.del_onclick, 'Delete Checked...').add('New IPC Code...', self.add_onclick);
+      },
+      add_onclick:function() {
+        IpcEntry.pop(null, self.refresh);
+      },
+      del_onclick:function() {
+        var checks = self.table.getChecks();
+        if (checks.length) {
+          Pop.Confirm.showDeleteChecked("delete", function(confirm) {
+            if (confirm) {
+              Ajax.post('AdminIpc', 'deleteMany', checks, function() {
+                self.refresh(checks);
+              });
+            }
+          });  
+        } else {
+          Pop.Msg.showCritical('Nothing was selected.');
+        }
+      },
+      table_onselect:function(rec) {
+        IpcEntry.pop(rec, self.refresh);
+      },
+      refresh:function(update) {
+        self.table.load(update);
+      }
+    });
+  },
+  Table:{
+    create:function(parent, augs) {
+      var self = Html.TableLoader.create(parent);
+      return self.aug({
+        init:function() {
+          self.setHeight(540);
+          self.thead().tr('fixed head').th(null, 'check').th('Name').w('20%').th('IPC').w('10%').th('Desc').w('50%').th('Category').w('20%');
+          self.setTopFilter();
+          self.load();
+        },
+        filter:function(rec) {
+          return {'Category':C_Ipc.CATS[rec.cat]};
+        },
+        rowKey:function(rec) {
+          return rec.ipc; 
+        },
+        load:function(update) {
+          if (Array.is(update)) {
+            self.loader().removeTrs(update);
+          } else if (update && self.loader().getRowByKey(update.ipc)) {
+            self.add(update);
+            fade(self.loader().getRowByKey(update.ipc));
+          } else {
+            self.reset();
+            var scrollTo = null;
+            self.working(true);
+            Ajax.get('AdminIpc', 'getAll', null, function(recs) {
+              Array.forEach(recs, function(rec) {
+                self.add(rec);
+                if (update && update.ipc == rec.ipc) 
+                  scrollTo = self.loader().tr;
+              });
+              self.show().setTopFilter();
+              if (scrollTo)
+                fade(scrollToTr_(scrollTo));
+              self.working(false);
+            }); 
+          }
+        },
+        add:function(rec) {
+          var cat = C_Ipc.CATS[rec.cat];
+          self.tbody().tr(rec).check().select(rec.name).td(rec.ipc).td(rec.desc).td(cat);
+        }
+      }).aug(augs);
+    }
+  }
+}
+/**
+ * RecordEntryPop IpcEntry
+ */
+IpcEntry = {
+  pop:function(rec, callback) {
+    IpcEntry = this.create(callback).pop(rec);
+  },
+  create:function(callback) {
+    var self = Html.RecordEntryPop.create('IPC Entry');
+    return self.aug({
+      onshow:function(rec) {
+        self.form.focus((rec) ? 'name' : 'ipc');
+      },
+      onsave:function(rec) {
+        callback(rec);
+      },
+      ondelete:function(id) {
+        callback([id]);
+      },
+      buildForm:function(ef) {
+        ef.li('IPC').textbox('ipc', 5).lbl('Category').select('cat', C_Ipc.CATS, '');
+        ef.li('Name', 'mt10').textbox('name', 25, 25);
+        ef.li('Desc').textbox('desc', 60);
+      },
+      save:function(rec, callback_rec) {
+        Ajax.post('AdminIpc', 'save', rec, callback_rec);
+      },
+      remove:function(rec, callback_id) {
+        Ajax.get('AdminIpc', 'delete', rec.ipc, callback_id);
+      }
+    });
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = AdminIpcPage;  

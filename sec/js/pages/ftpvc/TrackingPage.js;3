@@ -1,0 +1,97 @@
+/**
+ * Tracking Page
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var TrackingPage = {
+  cats:null,
+  /*
+   * Loader
+   */
+  load:function(query, lists) {
+    Page.setEvents();
+    this.cats = lists.cats;
+    CriteriaTile.load(lists);
+  }
+};
+/**
+ * Criteria Tile
+ */
+var CriteriaTile = {
+  form:null,
+  //
+  load:function(lists) {
+    var criteria = this._loadCriteriaForm(lists);
+    ResultsTile.load(criteria);
+  },
+  onChange:function(criteria) {
+    ResultsTile.load(criteria);
+  },
+  /*
+   * Build criteria entry form
+   * Returns {'cat':$,'cid':$} 
+   */
+  _loadCriteriaForm:function(lists) {
+    var form = new EntryForm($('criteria-ul'));
+    this.form = form;
+    form.addLi();
+    form.appendField('cat', createSelect(null, null, lists.cats, null, '[All Categories]'), 'Category');
+    var a = createAnchor(null, null, 'client', '[All Patients]');
+    form.appendClientPicker('cid', a, 'Patient');
+    var self = this;
+    form.setOnDirty(function(record){self.onChange(record)});
+    return form.getRecord();
+  }
+}
+/**
+ * Results Tile
+ */
+var ResultsTile = {
+  table:null,
+  load:function(criteria) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl');
+    overlayWorking(true, $('box'));
+    Ajax.post(Ajax.SVR_POP, 'getTracking', criteria,
+      function(recs) {
+        for (var i = 0, j = recs.length; i < j; i++) {
+          var rec = recs[i];
+          var client = rec.ClientStub;
+          var session = rec.SessionStub;
+          t.createTr(rec.trackCat);
+          t.createTd('bold', TrackingPage.cats[rec.trackCat]);
+          t.createTdAppend(null, PatientUi.createClientAnchor(client));
+          t.createTdAppend(null, ResultsTile.createTrackingAnchor(rec, rec.trackDesc));
+          t.createTd(null, rec.orderDate);
+          t.createTd(null, rec.schedDate);
+          t.createTd(null, rec.closedDate);
+        }
+        overlayWorking(false);
+      }
+    );
+    this.table = t;
+  },
+  createTrackingAnchor:function(rec, text) {
+    var href = 'javascript:TrackingPage.pEdit(' + rec.trackItemId + ')';
+    return createAnchor(null, href, 'action track', text);
+  }
+}
+/**
+ * Patient UI Library
+ */
+var PatientUi = {
+  formatName:function(client) {
+    return client.lastName + ', ' + client.firstName;
+  },
+  isMale:function(client) {
+    return client.sex == 'M';
+  },
+  createClientAnchor:function(client) {
+    var cls = (PatientUi.isMale(client)) ? 'action umale' : 'action ufemale';
+    return createAnchor(null, Page.url(Page.PAGE_FACESHEET, client.clientId), cls, PatientUi.formatName(client));
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = TrackingPage;  

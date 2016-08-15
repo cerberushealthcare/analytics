@@ -1,0 +1,111 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  /**
+   * @return array(Ipc,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = Ipc::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('name'));
+  }
+  /**
+   * @return Ipc
+   */
+  static function getByName($name) {
+    return geta(self::mapByName($myLogin->userGroupId), $name);
+  }
+  /**
+   * @return Ipc
+   */
+  static function getBySurgProc($proc) {
+    return geta(self::mapSurgByDesc($myLogin->userGroupId), $proc);
+  }
+  /**
+   * @return array(IpcHm,..)
+   */
+  static function getIpcHms() {
+    global $myLogin;
+    $recs = IpcHm::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('Ipc.cat', 'Ipc.name'));
+  }
+  /**
+   * @param stdClass $obj
+   * @return IpcHm
+   */
+  static function saveIpcHm($obj) {
+    global $myLogin;
+    $rec = IpcHm::fromUi($obj, $myLogin->userGroupId);
+    $rec->save();
+    return IpcHm::fetch($rec->userGroupId, $rec->ipc);
+  }
+  /**
+   * @param stdClass $obj
+   */
+  static function delIpcHm($obj) {
+    global $myLogin;
+    $rec = IpcHm::fromUi($obj, $myLogin->userGroupId);
+    IpcHm::delete($rec);
+  }
+  //
+  private static function mapByName($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName($ugid);
+    return $map;
+  }
+  private static function mapSurgByDesc($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap($ugid);
+    return $map;
+  } 
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends IpcRec {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $name;
+  public $desc;
+  public $cat;
+  //
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return parent::fetchAllBy($c, null, 2000);
+  }
+  static function fetchMapByName($ugid) {
+    return parent::fetchMapBy(self::asCriteria($ugid), 'name');
+  }
+  static function fetchSurgMap($ugid) {
+    $c = self::asCriteria($ugid);
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = self::getAllLevelsCriteria($ugid);
+    return $c; 
+  }
+  static function asRequiredJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+  static function asOptionalJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+}
+?> 

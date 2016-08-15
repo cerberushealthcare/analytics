@@ -1,0 +1,195 @@
+/**
+ * Patient Selector
+ * Global static 
+ */
+PatientSelector = {
+  clients:null,
+  _scb:null,
+  reset:function() {
+    setText('working-msg-ps', '');
+    setValue('search-pid', '');
+    setValue('search-last', '');
+    setValue('search-first', '');
+    setValue('search-address', '');
+    setValue('search-phone', '');
+    setValue('search-email', '');
+    setValue('search-custom', '');
+    setText('pop-ps-cap-text', 'Patient Selector');
+    setText('pop-ps-h1', 'Search for a patient');
+  },
+  /*
+   * Bring up pop
+   * - callback: callback(JClient); 
+   *             if null, calls patientSelectorCallback by default
+   */
+  pop:function(callback) {
+    overlayWorking(true);
+    this._scb = Ajax.buildScopedCallback(callback, 'patientSelector');
+    var self = this;
+    Includer.get(Includer.HTML_PATIENT_SELECTOR, function() {
+      Lookup.getClientSearchCustom(
+        function(luSearch) {
+          var foc = self._applySearchCustom(luSearch);
+          overlayWorking(false);
+          Pop.showPosCursor('pop-ps', foc);
+          if (self.clients == null) {
+            self.search(foc);
+          }
+        });
+    });
+  },
+  psSearch:function(foc) {
+    Page.workingCmd(true);
+    this.search(foc);
+  },
+  search:function(foc) {
+    var s_pid = value('search-pid');
+    var s_ln = value('search-last');
+    var s_fn = value('search-first');
+    show('ss').className = 'spreadsheet workingbar';
+    show('ss-searching');
+    hide('ss-table');
+    var req = {
+      'uid':s_pid,
+      'ln':s_ln,
+      'fn':s_fn,
+      'ad':value('search-address'),
+      'ph':value('search-phone'),
+      'em':value('search-email'),
+      'cu':value('search-custom')};
+    var self = this;
+    Ajax.get(Ajax.SVR_SCHED, 'search', req, function(clients) {
+      Page.workingCmd(false);
+      self.clients = clients.clients;
+      self._buildResultsTable();
+      show('ss').className = 'spreadsheet';
+      hide('ss-searching');
+      show('ss-table'); 
+      if (foc == null) {
+        if (s_ln != '') {
+          focus('search-last');
+        } else if (s_fn != '') {
+          focus('search-first');
+        } else {
+          focus('search-pid');
+        }
+      }
+    });
+  },
+  psSelect:function(i) {
+    Pop.close();
+    var client = this.clients[i];
+    Ajax.callScopedCallback(this._scb, client);
+  },
+  psCustomize:function() {
+    Pop.show('pop-ccs');
+  },
+  ccsSave:function() {
+    var rec = this._createClientSearchCustom();
+    Lookup.saveClientSearchCustom(rec);
+    this.resetClientSearchCustomCallback(rec);
+  },
+  ccsReset:function() {
+    Lookup.resetClientSearchCustom(this);
+  },
+  searchCallback:function(clients) {
+    Page.workingCmd(false);
+    this.clients = clients.clients;
+    this._buildResultsTable();
+    show('ss').className = 'spreadsheet';
+    hide('ss-searching');
+    show('ss-table');
+  },
+  resetClientSearchCustomCallback:function(rec) {
+    Pop.close();
+    hide('ss');
+    this._applySearchCustom(rec);
+    this.search();
+  },
+  _createClientSearchCustom:function() {
+    return {
+      'first':(isChecked('ccs-by-id') ? 0 : 1),
+      'incAddress':isChecked('ccs-inc-address'),
+      'incPhone':isChecked('ccs-inc-phone'),
+      'incEmail':isChecked('ccs-inc-email'),
+      'incCustom':isChecked('ccs-inc-custom')
+      };
+  },
+  _applySearchCustom:function(luSearch) {
+    var foc;
+    if (luSearch.first && luSearch.first == 1) {
+      $('search-ul').insertBefore($('search-li-name'), $('search-li-pid'));
+      $('ccs-by-name').checked = true;
+      foc = 'search-last';
+    } else {
+      $('search-ul').insertBefore($('search-li-pid'), $('search-li-name'));
+      $('ccs-by-id').checked = true;
+      foc = 'search-pid';
+    }
+    hide('search-li-more');
+    if (luSearch.incAddress) {
+      show('search-li-address');
+      show('search-li-more');
+      setCheck('ccs-inc-address', true);
+    } else {
+      hide('search-li-address');
+      setCheck('ccs-inc-address', false);
+    }
+    if (luSearch.incPhone) {
+      show('search-li-phone');
+      show('search-li-more');
+      setCheck('ccs-inc-phone', true);
+    } else {
+      hide('search-li-phone');
+      setCheck('ccs-inc-phone', false);
+    }
+    if (luSearch.incEmail) {
+      show('search-li-email');
+      show('search-li-more');
+      setCheck('ccs-inc-email', true);
+    } else {
+      hide('search-li-email');
+      setCheck('ccs-inc-email', false);
+    }
+    if (luSearch.incCustom) {
+      show('search-li-custom');
+      show('search-li-more');
+      setCheck('ccs-inc-custom', true);
+    } else {
+      hide('search-li-custom');
+      setCheck('ccs-inc-custom', false);
+    }  
+    return foc;
+  },
+  _buildResultsTable:function() {
+    var clients = this.clients;
+    var tbody = $('ss-tbody');
+    clearRows(tbody);
+    var offset = false;
+    if (clients != null) {
+      for (var i = 0; i < clients.length; i++) {
+        var c = clients[i];
+        if (c.clientId > 0) {
+          var href = 'javascript:PatientSelector.psSelect(' + i + ')';
+          var tr = createTr(offset ? 'offset' : '');
+          var id = (i == 0) ? 'ss-first-a' : null;
+          var cls = (c.sex == 'M') ? 'action umale' : 'action ufemale';
+          tr.appendChild(createTdAnchor(href, 'action noimg', c.uid, null, null));
+          tr.appendChild(createTdAnchor(href, cls, c.name, id, 'Select this patient'));
+          tr.appendChild(createTd(c.birth));
+          tbody.appendChild(tr);
+          offset = ! offset;
+        }
+      }
+    } 
+    if (tbody.children.length == 1) {
+      var tr = createTr('');
+      var td = createTd('No patients match your criteria.');
+      td.colSpan = 3;
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    $('ss').scrollTop = 0;
+  }
+};

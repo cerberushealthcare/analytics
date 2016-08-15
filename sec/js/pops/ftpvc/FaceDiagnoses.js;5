@@ -1,0 +1,184 @@
+/**
+ * Facesheet Diagnoses
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+var FaceDiagnoses = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-dia',  
+  /*
+   * callback(facesheet) if anything changed (calls page.diagnosesChangedCallback by default)
+   */
+  pop:function(fs, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'diagnosesChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_DIAGNOSES, Includer.LIB_FACE_UI, Includer.AP_TEMPLATE_POPS, Includer.JS_TEMPLATE_POPS], function() {
+      new TabBar(FaceDiagnoses._POP, ['Active Diagnoses', 'History'], ['Active', 'Diagnosis History']);
+      if (fs.client) {
+        setCaption('fsp-dia-cap-text', fs.client.name + ' - Diagnoses');
+        setCaption("pop-de-cap-text", fs.client.name + " - Diagnosis Entry");
+      }
+      self._load();
+      overlayWorking(false);
+      if (zoom) {
+        zoomPop(FaceDiagnoses._POP);
+      } else {
+        showOverlayPop(FaceDiagnoses._POP);
+      }
+    });
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.diagnoses = fs.diagnoses;
+    this.fs.diagnosesHistory = fs.diagnosesHistory;
+    this.changed = true;
+    this._load();
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpEdit:function(id) {
+    FaceDiagEntry.pop(id);
+  },
+  fpDeleteChecked:function() {
+    var checks = getCheckedValues('sel-dia', 'fsp-dia-tbody'); 
+    var self = this;
+    if (checks.length > 0) {
+      showConfirmChecked('remove', function(confirm) {
+        if (confirm) {
+          overlayWorking(true);
+          Ajax.post(Ajax.SVR_POP, 'deactivateDiagnoses', checks, 
+            function(fs) {
+              self.update(fs);
+              overlayWorking(false);
+            });
+        }
+      });  
+    } else {
+      showCritical('Nothing was selected.');
+    }
+  },
+  //
+  _load:function() {
+    var fs = this.fs;
+    setDisabled('dia-cmd-toggle', fs.diagnoses == null);
+    fs.diagnosesById = {};
+    var tp = new TableLoader('fsp-dia-tbody', 'off', 'fsp-dia-div');
+    var self = this;
+    if (fs.diagnoses) {
+      var i, diagnosis;
+      for (i = 0; i < fs.diagnoses.length; i++) {
+        diagnosis = fs.diagnoses[i];
+        var text = diagnosis.text;
+        if (diagnosis.icd) {
+          text += ' (' + diagnosis.icd + ')';
+        }
+        fs.diagnosesById[diagnosis.id] = diagnosis;
+        var click = 'FaceDiagnoses.fpEdit(' + diagnosis.id + ')';
+        tp.createTrTd('check');
+        var c = createCheckbox('sel-dia', diagnosis.id);
+        tp.append(c);
+        tp.createTd();
+        tp.append(createAnchor(null, null, 'fs', text, null, click));
+      }
+      if (fs.diagnosesHistory) {
+        t = new TableLoader('fsp-diah-tbody', 'off', 'fsp-diah-div');
+        t.defineFilter(this.diaHistFilter());
+        for (i = 0; i < fs.diagnosesHistory.length; i++) {
+          diagnosis = fs.diagnosesHistory[i];
+          t.createTr(diagnosis.date + diagnosis.sessionId, [diagnosis.date, diagnosis.sessionId], this.diaHistFilter(diagnosis));
+          t.createTd('histbreak', diagnosis.date);
+          t.createTdAppend(null, FaceUi.createSessionAnchor(fs, diagnosis.sessionId));
+          t.createTd(null, null, diagnosis.text);
+        }
+        //t.loadFilterSidebar('diah-filter-ul', TableLoader.NO_FILTER_COUNT);
+        t.loadFilterTopbar('diah-filter-ul');
+      }
+    } else {
+      tp.createTrTd(null, null, '&nbsp;');
+    }
+    this._flicker();
+  },
+  diaHistFilter:function(d) {
+    return {
+      'Show':(d) ? d.text : null
+      };
+  },
+  _flicker:function() {
+    flicker("diah-head");
+  }
+};
+/**
+ * Diagnosis Entry
+ */
+FaceDiagEntry = {
+  fs:null,
+  diagnosis:null,
+  pop:function(id) {
+    var fs = FaceUi.setParentage(FaceDiagnoses, this);
+    this.diagnosis = id ? fs.diagnosesById[id] : null;
+    this._load();
+    Includer.getWorking([Includer.AP_ICD_POP, Includer.JS_ICD_POP], function() {
+      showOverlayPop('pop-de', 'de-desc');
+    });
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var d = {
+      icd:nullify(value('de-icd')),
+      text:value('de-desc'),
+      clientId:this.fs.client.id
+      };
+    if (this.diagnosis) {
+      d.id = this.diagnosis.id;
+    }
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveDiagnosis', d, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.parent.update(fs);
+        closeOverlayPop();
+      });
+  },
+  fpDelete:function() {
+    var self = this;
+    confirm('Are you sure you want to remove this record?', function() {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'deactivateDiagnosis', self.diagnosis.id, 
+        function(fs) {
+          overlayWorking(false);
+          self.parent.update(fs);
+          closeOverlayPop();
+        });
+    });
+  },
+  fpLookupIcd:function() {
+    showIcd(null, value('de-desc'), 
+      function(code, desc) {
+        if (code) {
+          setText('de-icd', code);
+          setText('de-desc', desc);
+        }
+      });
+  },
+  //
+  _load:function() {
+    if (this.diagnosis) {
+      setText('de-icd', this.diagnosis.icd);
+      setText('de-desc', this.diagnosis.text);
+      show('de-delete-span');
+    } else { 
+      setText('de-icd', '');
+      setText('de-desc', '');
+      hide('de-delete-span');
+    }
+  }
+};

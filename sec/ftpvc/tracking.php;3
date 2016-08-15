@@ -1,0 +1,87 @@
+<?
+require_once "inc/requireLogin.php";
+require_once "inc/uiFunctions.php";
+require_once 'php/dao/OrderTrackingDao.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header("Location: welcome.php");
+}
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <? renderHead("Tracking") ?>
+    <link rel="stylesheet" type="text/css" href="css/clicktate.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/page.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/TabBar.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel='stylesheet' type='text/css' href='css/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel="stylesheet" type="text/css" href="css/TemplateUi.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
+    <link rel="stylesheet" type="text/css" href="css/clicktate-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/pop-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops-font.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/pop-ie6.css?<?=Version::getUrlSuffix() ?>" />
+<![endif]-->    
+    <script language="JavaScript1.2" src="js/pages/TrackingPage.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/event-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/TabBar.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+  </head>
+  <body onload="start()">
+    <div id="bodyContainer">
+      <div id="curtain"></div>
+      <? include "inc/header.php" ?>
+      <div class="content">
+        <table class='h'>
+          <tr>
+            <th><h1>Tracking Sheet</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart("wide min-pad", null, null, 'box') ?>
+          <div id='criteria'>  <!--  CriteriaTile -->
+            <ul id='criteria-ul'>
+            </ul>
+          </div>
+          <div id='results' class='fstab' style='height:300px'>  <!-- ResultsTile -->
+            <table id='results-tbl' class='fsb'>
+              <thead>
+                <tr class='fixed head'>
+                  <th style='width:10%'>Category</th>
+                  <th style='width:15%'>Patient</th>
+                  <th style='width:20%'>Tracking Item</th>
+                  <th style='width:15%'>Ordered</th>
+                  <th style='width:15%'>Scheduled</th>
+                  <th style='width:15%'>Closed</th>
+                <tr>
+              </thead>
+              <tbody id='results-tbody'>
+              </tbody>
+            </table>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+    </div>      
+    <? include "inc/footer.php" ?>
+  </body>
+<script type="text/javascript">
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  var lists = <?=jsonencode(OrderTrackingDao::getLists()) ?>;
+  TrackingPage.load(query, lists);
+}
+</script>      
+</html>

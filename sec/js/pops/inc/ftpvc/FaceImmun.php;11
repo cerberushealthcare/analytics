@@ -1,0 +1,287 @@
+<?
+/**
+ * Facesheet Immunizations
+ * Controller: FaceImmun.js
+ */
+?>
+<div id="fsp-imm" class="pop" onmousedown="event.cancelBubble = true" style='width:720px'>
+  <div id="fsp-imm-cap" class="pop-cap">
+    <div id="fsp-imm-cap-text">
+      Immunizations
+    </div>
+    <a href="javascript:FaceImmun.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="fsp-immh-div" class="fstab" style="height:300px">
+      <table id="fsp-immh-tbl" class="fsg single grid bigpad">
+        <thead>
+          <tr class="fixed head">
+            <th>Date Given</th>
+            <th>Vaccine</th>
+            <th>Manufac/Lot</th>
+            <th>Dose/Route</th>
+          </tr>
+        </thead>
+        <tbody id="fsp-immh-tbody">
+          <tr>
+            <td colspan="4">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd cmd-right">
+      <table class='h'>
+        <tr>
+          <th>
+            <a href="javascript:" onclick="FaceImmun.fpChart()" class="cmd report">Create Chart&nbsp;</a>
+            <span>&nbsp;</span>
+            <a href="http://www.cdc.gov/vaccines/recs/schedules/child-schedule.htm" target="_blank" class="qicon cdc" style='margin-top:2px'>CDC Immunization Schedules</a>
+          </th>
+          <td>
+            <a href="javascript:" onclick="FaceImmun.fpEdit()" class="cmd new">Add Immunization...</a>
+            <span>&nbsp;</span>
+            <a href="javascript:FaceImmun.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Immunization Entry 
+ */
+?>
+<div id="pop-imme" class="pop" onmousedown="event.cancelBubble = true" style='width:510px'>
+  <div id="pop-imme-cap" class="pop-cap">
+    <div id="pop-imme-cap-text">
+      Immunization Entry
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="imme-tui">
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:" onclick="FaceImmunEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span id="imme-delete-span">
+        <span>&nbsp;</span>
+        <a href="javascript:" onclick="FaceImmunEntry.fpDelete()" class="cmd delete-red">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Immunization Chart 
+ */
+?>
+<div id="pop-immc" class="pop" onmousedown="event.cancelBubble = true" style='width:660px'>
+  <div id="pop-immc-cap" class="pop-cap">
+    <div id="pop-immc-cap-text">
+      Immunization Chart
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="immc-div" class="fstab" style="height:400px">
+      <table id="immc-tbl" class="fsgr single grid" style='border-bottom:none'>
+        <tbody id="immc-tbody">
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:FaceImmunChart.fpPrint()" class="cmd rx">Print...</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>
+<div id='immc-prt' class='fstab noscroll' style='display:none'>
+  <table id="immc-tbl-prt" class="fsgr single grid">
+    <tbody id="immc-tbody-prt">
+    </tbody>
+  </table>
+</div>
+<?
+/**
+ * vIS Picker 
+ */
+?>
+<div id="pop-vis" class="pop" onmousedown="event.cancelBubble = true" style='width:460px'>
+  <div id="pop-vis-cap" class="pop-cap">
+    <div id="pop-vis-cap-text">
+      VIS Selector
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="fstab" style="height:500px">
+      <table class='fsgr'>
+        <tr class='head fixed'>
+          <th>Name</th>
+          <th>Date</th>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Multiple Vaccines</a></td>
+          <td>9/18/08</td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Adenovirus</a></td>
+          <td>7/14/11</td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Anthrax
+          </a></td>
+          <td>3/10/10</td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Diphtheria/ Tetanus/Pertussis (DTaP)
+          </a></td>
+          <td>5/17/07</td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Hepatitis A
+          </a></td>
+          <td>10/25/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Hepatitis B 
+          </a></td>
+          <td>7/18/07
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Hib (Haemophilus Influenzae type b) 
+          </a></td>
+          <td>12/16/98
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>HPV (Human Papillomavirus Vaccine)    
+          </a></td>
+          <td>5/3/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Influenza Vaccine - Live, Intranasal  
+          </a></td>
+          <td>7/26/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Influenza Vaccine - Inactivated   
+          </a></td>
+          <td>7/26/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Japanese Encephalitis 
+          </a></td>
+          <td>3/01/10
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Measles/Mumps/Rubella (MMR)  
+          </a></td>
+          <td>3/13/08
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Measles/Mumps/Rubella & Varicella (MMRV)    
+          </a></td>
+          <td>5/21/10
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Meningococcal     
+          </a></td>
+          <td>10/14/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Pneumococcal Conjugate (PCV13)    
+          </a></td>
+          <td>4/16/10
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Pneumococcal Polysaccharide (PPSV23)   
+          </a></td>
+          <td>10/06/09
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Polio     
+          </a></td>
+          <td>11/08/11
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Rabies    
+          </a></td>
+          <td>10/06/09
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Rotavirus  
+          </a></td>
+          <td>12/06/10
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Shingles (Herpes Zoster)    
+          </a></td>
+          <td>10/06/09
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Smallpox (Vaccinia)   
+          </a></td>
+          <td>8/31/07
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Tetanus/Diphtheria/(Pertussis) (Td/Tdap)    
+          </a></td>
+          <td>11/18/08
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Typhoid   
+          </a></td>
+          <td>5/19/04
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Varicella (Chickenpox)    
+          </a></td>
+          <td>3/13/08
+          </td>
+        </tr>
+        <tr>
+          <td><a href='javascript:' onclick='FaceImmunEntry.fpVisSel(this)' class='fsnone'>Yellow Fever    
+          </a></td>
+          <td>03/30/11
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?php 
+function renderCal($id, $value = "", $readOnly = true) {
+  echo "<input id='$id' type='text' size='10' value='$value' ";
+  if ($readOnly) {
+    echo "readonly='readonly' style='cursor:hand' onclick=\"Pop.Calendar.showFromTextbox('$id')\" ";
+  }
+  echo "/>&nbsp;";
+  echo "<a href='#' onclick=\"Pop.Calendar.showFromTextbox('$id');return false\" class='cal'></a>";
+}
+?>

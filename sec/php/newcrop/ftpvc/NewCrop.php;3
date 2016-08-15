@@ -1,0 +1,143 @@
+<?php
+require_once 'php/newcrop/data/NCScript.php';
+require_once 'php/newcrop/data/SoapData.php';
+require_once 'php/dao/UserDao.php';
+require_once 'php/dao/FacesheetDao.php';
+/**
+ * New Crop integration class
+ */
+class NewCrop {
+  //
+  private $env;
+  const ENV_TESTING = 0;
+  const ENV_PROD = 1;
+  //
+  private /*User*/ $user;
+  private /*Credentials*/ $credentials;
+  private $clickThruUrl;
+  private $wsHost;
+  // 
+  /**
+   * Constructor
+   */
+  public function __construct() {
+    $this->env = NewCrop::ENV_TESTING;
+    switch ($this->env) {
+      case NewCrop::ENV_TESTING:
+        $this->credentials = new Credentials('demo', 'demo', 'demo');
+        $this->clickThruUrl = 'https://preproduction.newcropaccounts.com/InterfaceV7/RxEntry.aspx'; 
+        $this->wsHost = 'https://preproduction.newcropaccounts.com/v7/WebServices';
+        break;
+      case NewCrop::ENV_PROD:
+        // TODO
+        break;
+    }
+  }
+  /**
+   * Build <form> XML to submit to NewCrop's click thru quick start
+   * @param int $cid
+   * @return array('url'=>'form-post-url','xml'=>'form-xml-content')
+   * @throws DomDataRequiredException if missing required elements
+   */
+  public function buildClickThru($cid) {
+    $user = UserDao::getMyUser();
+    $fs = FacesheetDao::getClientActiveMedsAllergies($cid, FacesheetDao::INTERNAL_ONLY);
+    $client = $fs->client;
+    $script = new NCScript(
+      CredentialsType::fromCredentials($this->credentials),
+      new UserRoleType(
+      'LicensedPrescriber',
+      'doctor'),
+      new DestinationType(
+      'compose'),
+      AccountType::fromUser($user),
+      LocationType::fromUserClient($user, $client),
+      LicensedPrescriberType::fromUser($user),
+      PatientType::fromClient($client, $fs->allergies),
+      OutsidePrescriptionType::fromMeds($fs->activeMeds));
+    return array(
+      'url' => $this->clickThruUrl,
+      'xml' => $script->toXml(),
+      );
+  }
+  /**
+   * Pull current allergy/med list via webservice call
+   * @param int $cuid
+   * @return array(
+   *   'allergy'=>array(PatientAllergyDetail,..),  // see https://preproduction.newcropaccounts.com/v7/WebServices/Patient.asmx?op=GetPatientAllergyHistory
+   *   'med'=>array(PatientDrugDetail,..)          // see https://preproduction.newcropaccounts.com/v7/WebServices/Patient.asmx?op=GetPatientFullMedicationHistory 
+   *   )
+   * @throws SoapHistoryException if result not 'OK'
+   */
+  public function getCurrent($cuid) {
+    global $myLogin;
+    $param = new SoapHistoryParam(
+      SoapCredentials::fromCredentials($this->credentials),
+      SoapAccount::fromUgid($myLogin->userGroupId),
+      new SoapPatient($cuid),
+      new SoapRxReq(),
+      new SoapPtInfoReq('test', 'test'));  // TODO what goes in soapptinforeq?
+    logit_r($param, 'NewCrop::getCurrent param');
+    //$orig = error_reporting();
+    //error_reporting(0);
+    $soap = new SoapClient($this->getPatientWsUrl());
+    //error_reporting($orig);
+    return array(
+      'allergy' => $this->buildAllergyHistory($soap, $param),
+      'med' => $this->buildMedHistory($soap, $param)
+    );
+  }
+  //
+  private function buildAllergyHistory($soap, $param) {
+    $response = $soap->GetPatientAllergyHistory($param);
+    //print_r($response);
+    return $this->getResponseDetail(
+      $response, 
+      'GetPatientAllergyHistoryResult', 
+      'patientAllergyDetail',
+      'PatientAllergyDetail');
+  }
+  private function buildMedHistory($soap, $param) {
+    $response = $soap->GetPatientFullMedicationHistory($param);
+    //print_r($response);
+    //$xml = base64_decode($response->GetPatientFullMedicationHistory6Result->XmlResponse);
+    //echo htmlentities($xml);
+    return $this->getResponseDetail(
+      $response, 
+      'GetPatientFullMedicationHistoryResult', 
+      'patientDrugDetail',
+      'PatientDrugDetail');
+  }
+  private function getResponseDetail($response, $resultNodeName, $detailNodeName, $arrayNodeName) {
+    $detail = array();
+    if ($response != null) {
+      $result = $response->$resultNodeName->result;
+      SoapHistoryException::throwIfNotOk($result);
+      if (isset($response->$resultNodeName->$detailNodeName)) 
+        $detail = $response->$resultNodeName->$detailNodeName->$arrayNodeName;
+    }
+    return is_array($detail) ? $detail : array($detail);
+  }
+  // Web service URLs
+  private function getPatientWsUrl() {
+    return "$this->wsHost/Patient.asmx?WSDL"; 
+  }
+  private function getUpdate1WsUrl() {
+    return "$this->wsHost/Update1.asmx?WSDL";
+  }
+}
+/**
+ * Credentials 
+ */
+class Credentials {
+  public $partner;
+  public $name;
+  public $password;
+  //
+  public function __construct($partner, $name, $password) {
+    $this->partner = $partner;
+    $this->name = $name;
+    $this->password = $password;
+  }
+}
+?>

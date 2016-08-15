@@ -1,0 +1,1100 @@
+/**
+ * Template UI
+ * Builds a document "mini engine" 
+ */
+TemplateUi.FORMAT_PARAGRAPH = 1;
+TemplateUi.FORMAT_ENTRY_FORM = 2;
+//
+TemplateUi.FT_BETWEEN_SENTENCES = 1;
+TemplateUi.FT_BETWEEN_LFS = 2;
+TemplateUi.FT_BETWEEN_PARS = 3;
+TemplateUi.FT_NONE = 9;
+//
+TemplateUi.FID_AS_QID = 1;
+TemplateUi.FID_AS_DSYNC = 2;
+//
+TemplateUi.NO_CURTAIN = true;
+/*
+ * TemplateUi constructor
+ * - div: optional (will be created if omitted) <div> for TUI document window
+ *        div.tui will be set to this reference
+ * - facesheet: optional, JFacesheet for client (msg level)
+ * - data: optional, to default syncs
+ *         {'qsyncs':{qsid:[seltext,..],..},'osyncs':{osid:1,..},'dsyncs':{dsynci:[seltext,..],..}}
+ * - pid: optional, to retrieve JParInfo
+ * - format: optional, default TemplateUi.FORMAT_PARAGRAPH;
+ * - callback: optional callback when pid loaded
+ */
+function TemplateUi(div, facesheet, data, pid, format, callback) {
+  this.doc = (div) ? clearChildren(div) : createDiv(null, 'tui');
+  this.reset();
+  this.data = data;
+  if (data) {
+    this.osyncs = data.osyncs;
+    this.qsyncs = data.qsyncs;
+    this.dsyncs = data.dsyncs;
+  }
+  this.doc.tui = this;
+  this.format = denull(format, TemplateUi.FORMAT_PARAGRAPH);
+  if (format == TemplateUi.FORMAT_ENTRY_FORM) {
+    this.ftPlacement = TemplateUi.FT_NONE;    
+  } else {
+    this.ftPlacement = TemplateUi.FT_BETWEEN_SENTENCES;
+  }
+  this.facesheet = facesheet;
+  TemplateUi._cacheInstance(this);
+  if (pid) {
+    this.getParInfo(pid, callback);
+  }
+}
+/*
+ * TemplateUi class defs
+ */
+TemplateUi.prototype = {
+  format:null,      // TemplateUi.FORMAT_
+  doc:null,         // <div>
+  ftPlacement:null, // where FT goes
+  tuiSections:null, // {suid:<div>,..}
+  tuiPars:null,     // {pid:<div>,..} 
+  qs:null,          // {qref:q,..}
+  qts:null,         // {qref:[{'q':q,'test':$,'lastResult':!},..],..}
+  qcs:null,         // {qid:[{'cond':$,'action':$}],..}
+  osyncs:null,      // {osid:!,..} 
+  qsyncs:null,      // {qsid:[seltext$,..],..} 
+  dsyncs:null,      // {dsync:[seltext$,..],..}
+  facesheet:null,   // JFacesheet
+  callback:null,
+  _i:null,          // instance index
+  _rec:null,
+  /*
+   * Reset
+   */
+  reset:function() {
+    this.tuiSections = {};
+    this.tuiPars = {};
+    this.qs = {};
+    this.qts = {};
+    this.qcs = {};
+    this.osyncs = {};
+    this.qsyncs = {};
+    this.dsyncs = {};
+    this.data = {};
+    this._rec = null;
+    clearChildren(this.doc);
+  },
+  /*
+   * Get requested JParInfo
+   */
+  getParInfo:function(pid, callback) {
+    pis = TemplateUi._pis[pid];
+    this.callback = callback;
+    if (pis) {
+      this.addParInfos(pis);
+    } else {
+      this.working(true);
+      TemplateUi._requestPar(this, pid);
+    }
+  },
+  /*
+   * Add paragraph + conditionless injects to the doc
+   * - pis: [JParInfo,..]
+   */
+  addParInfos:function(pis) {
+    for (var i = 0; i < pis.length; i++) {
+      this.addParInfo(pis[i]);
+    }
+  },
+  /*
+   * Add a paragraph to the doc
+   * - pi: JParInfo
+   */
+  addParInfo:function(pi) {
+    pi = clone(pi);
+    this._cacheQuestions(pi);
+    this.working(false);
+    var tuiSection = this._getTuiSection(pi.suid);
+    tuiSection.appendChild(this._buildTuiPar(pi));
+    this.refresh();
+    if (this.callback) {
+      this.callback();
+      this.callback = null;
+    }
+  },
+  /*
+   * Turn on working icon
+   */
+  working:function(on) {
+    if (on) {
+      addClass(this.doc, 'tuiwork');
+    } else {
+      removeClass(this.doc, 'tuiwork');
+    }
+  },
+  /*
+   * Refresh document (run thru visibility tests and reformat)
+   */
+  refresh:function() {
+    for (qref in this.qs) {
+      var q = this.qs[qref];
+      this._onChange(q);
+    }
+  },
+  /*
+   * Show/hide free text tags
+   */
+  showFreeTags:function(show) {
+    if (show) {
+      removeClass(this.doc, 'nofree');
+    } else {
+      addClass(this.doc, 'nofree');
+    }
+  },
+  /*
+   * Get updated sync values
+   * - deserialized optional (omit to receive JSON)
+   * Returns {
+   *   'qsyncs':{qsid:[seltext,..],..},
+   *   'osyncs':[osid,..],  // contains only 'on' osyncs
+   *   'dsyncs':{dsynci:[seltext,..],..}
+   *   } 
+   */
+  getSyncValues:function(deserialized) {
+    var osids = [];
+    for (var osid in this.osyncs) {
+      if (this.osyncs[osid]) {
+        osids.push(osid);
+      }
+    }
+    var syncs = {
+      'qsyncs':this.qsyncs,
+      'osyncs':osids,
+      'dsyncs':this.dsyncs
+      };
+    return (deserialized) ? syncs : Json.encode(syncs);
+  },
+  /*
+   * Builds record of question selections when formatted as entry form
+   * - removePrefix: optional, to remove a prefix from properties (e.g. 'imm.' from 'imm.dateGiven')
+   * Returns {
+   *   dsync:'seltext',..  // for each visible q
+   *   }
+   */
+  getRecord:function(removePrefix) {
+    var rec = {};
+    var fidStart = (removePrefix) ? removePrefix.length : 0;
+    for (var qref in this.qs) {
+      var q = this.qs[qref];
+      var tuiq = q.tuiq;
+      if (TemplateUi._isShow(tuiq)) {
+        var fid = q.dsync.substr(fidStart);
+        if (fid) {
+          rec[fid] = (q.blank && q.sel.length == 0) ? null : qSelText(q);
+        } 
+      }      
+    }
+    if (this._rec) {
+      rec.id = this._rec.id;
+    }
+    return rec;
+  },
+  /*
+   * Assign question selections from record
+   * - rec: {dsync:'seltext',..}
+   *        any id supplied here will be copied to built record (see getRecord) 
+   */
+  setRecord:function(rec) {
+    this._rec = rec;
+    for (var qref in this.qs) {
+      var q = this.qs[qref];
+      var fid = q.dsync;
+      if (fid) {
+        if (rec && rec[fid]) {
+          qSetByValue(q, rec[fid]);
+          this._onChange(q);
+        } else {
+          q.sel = [];
+          this._onChange(q);
+        }
+      }
+    }     
+  },
+  /*
+   * Produce document output 
+   * Returns plain text with only <br> tags
+   */
+  out:function() {
+    this._out = [];
+    this._crawl(this.doc);
+    return this._out.join('');
+  },
+  _crawl:function(e) {
+    if (TemplateUi._isHide(e) || hasClass(e, 'noprt')) {
+      return;
+    }
+    if (e.tuiqis && e.tuiqis.children.length == 0) {
+      return;
+    }
+    if (e.children.length > 0) {
+      for (var i = 0; i < e.children.length; i++) {
+        this._crawl(e.children[i]);
+      }
+    } else {
+      if (e.tagName == 'BR') {
+        this._out.push('<br>');
+      } else {
+        var text = e.innerText;
+        if (text != null) {
+          this._out.push(text);
+        }
+      }
+    }
+  },
+  /*
+   * Cache questions from paragraph 
+   */
+  _cacheQuestions:function(pi) {
+    for (var i = 0; i < pi.questions.length; i++) {
+      var q = pi.questions[i];
+      var qt = pi.par.qTemplates[i];
+      q.lt = qt.lt;
+      this._addProps(q);
+      this._cacheTest(q, qt.test);
+      this._cacheCommands(q, qt.actions);
+      var qref = pi.suid + '.' + pi.par.uid + '.' + q.uid;
+      this._cacheQuestion(qref, q);
+    }
+  },
+  _cacheQuestion:function(qref, q) {
+    q.ref = qref;
+    this.qs[qref] = q;
+  },
+  /*
+   * Add helper props to question and options:
+   *   q.blank      // true if default option is '(in paren)'
+   *   q.oixs       // {ouid:ix} map
+   *   q.hasOsyncs  // true if any opt sync present
+   *   q._ict       // instance count (if q is cloning type)
+   *   o.text       // doc text for option
+   */
+  _addProps:function(q) {
+    if (q.opts) {
+      q.oixs = {};  // {ouid:ix}
+      for (var ix = 0; ix <= q.loix; ix++) {
+        var o = q.opts[ix];
+        o.text = this._fixTags(qOptText(o));
+        if (o.sync) q.hasOsyncs = true;
+        q.oixs[o.uid] = ix;
+      }
+      q.blank = (q.opts[q.def[0]].text.substr(0, 1) == '('); 
+    }
+    if (q.cloning) {
+      q._ict = 0;
+      q.master = true;
+      if (q.uid.substring(0, 3) == '@rf') {
+        this._setRefillProps(q);
+      }
+    }
+  },
+  /*
+   * Set props for denoting med question as RX refill pop 
+   */
+  _setRefillProps:function(q) {
+    if (this.facesheet) {
+      var meds = this.facesheet.activeMeds;
+      if (meds && this.data) {
+        this._extractRefillDsyncs();
+        for (var i = 0; i < meds.length; i++) {
+          var med = meds[i];
+          if (this.data.refill.meds[med.name]) {
+            med.checked = true;
+          }
+        }
+      }
+      q.refill = true;
+      q.rx = {
+        'docs':this.facesheet.docs,
+        'client':this.facesheet.client,
+        'meds':meds
+        };
+    }
+  },
+  /*
+   * Assigns data.refill from consolidated dsyncs
+   * data.refill = {
+   *    'length':length,    // from 'refillLength' dsync
+   *    'meds':{name:1,..}  // from 'refillMed+x' dsync
+   *   }
+   */
+  _extractRefillDsyncs:function() {
+    if (this.data.refill == null) {
+      this.data.refill = {
+        'length':null,
+        'meds':{}
+        };
+      var meds = {};
+      for (var dsynci in this.data.dsyncs) {
+        var value = this.data.dsyncs[dsynci][0];
+        var dsync = dsynci.split('+')[0];
+        switch (dsync) {
+          case 'refillLength':
+            this.data.refill.length = value;
+            break;
+          case 'refillMed':
+            var name = value.split(':')[0]; 
+            this.data.refill.meds[name] = 1;
+            break;
+        }
+      }
+    }
+  },
+  /*
+   * Cache test to questions referenced in the args  
+   */
+  _cacheTest:function(q, test) {
+    if (test) {
+      test = this._fixMethodRefs(test);
+      var qt = {
+        'q':q,
+        'test':test,
+        'lastResult':null
+        };
+      var qrefs = {};
+      var a = test.split(')');
+      for (var i = 0, j = a.length - 1; i < j; i++) {
+        var b = a[i].split(/\('|','/);
+        if (b.length > 0) {
+          qrefs[b[2]] = b[2];
+        }
+      }
+      for (var qref in qrefs) {
+        if (this.qts[qref] == null) {
+          this.qts[qref] = [qt];
+        } else {
+          this.qts[qref].push(qt);
+        }
+      }
+    }
+  },
+  /*
+   * Cache commands
+   */
+  _cacheCommands:function(q, actions) {
+    if (actions) {
+      for (var i = 0; i < actions.length; i++) {
+        var cond = this._fixMethodRefs(actions[i].cond);
+        var action = this._fixMethodRefs(actions[i].action);
+        var cmd = {
+          'cond':cond,
+          'action':action};
+        pushInto(this.qcs, q.id, cmd);
+      }
+    }
+  },
+  /*
+   * Prepends method references and adds _i to args
+   */
+  _fixMethodRefs:function(expr) {
+    if (expr) {
+      expr = expr.replace(/always\(/g, "TemplateUi._always(");
+      var iarg = this._i + "',";
+      expr = expr.replace(/isSel\(/g, "TemplateUi._isSel('" + iarg);
+      expr = expr.replace(/notSel\(/g, "TemplateUi._notSel('" + iarg);
+      expr = expr.replace(/setDefault\(/g, "TemplateUi._setDefault('" + iarg);
+      expr = expr.replace(/olderThan\(/g, "TemplateUi._olderThan('" + iarg);
+      expr = expr.replace(/calcBmi\(/g, "TemplateUi._calcBmi('" + iarg);
+    }
+    return expr;
+  },
+  /*
+   * Update state as a result of question change 
+   */
+  _onChange:function(q) {
+    if (q.type == Q_TYPE_MED) {
+      var qi = this._formatMed(q);
+      if (qi) {
+        this._updateSyncCache(qi);
+      }
+    } else {
+      this._formatTuiq(q);
+      this._updateSyncCache(q);
+      this._runTests(q);
+      this._runCommands(q);
+    }
+  },
+  /*
+   * Update sync cache, if necessary 
+   */
+  _updateSyncCache:function(q) {
+    if (! q.master) {
+      this._cacheQDSyncs(q);
+      if (q.hasOsyncs) {
+        this._cacheOSyncs(qOpts(q, qSel(q)), true);
+        this._cacheOSyncs(qOpts(q, q.unsel), false);
+      }
+    }
+  },
+  _cacheQDSyncs:function(q) {
+    if (q.sync == null && q.dsync == null) return;
+    if (q.opts == null) return;
+    var sel = qSelTextArray(q);
+    if (q.sync) {
+      if (q.deleted && this.isCloneSuffixed(q.sync)) {
+        delete this.qsyncs[q.sync];        
+      } else {
+        this.qsyncs[q.sync] = sel;
+      }
+    }
+    if (q.dsync) {
+      if (q.deleted) {
+        delete this.dsyncs[q.dsync];
+      } else {
+        this.dsyncs[q.dsync] = sel;        
+      }
+    }
+  },
+  _cacheOSyncs:function(opts, value) {
+    for (var i = 0; i < opts.length; i++) {
+      var o = opts[i];
+      if (o.sync) {
+        this.osyncs[o.sync] = value;
+      }
+    }     
+  },
+  /*
+   * Run thru question commands
+   */
+  _runCommands:function(q) {
+    if (TemplateUi._isShow(q.tuiq)) {
+      var cmds = this.qcs[q.id];
+      if (cmds) {
+        for (var i = 0; i < cmds.length; i++) {
+          var cmd = cmds[i];
+          if (cmd.cond == null || eval(cmd.cond)) {
+            eval(cmd.action);
+          }
+        }
+      }
+    }
+  },
+  /*
+   * Run thru tests that reference this question
+   */
+  _runTests:function(q) {
+    var qts = this.qts[q.ref];
+    if (qts == null) return;
+    for (var i = 0, j = qts.length; i < j; i++) {
+      var t = qts[i];
+      var vis = eval(t.test);
+      if (vis != t.lastResult) {
+        t.lastResult = vis;
+        this._setTuiqVis(t.q, vis);
+      }
+    }
+  },
+  /*
+   * Set question visibility and initiate onchange if necessary
+   */
+  _setTuiqVis:function(q, show) {
+    var tuiq = q.tuiq;
+    var isShow = TemplateUi._isShow(tuiq);
+    if (show && ! isShow) {
+      TemplateUi._show(tuiq);
+      this._onChange(q);
+    } else if (! show && isShow) {
+      TemplateUi._hide(tuiq);
+      this._onChange(q);        
+    }
+  },
+  /*
+   * Returns <div> of section if exists, else creates new one
+   */
+  _getTuiSection:function(suid) {
+    var tuiSection = this.tuiSections[suid];
+    if (tuiSection == null) {
+      tuiSection = createDiv(null, 'tuis');
+      this.doc.appendChild(tuiSection);
+    }
+    return tuiSection;
+  },
+  /*
+   * Builds par HTML
+   * FORMAT_PARAGRAPH:
+   *   <div class='tuip' tui=this>
+   *     <span..  // see _buildTuiq
+   *   </div>
+   * FORMAT_ENTRY_FORM:
+   *   <ul class='entry' tui=this>
+   *     <li..    // see _buildTuiq
+   *   </ul>
+   */
+  _buildTuiPar:function(pi) {  
+    var par = pi.par;
+    var tuip;
+    if (this.format == TemplateUi.FORMAT_PARAGRAPH) {
+      tuip = createDiv(null, 'tuip');
+    } else {
+      tuip = createList(this.doc, null, 'entry q');
+    }
+    for (var i = 0; i < par.qTemplates.length; i++) {
+      var qt = par.qTemplates[i];
+      var q = pi.questions[i];
+      var tuiq = this._buildTuiq(qt, q);
+      q.tuiq = tuiq;
+      tuip.appendChild(tuiq);
+    }
+    tuip.tui = this;
+    this.tuiPars[par.id] = tuip;
+    return tuip;
+  },
+  /*
+   * Build question static text and anchor(s)
+   * FORMAT_PARAGRAPH:
+   *   <span class='tuiq'>
+   *     ..  // see specific builders below  
+   *   </span> 
+   * FORMAT_ENTRY_FORM:
+   *   <li>
+   *     ..  // see specific builders below
+   *   </li>
+   */
+  _buildTuiq:function(qt, q) {
+    var tuiq;
+    if (this.format == TemplateUi.FORMAT_PARAGRAPH) {
+      tuiq = createSpan('tuiq');
+    } else {
+      tuiq = createListItem();
+    }
+    if (q.type == Q_TYPE_MED) {
+      this._buildForMeds(tuiq, qt, q);
+    } else {
+      this._buildForQuestion(tuiq, qt, q);
+    }
+    if (this.format == TemplateUi.FORMAT_ENTRY_FORM) {
+      if (q.type == Q_TYPE_BUTTON || tuiq.innerHTML == '') {
+        tuiq.className = 'hide';
+      }
+    }
+    return tuiq;
+  },
+  /*
+   * Regular question type and buttons
+   * FORMAT_PARAGRAPH:
+   *   <span class='tuiq [button]' q=q a=a mult=mult brk=brk>  
+   *     <span>BT</span>
+   *     <a q=q>Single selected</a>   // a
+   *     <span ams=ams mu=mu>         // mult (only if necessary)
+   *       <span>BTMS</span>
+   *       <a q=q>Multi selected</a>  // ams 
+   *       <span>ATMS</span>
+   *       <span a=amu>               // mu (only if necessary)
+   *         <span>BTMU</span> 
+   *         <a q=q>Multi unsel</a>   // amu
+   *         <span>ATMU</span>
+   *       </span>
+   *     </span>
+   *     <span>AT</span>
+   *     <span>break</span>           // brk (see _createBrk)
+   *   </span>
+   * FORMAT_ENTRY_FORM:
+   *   <li q=q a=a mult=mult>  // tuiq
+   *     <label class='tui'>q.desc</label>
+   *     <span class='q'>         // serves as single and mult
+   *       <a q=q>Selections</a>  // both a and ams
+   *     </span>
+   *   </li>   
+   */
+  _buildForQuestion:function(tuiq, qt, q) {
+    if (this.format == TemplateUi.FORMAT_PARAGRAPH) {
+      if (q.type == Q_TYPE_BUTTON) tuiq.className = 'tuiq button noprt';
+      if (qt.bt) tuiq.appendChild(createSpan(null, this._fixTags(qt.bt + ' ')));
+      if (q.opts) {
+        this._appendAndRef(tuiq, this._createPopAnchor(q), 'a');
+        if (q.mix != null) {
+          var mult = createSpan();
+          if (qt.btms) mult.appendChild(createSpan(null, this._fixTags(qt.btms)));
+          this._appendAndRef(mult, this._createPopAnchor(q), 'ams');
+          if (qt.atms) mult.appendChild(createSpan(null, this._fixTags(qt.atms)));
+          if (qt.btmu) {
+            var mu = createSpan();
+            mu.appendChild(createSpan(null, this._fixTags(qt.btmu)));
+            this._appendAndRef(mu, this._createPopAnchor(q), 'amu');
+            if (qt.atmu) mu.appendChild(createSpan(null, this._fixTags(qt.atmu)));
+            this._appendAndRef(mult, mu, 'mu');
+          }
+          this._appendAndRef(tuiq, mult, 'mult');
+        }
+      }
+      if (qt.at) tuiq.appendChild(createSpan(null, this._fixTags(' ' + qt.at)));
+      tuiq.appendChild(this._createBreak(q, qt.brk));
+    } else {
+      if (q.opts) {
+        tuiq.appendChild(createLabel('tui', q.desc));
+        var span = createSpan('q');
+        var a = this._createPopAnchor(q);
+        span.appendChild(a);
+        tuiq.appendChild(span);
+        tuiq.a = a;
+        if (q.mix != null) {
+          tuiq.mult = span;
+          tuiq.ams = a;
+        }
+      }
+    }
+  },
+  /*
+   * Cloneable med pickers
+   * <span class='tuiq meds' q=mq tuiqis=tuiqis>  // q=master question
+   *   <span>BT</span>
+   *   <br>
+   *   <span>                      // tuiqis
+   *     ..                        // clone instances go here; see appendMed
+   *   </span>
+   *   <span class='button'>
+   *     <a q=mq>Select a Med</a>
+   *   </span> 
+   *   <span>AT</span>
+   * </span>   
+   */
+  _buildForMeds:function(tuiq, qt, q) {
+    tuiq.className = 'tuiq meds';
+    if (qt.bt) tuiq.appendChild(createSpan(null, this._fixTags(qt.bt + ' ')));
+    tuiq.appendChild(createBr());
+    this._appendAndRef(tuiq, createSpan(), 'tuiqis');
+    var span = createSpan('button ind noprt');
+    span.appendChild(this._createPopAnchor(q, (q.opts) ? qSelText(q) : 'Select a Med'));
+    tuiq.appendChild(span);
+    tuiq.appendChild(createBr());
+    if (qt.at) tuiq.appendChild(createSpan(null, this._fixTags(' ' + qt.at)));
+  },
+  /*   
+   * Appends med clone instance to tuiq.tuiqis
+   * - q: master question
+   *   q.med = med props (assigned by med picker)
+   *   <span>                        // tuiqis (container span)
+   *     <span a=a brk=brk>          // 'tuiqi' span created for this instance
+   *       <span>&bull;&nbsp;</span>
+   *       <a q=qi>Med</a>           // a (qi=instance of master question)
+   *       <span>break</span>        // brk (see _createBreak)
+   *     </span>
+   *   </span>
+   * Returns qi
+   */
+  _addMedInstance:function(q) {
+    var qi = this._clone(q);
+    qi.tuiq = q.tuiq;
+    var tuiqi = createSpan();
+    tuiqi.appendChild(createSpan(null, null, null, '&bull;&nbsp;'));
+    this._appendAndRef(tuiqi, this._createPopAnchor(qi, qSelText(qi), ''), 'a');
+    this._appendAndRef(tuiqi, this._createBreak(qi, TemplateUi._BRK_LF, TemplateUi._ALWAYS_SEE_FT), 'brk');
+    qi.tuiq.tuiqis.appendChild(tuiqi);
+    qi.tuiqi = tuiqi;
+    qi.med.id = qi.ref;
+    q.med = null;
+    return qi;
+  },
+  /*
+   * Remove med clone instance
+   */
+  _removeMedInstance:function(qi) {
+    TemplateUi._hide(qi.tuiqi);
+  },
+  /*
+   * Create an instance of master question
+   *   qi.mq     // ref to master question
+   *   qi._i     // instance index
+   *   qi.ref    // suffixed with +instance
+   *   qi.dsync  // suffixed with +instance
+   */
+  _clone:function(q) {
+    q._ict++;
+    var qi = clone(q);
+    qi.master = false;
+    qi.mq = q;
+    qi._i = q._ict;
+    qi.ref = this._addCloneSuffix(q.ref, qi._i);
+    if (qi.refills) {
+      qi.refills = null;
+      qi.meds = null;
+    }
+    if (q.dsync) {
+      qi.dsync = this._addCloneSuffix(q.dsync, qi._i);
+    }
+    return qi;
+  },
+  _addCloneSuffix:function(id, _i) {
+    return id + '+' + _i;  
+  },
+  _isCloneSuffixed:function(id) {
+    return id.indexOf('+') > -1; 
+  },
+  /*
+   * Format med question (returned by med picker)
+   * Returns qi   
+   */
+  _formatMed:function(q) {
+    if (q.med) {
+      qSetFormattedOption(q, this._formatMedName(q.med));
+    }
+    var qi;
+    if (q.tuiqi) {  // updating from a clone
+      var qi = q;
+      if (qi.med) {
+        qi.tuiqi.a.innerText = qSelText(qi);
+      } else {
+        this._removeMedInstance(qi);
+        qi.deleted = true;  
+      }
+    } else {
+      if (q.med) {  // returned from med pop (adding from master)
+        qi = this._addMedInstance(q);
+      } else if (q.refill && q.meds) {  // returned from rx pop (add refills)
+        this._formatRefills(q);
+      }
+    }
+    return qi;
+  },
+  /*
+   * Format refills returned from rx pop
+   * Invokes page.medsChangedCallback to reflect rx print in meds history
+   */
+  _formatRefills:function(q) {
+    if (q.meds.length > 0) {
+      for (var i = 0; i < q.meds.length; i++) {
+        var med = q.meds[i];
+        q.med = med;
+        qSetFormattedOption(q, this._formatMedName(q.med));
+        var qi = this._addMedInstance(q);
+        var fta = qi.tuiqi.brk.ft.a;
+        TemplateUi._setFreetext(fta, med.rx);
+      }
+      Ajax.post(Ajax.SVR_POP, 'printMeds', q.meds, 'medsChangedCallback'); 
+    } 
+  },
+  _formatMedName:function(med) {
+    var text = med.name;
+    if (med.text) {
+      text += ': ' + med.text;
+    }
+    return text;
+  },
+  /*
+   * Format regular question 
+   */
+  _formatTuiq:function(q) {
+    if (q.opts) {
+      this._formatTuiqOpts(q);
+    }
+  },
+  _formatTuiqOpts:function(q) {
+    var tuiq = q.tuiq;
+    var className = (q.sel.length == 0) ? ((q.blank) ? 'blank' : 'df') : '';
+    if (q.mix == null) {
+      tuiq.a.innerText = qSelText(q);
+      tuiq.a.className = className;
+    } else {
+      var sel = qSel(q);
+      var unsel = (q.unsel && q.unsel.length > 0) ? q.unsel : null;
+      if (qIsMultiSel(q)) {
+        TemplateUi._show(tuiq.mult);
+        TemplateUi._hide(tuiq.a);
+        tuiq.mult.ams.innerText = qStringOptText(q.opts, sel, true, q.lt);
+        tuiq.mult.ams.className = className;
+        if (tuiq.mu) {
+          if (unsel) {
+            TemplateUi._show(tuiq.mu);
+            tuiq.mult.amu.innerText = qStringOptText(q.opts, unsel, false);
+          } else {
+            TemplateUi._hide(tuiq.mu);
+          }
+        }
+      } else {
+        TemplateUi._hide(tuiq.mult);
+        TemplateUi._show(tuiq.a);
+        var text = q.opts[sel[0]].text;
+        if (text.indexOf('{all}') >= 0) {
+          text = o.text.replace(/\{all\}/, qStringOptText(q.opts, unsel, false));
+        }
+        tuiq.a.innerText = text;
+        tuiq.a.className = className;
+      }
+    }
+    if (this.format == TemplateUi.FORMAT_ENTRY_FORM && q.sel.length == 0 && q.blank) {
+      tuiq.a.innerText = TemplateUi._UNDERLINE;
+    }    
+  },
+  /*
+   * Returns <a> for question popup
+   * - innerText, className: optional
+   */
+  _createPopAnchor:function(q, innerText, className) {
+    innerText = denull(innerText, '___');
+    className = denull(className, 'df');
+    var onClick = 'TemplateUi._pop(this)';
+    var a = createAnchor(null, null, className, innerText, null, onClick);
+    a.q = q;
+    q.a = a;
+    return a;
+  },
+  /*
+   * Returns
+   * <span ft=ft>
+   *   <span>brk chars</span>
+   *   <span>       // ft (see _createFt)
+   *     ..  
+   *   </span>      
+   *   <break tag(s)>
+   * </span>
+   */
+  _createBreak:function(q, breakType, alwaysSeeFt) {
+    var s = createSpan();
+    var validFor = this._appendBeforeBrk(s, breakType);
+    var className = (alwaysSeeFt) ? 'ft noprt' : 'noprt';
+    this._appendAndRef(s, createSpan(className), 'ft');
+    this._appendAfterBrk(s, breakType);
+    if (alwaysSeeFt || this.ftPlacement <= validFor) {
+      this._createFt(s, q);
+    }
+    return s;
+  },
+  _appendBeforeBrk:function(s, breakType) {
+    var validFor;
+    switch (breakType) {
+      case TemplateUi._BRK_PERIOD:
+        s.appendChild(createSpan(null, '. '));
+        validFor = TemplateUi.FT_BETWEEN_SENTENCES; 
+        break;
+      case TemplateUi._BRK_PERIOD_LF:
+      case TemplateUi._BRK_PERIOD_PAR:
+        s.appendChild(createSpan(null, '. '));
+        validFor = TemplateUi.FT_BETWEEN_LFS; 
+        break;
+      case TemplateUi._BRK_LF:
+        s.appendChild(createSpan(null, ' '));
+        validFor = TemplateUi.FT_BETWEEN_LFS; 
+        break;
+      case TemplateUi._BRK_SPACE:
+        s.appendChild(createSpan(null, ' '));
+        break;
+      case TemplateUi._BRK_COLON:
+        s.appendChild(createSpan(null, ': '));
+        break;
+      case TemplateUi._BRK_SEMI:
+        s.appendChild(createSpan(null, '; '));
+        break;
+    }
+    return validFor;
+  },
+  _appendAfterBrk:function(s, breakType) {
+    switch (breakType) {
+      case TemplateUi._BRK_PERIOD_LF:
+      case TemplateUi._BRK_LF:
+        s.appendChild(createBr());
+        break;
+      case TemplateUi._BRK_PERIOD_PAR:
+        s.appendChild(createBr());
+        s.appendChild(createBr());
+        break;
+    }
+  },
+  /*
+   * Create freetext tag 
+   * - brk: parent span
+   * - q: question preceding freetext
+   *      q.ftq will be used to store the freetext question
+   * <span ft=ft>   // brk
+   *   <span>       // brk.ft
+   *     <a q=q brk=brk>Free text</a>  // ft.a
+   *     <span>&nbsp;</span>
+   *   </span>
+   * </span> 
+   */
+  _createFt:function(brk, q) {
+    var onClick = 'TemplateUi._ft(this)';
+    var a = createAnchor(null, null, 'ft', null, null, onClick);
+    a.q = q;
+    a.brk = brk;
+    brk.ft.appendChild(a);
+    brk.ft.appendChild(createSpan(null, ' '));
+    brk.ft.a = a;
+  },
+  /*
+   * To <parent>, appends <child> and assigns a property reference to <child> 
+   */
+  _appendAndRef:function(parent, child, prop) {
+    parent.appendChild(child);
+    parent[prop] = child;
+  },
+  /*
+   * Evaluate text tags and correct gender-specific language
+   */
+  _fixTags:function(t) {
+    t = t.replace(/\{today\}/g, today);
+    return t;
+  }
+}
+/*
+ * TemplateUi statics
+ */
+TemplateUi._BRK_PERIOD = 0;
+TemplateUi._BRK_SPACE = 1;
+TemplateUi._BRK_COLON = 2;
+TemplateUi._BRK_SEMI = 3;
+TemplateUi._BRK_PERIOD_LF = 4;
+TemplateUi._BRK_PERIOD_PAR = 5;
+TemplateUi._BRK_LF = 6;
+TemplateUi._BRK_FRAG = 7;
+TemplateUi._LT_COMMA = 0;
+TemplateUi._LT_REGULAR = 1;
+TemplateUi._LT_BULLET = 2;
+TemplateUi._LT_SPACE = 3;
+TemplateUi._ALWAYS_SEE_FT = true;
+TemplateUi._UNDERLINE = '_____________';
+/*
+ * Instance management
+ */
+TemplateUi._ict = 0;
+TemplateUi._instances = {};
+TemplateUi._cacheInstance = function(tui) {
+  tui._i = TemplateUi._ict++;
+  TemplateUi._instances[tui._i] = tui;
+}
+TemplateUi.getInstance = function(_i) {
+  return TemplateUi._instances[_i];
+}
+TemplateUi.clearInstance = function(tui) {
+  delete TemplateUi._instances[tui._i];
+  tui = null;
+}
+/*
+ * Template retrieval
+ */
+TemplateUi._pis = {};      // {pid:pi,..}
+TemplateUi._pidreqs = {};  // {pid:[tui,..],..}
+TemplateUi._requestPar = function(tui, pid) {
+  var tuis = TemplateUi._pidreqs[pid];
+  if (tuis) {
+    tuis.push(tui);
+  } else {
+    TemplateUi._pidreqs[pid] = [tui];
+    Ajax.get(Ajax.SVR_MSG, 'getTemplatePar', pid, TemplateUi._requestParCallback);
+  }
+}
+TemplateUi._requestParCallback = function(pis) {
+  var pid = pis[0].par.id;
+  TemplateUi._pis[pid] = pis;
+  var tuis = TemplateUi._pidreqs[pid];
+  for (var i = 0; i < tuis.length; i++) {
+    tuis[i].addParInfos(pis);
+  }
+  TemplateUi._pidreqs[pid] = null; 
+}
+/*
+ * UI methods
+ */
+TemplateUi.noCurtain = TemplateUi.NO_CURTAIN;
+TemplateUi._pop = function(a) {
+  showQuestion(a.q, TemplateUi.noCurtain, null, null, TemplateUi._popCallback);
+}
+TemplateUi._popCallback = function(q) {
+  var tui = q.tuiq.parentElement.tui;
+  tui._onChange(q);
+}
+TemplateUi._setFreetext = function(fta, text) {  // leave text null to assign from ftq
+  var ftq = TemplateUi._getFreetextQuestion(fta);
+  if (text != null) {
+    qSetFormattedOption(ftq, text);
+  } else {
+    text = qFormattedOptText(ftq);
+  }
+  fta.innerText = text;
+  if (text == '') {
+    addClass(ftq.a.brk.ft, 'noprt');    
+  } else {
+    removeClass(ftq.a.brk.ft, 'noprt');
+  }
+}
+TemplateUi._getFreetextQuestion = function(fta) {
+  if (fta.q.ftq == null) {
+    fta.q.ftq = newFreetextQuestion();
+    fta.q.ftq.a = fta;
+  }
+  return fta.q.ftq;
+}
+TemplateUi._ft = function(fta) {
+  var ftq = TemplateUi._getFreetextQuestion(fta);
+  showQuestion(ftq, TemplateUi.noCurtain, null, null, TemplateUi._ftCallback);
+}
+TemplateUi._ftCallback = function(ftq) {
+  TemplateUi._setFreetext(ftq.a);
+}
+TemplateUi._hide = function(e) {
+  e.style.display = 'none';
+  return e;
+}
+TemplateUi._isHide = function(e) {
+  return (e.style.display == 'none');
+}
+TemplateUi._show = function(e) {
+  e.style.display = '';
+  return e;
+}
+TemplateUi._isShow = function(e) {
+  return (e.style.display == '');
+}
+/* 
+ * Template tests
+ */
+TemplateUi._isSel = function(_i, qref, ouid) {
+  var tui = TemplateUi.getInstance(_i);
+  var q = tui.qs[qref];
+  if (q == null) return false;
+  var oix = q.oixs[ouid];
+  if (oix == null) return false;
+  return TemplateUi._isSelected(q, oix);
+},
+TemplateUi._notSel = function(_i, qref, ouid) {
+  return ! TemplateUi._isSel(_i, qref, ouid);
+}
+TemplateUi._always = function() {
+  return true;
+}
+/* 
+ * Template commands
+ */
+TemplateUi._setDefault = function(_i, qref, ouid) {
+  var tui = TemplateUi.getInstance(_i);
+  var q = tui.qs[qref];
+  if (q == null) return false;
+  var oix = q.oixs[ouid];
+  if (oix == null) return false;
+  if (q.def.length && q.def[0] == oix) return true;
+  q.def = [oix];
+  q.blank = (q.opts[q.def[0]].text.substr(0, 1) == '('); 
+  if (q.sel.length == 0) {
+    tui._onChange(q);
+  }
+  return true;
+},
+TemplateUi._olderThan = function(_i, age) {
+  var tui = TemplateUi.getInstance(_i);
+  if (tui.facesheet && tui.facesheet.client) {
+    return tui.facesheet.client.age > age;
+  }
+},
+TemplateUi._calcBmi = function() {
+  return;
+}
+/* 
+ * General template functions
+ */
+TemplateUi._isSelected = function(q, oix) {
+  if (! this._isInserted(q)) {
+    return false;
+  }
+  return inArray(qSel(q), oix);
+},
+TemplateUi._isInserted = function(q) {
+  var tuiq = q.tuiq;
+  var tuip = tuiq.parentElement;
+  return (TemplateUi._isShow(tuiq) && TemplateUi._isShow(tuip))
+}

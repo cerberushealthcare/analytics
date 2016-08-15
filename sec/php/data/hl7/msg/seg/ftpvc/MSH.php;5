@@ -1,0 +1,74 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+/**
+ * Message Header
+ * @author Warren Hornsby	
+ */
+class MSH extends HL7Segment {
+  //
+  public $encodingChars = 'ST_EncodingChars';  // Encoding Characters (ST)
+  public $sendApp = 'HD';  // Sending Application (HD) 
+  public $sendFacility = 'HD';  // Sending Facility (HD)
+  public $rcvApp = 'HD';  // Receiving Application (HD)
+  public $rcvFacility = 'HD';  // Receiving Facility (HD)
+  public $timestamp = 'TS';  // Date/Time Of Message (TS)
+  public $security;  // Security (ST)
+  public $msgType = 'CM_MsgType';  // Message Type (MSG)   
+  public $msgControlId;  // Message Control ID (ST)
+  public $processId;  // Processing ID (PT)
+  public $versionId;  // Version ID (VID)
+  public $seq;  // Sequence Number (NM)
+  public $continuation;  // Continuation Pointer (ST)
+  public $acceptAckType;  // Accept Acknowledgment Type (ID)
+  public $appAckType;  // Application Acknowledgment Type (ID)  
+  public $countryCode;  // Country Code (ID)
+  public $charSet;  // Character Set (ID)
+  public $primaryLanguage = 'CE';  // Principal Language Of Message (CE)
+  public $altCharSet;  // Alternate Character Set Handling Scheme (ID)
+  public $msgProfileId;  // Message Profile Identifier (EI)
+  //
+  public $_fieldDelim;
+  //
+  public function __construct() {
+    // override as no-arg constructor
+  }
+  public function getSource() {
+    $a = array();
+    if ($this->sendApp)
+      $a[] = $this->sendApp->namespaceId;
+    if ($this->sendFacility)
+      $a[] = $this->sendFacility->namespaceId;
+    return implode(' - ', $a);
+  }
+  //
+  static function from($rec) {
+    $fieldDelim = substr($rec, 3, 1);
+    $encoding = ST_EncodingChars::from(substr($rec, 4, 4));
+    $me = new self();
+    $me->setValues(explode($fieldDelim, $rec), $encoding);
+    $me->_fieldDelim = $fieldDelim;
+    return $me;
+  }
+}
+class ST_EncodingChars extends HL7Value {
+  //
+  public $compDelim;
+  public $repeatDelim;
+  public $escapeChar;
+  public $subDelim;
+  //
+  static function from($value) {
+    $me = parent::from($value);
+    $me->compDelim = substr($value, 0, 1);
+    $me->repeatDelim = substr($value, 1, 1);
+    $me->escapeChar = substr($value, 2, 1);
+    $me->subDelim = substr($value, 3, 1);
+    return $me;
+  }
+}
+class CM_MsgType extends HL7CompValue {
+  //
+  public $type;
+  public $trigger;
+}

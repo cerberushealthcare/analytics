@@ -1,0 +1,623 @@
+/**
+ * Scanning Page
+ * @author Warren Hornsby
+ */
+ScanningPage = {
+  //
+  init:function(query) {
+    page.tile = ScanIndexing.create(_$('scan-indexing'));
+    page.onresize();
+    Page.setEvents();
+  },
+  onresize:function() {
+    page.tile.setHeight(Html.Window.getViewportDim().height - 275);
+  }
+};
+/** 
+ * Tile ScanIndexing 
+ *   Tile files
+ *   Tile folders
+ *     Tile entryFolder
+ *       EntryForm form
+ *       Div list
+ *       CmdBar cmd
+ *     Tile savedFolders
+ */
+ScanIndexing = {
+  create:function(parent, callback) {
+    parent.clean();
+    var self = Html.Tile.create(parent);
+    return self.augment({
+      init:function() {
+        self.folders = ScanIndexing.Folders.create(self);
+        self.files = ScanIndexing.Files.create(self, callback);
+        self.setHeight(400);
+        var t = Html.Table.create('w100 c2').into(self).tbody();
+        t.tr().td(Html.H2.create('Unindexed Files'), 'cj').w('46%').td(Html.H2.create('Indexed Folders'), 'cj pr').w('54%');
+        t.tr().td(self.files).td(self.folders).rowspan(2);
+        var td = t.tr().td()._cell;
+        Html.CmdBar.create(td).button('Upload Files...', self.upload_onclick);
+        self.folders.load();
+        self.files.load();
+      },
+      setHeight:function(i) {
+        i = Math.larger(i, 200);
+        self.folders.setHeight(i);
+        self.files.setHeight(i);
+      },
+      scanFile_oncheck:function(scanFile, checked) {
+        scanFile.resetZoom();
+        if (checked)
+          self.folders.entryFolder.add(scanFile);
+        else
+          self.files.add(scanFile);
+      },
+      folder_onchange:function() {
+        self.files.load();
+      },
+      upload_onclick:function() {
+        _$('pop-upload-info').hide();
+        Pop.show('pop-upload');
+      }
+    });
+  },
+  Folders:{
+    create:function(parent) {
+      var self = Html.Tile.create(parent, 'Folders');
+      return self.augment({
+        init:function() {
+          self.entryFolder = ScanIndexing.Folders.EntryFolder.create(self);
+          self.savedFolders = ScanIndexing.Folders.SavedFolders.create(self);
+          self.entryFolder.close();
+        },
+        setHeight:function(i) {
+          self.entryFolder.list.setHeight(i - 165);
+        },
+        load:function() {
+          self.savedFolders.load();
+        },
+        entryFolder_oncancel:function() {
+          parent.folder_onchange();
+        },
+        entryFolder_onopen:function() {
+          self.savedFolders.hide();
+        },
+        entryFolder_onclose:function() {
+          self.savedFolders.show();
+        },
+        entryFolder_onupdate:function() {
+          self.load();
+          parent.folder_onchange();
+        },
+        folder_onclick:function(rec) {
+          self.entryFolder.open(rec);
+        },
+        scanFile_oncheck:function(scanFile, checked) {
+          parent.scanFile_oncheck(scanFile, checked);
+        }
+      });
+    },
+    EntryFolder:{
+      create:function(parent) {
+        var self = Html.Tile.create(parent, 'EntryFolder'); 
+        return self.augment({
+          init:function() {
+            self.tbar = ScanIndexing.Folders.EntryFolder.Title.create(self);
+            self.content = Html.Div.create().into(self).hide();
+            self.form = ScanIndexing.Folders.EntryFolder.EntryForm.create(self.content);
+            self.list = ScanIndexing.Folders.EntryFolder.FileList.create(self.content, self);
+            self.cmd = ScanIndexing.Folders.EntryFolder.CmdBar.create(self.content, self);
+            self.rec = null;
+          },
+          open:function(rec) {
+            self.rec = rec;
+            self.addClassIf('update', rec);
+            self.tbar.hide();
+            self.cmd.showDelIf(rec);
+            self.content.show();
+            self.form.load(rec);
+            self.list.load(rec);
+            self.closed = null;
+            parent.entryFolder_onopen();
+          },
+          close:function(updated) {
+            self.rec = null;
+            self.removeClass('update');
+            self.tbar.show();
+            self.content.hide();
+            self.closed = self;
+            parent.entryFolder_onclose();
+            if (updated)
+              parent.entryFolder_onupdate();
+            return self;
+          },
+          save_onclick:function() {
+            self.working(true);
+            Ajax.Scanning.saveIndex(self.form.getRecord(), self.list.getScanFileIds(),  
+              function(rec) {
+                self.working(false);
+                self.close(true);
+              });
+          },
+          del_onclick:function() {
+            Pop.Confirm.showYesNoCancel('Are you sure you want to remove this index?<br><br>Note: Only the index will be deleted. Any scanned files in this index will be returned to Unindexed Files.', function() {
+              self.working(true);
+              Ajax.Scanning.removeIndex(self.rec.scanIndexId, 
+                function(id) {
+                  self.working(false);
+                  self.close(true);
+                });
+            });
+          },
+          cancel_onclick:function() {
+            if (self.isDirty()) {
+              Pop.Confirm.show('This index record has unsaved changes. Save now?', 'Save Now', 'save', "Don't Save", null, true, null,
+                function(confirmed) {
+                  if (confirmed) {
+                    self.save_onclick();
+                  } else {
+                    if (self.list.isDirty())
+                      parent.entryFolder_oncancel();
+                    self.close();
+                  }
+                });
+            } else {
+              self.close();
+            }
+          },
+          add:function(scanFile) {
+            if (self.closed)
+              self.open();
+            self.list.add(scanFile);
+          },
+          scanFile_oncheck:function(scanFile, checked) {
+            parent.scanFile_oncheck(scanFile, checked);
+          },
+          isDirty:function() {
+            return self.form.isRecordChanged() || self.list.isDirty();
+          }
+        });
+      },
+      Title:{
+        create:function(parent) {
+          var self = Html.Tile.create(parent, 'new-index');
+          return self.augment({
+            init:function() {
+              Html.Anchor.create(null, 'Create New...', parent.open).into(self);
+            }
+          });
+        }
+      },
+      EntryForm:{
+        create:function(parent) {
+          var ef = Html.EntryForm.create(parent, 'first50', {
+            load:function(rec) {
+              if (rec) {
+                ef.setRecord(rec);
+                ef.focus('scanType');
+              } else {
+                ef.reset();
+                ef.popClient();
+              }
+            },
+            popClient:function() {
+              ef._popClientPicker('clientId');
+            },
+            type_onchange:function() {
+              ef.showScanType();
+            },
+            provider_onset:function(rec) {
+              if (rec) {
+                if (rec.Address_addrFacility) 
+                  ef.setValue('addrFacility', rec.Address_addrFacility);
+                if (rec.area) 
+                  ef.setValue('area', rec.area);
+              }
+            },
+            showScanType:function() {
+              _$('ef-ipc').showIf(ef.getValue('scanType') == C_ScanIndex.TYPE_RESULT);
+            }
+          });
+          ef.li().client('clientId', '(Select Patient)', 'Client');
+          ef.li('Type', 'mt5').select('scanType', C_ScanIndex.TYPES, '', ef.type_onchange).startSpan('ef-ipc').lbl('for', 'nopad').picker(IpcPicker, 'ipc', 'Ipc_ipc').endSpan();
+          ef.li('Provider', 'mt10').picker(ProviderPicker, 'providerId', 'Provider', ef.provider_onset).lbl('at', 'nopad').picker(FacilityPicker, 'addrFacility', 'Address_addrFacility');
+          ef.li('on', 'nopad').date('datePerformed');
+          ef.li('Area', 'mt10').select('area', C_Lookups.AREAS, '');
+          ef.showScanType();
+          return ef;
+        }
+      },
+      FileList:{
+        create:function(parent, context) {
+          var self = Html.Div.create('EntryFolderList').into(parent);
+          return self.augment({
+            load:function(rec) {
+              this.clean();
+              if (rec)
+                Array.forEach(rec.ScanFiles, function(rec) {
+                  Html.ScanFile.create(self, rec, self.scanFile_oncheck, true);
+                });
+              this._recOrig = Json.encode(self.getScanFileIds());
+            },
+            isDirty:function() {
+              var _recNow = Json.encode(self.getScanFileIds());
+              return (_recNow != self._recOrig);
+            },
+            add:function(scanFile) {
+              self.append(scanFile);
+            },
+            scanFile_oncheck:function(scanFile, checked) {
+              context.scanFile_oncheck(scanFile, checked);
+            },
+            getScanFileIds:function() {
+              var recs = [];
+              Array.forEach(self.children, function(scanFile) {
+                recs.push(scanFile.rec.scanFileId);
+              });
+              return recs;
+            }
+          });
+        }
+      },
+      CmdBar:{
+        create:function(parent, context) {
+          return Html.CmdBar.create(parent).save(context.save_onclick).del(context.del_onclick).cancel(context.cancel_onclick);
+        }
+      }
+    },
+    SavedFolders:{
+      create:function(parent) {
+        var self = Html.Tile.create(parent, 'SavedFolders');
+        return self.augment({
+          load:function() {
+            self.working(true);
+            self.clean();
+            Ajax.Scanning.getIndexedToday(function(recs) {
+              if (recs.length) {
+                Html.H3.create("Created Today").into(self);                  
+                Array.forEach(recs, function(rec) {
+                  ScanIndexing.Folders.SavedFolders.Folder.create(self, rec);
+                });
+              }
+              self.working(false);
+            });
+          },
+          folder_onclick:function(rec) {
+            parent.folder_onclick(rec);
+          }
+        });
+      },
+      Folder:{
+        create:function(parent, rec) {
+          var self = Html.Div.create('Folder').into(parent);
+          return self.augment({
+            init:function() {
+              self.rec = rec;
+              self.anchor = Html.Anchor.create(null, null, self.anchor_onclick).into(self);
+              self.anchor.innerHTML = '<b>' + rec.Client.name + '</b> &bull; ' + C_ScanIndex.TYPES[rec.scanType]; 
+            },
+            anchor_onclick:function() {
+              parent.folder_onclick(self.rec);
+            }
+          });
+        }
+      }
+    }
+  },
+  Files:{
+    create:function(parent) {
+      var self = Html.Tile.create(parent, 'ScanIndex');
+      return self.augment({
+        load:function() {
+          self.clean();
+          self.working(true);
+          Ajax.Scanning.getUnindexed(function(recs) {
+            Array.forEach(recs, function(rec) {
+              Html.ScanFile.create(self, rec, self.scanFile_oncheck);
+            });
+            self.working(false);
+          });
+        }, 
+        add:function(scanFile) {
+          self.append(scanFile); 
+        },
+        scanFile_oncheck:function(scanFile, checked) {
+          parent.scanFile_oncheck(scanFile, checked);
+        }
+      });
+    }
+  }
+};
+/**
+ * Div ScanFile
+ *   ScanFile rec
+ *   ImageScanThumb thumb
+ *   InputCheck check
+ *   Label label
+ */
+Html.ScanFile = {
+  create:function(parent, rec, oncheck, checked) {
+    var self = Html.Div.create('ScanFile').into(parent);
+    return self.augment({
+      init:function() {
+        self.rec = rec;
+        self.table = Html.Table.create().into(self);
+        self.thumb = Html.ImageScanThumb.create(self, rec, 70);
+        self.check = Html.InputCheck.create().into(self).hide().augment({
+          onclick:function() {
+            self.toggle();
+          }});
+        self.label = Html.Label.create(null, rec.origFilename).into(self);
+        if (checked) {
+          self.check.checked = true;
+          self.addClass('check');
+          self.thumb.shrink(true);
+        }
+        self.table.tbody().tr().td(self.thumb).td(self.check).td(self.label, 'p5');
+      },
+      toggle:function() {
+        self.addClassIf('check', self.check.checked);
+        self.thumb.shrink(self.check.checked);
+        if (oncheck)
+          oncheck(self, self.check.checked);
+      },
+      onclick:function() {
+        self.check.checked = ! self.check.checked;
+        self.toggle();
+      },
+      isChecked:function() {
+        return self.check.checked;
+      },
+      resetZoom:function() {
+        self.thumb.zoom.hide();
+      }
+    });
+  }
+};
+/**
+ * Image ImageScanThumb
+ *   Image zoom
+ */
+Html.ImageScanThumb = {
+  create:function(parent, rec, maxh, maxw) {
+    var src = 'scan-image.php?id=' + rec.scanFileId;
+    var h = String.toInt(rec.height || maxh);
+    var w = String.toInt(rec.width || maxw);
+    var size = Html.ImageScanThumb.resize(h, maxh || 100, w, maxw || 50);
+    var self = Html.Image.create(null, src, size.h, size.w).into(parent);
+    return self.augment({
+      init:function() {
+        self.parent = parent;
+        self.h = size.h;
+        self.w = size.w;
+        self.zoom = Html.ImageScanThumb.ImageZoom.create(self, Html.ImageScanThumb.resize(h, 500, w, 400));
+      },
+      onmouseover:function() {
+        self.preview(true);
+      },
+      onmouseout:function() {
+        self.preview(false);
+      },
+      preview:function(on) {
+        self.zoom.preview(on);
+      },
+      shrink:function(on) {
+        if (on) 
+          return self.setHeight(25).setWidth(25);
+        else
+          return self.setHeight(self.h).setWidth(self.w);
+      }
+    });
+  },
+  resize:function(h, maxh, w, maxw) {
+    var r = h / w;
+    if (h > maxh || w > maxw) {
+      if (r > 1 && h > maxh) {
+        r = maxh / h;
+        h = maxh;
+        w = w * r;
+      } else {
+        r = maxw / w;
+        w = maxw;
+        h = h * r;
+      }
+    }
+    return {'h':h, 'w':w};
+  },
+  ImageZoom:{
+    create:function(thumb, size) {
+      var self = Html.Image.create(null, thumb.src, size.h, size.w).hide().into(thumb.parent);
+      self.setPosition('absolute').style.margin = '-' + (thumb.h + 10) + 'px 0 0 10px';
+      return self.augment({
+        init:function() {
+          self.previewing = null;
+        },
+        preview:function(on) {
+          self.previewing = (on) ? self : null;
+          self.showIf(on);
+        },
+        onmouseover:function() {
+          if (! self.previewing)
+            self.preview(true);
+        },
+        onmouseout:function() {
+          if (self.previewing)
+            self.preview(false);
+        }
+      });
+    }
+  }
+};
+/**
+ * RecordPicker IpcPicker
+ */
+IpcPicker = {
+  create:function() {
+    var self = Html.RecordPicker.create('Test/Procedure Selector', 26);
+    return self.augment({
+      init:function() {
+        self.thead().tr('fixed head').th('Test/Procedure').w('35%').th('Description').w('45%').th('Category').w('20%');
+      },
+      fetch:function(callback) {
+        Ajax.Ipc.getAll(callback);
+      },
+      applies:function(rec, search) {
+        if (search)
+          return rec.name.match(search);
+        return true;
+      },
+      add:function(rec, tr) {
+        var cat = C_Ipc.CATS[rec.cat];
+        tr.select(rec, rec.name).td(rec.desc).td(cat);
+      },
+      getValueFrom:function(rec) {
+        return rec.ipc;
+      },
+      getTextFrom:function(rec) {
+        return rec.name;
+      }
+    });
+  }
+}
+/**
+ * RecordPicker ProviderPicker
+ */
+ProviderPicker = {
+  create:function(ef) {
+    var self = Html.RecordPicker.create('Provider Selector');
+    return self.augment({
+      init:function() {
+        self.thead().tr('fixed head').th('Provider').w('35%').th('Area').w('20%').th('Location').w('45%');
+      },
+      buttons:function(cmd) {
+        cmd.add('Add New Provider...', self.new_onclick).cancel(self.pop.close);
+      },
+      fetch:function(callback) {
+        Ajax.Providers.getAll(callback);
+      },
+      applies:function(rec, search) {
+        if (search)
+          return rec.name.match(search);
+        return true;
+      },
+      add:function(rec, tr) {
+        var area = C_Lookups.AREAS[rec.area];
+        tr.select(rec, rec.name).td(area).td(rec.address);
+      },
+      getValueFrom:function(rec) {
+        return rec.providerId;
+      },
+      getTextFrom:function(rec) {
+        return rec.name;
+      },
+      //
+      new_onclick:function() {
+        ProviderEntry.show(null, self.pop_onsave); 
+      },
+      pop_onsave:function(rec) {
+        self.pop.clean();
+        self.pop.select(rec);
+      }
+    });
+  }
+}
+FacilityPicker = {
+  create:function(ef) {
+    var self = Html.RecordPicker.create('Facility Selector');
+    return self.augment({
+      init:function() {
+        self.thead().tr('fixed head').th('Facility').w('33%').th('Location').w('67%');
+      },
+      buttons:function(cmd) {
+        cmd.add('Add New Facility...', self.new_onclick).cancel(self.pop.close);
+      },
+      fetch:function(callback) {
+        Ajax.Providers.Facilities.getAll(callback);
+      },
+      applies:function(rec, search) {
+        if (search)
+          return rec.name.match(search);
+        return true;
+      },
+      add:function(rec, tr) {
+        tr.select(rec, rec.name).td(rec.csz);
+      },
+      getValueFrom:function(rec) {
+        return rec.addressId;
+      },
+      getTextFrom:function(rec) {
+        return rec.name;
+      },
+      //
+      new_onclick:function() {
+        FacilityEntry.show(null, self.pop_onsave);
+      },
+      pop_onsave:function(rec) {
+        self.pop.clean();
+        self.pop.select(rec);
+      }
+    });
+  }
+}
+/**
+ * RecordEntryPop ProviderEntry
+ */
+ProviderEntry = {
+  create:function() {
+    var self = Html.RecordEntryPop.create('Provider Entry');
+    return self.augment({
+      onshow:function(rec) {
+        self.form.focus('last');
+      },
+      save:function(rec, callback) {
+        Ajax.Providers.save(rec, callback);
+      },
+      remove:function(rec, callback) {h
+        Ajax.Providers.remove(rec.providerId, callback);
+      },
+      build:function(ef) {
+        ef.li('Last Name').textbox('last', 15).lbl('First').textbox('first', 12).lbl('Middle').textbox('middle', 6);
+        ef.li('Area').select('area', C_Lookups.AREAS, '');
+        ef.li('Facility', 'mt10').picker(FacilityPicker, 'addrFacility');
+      }
+    });
+  },
+  show:function(rec, callback) {
+    var pop = this.create().show(rec, callback);
+    ProviderEntry = pop;
+  }
+}
+/**
+ * RecordEntryPop FacilityEntry
+ */
+FacilityEntry = {
+  create:function() {
+    var self = Html.RecordEntryPop.create('Facility Entry');
+    return self.augment({
+      onshow:function(rec) {
+        self.form.focus('name');
+      },
+      save:function(rec, callback) {
+        Ajax.Providers.Facilities.save(rec, callback);
+      },
+      remove:function(rec, callback) {
+        Ajax.Providers.Facilities.remove(rec.providerId, callback);
+      },
+      build:function(ef) {
+        ef.li('Name').textbox('name', 30);
+        ef.li('Address', 'mt10').textbox('addr1', 40);
+        ef.li(' ').textbox('addr2', 40);
+        ef.li('City').textbox('city', 35);
+        ef.li('State').select('state', C_Address.STATES, '').lbl('Zip').textbox('zip', 5);
+      }
+    });
+  },
+  show:function(rec, callback) {
+    var pop = this.create().show(rec, callback);
+    FacilityEntry = pop;
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = ScanningPage;  

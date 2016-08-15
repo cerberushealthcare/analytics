@@ -1,0 +1,51 @@
+<?
+require_once "inc/requireLogin.php";
+require_once "inc/uiFunctions.php";
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header("Location: welcome.php");
+}
+$pop = $_GET['pop'];
+$title = $_GET['title'];
+$arg = $_GET['arg'];
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title id='page-title'><?=$title ?></title>
+    <link rel="stylesheet" type="text/css" href="css/page.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/TabBar.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/TemplateUi.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
+    <link rel="stylesheet" type="text/css" href="css/pop-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet-font.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops-font.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/pop-ie6.css?<?=Version::getUrlSuffix() ?>" />
+<![endif]-->    
+    <script language="JavaScript1.2" src="js/ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/event-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pops/<?=$pop ?>.js?<?=Version::getUrlSuffix() ?>"></script>
+  </head>
+  <body>
+    <div id='body'>
+      <? include "js/pops/inc/$pop.php" ?>
+    </div>
+  </body>
+  <script>
+FaceImmunChart.print(<?=$arg ?>);
+  </script>
+</html>

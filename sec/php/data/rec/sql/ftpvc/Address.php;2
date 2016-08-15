@@ -1,0 +1,80 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Address Record
+ */
+class Address extends SqlRec {
+  //
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $phone3;
+  public $phone3Type;
+  public $email1;
+  public $email2;
+  //
+  const TABLE_USERS = 'U';
+  const TABLE_USER_GROUPS = 'G';
+  const TABLE_CLIENTS = 'C';
+  //
+  const TYPE_SHIP = '0';
+  const TYPE_BILL = '1';
+  const TYPE_EMER = '2';
+  const TYPE_SPOUSE = '3';
+  const TYPE_RX = '4';
+  const TYPE_MOTHER = '5';  
+  const TYPE_FATHER = '6';  
+  //
+  const PHONE_TYPE_PRIMARY = 0;
+  const PHONE_TYPE_WORK = 1;
+  const PHONE_TYPE_CELL = 2;
+  const PHONE_TYPE_EMER = 3;
+  const PHONE_TYPE_FAX = 4;
+  const PHONE_TYPE_OTHER = 9;
+  public static $PHONE_TYPES = array(
+    Address::PHONE_TYPE_PRIMARY => 'Primary',
+    Address::PHONE_TYPE_WORK => 'Work',
+    Address::PHONE_TYPE_CELL => 'Cell',
+    Address::PHONE_TYPE_EMER=> 'Emergency',
+    Address::PHONE_TYPE_FAX => 'Fax',
+    Address::PHONE_TYPE_OTHER => 'Other');
+  //
+  public function getSqlTable() {
+    return 'addresses';
+  }
+  //
+  /**
+   * Static builders
+   */
+  public static function fromClient($cid, $type = Address::TYPE_SHIP) {
+    return new Address(null, Address::TABLE_CLIENTS, $cid, $type);
+  }
+  //
+  /**
+   * Static fetchers
+   */
+  public static function fetchByTable($tableCode, $tableId, $type = Address::TYPE_SHIP) {
+    $rec = new Address();
+    $rec->tableCode = $tableCode;
+    $rec->tableId = $tableId;
+    $rec->type = $type;
+    return SqlRec::fetchOneBy($rec);
+  }
+  public static function fetchByClient($cid, $type) {
+    $rec = Address::fromClient($cid, $type);
+    return Address::fetchOneBy($rec);
+  }
+}
+?>

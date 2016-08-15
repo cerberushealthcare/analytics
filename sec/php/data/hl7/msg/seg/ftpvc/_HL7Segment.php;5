@@ -1,0 +1,55 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Values.php';
+/**
+ * HL7 Segment  
+ * @author Warren Hornsby
+ */
+abstract class HL7Segment extends HL7Rec {
+  //
+  public $_rec;
+  //
+  /**
+   * @return array('Comment',..)
+   */
+  public function getComments() {
+    $a = array();
+    $segs = $this->get('Comment');
+    if ($segs) {
+      foreach ($segs as $seg) 
+        $a[] = $seg->comment;
+    }
+    return $a;
+  }
+  //
+  /**
+   * @param HL7Buffer $buffer
+   * @param ST_EncodingChars $encoding
+   * @return HL7Segment 
+   */
+  static function fromBuffer($buffer, $encoding) {
+    if ($buffer) {
+      $me = new static();
+      $me->_rec = $buffer->current();
+      $me->setValues($buffer->pop(), $encoding);
+      $me->setSegments($buffer, $encoding);
+      return $me;
+    }
+  }
+  static function asEmpty() {
+    $me = new static();
+    foreach ($me as $fid => $value)
+      if ($fid != 'segId') 
+        $me->$fid = null;
+    return $me;
+  }
+  //
+  protected function setValues($values, $encoding) {
+    next($values);
+    parent::setValues($values, $encoding);
+  }
+  protected function getVars() {
+    $vars = parent::getVars();
+    array_shift($vars);
+    return $vars;
+  }
+}

@@ -1,0 +1,11 @@
+MSH|^~\&|Clicktate|1|||20141119220256||ADT^A01|1-3776-20141119220256|P|2.3.1
+PID|||3776^^^1^MR||Hernandez^Jane^B||19480116|F||U^Unknown^HL70005|758 Las Olas Dr.^^Fort Lauderdale^FL^33011^^H||^PRN^^^^555^1212|||||||||NH^Not Hispanic or Latino^HL70189
+PV1|1|O|||||1^Papyrus Admin|||||||||||||||||||||||||||||||||||||20141005
+OBX|1|NM|21612-7^REPORTED PATIENT AGE^LN||66|a^year^UCUM|||||F
+DG1|0|I9|250.00^Diabetes Mellitus Type 2- controlled^ICD-9-CM|Diabetes Mellitus Type 2- controlled|20141005|F
+DG1|1||1715^Fever^LOCAL CODE SET|Fever|20141005|F
+DG1|2|I9|530.11^Gastroesophageal Reflux Disease^ICD-9-CM|Gastroesophageal Reflux Disease|20141005|F
+DG1|3|I9|410.80^Myocardial Infarction^ICD-9-CM|Myocardial Infarction|20030125|F
+DG1|4|I9|428.0^Congestive Heart Failure^ICD-9-CM|Congestive Heart Failure|19990401|F
+DG1|5|I9|403.10^Hypertension^ICD-9-CM|Hypertension|19900808|F
+DG1|6|I9|250.02^Diabetes Mellitus^ICD-9-CM|Diabetes Mellitus|19840301|F

@@ -1,0 +1,9 @@
+MSH|^~\&|Clicktate|X68||LCD|20141215101852||VXU^V04^VXU_V04|1-3820-20141215101852|P|2.5.1|||NE|NE
+PID|1||3820^^^1^MR~184-25-4562^^^MAA^SS||Quinla^Eisig^^^^^L||19410714|M|||^^^^^^L||~^NET^^Eisig@hotmail.com
+ORC|RE||259^LCD|||||||||259-O^Radon^Nicholas^^^^^^Clicktate^L
+RXA|0|1|20120816235701||115^Boostrix (Tdap)^CVX|0.5|mL^milliliter^UCUM||00^New immunization record^NIP001|259-P^^(select)^^^^^^Clicktate^L|^^^G1||||Z79YG|20121216|SKB^GlaxoSmithKline^MVX|||CP|A
+RXR|IM^IM^HL70162|RA^Right Arm^HL70163
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V01^Not VFC Eligible^HL70064||||||F|||20120816235701|||VXC40^Eligibility captured at the immunization level^CDCPHINVS
+OBX|2|CE|30956-7^Vaccine type^LN|2|139^Td^CVX||||||F
+OBX|3|TS|29768-9^Date vaccine information statement published^LN|2|20130509||||||F
+OBX|4|TS|29769-7^Date vaccine information statement presented^LN|2|20120816235701||||||F

@@ -1,0 +1,221 @@
+<?php
+require_once 'php/data/json/_util.php';
+
+/**
+ * Allergy 
+ * Facesheet Data Record
+ * 
+ * Organization:
+ *   ugid, cid,..
+ *     sid>0, date=DOS, index=oix  // built from closed note
+ *     sid=NULL, agent             // facesheet summary record
+ */
+class JDataAllergy {
+  //
+  public $id;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  // dos
+  public $index;
+  public $agent;
+  public $reactions;
+  public $active;
+  public $updated;
+  public $source;
+  //
+  const SQL_FIELDS = 'data_allergies_id, user_group_id, client_id, session_id, date, `index`, agent, reactions, active, date_updated, source';
+  const QUID = 'allerNew.!addAllergy';
+  //
+  const SOURCE_LEGACY             = null;
+  const SOURCE_NEWCROP            = 1; 
+  //
+  public function __construct($id, $userGroupId, $clientId, $sessionId, $date, $index, $agent, $reactions, $active, $updated, $source) {
+    $this->id = $id;
+    $this->userGroupId = $userGroupId;
+    $this->clientId = $clientId;
+    $this->sessionId = $sessionId;
+    $this->date = $date;
+    $this->index = $index;
+    $this->agent = $agent;
+    $this->reactions = $reactions;
+    $this->active = $active;
+    $this->updated = $updated;
+    $this->source = $source;
+	}
+	public function out() {
+    $out = '';
+    $out = nqq($out, 'id', $this->id);
+    $out = nqq($out, 'clientId', $this->clientId);
+    $out = nqq($out, 'sessionId', $this->sessionId);
+    $out = nqq($out, 'date', formatDate($this->date));
+    $out = nqq($out, 'index', $this->index);
+    $out = nqq($out, 'agent', $this->agent);
+    $out = nqqo($out, 'reactions', $this->reactions);
+    $out = nqqo($out, 'active', $this->active);
+    $out = nqqo($out, 'source', $this->source);
+    return cb($out);
+	}
+	/**
+	 * Get json-encoded reactions value as PHP array
+	 * Returns array('reaction',..)
+	 */
+	public function getReactions() {
+	  return jsondecode($this->reactions);
+	}
+	//
+	/**
+	 * Static builder (clone)
+	 * @param JDataAllergy $dto
+	 * @return JDataAllergy
+	 */
+  public static function copy($dto) { 
+    return new JDataAllergy(
+        null,
+        $dto->userGroupId,
+        $dto->clientId,
+        $dto->sessionId,
+        $dto->date,
+        $dto->index,
+        $dto->agent,
+        $dto->reactions,
+        $dto->active,
+        $dto->updated,
+        $dto->source);
+  }
+  /**
+   * Static builders 
+   */
+  public static function fromRows($res, $assocBy = null) {
+    $allergies = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $rec = JDataAllergy::fromRow($row);
+      if ($assocBy != null) {
+        $allergies[$row[$assocBy]] = $rec;
+      } else {
+        $allergies[] = $rec;
+      }
+    }
+    return $allergies;
+  }
+  public static function fromRow($row) {
+    if (! $row) return null;
+    return new JDataAllergy(
+        $row["data_allergies_id"],
+        $row["user_group_id"],
+        $row["client_id"],
+        $row["session_id"],
+        $row["date"],
+        $row["index"],
+        $row["agent"],
+        $row["reactions"],
+        $row["active"],
+        $row["date_updated"],
+        $row["source"]
+        );
+  }
+  /**
+   * Static builders
+   * @param int $ugid
+   * @param int $cid 
+   * @param array $allergies; see NewCrop->getCurrent()
+   * @return array('agent'->JDataAllergy,..)
+   */
+  public static function fromNewCropAllergies($ugid, $cid, $allergies) {
+    $dtos = array();
+    if ($allergies)
+      foreach ($allergies as $allergy) {
+        $dto = JDataAllergy::fromNewCropAllergy($ugid, $cid, $allergy);
+        $dtos[$dto->agent] = $dto;
+      }
+    return $dtos;
+  }
+  /**
+   * Static builder
+   * @param int $ugid
+   * @param int $cid 
+   * @param object $allergy; see NewCrop->getCurrent()
+   * @return JDataAllergy
+   */
+  public static function fromNewCropAllergy($ugid, $cid, $allergy) {
+    return new JDataAllergy(
+      null,
+      $ugid,
+      $cid,
+      null,
+      nowNoQuotes(),
+      null,
+      $allergy->Allergy,
+      null,
+      true,
+      null,
+      JDataAllergy::SOURCE_NEWCROP
+      );
+  }
+  public static function save($dto, $escape = false, $audit = true) {
+    if ($dto->id != null) {
+      LoginDao::authenticateDataAllergy($dto->id);
+      $sql = "UPDATE data_allergies SET ";
+      $sql .= "date=" . quote($dto->date);
+      $sql .= ", reactions=" . quote($dto->reactions, $escape);
+      $sql .= ", active=" . toBoolInt($dto->active);
+      $sql .= ", date_updated=NULL";
+      $sql .=" WHERE data_allergies_id=" . $dto->id;
+      if ($audit) AuditDao::log($dto->clientId, AuditDao::ENTITY_DATA_ALLER, $dto->id, AuditDao::ACTION_UPDATE, null, $dto->agent);
+      query($sql);
+    } else {
+      LoginDao::authenticateClientId($dto->clientId);
+      $sql = "INSERT INTO data_allergies VALUE(NULL";
+      $sql .= ", " . quote($dto->userGroupId);
+      $sql .= ", " . quote($dto->clientId);
+      $sql .= ", " . quote($dto->sessionId);
+      $sql .= ", " . quote($dto->date);
+      $sql .= ", " . quote($dto->index);
+      $sql .= ", " . quote($dto->agent, $escape);
+      $sql .= ", " . quote($dto->reactions, $escape);
+      $sql .= ", " . toBoolInt($dto->active);
+      $sql .= ", NULL";  // date_updated
+      $sql .= ", " . quote($dto->source);
+      $sql .= ")";
+      $dto->id = insert($sql);
+      if ($audit) AuditDao::log($dto->clientId, AuditDao::ENTITY_DATA_ALLER, $dto->id, AuditDao::ACTION_CREATE, null, $dto->agent);
+    }
+    return $dto;
+  }
+  public static function deleteActive($cid) {
+    query("DELETE FROM data_allergies WHERE client_id=$cid AND active=1");
+  }
+  // Return collection of distinct (by agent) allergies from session history, associated by agent
+  public static function getSessionAllergies($clientId) {
+    $sql = "SELECT " . JDataAllergy::SQL_FIELDS . " FROM (SELECT * FROM data_allergies WHERE client_id=" . $clientId . " AND `index`>3 AND session_id IS NOT NULL ORDER BY date DESC) a GROUP BY agent ORDER BY agent";
+    return JDataAllergy::fromRows(query($sql), "agent");
+  }
+  // Return collection of non-session allergy data records, associated by agent
+  public static function getFacesheetAllergies($clientId) {
+    $sql = "SELECT " . JDataAllergy::SQL_FIELDS . " FROM data_allergies WHERE client_id=" . $clientId . " AND session_id IS NULL";
+    return JDataAllergy::fromRows(query($sql), "agent");
+  }
+  // Return simple array of entire session allergy history;
+  public static function getAllergiesHistory($clientId) {
+    $sql = "SELECT " . JDataAllergy::SQL_FIELDS . " FROM data_allergies WHERE client_id=" . $clientId . " AND session_id IS NOT NULL ORDER BY date DESC, session_id, agent";
+    return JDataAllergy::fromRows(query($sql));
+  }
+  public static function getAllergy($id) {
+    $sql = "SELECT " . JDataAllergy::SQL_FIELDS . " FROM data_allergies WHERE data_allergies_id=" . $id;
+    $allergy = JDataAllergy::fromRow(fetch($sql));
+    if ($allergy != null) {
+      LoginDao::authenticateDataAllergy($id);
+    }
+    return $allergy;
+  }
+  public static function getClientAllergyByAgent($clientId, $agent) {
+    $row = fetch("SELECT data_allergies_id FROM data_allergies WHERE session_id IS NULL and client_id=" . $clientId . " AND agent=" . quote($agent, true) . " ORDER BY data_allergies_id DESC");
+    if ($row) {
+      return $row["data_allergies_id"];
+    }
+  }
+  public static function deactivateLegacy($clientId) {
+    query("UPDATE data_allergies SET active=0 WHERE client_id=$clientId AND (source IS NULL OR source=0)");
+  }
+}
+?>

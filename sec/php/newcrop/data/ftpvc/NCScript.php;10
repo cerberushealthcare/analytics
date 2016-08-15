@@ -1,0 +1,469 @@
+<?php
+require_once '_DomData.php';
+require_once '_NameParser.php';
+/**
+ * NewCrop's <NCScript> structure 
+ * For supplying to clickthru post
+ */
+class NCScript extends DomData {
+  public /*CredentialsType*/ $Credentials;         
+  public /*UserRoleType*/ $UserRole;            
+  public /*DestinationType*/ $Destination;     
+  public /*AccountType*/ $Account;             
+  public /*LocationType*/ $Location;            
+  public /*LicensedPrescriberType*/ $LicensedPrescriber;  
+  public /*StaffType*/ $Staff;  
+  public /*PatientType*/ $Patient;
+  public /*PrescriptionRenewalResponseType*/ $PrescriptionRenewalResponse;
+  public /*[OutsidePrescriptionType]*/ $OutsidePrescription;
+  public $_xmlns = 'http://secure.newcropaccounts.com/interfaceV7';
+  /**
+   * Static
+   * @param string $date
+   * @return 'CCYYMMDD'
+   */
+  public static function formatDate($date) {
+    return date('Ymd', strtotime($date));
+  }
+}
+// Types
+//
+class AccountType extends DomData {
+  public $_ID;
+  //
+  public $accountName;
+  public $siteID;
+  public /*AddressType*/ $AccountAddress;  
+  public $accountPrimaryPhoneNumber;
+  public $accountPrimaryFaxNumber = '5025551212';  // TODO
+  /**
+   * Static builder
+   * @param User $user
+   * @return AccountType
+   */
+  public static function fromUser($user) {
+    $ug = $user->userGroup;
+    $id = UserStub::getEnv() . $ug->id;
+    return new AccountType(
+      $id,
+      $ug->name,
+      1,  // acctSite
+      AddressType::fromAddress($ug->address),
+      $ug->address->phone1,
+      $ug->address->getFax());
+  }
+}  
+//
+class AddressType extends DomData {
+  public $address1 = DomData::REQUIRED;
+  public $address2;
+  public $city = DomData::REQUIRED;
+  public $state = DomData::REQUIRED;
+  public $zip = DomData::REQUIRED;
+  public $zip4 = '0000';
+  public $country = 'US';
+  /**
+   * Static builder
+   * @param Address $addr
+   * @return AddressType
+   */
+  public static function fromAddress($addr) {
+    return new AddressType(
+      $addr->addr1,
+      $addr->addr2,
+      $addr->city,
+      $addr->state,
+      $addr->zip);
+  }
+}
+//
+class ContactType extends DomData {
+  public $homeTelephone;
+  public $workTelephone;
+  public $cellularTelephone;
+  public $pagerTelephone;
+  public $fax;
+  public $email;
+  public $backOfficeTelephone;
+  public $backOfficeFax;
+  /**
+   * Static builder
+   * @param Client $client
+   * @return ContactType
+   */
+  public static function fromClient($client) {
+    return new ContactType(
+      $client->shipAddress->phone1,
+      $client->shipAddress->phone2,
+      $client->shipAddress->phone3,
+      null,
+      null,
+      $client->shipAddress->email1);
+  }
+}
+//
+class CredentialsType extends DomData {
+  public $partnerName;
+  public $name;
+  public $password;
+  public $productName;
+  public $productVersion;
+  /**
+   * Static builder
+   * @param NewCrop.Credentials $cred
+   * @return CredentialsType
+   */
+  public static function fromCredentials($cred) {
+    return new CredentialsType(
+      $cred->partner,
+      $cred->name, 
+      $cred->password, 
+      'www.clicktate.com', 
+      Version::MAJOR);
+  }
+}
+//
+class DestinationType extends DomData {
+  public /*RequestedPageType*/ $requestedPage;
+  public $logoutPage;
+  public $sessionTimeoutInMinutes;
+  public $messageTransactionId;
+  //
+  const DEST_COMPOSE = 'compose';
+  const DEST_STATUS = 'status';
+  const DEST_MEDENTRY = 'medentry';
+}
+//
+class LicensedPrescriberType extends DomData {
+  public $_ID;
+  //
+  public /*PersonNameType*/ $LicensedPrescriberName;  
+  public $dea = DomData::REQUIRED;
+  public $prescriberStatus;
+  public $upin;
+  public $licenseState;
+  public $licenseNumber;
+  public $prescriberNetwork;
+  public $prescriberStartDateTime;
+  public $prescriberStopDateTime;
+  public $npi;
+  public $freeformCredentials;
+  /**
+   * Static builder
+   * @param User $user
+   * @return LicensedPrescriberType
+   */
+  public static function fromUser($user) {
+    return new LicensedPrescriberType(
+      $user->uid,
+      PersonNameType::fromFullName($user->name),
+      $user->dea,
+      null,  // prescriberStatus
+      null,  // upin
+      $user->licenseState,
+      $user->license,
+      null,  // prescriberNetwork
+      null,  // prescriberStartDateTime
+      null,  // prescriberStopDateTime
+      $user->npi);    
+  }
+}
+//
+class LocationType extends DomData {
+  public $_ID;
+  //
+  public $locationName;
+  public $locationShortName;
+  public /*AddressType*/ $LocationAddress = DomData::REQUIRED;  
+  public $primaryPhoneNumber;
+  public $primaryFaxNumber = '5025551212';  // TODO
+  public $pharmacyContactNumber = DomData::REQUIRED;
+  /**
+   * Static builder
+   * @param User $user
+   * @return LocationType
+   */
+  public static function fromUserClient($user, $client) {
+    $ug = $user->userGroup;
+    $rxContact = ($client == null) ? '0' : $client->pharmAddress->phone1;
+    return new LocationType(
+      $ug->id,
+      $ug->name,
+      null,  // shortName
+      AddressType::fromAddress($ug->address),
+      $ug->address->phone1,
+      $ug->address->getFax(),
+      $rxContact);
+  }
+}
+//
+class OutsidePrescriptionType extends DomData {
+  public $externalId;
+  public $date;
+  public $doctorName;
+  public $drug;
+  public $dispenseNumber;
+  public $sig;
+  public $refillCount;
+  public $prescriptionType = 'reconcile';
+  /**
+   * Static builder
+   * @param [JDataMed] $meds
+   * @param array(OutsidePrescriptionType,..)
+   * @return OutsidePrescriptionType
+   */
+  public static function fromMeds($meds) {
+    if ($meds && count($meds) > 0) { 
+      $recs = array();
+      foreach ($meds as $med) {
+        if ($med->name) 
+          $recs[] = OutsidePrescriptionType::fromMed($med);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromMed($med) {
+    $refills = null;
+    if ($med->rx != null) {
+      $a = explode('Refills: ', $med->rx);
+      if (count($a) > 1) 
+        $refills = substr($a[1], 0, -1);
+    }
+    return new OutsidePrescriptionType(
+      $med->id,
+      NCScript::formatDate($med->date),
+      null,
+      OutsidePrescriptionType::fixName($med->name),
+      intval($med->disp),
+      $med->buildSig(),
+      intval($refills));
+  }
+  private static function fixName($name) {
+    return str_replace(';', '-', $name);
+  }
+}
+// 
+class PatientDiagnosisType extends DomData {
+  public $diagnosisID = DomData::REQUIRED;
+  public $diagnosisType;
+  public $onsetDate;
+  public $diagnosisName;
+  public $recordedDate;
+  /**
+   * Static builder
+   * @param [JDataDiagnosis] $diagnoses
+   * @return array(PatientDiagnosisType,..)
+   */
+  public static function fromDiagnoses($diagnoses) {
+    if ($diagnoses && count($diagnoses) > 0) {
+      $recs = array();
+      foreach ($diagnoses as $diagnosis) {
+        if ($diagnosis->icd) 
+          $recs[] = PatientDiagnosisType::fromDiagnosis($diagnosis);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromDiagnosis($diagnosis) {
+    return new PatientDiagnosisType(
+      $diagnosis->icd,
+      'ICD9',
+      null,
+      $diagnosis->text);
+  }
+}
+//
+class PatientAllergyFreeformType extends DomData {
+  public $allergyName = DomData::REQUIRED;
+  public $allergySeverityTypeId;
+  public $allergyComment;
+  /**
+   * Static builder
+   * @param [JDataAllergy] $allergies
+   * @param [PatientAllergyFreeformType,..]
+   */
+  public static function fromAllergies($allergies) {
+    if ($allergies && count($allergies) > 0) {
+      $recs = array();
+      foreach ($allergies as $allergy) {
+        if ($allergy->agent) 
+          $recs[] = PatientAllergyFreeformType::fromAllergy($allergy);
+      }
+      return $recs;
+    }
+  }
+  //
+  private static function fromAllergy($allergy) {
+    return new PatientAllergyFreeformType(
+      $allergy->agent,
+      null,
+      implode(' - ', $allergy->getReactions()));
+  }
+}
+//
+class PatientCharacteristicsType extends DomData {
+  public $dob;
+  public $gender;
+  public $height;
+  public $heightUnits;
+  public $weight;
+  public $weightUnits;
+  public $language;
+  /**
+   * Static builder
+   * @param Client $client
+   * @return PatientChacteristicsType
+   */
+  public static function fromClient($client) {
+    return new PatientCharacteristicsType(
+      NCScript::formatDate($client->birth),
+      $client->sex);
+  }
+}
+//
+class PatientType extends DomData {
+  public $_ID;
+  //
+  public /*PersonNameType*/ $PatientName = DomData::REQUIRED;          
+  public $medicalRecordNumber;
+  public $socialSecurityNumber;
+  public $memo;
+  public /*AddressType*/ $PatientAddress;          
+  public /*ContactType*/ $PatientContact;           
+  public /*PatientCharacteristicsType*/ $PatientCharacteristics = DomData::REQUIRED;
+  public /*[PatientDiagnosisType]*/ $PatientDiagnosis;
+  public /*[PatientAllergyFreeformType]*/ $PatientFreeformAllergy;
+  /**
+   * Static builder
+   * @param Client $client
+   * @param [JDataAllergy] $allergies
+   * @return PatientType
+   */
+  public static function fromClient($client, $allergies, $diagnoses) {
+    $rec = null;
+    if ($client)
+      $id = $client->id; 
+      $rec = new PatientType(
+        $id,
+        new PersonNameType(
+          $client->lastName,
+          $client->firstName),
+        $client->uid,
+        null,  // ssn
+        null,  // memo
+        AddressType::fromAddress($client->shipAddress),
+        ContactType::fromClient($client),
+        PatientCharacteristicsType::fromClient($client),
+        PatientDiagnosisType::fromDiagnoses($diagnoses),
+        PatientAllergyFreeformType::fromAllergies($allergies));
+    return $rec;    
+  }
+}
+//
+class PersonNameType extends DomData {
+  public $last;
+  public $first;
+  public $middle;
+  public $prefix;
+  public $suffix;
+  /**
+   * Static builder
+   * @param string $fullname 'Dr. Henry S. Collier Jr'
+   * @return PersonNameType
+   */
+  public static function fromFullName($fullname) {
+    $parser = new NameParser($fullname);
+    return new PersonNameType(
+      $parser->last,
+      $parser->first,
+      $parser->middle,
+      $parser->title,
+      $parser->suffix);
+  }
+}
+//
+class PrescriptionRenewalResponseType extends DomData {
+  public $renewalRequestIdentifier = DomData::REQUIRED;
+  public $responseCode = DomData::REQUIRED;
+  public $refillCount;
+  public $drugSchedule;
+  public $responseDenyCode;
+  public $messageToPharmacist;
+  /**
+   * Static builder
+   * @param string $renewalRequestIdentifer
+   * @return PrescriptionRenewalResponseType 
+   */
+  public static function fromId($renewalRequestIdentifer) {
+    if ($renewalRequestIdentifer)
+      return new PrescriptionRenewalResponseType(
+        $renewalRequestIdentifer,
+        'Undetermined');
+  }
+}
+//
+class StaffType extends DomData {
+  public $_ID;
+  //
+  public /*PersonNameType*/ $StaffName;
+  public $license;
+  public $npi;
+  /**
+   * Static builder
+   * @param User $user
+   * @return StaffType
+   */
+  public static function fromUser($user) {
+    if ($user) 
+      return new StaffType(
+        $user->uid,
+        PersonNameType::fromFullName($user->name));
+  }
+}
+//
+class UserRoleType extends DomData {
+  public /*UserType*/ $user;  
+  public /*RoleType*/ $role;
+  public $name;
+  public $password;
+  /**
+   * Static builder
+   * @param User $User
+   * @return UserRoleType
+   */
+  public static function fromUser($user) {
+    return new UserRoleType(
+      $user->NcUser->userType,
+      $user->NcUser->roleType);
+  }
+}
+/**
+ * NewCrop's NCStandard simple types (enumerations)
+ */
+class RequestedPageType {
+  const COMPOSE = 'compose';
+  const STATUS = 'status';
+  const MEDENTRY = 'medentry';
+  const RENEWAL = 'renewal';
+}
+class UserType {
+  const LP = 'LicensedPrescriber';
+  const MIDLEVEL = 'MidlevelPrescriber';  
+  const STAFF = 'Staff';
+  const SUP_MD = 'SupervisingDoctor';
+}
+class RoleType {
+  const DOCTOR = 'doctor';
+  const NURSE = 'nurse';
+  const ADMIN = 'admin';
+  const MANAGER = 'manager';
+  const NURSE_NO_RX = 'nurseNoRx';
+  const DOCTOR_NO_RX = 'doctorNoRx';
+  const DOCTOR_RO = 'doctorReadOnly';
+  const IP_RO = 'interestedPartyReadOnly';
+  const SUP_MD = 'supervisingDoctor';
+  const MIDLEVEL = 'midlevelPrescriber';
+}
+?>

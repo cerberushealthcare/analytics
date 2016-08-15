@@ -1,0 +1,120 @@
+<?php
+require_once 'php/data/xml/_XmlRec.php';
+require_once 'php/data/xml/ccd/POCD_MT000040.php';
+require_once 'php/data/xml/ccd/datatypes_base.php';
+require_once 'php/data/xml/ccd/Section_Types.php';
+//
+/**
+ * CCD Clinical Document Generator
+ */
+class ClinicalDocument extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClinicalDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId; //REQ
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id; //REQ
+  public /*CE*/ $code; //REQ
+  public /*ST*/ $title;
+  public /*TS*/ $effectiveTime; //REQ
+  public /*CE*/ $confidentialityCode; //REQ
+  public /*CS*/ $languageCode;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+  public /*TS*/ $copyTime;
+  public /*RecordTarget[]*/ $recordTarget; //REQ
+  public /*Author[]*/ $author; //REQ
+  public /*DataEnterer*/ $dataEnterer;
+  public /*Informant12[]*/ $informant;
+  public /*Custodian*/ $custodian; //REQ
+  public /*InformationRecipient[]*/ $informationRecipient;
+  public /*LegalAuthenticator*/ $legalAuthenticator;
+  public /*Authenticator[]*/ $authenticator;
+  public /*Participant1[]*/ $participant;
+  public /*InFulfillmentOf[]*/ $inFulfillmentOf;
+  public /*DocumentationOf[]*/ $documentationOf;
+  public /*RelatedDocument[]*/ $relatedDocument;
+  public /*Authorization[]*/ $authorization;
+  public /*Component1*/ $componentOf;
+  public /*Component2*/ $component; //REQ
+  //
+  private $client;
+  private $userGroup;
+  private $user;
+  /**
+   * Construct with required defaults
+   * @param Client $client
+   * @param UserGroup $userGroup
+   * @param ErxUser $user
+   */
+  public function __construct($client, $userGroup, $user) {
+    $this->client = $client;
+    $this->userGroup = $userGroup;
+    $this->user = $user;
+    $this->setNamespaces();
+    $this->typeId = InfrastructureRoot_typeId::fromExtension('POCD_HD000040');
+    $this->templateId = InfrastructureRoot_templateId::asCCD();
+    $this->code = new CE_LOINC('34133-9', 'Summarization of Episode Note');
+    $this->confidentialityCode = new CE_HL7_Confidentiality('N');
+    $this->languageCode = CS_LanguageType::asUsEnglish(); 
+    $this->effectiveTime = TS::fromNow();
+    $this->component = Component2::asStructuredBody();
+  }
+  /**
+   * Assign required header elements
+   * @param string $id
+   * @param string $title
+   * @param string $dateFrom 
+   * @param string $dateTo
+   */
+  public function setHeader($id, $title, $dateFrom, $dateTo) {
+    $this->id = II::from($id);
+    $this->title = ST::asText($title);
+    $this->recordTarget = RecordTarget::from($this->client, $this->userGroup);
+    $this->author = Author::from($this->user, $this->userGroup);
+    $this->custodian = Custodian::from($this->userGroup);
+    $this->documentationOf = DocumentationOf::from($this->client, $this->user, $this->userGroup, $dateFrom, $dateTo);
+  }
+  /**
+   * Add a participant to header
+   * @param AssociatedEntity $entity e.g. AssociatedEntity::asGuardian()
+   */
+  public function addParticipant($entity) {
+    $this->set('participant', Participant1::asIndirectTarget($entity));
+  }
+  /**
+   * Medication section
+   * @param Med[] $meds 
+   */
+  public function setMedsSection($meds) {
+    $section = new Section_Meds($meds);
+    $this->component->structuredBody->add($section);
+  }
+  /**
+   * Alerts section
+   * @param Allergy[] $allers 
+   */
+  public function setAlertsSection($allers) {
+    $section = new Section_Alerts($allers);
+    $this->component->structuredBody->add($section);
+  }
+  /**
+   * Problems section
+   * @param CE $code e.g. CE_LOINC::asProblemList() 
+   */
+  public function setProblemsSection($code = null) {
+    $section = new Section_Problems($code);
+    // TODO
+    $this->component->structuredBody->add($section);
+  }
+  //
+  private function setNamespaces() {
+    $this->_xmlns = 'urn:hl7-org:v3';
+    $this->_xmlns_voc = 'urn:hl7-org:v3/voc';
+    $this->_xmlns_xsi = 'http://www.w3.org/2001/XMLSchema-instance';
+    $this->_xsi_schemaLocation = 'urn:hl7-org:v3 CDA.xsd';
+  }
+}
+?>

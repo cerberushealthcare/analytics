@@ -1,0 +1,461 @@
+<?php
+/**
+ * GroupFolder
+ * @author Warren Hornsby
+ */
+class GroupFolder {
+  //
+  public $ugid;
+  public $dir;
+  //
+  static $EXT_TO_MIME = array(
+    'ai'   => 'application/postscript',
+    'asf'  => 'video/x-ms-asf',
+    'asx'  => 'video/x-ms-asf',
+    'avi'  => 'video/x-msvideo',
+    'bmp'  => 'image/bmp',
+    'doc'  => 'application/msword',
+    'dvi'  => 'application/x-dvi',
+    'eps'  => 'application/postscript',
+    'gif'  => 'image/gif',
+    'htm'  => 'text/html',
+    'html' => 'text/html',
+    'jpeg' => 'image/jpeg',
+    'jpg'  => 'image/jpeg',
+    'mov'  => 'video/quicktime',
+    'mp2'  => 'audio/mpeg',
+    'mp3'  => 'audio/mpeg',
+    'mpe'  => 'video/mpeg',
+    'mpeg' => 'video/mpeg',
+    'mpg'  => 'video/mpeg',
+    'mpga' => 'audio/mpeg',
+    'pdf'  => 'application/pdf',
+    'png'  => 'image/png',
+    'ppt'  => 'application/vnd.ms-powerpoint',
+    'ps'   => 'application/postscript',
+    'qt'   => 'video/quicktime',
+    'ras'  => 'image/x-cmu-raster',
+    'rgb'  => 'image/x-rgb',
+    'rm'   => 'audio/x-pn-realaudio',
+    'rtf'  => 'text/rtf',
+    'swf'  => 'application/x-shockwave-flash',
+    'tif'  => 'image/tiff',
+    'tiff' => 'image/tiff',
+    'txt'  => 'text/plain',
+    'wm'   => 'video/x-ms-wm',
+    'wma'  => 'audio/x-ms-wma',
+    'wmv'  => 'video/x-ms-wmv',
+    'xls'  => 'application/vnd.ms-excel',
+    'xml'  => 'text/xml',
+    'zip'  => 'application/zip');
+  //
+  const MIME_PDF = 'application/pdf';
+  const MIME_XML = 'text/xml';
+  //
+  public function __construct($ugid, $dir) {
+    if (! is_dir($dir))
+      if (! mkdir($dir, 0, true))
+        throw new GroupFolderException($dir, 'Unable to access directory');
+    $this->dir = $dir;
+    $this->ugid = $ugid;
+  }
+  /**
+   * @param GroupUpload $upload
+   * @return GroupFile
+   */
+  public function upload($upload) {
+    $filename = $this->getCompleteFilename($upload->name);
+    move_uploaded_file($upload->tmpName, $filename);
+    return GroupFile::from($this, $upload->name);
+  }
+  /**
+   * @param GroupUpload[] $uploads
+   */
+  public function uploadAll($uploads) {
+    foreach ($uploads as $upload)
+      static::upload($upload);
+  }
+  /**
+   * @param GroupFile $file
+   * @param string $mime 'image/jpeg' (optional, determined from extension if omitted)
+   */
+  public function output($file, $mime = null) {
+    $file->output($mime);
+  }
+  /**
+   * @param GroupFile $file
+   * @param string $mime 'image/jpeg' (optional, determined from extension if omitted)
+   */
+  public function download($file, $mime = null) {
+    $file->download($mime);
+  }
+  /**
+   * @param GroupFile $file
+   */
+  public function delete($file) {
+    $file->delete();
+  }
+  /**
+   * @param string $filename
+   * @return string
+   */
+  public function getHash($filename) {
+    return sha1_file($filename);
+  }
+  /**
+   * @param string $filename 'file.xml'
+   * @return string 'complete\path\file.xml'
+   */
+  public function getCompleteFilename($filename) {
+    return "$this->dir\\$filename";
+  }
+  //
+  /**
+   * @param int $ugid (optional, omit to default)
+   * @param string $dir subdirectory
+   * @return GroupFolder
+   */
+  static function open($ugid = null, $dir = null) {
+    if ($ugid == null) {
+      global $login;
+      $ugid = $login->userGroupId;
+    }
+    $root = "user-folders\\G$ugid";
+    if ($dir)
+      $root .= "\\$dir";
+    return new static($ugid, $root);
+  }
+  /**
+   * @param $httpPostFile $_FILES field array('name'=>..,'type'=>..,'tmp_name'=>..,'error'=>..,'size'=>)
+   * @return GroupUpload[]
+   * @throws GroupUploadException
+   */
+  static function getUploads($httpPostFile) {
+    $files = GroupUpload::fromHttpPostFile($httpPostFile);
+    if (empty($files))
+      throw new GroupUploadException(null, 'No files were selected');
+    return $files;
+  }
+  /**
+   * @param string $filename 'file.jpeg'
+   * @return string 'image/jpeg'
+   * @throws GroupFolderException
+   */
+  static function getMime($filename) {
+    $ext = strtolower(end(explode('.', $filename)));
+    $mime = geta(static::$EXT_TO_MIME, $ext);
+    if ($mime == null)
+      throw new GroupFolderException(null, "Unable to determine MIME of $filename");
+    return $mime;
+  }
+}
+//
+class GroupFolderException extends DisplayableException {
+  public $dir;
+  public function __construct($dir, $message) {
+    $this->dir = $dir;
+    $this->message = $message;
+  }
+}
+/**
+ * GroupFile
+ */
+class GroupFile extends Rec {
+  //
+  public $filename;  // 'file.xml'
+  //
+  public $contents;
+  public $hash;
+  public /*GroupFolder*/ $folder;
+  //
+  public function getJsonFilters() {
+    return array(
+      'contents' => JsonFilter::omit());
+  }
+  public function getCompleteFilename() {
+    return $this->folder->getCompleteFilename($this->filename);
+  }
+  public function setContents($contents) {
+    $this->contents = $contents;
+    $this->hash = sha1($this->contents);
+  }
+  /**
+   * @param string $password for decryption (optional)
+   * @return string contents
+   */
+  public function readContents($password = null) {
+    $contents = file_get_contents($this->getCompleteFilename());
+    if ($password)
+      $contents = static::decrypt($password, $contents);
+    $this->setContents($contents);
+    return $contents;
+  }
+  /**
+   * @param string $contents of file
+   * @param string $password for encryption (optional)
+   * @return GroupFile
+   */
+  public function save($contents, $password = null) {
+    if ($password)
+      $contents = static::encrypt($password, $contents);
+    $this->setContents($contents);
+    file_put_contents($this->getCompleteFilename(), $this->contents);
+    return $this;
+  }
+  public function download($mime = null) {
+    $mime = ($mime) ? $mime : GroupFolder::getMime($this->filename);
+    ob_clean();
+    header("Pragma: ");
+    header("Cache-Control: ");
+    header("Content-type: $mime");
+    header('Content-Disposition: attachment; filename="' . $this->filename . '"');
+    readfile($this->getCompleteFilename());
+  }
+  public function output($mime = null) {
+    $mime = ($mime) ? $mime : GroupFolder::getMime($this->filename);
+    ob_clean();
+    header("Pragma: ");
+    header("Cache-Control: ");
+    header("Content-type: $mime");
+    readfile($this->getCompleteFilename());
+  }
+  public function delete() {
+    unlink($this->getCompleteFilename());
+  }
+  //
+  /**
+   * @param GroupFolder $folder
+   * @param string $filename 'file.xml'
+   * @return GroupFile
+   */
+  static function from($folder, $filename) {
+    $me = new static();
+    $me->folder = $folder;
+    $me->filename = $filename;
+    return $me;
+  }
+  //
+  private static function encrypt($pass, $text) {
+    $c = new cryptastic();
+    $key = static::getEncryptKey($c, $pass);
+    return $c->encrypt($text, $key, true);
+  }
+  private static function decrypt($pass, $text) {
+    $c = new cryptastic();
+    $key = static::getEncryptKey($c, $pass);
+    return $c->decrypt($text, $key, true);
+  }
+  private static function getEncryptKey($c, $pass) {
+    $salt = 'lcd solutions';
+    return $c->pbkdf2($pass, $salt, 1966, 32);
+  }
+}
+/**
+ * GroupUpload
+ */
+class GroupUpload extends Rec {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  const M = 1000000;
+  const K = 1000;
+  //
+  static $TYPE_IMAGES = array(
+    'image/jpeg',
+    'image/pjpeg',
+    'image/bmp',
+    'image/x-windows-bmp',
+    'image/gif',
+    'image/x-png');
+  //
+  public function __construct() {
+    $args = func_get_args();
+    call_user_func_array(array('Rec', '__construct'), $args);
+    $this->validate();
+  }
+  public function validate() {
+    logit_r($this, 'validate this');
+    $types = static::getValidTypes();
+    if ($types) {
+      if (! in_array($this->type, $types))
+        throw new GroupUploadException($this, static::getInvalidTypeMessage());
+      if (! in_array(GroupFolder::getMime($this->name), $types))
+        throw new GroupUploadException($this, "File extension is not of an allowable type.");
+    }
+    $max = static::getMaxSize();
+    if ($max)
+      if ($this->size > $max)
+        throw new GroupUploadException($this, "$this->name is too large; files must be less than " . static::formatSize($max) . " in size");
+  }
+  /**
+   * @return array(GroupUpload,..)
+   */
+  static function asUploads() {
+    $uploads = static::fromHttpPostFile(current($_FILES));
+    if (empty($uploads))
+      throw new GroupUploadException(null, 'Please select a file for upload.');
+    return $uploads;
+  }
+  /**
+   * @return GroupUpload
+   */
+  static function asUpload() {
+    $recs = static::asUploads();
+    return current($recs);
+  }
+  //
+  protected static function getValidTypes() {
+    // return array('image/jpeg',..)
+  }
+  protected static function getMaxSize() {
+    return static::M;  // default 1M
+  }
+  protected static function getInvalidTypeMessage() {
+    return 'File is not of an allowable type.';
+  }
+  //
+  private static function fromHttpPostFile($f) {
+    $recs = array();
+    arrayifyEach($f);
+    for ($i = 0, $j = count($f['name']); $i < $j; $i++) {
+      if ($f['name'][$i]) {
+        $name = '0_' . str_replace(' ', '_', $f['name'][$i]);  // to ensure names do not begin with dash or contain spaces, which messes with bat commands
+        $recs[] = new static($name, $f['type'][$i], $f['tmp_name'][$i], $f['error'][$i], $f['size'][$i]);
+      }
+    }
+    return $recs;
+  }
+  private static function formatSize($i) {
+    if ($i < static::M)
+      return round($i / static::K, 2) . 'K';
+    else
+      return round($i / static::M, 2) . 'M';
+  }
+}
+//
+class GroupUploadException extends DisplayableException {
+  public $uploadFile;
+  public function __construct($uploadFile, $message) {
+    $this->upload = $uploadFile;
+    $this->message = $message;
+  }
+}
+/**
+ * Cryptastic
+ * http://www.itnewb.com/tutorial/PHP-Encryption-Decryption-Using-the-MCrypt-Library-libmcrypt
+ *
+ * Cipher used: rijndael-256 @see http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+ */
+class cryptastic {
+
+    /** Encryption Procedure
+     *
+     *  @param mixed msg message/data
+     *  @param string k encryption key
+     *  @param boolean base64 base64 encode result
+     *
+     *  @return string iv+ciphertext+mac or
+     * boolean false on error
+    */
+    public function encrypt( $msg, $k, $base64 = false ) {
+
+        # open cipher module (do not change cipher/mode)
+        if ( ! $td = mcrypt_module_open('rijndael-256', '', 'ctr', '') )
+            return false;
+
+        $msg = serialize($msg);                         # serialize
+        $iv = mcrypt_create_iv(32, MCRYPT_RAND);        # create iv
+
+        if ( mcrypt_generic_init($td, $k, $iv) !== 0 )  # initialize buffers
+            return false;
+
+        $msg = mcrypt_generic($td, $msg);               # encrypt
+        $msg = $iv . $msg;                              # prepend iv
+        $mac = $this->pbkdf2($msg, $k, 1000, 32);       # create mac
+        $msg .= $mac;                                   # append mac
+
+        mcrypt_generic_deinit($td);                     # clear buffers
+        mcrypt_module_close($td);                       # close cipher module
+
+        if ( $base64 ) $msg = base64_encode($msg);      # base64 encode?
+
+        return $msg;                                    # return iv+ciphertext+mac
+    }
+
+    /** Decryption Procedure
+     *
+     *  @param string msg output from encrypt()
+     *  @param string k encryption key
+     *  @param boolean base64 base64 decode msg
+     *
+     *  @return string original message/data or
+     * boolean false on error
+    */
+    public function decrypt( $msg, $k, $base64 = false ) {
+
+        if ( $base64 ) $msg = base64_decode($msg);          # base64 decode?
+
+        # open cipher module (do not change cipher/mode)
+        if ( ! $td = mcrypt_module_open('rijndael-256', '', 'ctr', '') )
+            return false;
+
+        $iv = substr($msg, 0, 32);                          # extract iv
+        $mo = strlen($msg) - 32;                            # mac offset
+        $em = substr($msg, $mo);                            # extract mac
+        $msg = substr($msg, 32, strlen($msg)-64);           # extract ciphertext
+        $mac = $this->pbkdf2($iv . $msg, $k, 1000, 32);     # create mac
+
+        if ( $em !== $mac )                                 # authenticate mac
+            return false;
+
+        if ( mcrypt_generic_init($td, $k, $iv) !== 0 )      # initialize buffers
+            return false;
+
+        $msg = mdecrypt_generic($td, $msg);                 # decrypt
+        $msg = unserialize($msg);                           # unserialize
+
+        mcrypt_generic_deinit($td);                         # clear buffers
+        mcrypt_module_close($td);                           # close cipher module
+
+        return $msg;                                        # return original msg
+    }
+
+    /** PBKDF2 Implementation (as described in RFC 2898);
+     *
+     *  @param string p password
+     *  @param string s salt
+     *  @param int c iteration count (use 1000 or higher)
+     *  @param int kl derived key length
+     *  @param string a hash algorithm
+     *
+     *  @return string derived key
+    */
+    public function pbkdf2( $p, $s, $c, $kl, $a = 'sha256' ) {
+
+        $hl = strlen(hash($a, null, true)); # Hash length
+        $kb = ceil($kl / $hl);              # Key blocks to compute
+        $dk = '';                           # Derived key
+
+        # Create key
+        for ( $block = 1; $block <= $kb; $block ++ ) {
+
+            # Initial hash for this block
+            $ib = $b = hash_hmac($a, $s . pack('N', $block), $p, true);
+
+            # Perform block iterations
+            for ( $i = 1; $i < $c; $i ++ )
+
+                # XOR each iterate
+                $ib ^= ($b = hash_hmac($a, $b, $p, true));
+
+            $dk .= $ib; # Append iterated block
+        }
+
+        # Return derived key of correct length
+        return substr($dk, 0, $kl);
+    }
+}

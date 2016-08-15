@@ -1,0 +1,59 @@
+/**
+ * Rec Proc
+ *   RecArray Results
+ */
+Proc = Object.Rec.extend({
+  //
+  onload:function() {
+    this.ProcResults = ProcResults.create(this).revive(this.ProcResults, ProcResult.create(this));
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  /*
+   * @arg int cid
+   * @return Proc
+   */
+  asNew:function(cid) {
+    return this.revive({'clientId':cid});
+  },
+  /*
+   * @arg int procId
+   * @return Proc
+   */
+  fetch:function(procId, callback) {
+    Ajax.Procedures.get(procId, callback);
+  }
+})
+//
+Procedures = Object.RecArray.of(Proc, {
+  //
+  getMostRecent:function(ipc) {  // assumes Procedures loaded most recent to earliest
+    for (var i = 0; i < this.length; i++)
+      if (this[i].ipc == ipc)
+        return this[i];
+  }
+})
+/**
+ * Rec ProcResult
+ */
+ProcResult = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  //
+  asNew:function(procId) {
+    return this.revive({'procId':procId});
+  }
+})
+ProcResults = Object.RecArray.of(ProcResult, {
+  //
+  newItem:function(procId) {
+    return this.itemProto.asNew(procId);
+  }
+})
+//
+Ipc_NotFound = {
+  name:'NOT FOUND'
+}

@@ -1,0 +1,299 @@
+<?php
+require_once 'php/data/rec/sql/PortalUsers_Session.php';
+require_once 'php/data/rec/sql/Messaging.php';
+require_once 'php/data/rec/sql/PortalScanning.php';
+require_once 'php/data/rec/sql/Documentation.php';
+//
+/**
+ * Patient Portal Messaging
+ * @author Warren Hornsby 
+ */
+class PortalMessaging {
+  //
+  /**
+   * @return int total unread
+   */
+  static function getMyUnreadCt() {
+    $sess = PortalSession::get();
+    return PortalInbox::countUnread($sess->portalUserId);    
+  }
+  /**
+   * @return array(MsgThread(+MsgInbox),..)
+   */
+  static function getMyInboxThreads() {
+    $sess = PortalSession::get();
+    $inboxes = PortalInbox::fetchAllForInbox($sess->portalUserId);
+    return MsgThread_Portal::fetchAllByInboxes($inboxes);
+  }
+  /**
+   * @param int $mtid
+   * @return MsgThread
+   */
+  static function openThread($mtid) {
+    $sess = PortalSession::get();
+    $thread = self::getThread($sess, $mtid);
+    if ($thread) {
+      $thread->MsgPosts = Rec::sort(MsgPost::fetchByThread($thread), new RecSort('postId'));
+      PortalInbox::saveAsRead($thread);
+      // TODO: auditing
+    }
+    return $thread;
+  }
+  /**
+   * @param string $subject
+   * @param int[] $sendTos
+   * @param string $body
+   */
+  static function newThread($subject, $sendTos, $body) {
+    $sess = PortalSession::get();
+    $sendTo = self::buildSendToNames($sess, $sendTos);
+    $thread = MsgThread_Portal::asNew($sess->userGroupId, $sess->clientId, $sess->portalUserId, $sess->name, $subject, MsgThread::PRIORITY_NORMAL);
+    $thread->save();
+    if ($thread) {
+      $post = self::addPost($sess, MsgPost::ACTION_CREATE, $thread, $sendTo, $body);
+      MsgInbox::saveAsUnreadFor($sendTos, $post);
+    }
+    return $thread;
+  }
+  /**
+   * @return array(id=>name,..)
+   */
+  static function getMySendTos() {
+    $sess = PortalSession::get();
+    $recs = User_Ps::fetchDoctors($sess->userGroupId);
+    return User_Ps::asIdNameMap($recs);
+  }
+  /**
+   * @param int $mtid
+   * @param int[] $sendTos
+   * @param string $body
+   */
+  static function postReply($mtid, $sendTos, $body) {
+    $sess = PortalSession::get();
+    $sendTo = self::buildSendToNames($sess, $sendTos);
+    $thread = self::getThread($sess, $mtid);
+    if ($thread) {
+      $post = self::addPost($sess, MsgPost::ACTION_REPLY, $thread, $sendTo, $body);
+      //$thread->Inbox->saveAsSent($post);
+      MsgInbox::saveAsUnreadFor($sendTos, $post);
+    }
+  }
+  //
+  private static function getThread($sess, $mtid) {
+    $thread = MsgThread_Portal::fetch($mtid, 1);
+    if ($thread) {
+      if ($thread->clientId != $sess->clientId)
+        throw new SecurityException("Access not allowed: mtid ($mtid) uid($sess->portalUserId) ugid($sess->userGroupId) cid($sess->clientId)");
+      $thread->Inbox = PortalInbox::fetchByRecip($sess->portalUserId, $thread);
+    }
+    return $thread; 
+  }
+  private static function buildSendToNames($sess, $ids) {
+    $map = User_ps::fetchGroupMap($sess->userGroupId);
+    $s = array();
+    foreach ($ids as $id) 
+      $s[$id] = self::getRecipName($map, $id);
+    return implode($s, ';');
+  }
+  private static function getRecipName($map, $id) {
+    $r = geta($map, $id);
+    if ($r == null) 
+      throw new SecurityException("Invalid sendto: $id");
+    return $r->name;
+  }
+  private static function addPost($sess, $action, $thread, $sendTo, $body) {
+    $post = MsgPost::fromUi($sess->portalUserId, $sess->name, $action, $thread->threadId, $sendTo, $body, null);
+    $post->save();
+    return $post;
+  }
+}
+/**
+ * SqlRec PortalInbox
+ */
+class PortalInbox extends SqlRec implements NoAudit {
+  //
+  public $portalInboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  //
+  public function getSqlTable() {
+    return 'portal_inbox';
+  }
+  public function saveAsSent($post) {
+    if ($this->isRead == MsgInbox::IS_READ) {
+      $this->postId = $post->postId;
+      $this->isRead = MsgInbox::IS_SENT;
+      $this->save();
+    }
+  }
+  //
+  static function countUnread($puserId) {
+    $rec = new self();
+    $rec->recipient = $puserId;
+    $rec->isRead = MsgInbox::IS_UNREAD;
+    return SqlRec::count($rec);
+  }
+  static function fetchAllForInbox($puserId) {
+    return self::fetchAllByIsRead($puserId, CriteriaValue::lessThan(MsgInbox::IS_SENT));
+  }
+  static function fetchByRecip($puserId, $thread) {
+    $inbox = new self();
+    $inbox->recipient = $puserId;
+    $inbox->threadId = $thread->threadId;
+    return SqlRec::fetchOneBy($inbox);
+  }
+  static function saveAsRead($thread) {
+    $inbox = &$thread->Inbox;
+    if ($inbox && $inbox->isRead == MsgInbox::IS_UNREAD) { 
+      $post = $thread->getLastPost();
+      if ($post) 
+        $inbox->postId = $post->postId;
+      $inbox->isRead = MsgInbox::IS_READ;
+      $inbox->save();
+    }
+  }
+  static function saveAsUnreadFor($puserId, $post) {
+    $mtid = $post->threadId;
+    $mpid = $post->postId;
+    $inbox = self::fetchOrCreate($mtid, $puserId);
+    $inbox->postId = $mpid;
+    $inbox->isRead = MsgInbox::IS_UNREAD;
+    $inbox->save();
+  }
+  //
+  private static function fetchAllByIsRead($puserId, $isRead) {
+    $rec = new self();
+    $rec->recipient = $puserId;
+    $rec->isRead = $isRead;
+    $rec->MsgPost = new MsgPost();
+    return SqlRec::fetchAllBy($rec);
+  }
+  private static function fetchOrCreate($mtid, $id) {
+    $inbox = self::fetchOneBy(self::_create($mtid, $id));
+    return ($inbox) ? $inbox : self::_create($mtid, $id);
+  }
+  private static function _create($mtid, $id) {
+    return new self(null, $id, $mtid);
+  }
+}
+/**
+ * MsgThread MsgThread_Portal
+ */
+class MsgThread_Portal extends MsgThread implements NoAudit {
+  //
+  public function attachStub() {
+    $this->Stub = DocStub_Portal::fetchWithPreview($this->stubType, $this->stubId);
+  }
+  static function fetch($mtid) {
+    $c = new static($mtid);
+    $c->ClientStub = new ClientStub();
+    $rec = parent::fetchOneBy($c);
+    $rec->attachStub();
+    return $rec;
+  }
+  static function fetchAllByInboxes($inboxes) {
+    $threads = array();
+    foreach ($inboxes as &$inbox) {
+      $thread = self::fetch($inbox->threadId);
+      $thread->Inbox = $inbox;
+      if (! $thread->isClosed() || $thread->MsgInbox->isRead == MsgInbox::IS_UNREAD) 
+        $threads[] = $thread;
+    }
+    Rec::sort($threads, new RecSort('Inbox.isRead', '-priority', '-Inbox.postId'));
+    return $threads;
+  }
+  //
+  static function asNew($ugid, $cid, $creatorId, $creator, $subject, $priority) {
+    $me = new static();
+    $me->userGroupId = $ugid;
+    $me->clientId = $cid;
+    $me->creatorId = $creatorId;
+    $me->creator = $creator;
+    $me->dateCreated = nowNoQuotes();
+    $me->type = static::TYPE_PATIENT;
+    $me->status = static::STATUS_OPEN;
+    $me->priority = $priority;
+    $me->subject = $subject;
+    return $me;
+  }
+  protected function getAuthenticator() {
+    return 'PortalSqlAuthenticator';
+  }
+  protected function fetchUgidWithin($table, $col, $id) {
+    return SqlRec::_fetchUgidWithin($table, $col, $id);
+  }
+} 
+/**
+ * DocStub DocStub_Portal
+ */
+class DocStub_Portal extends DocStub implements NoAudit {
+  //
+  static function fetchWithPreview($type, $id) {
+    $me = static::fetch($type, $id);
+    $me->Preview = static::fetchForPreview($me, null);
+    return $me;
+  }
+  //
+  static function getRecClass($type) {
+    switch ($type) {
+      case self::TYPE_SESSION:
+        return 'DocSession_Portal';
+      case self::TYPE_MSG:
+        return 'DocMessage';
+      case self::TYPE_APPT: 
+        return 'DocAppt';
+      case self::TYPE_ORDER:
+        return 'DocOrder';
+      case self::TYPE_SCAN:
+        return 'DocScan_Portal';
+      case self::TYPE_SCAN_XML:
+        return 'DocScan_Xml';
+      case self::TYPE_RESULT:
+        return 'DocProc'; 
+    }
+  }
+  protected function getAuthenticator() {
+    return 'PortalSqlAuthenticator';
+  }
+}
+//
+class DocSession_Portal extends DocSession {
+  //
+  static function asCriteria($cid) {
+    $c = new static();
+    $c->clientId = $cid;
+    return $c;
+  }
+  //  
+  protected function getAuthenticator() {
+    return 'PortalSqlAuthenticator';
+  }
+}
+class DocScan_Portal extends DocScan {
+  //
+  public function attachFiles() {
+    $this->ScanFiles = ScanFile_Portal::fetchAllIndexedTo($this->scanIndexId);
+  }
+  //  
+  static function fetch($id) {
+    $c = new static();
+    $c->scanIndexId = $id;
+    $rec = static::fetchOneBy($c);
+    $rec->attachFiles();
+    return $rec;
+  }
+  static function fetchForPreview($id) {
+    return static::fetch($id);
+  }
+  static function asCriteria($cid) {
+    $c = new static();
+    $c->clientId = $cid;
+    return $c;
+  }
+  //
+  protected function getAuthenticator() {
+    return 'PortalSqlAuthenticator';
+  }
+}

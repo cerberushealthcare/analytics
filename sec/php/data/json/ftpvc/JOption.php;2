@@ -1,0 +1,51 @@
+<?php
+require_once "php/data/json/_util.php";
+//
+class JOption {
+  //
+	public $uid;
+	public $desc;
+	public $text;
+	public $shape;
+	public $coords;
+	public $sync;
+	public $cpt;
+	public $trackCat;
+	//  
+  public $icd;  // for defaulting ICD
+	public $icdDesc;
+	//
+	public function __construct($uid, $desc, $text, $shape, $coords, $sync, $cpt, $trackCat) {
+		$this->uid = $uid;
+		$this->desc = $desc;
+		$this->text = $text;
+		$this->shape = $shape;
+		$this->coords = $coords;
+		$this->sync = $sync;
+		$this->cpt = $cpt;
+		$this->trackCat = $trackCat;
+	}
+  public function getText() {
+    return ($this->text != null) ? $this->text : $this->desc;
+  }
+  public function isTrackable() {
+    return ($this->trackCat != null);
+  }
+	public function out() {
+	  $out = "";
+	  $out = nqq($out, "uid", $this->uid);
+    $out = nqq($out, "text", $this->text);
+    $out = nqq($out, "sync", $this->sync);
+    $out = nqq($out, "cpt", $this->cpt);
+    $out = nqq($out, "tcat", $this->trackCat);
+    $out = nqq($out, "icd", $this->icd);
+    $out = nqq($out, "icdDesc", $this->icdDesc);
+    return cb($out);    
+	}
+	//
+	// Statics
+	public static function buildOther() {
+	  return new JOption("other", "other", "other", "", "", "", "", "");
+	}
+}
+?>

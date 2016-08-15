@@ -1,0 +1,47 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/Reporting.php'; 
+require_once 'php/data/csv/report-download/ReportCsvFile.php';
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->Report->any());
+  switch ($action) {
+    //
+    case 'newReport':
+      $report = Reporting::newReport($_GET['id']);
+      AjaxResponse::out($action, $report);
+      exit;
+    case 'getJoin':
+      $join = Reporting::getJoin($_GET['id']);
+      AjaxResponse::out($action, $join);
+      exit;
+    case 'getReport':
+      $report = Reporting::getReport($_GET['id']);
+      AjaxResponse::out($action, $report);
+      exit;
+    case 'deleteReport':
+      $report = Reporting::deleteReport($_GET['id']);
+      AjaxResponse::out($action, $_GET['id']);
+      exit;
+    case 'getStubs':
+      $stubs = Reporting::getStubs();
+      AjaxResponse::out($action, $stubs);
+      exit;
+    case 'save':
+      $report = Reporting::save($obj);
+      AjaxResponse::out($action, $report);
+      exit;
+    case 'generate':
+      $report = Reporting::generate($obj);
+      AjaxResponse::out($action, $report);
+      exit;
+    case 'download':
+      $report = Reporting::generateForDownload($_GET['id'], $_GET['num']);
+      $file = ReportCsvFile::from($report, $report->recs);
+      $file->download();
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

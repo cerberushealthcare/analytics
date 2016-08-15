@@ -1,0 +1,54 @@
+DIV.cv-line {
+  position:absolute;
+  height:0;
+  margin:0;
+  padding:0;
+  border-width:1px 0 0 0;
+  border-style:solid;
+  border-color:black;
+}
+DIV.cv-box {
+  position:absolute;
+  height:0;
+  margin:0;
+  padding:0;
+  border-width:1px;
+  border-style:solid;
+  border-color:black;
+}
+DIV.cv-pt {
+  position:absolute;
+  height:3px;
+  width:3px;
+  font-size:0;
+  background-color:black;
+}
+DIV.cv-label {
+  position:absolute;
+  font-size:8pt;
+  font-family:Tahoma;
+  color:black;
+  width:100px;
+  height:12px;
+  line-height:12px;
+}
+DIV.cv-legend {
+  position:absolute;
+  font-size:10pt;
+  font-family:Arial;
+  background-color:white;
+  padding:5px;
+}
+.cv-poly {
+  cursor:pointer;
+  background-color:white;
+}
+.cv-poly:hover {
+  background-color:red;
+}
+.cv-poly-box {
+  cursor:pointer;
+}
+IMG.cv-graph {
+  position:absolute;
+}

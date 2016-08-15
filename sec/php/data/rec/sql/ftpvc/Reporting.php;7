@@ -1,0 +1,569 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Allergies.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/Vitals.php';
+//
+/**
+ * Reporting DAO
+ * @author Warren Hornsby
+ */
+class Reporting {
+  /**
+   * @return ReportCriteria
+   */
+  static function newReport() {
+    return ReportCriteria::asPatientReport();
+  }
+  /**
+   * @param ReportCriteria $report
+   * @return array(Rec,..)
+   */
+  static function generate($report) {
+    global $myLogin;
+    $client = new RepCrit_Client($report->Rec);
+    $criteria = RepCrit::asSqlCriteria($client, $myLogin->userGroupId);
+    $recs = Client_Rep::fetchAllBy($criteria);
+    Rec::sort($recs, new RecSort('lastName', 'firstName'));
+    return $recs;
+  }
+  /**
+   * @param string $table 'Meds'
+   * @return RepCritJoin
+   */
+  static function getJoin($table) {
+    return RepCritJoin::forTable($table); 
+  }
+  //
+  static function test1() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $diagnosis = new Diagnosis_Rep();
+    $med = new Med_Rep();
+    //
+    $client->birth = CriteriaValue::betweenAge(0, 13);
+    $diagnosis->icd = CriteriaValue::startsWith('493');
+    $diagnosis->status = Diagnosis::getActiveCriteriaValue();
+    $med->name = CriteriaValue::startsWith('advair');
+    $med->active = true;
+    //
+    $client->Diagnosis = CriteriaJoin::requiresAsArray($diagnosis);
+    $client->Med =  CriteriaJoin::requiresAsArray($med);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test2() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $immun = new Immun_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(65);
+    $immun->name = 'Influenza';
+    $immun->dateGiven = CriteriaValue::betweenAge(0, 1);
+    //
+    $client->Immun = CriteriaJoin::notExists($immun); 
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3a() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $diagnosis = new Diagnosis_Rep();
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    $result3 = new ProcResult_Rep();
+    $result4 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $diagnosis->icd = CriteriaValue::startsWith('428');
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(40);
+    $result3->ipc = '600002';
+    $result3->value = CriteriaValue::greaterThanNumeric(100);
+    $result4->ipc = '600003';
+    $result4->value = CriteriaValue::greaterThanNumeric(150);
+    //
+    $client->Diagnoses = CriteriaJoin::requires($diagnosis);
+    $client->Results = CriteriaJoin::requiresAnyOf(array($result1, $result2, $result3, $result4));
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3b() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    $result3 = new ProcResult_Rep();
+    $result4 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(50);
+    $result3->ipc = '600002';
+    $result3->value = CriteriaValue::greaterThanNumeric(100);
+    $result4->ipc = '600003';
+    $result4->value = CriteriaValue::greaterThanNumeric(150);
+    //
+    $client->Results1 = CriteriaJoin::requiresAnyOf(array($result1, $result2));
+    $client->Results2 = CriteriaJoin::notExists($result3);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    $result3 = new ProcResult_Rep();
+    $result4 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(50);
+    $result3->ipc = '600002';
+    $result3->value = CriteriaValue::greaterThanNumeric(100);
+    $result4->ipc = '600003';
+    $result4->value = CriteriaValue::greaterThanNumeric(150);
+    //
+    $client->Results1 = CriteriaJoin::requires($result1);
+    $client->Results2 = CriteriaJoin::requires($result3);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3d() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    $result3 = new ProcResult_Rep();
+    $result4 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(50);
+    $result3->ipc = '600002';
+    $result3->value = CriteriaValue::greaterThanNumeric(100);
+    $result4->ipc = '600003';
+    $result4->value = CriteriaValue::greaterThanNumeric(150);
+    //
+    $client->Results1 = CriteriaJoin::optionalAnyOf(array($result1, $result2));
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test4() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $med = new Med_Rep();
+    //
+    $client->birth = CriteriaValue::betweenAge(1, 3);
+    //
+    $client->Meds = CriteriaJoin::requiresAsArray($med);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test0a() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $address1 = Address_Rep::asClientCriteria();
+    $address2 = Address_Rep::asClientCriteria();
+    $address1->city = CriteriaValue::startsWith('lex');
+    $address2->city = CriteriaValue::startsWith('lou');
+    $client->Address = CriteriaJoin::requiresOneOf(array($address1, $address2), 'tableId');
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test0() {
+    global $myLogin;
+    $client = new RepCrit_Client();
+    $client->birth = new RepCritValue(RepCritValue::OP_AGERANGE, '44,45');
+    $diagnosis = new RepCrit_Diagnosis();
+    $diagnosis->icd = new RepCritValue(RepCritValue::OP_START, '428');
+    $diagnosis2 = new RepCrit_Diagnosis();
+    $diagnosis2->icd = new RepCritValue(RepCritValue::OP_START, '496');
+    $client->Joins = array(RepCritJoin::from(RepCritJoin::JT_REQ, array($diagnosis, $diagnosis2)));
+        print_r(jsonencode($client));
+        exit;
+    $criteria = RepCrit::asSqlCriteria($client, $myLogin->userGroupId);
+    $recs = Client_Rep::fetchAllBy($criteria);
+    print_r($recs);
+    exit;
+  }
+}
+class ReportCriteria extends Rec implements SerializeNulls {
+  //
+  public $name;
+  public /*RepCrit*/ $Rec;
+  public /*RepCritJoin[]*/ $Joins;
+  //
+  static function asPatientReport() {
+    $rec = new self();
+    $rec->name = 'Patient Report';
+    $rec->Rec = new RepCrit_Client();
+    $rec->Rec->Joins = array();
+    return $rec;
+  }
+} 
+class RepCritValue extends Rec {
+  //
+  public $op;
+  public $value;
+  //
+  const OP_EQ = '1';
+  const OP_NEQ = '2';
+  const OP_START = '3';
+  const OP_CONTAIN = '4';
+  const OP_IN = '5';
+  const OP_NULL = '6';
+  const OP_NOT_NULL = '7';
+  const OP_LTN = '11';
+  const OP_GTN = '12';
+  const OP_BETWEEN = '13';
+  const OP_OLDER = '20';
+  const OP_YOUNGER = '21';
+  const OP_AGERANGE = '22';
+  const OP_IS = '30';
+  const OP_IS_NOT = '31';
+  static $OPS = array(
+    self::OP_EQ => 'equals',
+    self::OP_NEQ => 'not equals',
+    self::OP_START => 'starts with',
+    self::OP_CONTAIN => 'contains',
+    self::OP_IN => 'is one of',
+    self::OP_NULL => 'is empty',
+    self::OP_NOT_NULL => 'has a value',
+    self::OP_LTN => 'less than',
+    self::OP_GTN => 'greater than',
+    self::OP_BETWEEN => 'between',
+    self::OP_OLDER => 'older than',
+    self::OP_YOUNGER => 'younger than',
+    self::OP_AGERANGE => 'between',
+    self::OP_IS => 'is',
+    self::OP_IS_NOT => 'is not');
+  //
+  public function hasData() {
+    if ($this->op && $this->value)
+      return true;
+    if ($this->op == self::OP_NOT_NULL || $this->op == self::OP_NULL)
+      return true;
+  }
+  public function getValueArray() {
+    return explode(',', $this->value);
+  }
+  //
+  static function asSqlCriteriaValue($rec) {
+    if ($rec->hasData()) {
+      switch ($rec->op) {
+        case self::OP_EQ:
+        case self::OP_IS:
+          return CriteriaValue::equals($rec->value);
+        case self::OP_IS_NOT:
+          return CriteriaValue::notEquals($rec->value);
+        case self::OP_START:
+          return CriteriaValue::startsWith($rec->value);
+        case self::OP_CONTAIN:
+          return CriteriaValue::contains($rec->value);
+        case self::OP_NULL:
+          return CriteriaValue::isNull();
+        case self::OP_NOT_NULL:
+          return CriteriaValue::isNotNull();
+        case self::OP_LTN:
+          return CriteriaValue::lessThanNumeric($rec->value);
+        case self::OP_GTN:
+          return CriteriaValue::greaterThanNumeric($rec->value);
+        case self::OP_IN:
+          return CriteriaValue::in($rec->getValueArray());
+        case self::OP_BETWEEN:
+          return CriteriaValue::betweenNumeric($rec->getValueArray());
+        case self::OP_OLDER:
+          logit_r($rec->value, 'olderThan');
+          return CriteriaValue::olderThan($rec->value);
+        case self::OP_YOUNGER:
+          return CriteriaValue::betweenAge(array(0, $rec->value));
+        case self::OP_AGERANGE:
+          return CriteriaValue::betweenAge($rec->getValueArray());
+      }
+    }
+  }
+} 
+class RepCritJoin extends Rec {
+  //
+  public $jt;
+  public $table;
+  public /*RepCrit*/ $Recs;
+  //
+  const JT_HAVE = '1';
+  const JT_NOT_HAVE = '2';
+  const JT_HAVE_ONE = '10';
+  const JT_HAVE_ALL = '11';
+  const JT_NOT_HAVE_ANY = '12';
+  static $JTS = array(
+    self::JT_HAVE => 'having',
+    self::JT_NOT_HAVE => 'not having',
+    self::JT_HAVE_ONE => 'having at least one of',
+    self::JT_HAVE_ALL => 'having all of',
+    self::JT_NOT_HAVE_ANY => 'not having any of'
+  );
+  //
+  const T_DIAGNOSES = 'Diagnoses';
+  const T_MEDS = 'Medications';
+  const T_ALLERGIES = 'Allergies';
+  const T_PROCS = 'Procedures';
+  const T_RESULTS = 'Results';
+  const T_IMMUNS = 'Immunizations';
+  const T_VITALS = 'Vitals';
+  static $TABLES = array(
+    self::T_ALLERGIES, self::T_DIAGNOSES, self::T_IMMUNS, self::T_MEDS, self::T_PROCS, self::T_RESULTS, self::T_VITALS);
+  // 
+  protected function getClassFromJsonField($fid) {
+    switch ($this->table) {
+      case self::T_DIAGNOSES:
+        return 'RepCrit_Diagnosis';
+      case self::T_MEDS:
+        return 'RepCrit_Med';
+      case self::T_ALLERGIES:
+        return 'RepCrit_Allergy';
+      case self::T_PROCS:
+        return 'RepCrit_Proc';
+      case self::T_RESULTS:
+        return 'RepCrit_ProcResult';
+      case self::T_IMMUNS:
+        return 'RepCrit_Immun';
+      case self::T_VITALS:
+        return 'RepCrit_Vital';
+    }
+  }
+  protected function getSingular($fid) {
+    return $fid;
+  }
+  public function asSqlJoins() {
+    if ($this->hasData()) {
+      $joins = array();
+      $recs = RepCrit::asSqlCriterias($this->Recs);
+      switch ($this->jt) {
+        case self::JT_HAVE:
+          $joins[] = CriteriaJoin::requiresAsArray(current($recs));
+          break;
+        case self::JT_NOT_HAVE:
+          $joins[] = CriteriaJoin::notExists(current($recs));
+          break;
+        case self::JT_HAVE_ONE:
+          $joins[] = CriteriaJoin::requiresAnyOf($recs);
+          break;
+        case self::JT_HAVE_ALL:
+          foreach ($recs as $rec) 
+            $joins[] = CriteriaJoin::requiresAsArray($rec);
+          break;
+        case self::JT_NOT_HAVE_ANY:
+          foreach ($recs as $rec) 
+            $joins[] = CriteriaJoin::notExists($rec);
+          break;
+      }
+      return $joins;
+    }
+  }
+  public function hasData() {
+    return ($this->jt && count($this->Recs) > 0);
+  }
+  //
+  /**
+   * @param string $table
+   * @return RepCritJoin
+   */
+  static function forTable($table) {
+    $rec = new self();
+    $rec->jt = self::JT_HAVE;
+    $rec->table = $table;
+    $class = $rec->getClassFromJsonField($table);
+    $rec->Recs = array(new $class());
+    return $rec;
+  }
+}
+abstract class RepCrit extends Rec implements SerializeNulls {
+  //
+  public /*RepCrit[]*/ $Joins;
+  //
+  abstract public function getSqlClass(); 
+  //
+  protected function getClassFromJsonField($fid) {
+    if ($fid == 'Joins')
+      return 'RepCritJoins';
+    else
+      return 'RepCritValue';
+  }
+  public function toJsonObject(&$o) {
+    $o->_class = $this->getSqlClass();
+  }
+  /*
+   * Modify existing RepCritValues to convert this to a SqlRec criteria object
+   * @arg RepCrit $rec
+   * @arg int $ugid (optional, for base critiera) 
+   */
+  static function asSqlCriteria($rec, $ugid = null) {
+    $class = $rec->getSqlClass();
+    $c = new $class();
+    if ($ugid && $c->hasUserGroupId()) 
+      $c->userGroupId = $ugid;
+    foreach ($rec as $fid => $value) 
+      if ($value instanceof RepCritValue) 
+        $c->$fid = RepCritValue::asSqlCriteriaValue($value);
+    if (isset($rec->Joins)) {
+      $cjoins = array();
+      foreach ($rec->Joins as $join) 
+        $cjoins = array_merge($cjoins, $join->asSqlJoins());
+      $i = 0;
+      foreach ($cjoins as $cjoin) {
+        $fid = 'Join' . $i++;
+        $c->$fid = $cjoin;
+      }
+    }
+    return $c;
+  }
+  static function asSqlCriterias($recs) {
+    return self::fromRecs($recs, 'asSqlCriteria', __CLASS__);
+  }
+}
+class RepCrit_Client extends RepCrit {
+  //
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $deceased;
+  public $race;
+  public $ethnicity;
+  public $language;
+  //
+  public function getSqlClass() {
+    return 'Client_Rep';
+  }
+}
+class Client_Rep extends Client implements ReadOnly {
+  //
+}
+class RepCrit_Diagnosis extends RepCrit {
+  //
+  public $icd;
+  public $text;
+  public $status;
+  //
+  public function getSqlClass() {
+    return 'Diagnosis_Rep';
+  }
+}
+class Diagnosis_Rep extends Diagnosis implements ReadOnly {
+  //
+}
+class RepCrit_Med extends RepCrit {
+  //
+  public $name;
+  public $active;
+  //
+  public function getSqlClass() {
+    return 'Med_Rep';
+  }
+}
+class Med_Rep extends Med implements ReadOnly {
+  //
+}
+class RepCrit_Allergy extends RepCrit {
+  //
+  public $agent;
+  public $active;
+  //
+  public function getSqlClass() {
+    return 'Allergy_Rep';
+  }
+}
+class Allergy_Rep extends Allergy implements ReadOnly {
+  //
+  public function __construct() {
+    $this->sessionId = CriteriaValue::isNull();
+  }
+}
+class RepCrit_Proc extends RepCrit {
+  //
+  public $ipc;
+  public $date;
+  public $cat;
+  public $providerId;
+  public $addrFacility;
+  public $location;
+  //
+  public function getSqlClass() {
+    return 'Proc_Rep';
+  }
+}
+class Proc_Rep extends Proc implements ReadOnly {
+  //
+}
+class RepCrit_ProcResult extends RepCrit {
+  //
+  public $ipc;
+  public $date;
+  public $value;
+  public $valueUnit;
+  public $interpretCode;
+  //
+  public function getSqlClass() {
+    return 'ProcResult_Rep';
+  }
+}
+class ProcResult_Rep extends ProcResult implements ReadOnly {
+//
+}
+class RepCrit_Immun extends RepCrit {
+  //
+  public $name;
+  public $tradeName;
+  public $dateGiven;
+  public $manufac;
+  public $lot;
+  public $dose;
+  public $route;
+  public $site;
+  public $adminBy;
+  //
+  public function getSqlClass() {
+    return 'Immun_Rep';
+  }
+}
+class Immun_Rep extends Immun implements ReadOnly {
+  //
+}
+class RepCrit_Vital extends RepCrit {
+  //
+  public $date;
+  public $pulse;
+  public $resp;
+  public $bpSystolic;
+  public $bpDiastolic;
+  public $temp;
+  public $wt;
+  public $height;
+  public $bmi;
+  public $hc;
+  public $wc;
+  //
+  public function getSqlClass() {
+    return 'Vital_Rep';
+  }
+}
+class Vital_Rep extends Vital implements ReadOnly {
+  //
+}
+class Address_Rep extends AddressRec implements ReadOnly {
+  //
+} 
+?>

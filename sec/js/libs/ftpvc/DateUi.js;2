@@ -1,0 +1,114 @@
+/**
+ * Date UI Library
+ */
+var DateUi = {
+  //
+  MONTH_NAMES:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  MONTH_ABBR_IX:{'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11},
+  /*
+   * Convert string to Date
+   * - text: any format string, e.g. 'dd-mmm-yyyy', 'yyyy-mm-dd', 'mm-dd-yy', 'mm-dd-yyyy'
+   * Returns null if can't convert
+   */
+  toDate:function(text) {
+    if (text == null || ! isString(text)) 
+      return null;
+    var a, y, m, d;
+    if (text.indexOf('-') >= 0) 
+      a = text.split('-');
+    else
+      a = text.split('/');
+    if (a.length != 3)
+      return;
+    if (a[1].length == 3) {  // dd-mmm-yyyy
+      y = val(a[2]);
+      m = this.getMonthIndex(a[1]);
+      d = val(a[0]);
+    } else if (a[0].length == 4) {  // yyyy-mm-dd
+      y = val(a[0]);
+      m = val(a[1]) - 1;
+      d = val(a[2]);
+    } else {  // mm-dd-yy or mm-dd-yyyy
+      y = val(a[2]);
+      m = val(a[0]) - 1;
+      d = val(a[1]);
+      if (y < 100) 
+        if (y > 20) 
+          y += 1900;
+        else 
+          y += 2000;
+    }
+    var date = new Date(y, m, d);
+    if (date.toString() == 'NaN') 
+      date = null;
+    return date;
+  },
+  getMonthName:function(i) {
+    return DateUi.MONTH_NAMES[i];
+  },
+  getMonthAbbr:function(i) {
+    return DateUi.MONTH_NAMES[i].substr(0, 3);
+  },
+  getMonthIndex:function(abbr) {
+    return DateUi.MONTH_ABBR_IX[abbr];
+  }
+}
+/**
+ * Date Value object
+ * - text: optional, any formatted date string
+ */
+function DateValue(text) {
+  if (text)
+    this.setText(text);
+}
+DateValue.prototype = {
+  _date:null,
+  //
+  setDate:function(date) {
+    this._date = date;
+  },
+  setText:function(text) {
+    this.setDate(DateUi.toDate(text));
+  },
+  setYMD:function(y, m, d) {
+    this.setDate(y, m, d);
+  },
+  getDate:function() {
+    return this._date;
+  },
+  getYear:function() {
+    return (this._date) ? this._date.getFullYear() : null;
+  },
+  getMonth:function() {
+    return (this._date) ? this._date.getMonth() : null;
+  },
+  getMonthAbbr:function() {
+    return (this._date) ? DateUi.getMonthAbbr(this._date.getMonth()) : null;
+  },
+  getDay:function() {
+    return (this._date) ? lpad(this._date.getDate()) : null;
+  },
+  toString:function() {
+    var s;
+    if (this._date) 
+      s = this.getDay() + '-' + this.getMonthAbbr() + '-' + this.getYear(); 
+    else
+      s = '';
+    return s;
+  }
+}
+DateValue.fromDate = function(date) {
+  var dv = new DateValue();
+  dv.setDate(date);
+  return dv;
+}
+DateValue.fromNow = function() {
+  var dv = new DateValue();
+  dv.setDate(new Date());
+  return dv;
+}
+DateValue.fromYMD = function(y, m, d) {
+  var dv = new DateValue();
+  dv.setDate(new Date(y, m, d));
+  return dv;
+}

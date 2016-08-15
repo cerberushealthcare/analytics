@@ -1,0 +1,44 @@
+<?
+/**
+ * Tracking Item Entry
+ */
+?>
+<div id='pop-tie' class='pop' style='width:650px'>
+  <div class='pop-cap'>
+    <div>
+      Clicktate - Tracking Item Entry
+    </div>
+    <a href='javascript:TrackingEntry.pClose()' class='pop-close'></a>
+  </div>
+  <div class='pop-content'>
+    <ul id='tie-form'>
+    </ul>
+    <div class='pop-cmd'>
+      <a href='javascript:' onclick='TrackingEntry.pSave()' class='cmd save'>Save Changes</a>
+      <span>&nbsp;</span>
+      <a href='javascript:' onclick='TrackingEntry.pClose()' class='cmd none'>Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Tracking Add Orders
+ */
+?>
+<div id='pop-ta' class='pop' style='width:650px'>
+  <div class='pop-cap'>
+    <div>
+      Clicktate - Add Items
+    </div>
+    <a href='javascript:TrackingAdd.pClose()' class='pop-close'></a>
+  </div>
+  <div class='pop-content'>
+    <div id="ta-tui">
+    </div>
+    <div class='pop-cmd'>
+      <a href='javascript:' onclick='TrackingAdd.pOrder()' class='cmd gen-order'>Generate Order(s)...</a>
+      <span>&nbsp;</span>
+      <a href='javascript:' onclick='TrackingAdd.pClose()' class='cmd none'>Cancel</a>
+    </div>
+  </div>
+</div>

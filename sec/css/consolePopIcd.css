@@ -1,0 +1,146 @@
+DIV#icd-tree {
+  border:1px solid #c0c0c0; 
+  padding:0 10px 5px 10px;
+  margin:5px 0 10px 0; 
+  width:610px; 
+  height:280px; 
+  overflow-y:scroll;
+  overflow-x:hidden; 
+  scrollbar-face-color:#e0e0e0;
+}
+DIV#icd-tree UL {
+  list-style:none; 
+  margin:0 0 0 1.5em;
+}
+DIV#icd-tree LI {
+  margin:2px 0;
+  font-size:10pt;
+}
+DIV#icd-tree LI.i3 {
+  font-size:12pt;
+  padding-top:0.5em;
+}
+DIV#icd-tree LI.i4 {
+  font-size:10.5pt;
+  padding-top:0.1em;
+}
+DIV#icd-tree LI.i4 I {
+  font-size:10pt;
+}
+DIV#icd-tree SPAN.i3 {
+  font-weight:bold;
+}
+DIV#icd-tree LI.max {
+  font-size:12pt;
+  padding-top:0.5em;
+  text-indent:-1.5em;
+  font-style:italic;
+  color:red;
+}
+DIV#icd-tree A {
+  font-weight:bold;
+  color:blue;
+  padding:1px 4px;
+  text-indent:-1.5em;
+}
+DIV#icd-tree A.sel {
+  border:1px dashed #f42941;
+  background:white;
+  padding:0 3px;
+  color:#A12830;
+}
+DIV#icd-tree A SPAN {
+  color:black;
+  font-weight:normal;
+}
+DIV#icd-tree A:hover {
+  color:#f42941;
+  text-decoration:underline;
+}
+DIV#icd-tree A.sel:hover {
+  color:#A12830;
+  text-decoration:none;
+}
+DIV#icd-tree A:hover SPAN {
+  color:#f42941;
+}
+DIV#icd-tree A.sel:hover SPAN {
+  color:black;
+}
+DIV#icd-tree A U {
+  background-color:#FFFF80;
+  text-decoration:none;
+}
+DIV#icd-tree A:hover U {
+  text-decoration:underline;
+}
+DIV#icd-tree A.sel:hover U {
+  text-decoration:none;
+}
+DIV#icd-tree A.icd-more {
+  font-weight:normal;
+  color:purple;
+}
+SPAN#icd-desc {
+  font-weight:bold; 
+  font-size:11pt; 
+  padding-left:2px
+}
+DIV#icd-info {
+  border:1px solid #c0c0c0; 
+  padding:5px; 
+  margin:2px 0 0 0; 
+  background-color:white;
+  width:620px; 
+  height:120px; 
+  scrollbar-face-color:#e0e0e0;
+  overflow-y:scroll; 
+}
+DIV#icd-info TD.top {
+  vertical-align:top;
+  text-align:right;
+}
+DIV#icd-info TH.sub {
+  vertical-align:top;
+  padding-top:9px;
+  color:black;
+  text-align:right;
+  width:70px;
+}
+DIV#icd-info TD.sub {
+  padding-top:10px;
+}
+DIV#icd-info-code {
+  font-size:13pt;
+  font-weight:bold;
+  color:#A12830;
+  padding-right:5px;
+  width:70px;
+}
+SPAN#icd-info-desc {
+  font-size:13pt;
+  font-weight:normal;
+  color:black;
+}
+DIV#icd-info-syn {
+  font-size:10.5pt;
+}
+DIV.icd-info-head {
+  font-weight:bold;
+  margin:1em 0 0 0;
+  padding:0;
+}
+TH#icdNav {
+  text-align:right;
+  color:#a0a0a0;
+}
+TH#icdNav A {
+  color:#a0a0a0;
+}
+TH#icdNav A.enabled {
+  color:blue;
+}
+TH#icdNav A.enabled:hover {
+  color:#f42941;
+  text-decoration:underline;
+}

@@ -1,0 +1,1054 @@
+<?php
+require_once 'php/data/rec/sql/_SqlLevelRec.php';
+//
+/**
+ * Reporting DAO
+ * @author Warren Hornsby
+ */
+class Reporting {
+  /**
+   * @return ReportCriteria
+   */
+  static function newReport($tableId = RepCritRec::T_CLIENTS) {
+    $rc = ReportCriteria::asNewReport($tableId);
+    return $rc;
+  }
+  /**
+   * @param ReportCriteria $report
+   * @return ReportCriteria
+   */
+  static function generate($rc) {
+    global $myLogin;
+    $rc = ReportCriteria::revive($myLogin->userGroupId, $rc);
+    $rc->recs = $rc->Rec->fetchAll($myLogin->userGroupId);
+    if ($rc->type == ReportCriteria::TYPE_FRACTION) 
+      $rc->recsDenom = $rc->RecDenom->fetchAll($myLogin->userGroupId);
+    logit_r($rc->recs, 'generate recs');
+    return $rc;
+  }
+  /**
+   * @param ReportCriteria $rc
+   * @return ReportCriteria
+   */
+  static function save($rc) {
+    global $myLogin;
+    $rec = Report::fromReportCriteria($rc);
+    $rec = $rec->save($myLogin->userGroupId, $myLogin->userId);
+    return self::getReport($rec->reportId);
+  }
+  /**
+   * @param int $reportId
+   * @return ReportCriteria
+   */
+  static function getReport($reportId) {
+    $rec = Report::fetch($reportId);
+    if ($rec)
+      return ReportCriteria::fromReport($rec);
+    else
+      return ReportCriteria::asNewReport();
+  }
+  /**
+   * @param int $reportId
+   * @return int
+   */
+  static function deleteReport($reportId) {
+    $rec = Report::fetch($reportId);
+    if ($rec) {
+      Report::delete($rec);
+      return $reportId;
+    }
+  }
+  /**
+   * @return ReportStub[]
+   */
+  static function getStubs() {
+    global $myLogin;
+    $recs = ReportStub::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('tableId', 'name'));
+  }
+  /**
+   * @param string $table 'Meds'
+   * @return RepCritJoin
+   */
+  static function getJoin($table) {
+    return RepCritJoin::forTable($table); 
+  }
+}
+class Report extends SqlLevelRec {
+  //
+  public $reportId;
+  public $userGroupId;
+  public $name;
+  public $type;
+  public $tableId;
+  public $jsonRec;  // serialized RepCritRec
+  public $jsonRecDenom;  // serialized RepCritRec
+  public $comment;
+  public $createdBy;
+  public $dateCreated;
+  //
+  public function getAuditLabel() {
+    return $this->name;
+  }
+  public function validate(&$rv) {
+    $rv->requires('name');
+  }
+  public function getSqlTable() {
+    return 'reports';
+  }
+  public function save($ugid, $userId) {
+    if ($this->reportId == null) { 
+      $this->createdBy = $userId;
+      $this->dateCreated = nowNoQuotes();
+    }
+    $this->userGroupId = $ugid;
+    return parent::save();
+  }
+  //
+  /**
+   * @param ReportCriteria $reportCriteria
+   * @return Report
+   */
+  static function fromReportCriteria($reportCriteria) {
+    $rec = new self();
+    $rec->reportId = get($reportCriteria, 'reportId');
+    $rec->name = $reportCriteria->name;
+    $rec->type = $reportCriteria->type;
+    $rec->tableId = $reportCriteria->Rec->table_;
+    $rec->comment = get($reportCriteria, 'comment');
+    $rec->jsonRec = jsonencode($reportCriteria->Rec);
+    $rec->jsonRecDenom = ($reportCriteria->type == ReportCriteria::TYPE_FRACTION) ? jsonencode($reportCriteria->RecDenom) : null;
+    return $rec;
+  }
+}
+class ReportStub extends SqlLevelRec implements ReadOnly {
+  //
+  public $reportId;
+  public $userGroupId;
+  public $name;
+  public $tableId;
+  public $comment;
+  //
+  public function getSqlTable() {
+    return 'reports';
+  }
+  public function toJsonObject(&$o) {
+    $o->_table = RepCritRec::$TABLES[$this->tableId];
+  }
+  public function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchAllBy($c);
+  }
+}
+/**
+ * ReportCriteria
+ */
+class ReportCriteria extends Rec implements SerializeNulls {
+  //
+  public $userGroupId;
+  public $reportId;
+  public $name;
+  public $type;
+  public $comment;
+  public /*RepCritRec*/ $Rec;
+  public /*RepCritRec*/ $RecDenom;
+  //
+  const TYPE_REGULAR = 0;
+  const TYPE_FRACTION = 1;
+  //
+  public function toJsonObject(&$o) {
+    $o->_tableName = $this->Rec->getTableName();
+  }
+  //
+  static function asNewReport($tableId) {
+    $rec = new self();
+    $class = RepCritRec::getClassFromTable($tableId);
+    $rec->name = RepCritRec::$TABLES[$tableId] . ' Report';
+    $rec->Rec = new $class();
+    $rec->type = self::TYPE_REGULAR;
+    return $rec;
+  }
+  static function fromReport($report) {
+    $rec = new self($report->userGroupId, $report->reportId, $report->name, $report->type, $report->comment);
+    $class = RepCritRec::getClassFromTable($report->tableId);
+    $rec->Rec = new $class(jsondecode($report->jsonRec));
+    if ($report->type == self::TYPE_FRACTION)
+      $rec->RecDenom = new $class(jsondecode($report->jsonRecDenom));
+    return $rec;
+  }
+  static function revive($ugid, $o) {
+    $rec = new self($ugid, $o->reportId, $o->name, $o->type, get($o, 'comment'));
+    $rec->Rec = RepCritRec::revive($o->Rec);
+    if (isset($o->RecDenom))
+      $rec->RecDenom = RepCritRec::revive($o->RecDenom);
+    return $rec;
+  }
+}
+/** 
+ * RepCritRec
+ */
+abstract class RepCritRec extends Rec implements SerializeNulls {
+  //
+  const T_CLIENTS = '0';
+  const T_ADDRESS = '1';
+  const T_DIAGNOSES = '2';
+  const T_MEDS = '3';
+  const T_ALLERGIES = '4';
+  const T_PROCS = '5';
+  const T_RESULTS = '6';
+  const T_IMMUNS = '7';
+  const T_VITALS = '8';
+  const T_AUDITS = '9';
+  const T_SESSIONS = '10';
+  const T_MEDHIST = '11';
+  static $TABLES = array(
+    self::T_CLIENTS => 'Patients',
+    self::T_ADDRESS => 'Address',
+    self::T_DIAGNOSES => 'Diagnoses',
+    self::T_MEDS => 'Medications',
+    self::T_MEDHIST => 'Med History',
+    self::T_ALLERGIES => 'Allergies',
+    self::T_PROCS => 'Procedures',
+    self::T_RESULTS => 'Results',
+    self::T_IMMUNS => 'Immunizations',
+    self::T_VITALS => 'Vitals',
+    self::T_SESSIONS => 'Sessions',
+    self::T_AUDITS => 'Audits');
+  static $CREATABLE = array(
+    self::T_CLIENTS,
+    self::T_AUDITS);
+  //
+  public /*RepCrit[]*/ $Joins;
+  public $table_;
+  public $pid_;
+  //
+  abstract public function getSqlClass();
+  public function getRecSort() {
+    return null;
+  }
+  public function getTemplatePid() {
+    return null;
+  } 
+  //
+  protected function getClassFromJsonField($fid) {
+    if ($fid == 'Joins')
+      return 'RepCritJoins';
+    else
+      return 'RepCritValue';
+  }
+  public function toJsonObject(&$o) {
+    $o->table_ = $this->getTable(); 
+    if ($this->getTemplatePid()) 
+      $o->pid_ = $this->getTemplatePid();
+  }
+  public function getTable() {
+    if ($this instanceof RepCrit_Address)
+      return self::T_ADDRESS;
+    if ($this instanceof RepCrit_Client)
+      return self::T_CLIENTS;
+    if ($this instanceof RepCrit_Diagnosis)
+      return self::T_DIAGNOSES;
+    if ($this instanceof RepCrit_Session)
+      return self::T_SESSIONS;
+    if ($this instanceof RepCrit_Med)
+      return self::T_MEDS;
+    if ($this instanceof RepCrit_MedHist)
+      return self::T_MEDHIST;
+    if ($this instanceof RepCrit_Allergy)
+      return self::T_ALLERGIES;
+    if ($this instanceof RepCrit_Proc)
+      return self::T_PROCS;
+    if ($this instanceof RepCrit_ProcResult)
+      return self::T_RESULTS;
+    if ($this instanceof RepCrit_Immun)
+      return self::T_IMMUNS;
+    if ($this instanceof RepCrit_Vital)
+      return self::T_VITALS;
+    if ($this instanceof RepCrit_Audit) 
+      return self::T_AUDITS;
+  }
+  public function getTableName() {
+    return self::$TABLES[$this->getTable()];
+  }
+  /**
+   * @return array(SqlRec_Rep,..)  
+   */
+  public function fetchAll($ugid) {
+    $sqlClass = $this->getSqlClass();
+    $criteria = self::asSqlCriteria($this, $ugid);
+    $recs = $sqlClass::fetchAllBy($criteria);
+    $sort = $this->getRecSort();
+    if ($sort)
+      Rec::sort($recs, $sort);
+    return $recs; 
+  }
+  protected function assignSqlCriteriaValue(&$criteria, $fid, $value) {
+    $value = RepCritValue::asSqlCriteriaValue($criteria, $fid, $value);
+    if ($value) 
+      $criteria->$fid = CriteriaValues::_and(get($criteria, $fid), $value);
+  }
+  //
+  /**
+   * @param RepCritRec $rec
+   */
+  static function revive($rec) {
+    $class = self::getClassFromTable($rec->table_);
+    return new $class($rec);
+  }
+  /**
+   * Modify existing RepCritValues to convert this to a SqlRec criteria object
+   * @param RepCrit $rec
+   * @param int $ugid (optional, for base critiera) 
+   */
+  static function asSqlCriteria($rec, $ugid = null) {
+    $class = $rec->getSqlClass();
+    $c = $class::asCriteria($ugid);
+    foreach ($rec as $fid => $value) 
+      if ($value instanceof RepCritValue) 
+        $rec->assignSqlCriteriaValue($c, $fid, $value);
+    if (isset($rec->Joins)) {
+      $cjoins = array();
+      foreach ($rec->Joins as $join)
+        $cjoins = array_merge($cjoins, $join->asSqlJoins());
+      $i = 0;
+      foreach ($cjoins as $cjoin) {
+        $fid = 'Join' . $i++;
+        if (method_exists($cjoin->rec, 'getClientFk'))
+          $fid .= '_' . $cjoin->rec->getClientFk();
+        $c->$fid = $cjoin;
+      }
+    }
+    return $c;
+  }
+  static function asSqlCriterias($recs) {
+    return self::fromRecs($recs, 'asSqlCriteria');
+  }
+  static function getTableFromName($name) {
+    static $a;
+    if ($a == null) 
+      $a = array_flip(self::$TABLES);
+    return strval($a[$name]);
+  }
+  static function getClassFromTable($table) {
+    switch ($table) {
+      case self::T_CLIENTS:
+        return 'RepCrit_Client';
+      case self::T_ADDRESS:
+        return 'RepCrit_Address';
+      case self::T_DIAGNOSES:
+        return 'RepCrit_Diagnosis';
+      case self::T_SESSIONS:
+        return 'RepCrit_Session';
+      case self::T_MEDS:
+        return 'RepCrit_Med';
+      case self::T_MEDHIST:
+        return 'RepCrit_MedHist';
+      case self::T_ALLERGIES:
+        return 'RepCrit_Allergy';
+      case self::T_PROCS:
+        return 'RepCrit_Proc';
+      case self::T_RESULTS:
+        return 'RepCrit_ProcResult';
+      case self::T_IMMUNS:
+        return 'RepCrit_Immun';
+      case self::T_VITALS:
+        return 'RepCrit_Vital';
+      case self::T_AUDITS:
+        return 'RepCrit_Audit';
+    }
+  }
+}
+class RepCritJoin extends Rec {
+  //
+  public $jt;
+  public $ct;
+  public $table;
+  public /*RepCrit*/ $Recs;
+  //
+  const JT_HAVE = '1';
+  const JT_NOT_HAVE = '2';
+  const JT_HAVE_CT = '3';
+  const JT_HAVE_CT_LT = '4';
+  const JT_HAVE_CT_GT = '5';
+  const JT_HAVE_ONE = '10';
+  const JT_HAVE_ALL = '11';
+  const JT_NOT_HAVE_ANY = '12';
+  static $JTS = array(
+    self::JT_HAVE => 'having',
+    self::JT_HAVE_CT => 'having exactly',
+    self::JT_HAVE_CT_LT => 'having less than',
+    self::JT_HAVE_CT_GT => 'having more than',
+    self::JT_NOT_HAVE => 'not having',
+    self::JT_HAVE_ONE => 'having at least one of',
+    self::JT_HAVE_ALL => 'having all of',
+    self::JT_NOT_HAVE_ANY => 'not having any of'
+  );
+  //
+  public function getClassFromJsonField($fid) {
+    return RepCritRec::getClassFromTable($this->table);
+  }
+  protected function getSingular($fid) {
+    return $fid;
+  }
+  public function asSqlJoins() {
+    if ($this->hasData()) {
+      $joins = array();
+      $recs = RepCritRec::asSqlCriterias($this->Recs);
+      switch ($this->jt) {
+        case self::JT_HAVE:
+          $joins[] = CriteriaJoin::requiresAsArray(current($recs));
+          break;
+        case self::JT_HAVE_CT:
+          $joins[] = CriteriaJoin::requiresCountEquals(current($recs), $this->ct);
+          break;
+        case self::JT_HAVE_CT_GT:
+          $joins[] = CriteriaJoin::requiresCountGreaterThan(current($recs), $this->ct);
+          break;
+        case self::JT_HAVE_CT_LT:
+          $joins[] = CriteriaJoin::requiresCountLessThan(current($recs), $this->ct);
+          break;
+        case self::JT_NOT_HAVE:
+          $joins[] = CriteriaJoin::notExists(current($recs));
+          break;
+        case self::JT_HAVE_ONE:
+          $joins[] = CriteriaJoin::requiresAnyOf($recs);
+          break;
+        case self::JT_HAVE_ALL:
+          foreach ($recs as $rec) 
+            $joins[] = CriteriaJoin::requiresAsArray($rec);
+          break;
+        case self::JT_NOT_HAVE_ANY:
+          foreach ($recs as $rec) 
+            $joins[] = CriteriaJoin::notExists($rec);
+          break;
+      }
+      return $joins;
+    }
+  }
+  public function hasData() {
+    return ($this->jt && count($this->Recs) > 0);
+  }
+  //
+  /**
+   * @param string|int 
+   * @return RepCritJoin
+   */
+  static function forTable($table) {
+    $rec = new self();
+    $rec->jt = self::JT_HAVE;
+    $rec->table = (is_numeric($table)) ? $table : RepCritRec::getTableFromName($table);
+    $class = $rec->getClassFromJsonField(null);
+    $rec->Recs = array(new $class());
+    return $rec;
+  }
+}
+/**
+ * RepCritValue
+ */
+class RepCritValue extends Rec {
+  //
+  public $op;
+  public $value;  // single value e.g. 'Singulair' or comma-delimited e.g. '1,10'
+  public $text_;  // picker text, e.g. 'Colonoscopy'
+  //
+  const OP_EQ = '1';
+  const OP_NEQ = '2';
+  const OP_START = '3';
+  const OP_CONTAIN = '4';
+  const OP_IN = '5';
+  const OP_NULL = '6';
+  const OP_NOT_NULL = '7';
+  const OP_LTN = '11';
+  const OP_GTN = '12';
+  const OP_GTEN = '14';
+  const OP_BETWEEN = '13';
+  const OP_OLDER = '20';
+  const OP_YOUNGER = '21';
+  const OP_AGERANGE = '22';
+  const OP_BEFORE = '23';
+  const OP_AFTER = '24';
+  const OP_ON = '25';
+  const OP_NOT_ON = '26';
+  const OP_WITHIN = '27';
+  const OP_OVER = '28';
+  const OP_IS = '30';
+  const OP_IS_NOT = '31';
+  const OP_REGEX = '40';
+  const OP_NOT_REGEX = '41';
+  static $OPS = array(
+    self::OP_NULL => 'is empty',
+    self::OP_NOT_NULL => 'has a value',
+    /* strings/numerics */
+    self::OP_EQ => 'equals',
+    self::OP_NEQ => 'not equals',
+    self::OP_START => 'starts with',
+    self::OP_CONTAIN => 'contains',
+    self::OP_IN => 'is one of',
+    self::OP_LTN => 'less than',
+    self::OP_GTN => 'greater than',
+    self::OP_GTEN => 'greater than or equals',
+    self::OP_BETWEEN => 'between',
+    /* date as calendar */
+    self::OP_ON => 'on',
+    self::OP_NOT_ON => 'not on',
+    self::OP_BEFORE => 'before',
+    self::OP_AFTER => 'after',
+    /* date as age */
+    self::OP_WITHIN => 'within past',
+    self::OP_OVER => 'over',
+    /* patient age */
+    self::OP_OLDER => 'at least',
+    self::OP_YOUNGER => 'younger than',
+    self::OP_AGERANGE => 'from/up to',
+    /* fixed list */
+    self::OP_IS => 'is',
+    self::OP_IS_NOT => 'is not',
+    /* regex */
+    self::OP_REGEX => 'is',
+    self::OP_NOT_REGEX => 'is not');
+  //
+  public function hasData() {
+    if ($this->op && ! is_null($this->value))
+      return true;
+    if ($this->op == self::OP_NOT_NULL || $this->op == self::OP_NULL)
+      return true;
+  }
+  public function isIs() {
+    return $this->op == self::OP_IS;
+  }
+  //
+  static function asEquals($value) {
+    $rec = new static();
+    $rec->op = self::OP_EQ;
+    $rec->value = $value;
+    $rec->text_ = $value;
+    return $rec;
+  }
+  /**
+   * @param SqlRec criteria
+   * @param string fid
+   * @param RepCritValue cv
+   */
+  static function asSqlCriteriaValue($criteria, $fid, $cv) {
+    if ($cv->hasData()) {
+      switch ($cv->op) {
+        case self::OP_EQ:
+        case self::OP_IS:
+        case self::OP_ON:
+          return CriteriaValue::equals(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_NEQ:
+        case self::OP_IS_NOT:
+        case self::OP_NOT_ON:
+          return CriteriaValue::notEquals(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_START:
+          return CriteriaValue::startsWith(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_CONTAIN:
+          return CriteriaValue::contains(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_NULL:
+          return CriteriaValue::isNull();
+        case self::OP_NOT_NULL:
+          return CriteriaValue::isNotNull();
+        case self::OP_LTN:
+          return CriteriaValue::lessThanNumeric(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_GTN:
+          return CriteriaValue::greaterThanNumeric(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_GTEN:
+          return CriteriaValue::greaterThanOrEqualsNumeric($cv->value);
+        case self::OP_BEFORE:
+          return CriteriaValue::lessThan(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_AFTER:
+          return CriteriaValue::greaterThan(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_IN:
+          return CriteriaValue::in(self::asFilteredValueArray($criteria, $fid, $cv->value));
+        case self::OP_BETWEEN:
+          return CriteriaValue::betweenNumeric(self::asFilteredValueArray($criteria, $fid, $cv->value));
+        case self::OP_OLDER:
+          return CriteriaValue::olderThan(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_OLDER:
+          return CriteriaValue::olderThan(self::asFilteredValue($criteria, $fid, $cv->value));
+        case self::OP_YOUNGER:
+          return CriteriaValue::betweenAge(array(0, self::asFilteredValue($criteria, $fid, $cv->value)));
+        case self::OP_AGERANGE:
+          return CriteriaValue::betweenAge(self::asFilteredValueArray($criteria, $fid, $cv->value));
+        case self::OP_WITHIN:
+          return CriteriaValue::withinPast(self::asValueArray($cv->value));
+        case self::OP_OVER:
+          return CriteriaValue::over(self::asValueArray($cv->value));
+        case self::OP_REGEX:
+          return CriteriaValue::regexp($cv->value);
+        case self::OP_NOT_REGEX:
+          return CriteriaValue::notRegexp($cv->value);
+      }
+    }
+  }
+  protected static function asValueArray($value) {
+    return explode(',', $value);
+  }
+  protected static function asFilteredValueArray($criteria, $fid, $value) {
+    $values = self::asValueArray($value);
+    foreach ($values as &$value) 
+      $value = self::asFilteredValue($criteria, $fid, $value);
+    return $values;
+  }
+  protected static function asFilteredValue($criteria, $fid, $value) {
+    return RecJson::filterIncomingValue($criteria, $fid, $value);
+  }
+} 
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Allergies.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/Vitals.php';
+require_once 'php/data/rec/sql/Auditing.php';
+require_once 'php/data/rec/sql/DrugClasses.php';
+require_once 'php/data/rec/sql/Sessions.php';
+/**
+ * RepCrit Subclasses
+ */
+class RepCrit_Audit extends RepCritRec {
+  //
+  public $clientId;
+  public $userId;
+  public $date;
+  public $action;
+  public $recName;
+  public $label;
+  //
+  static $JOINS_TO = array();
+  //
+  public function getSqlClass() {
+    return 'Audit_Rep';
+  }
+  public function getRecSort() {
+    return new RecSort('-date');
+  }
+}
+class Audit_Rep extends AuditRec implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_table = $this->getTableName();
+    $o->_label = $this->formatLabel();
+    $o->_action = self::$ACTIONS[$this->action];
+    $o->_by = $this->User->name;
+    $o->after = $this->decorateSnapshot($this->after);
+    $o->before = $this->decorateSnapshot($this->before);
+  }
+  private function decorateSnapshot($rec) {
+    if ($rec) {
+      $class = $this->recName;
+      $nfr = jsondecode($rec);
+      $nfr->_noFilterIn = true;
+      $rec = new $class($nfr);
+      $pk = $rec->getPkFid();
+      if ($pk)
+        unset($rec->$pk);
+      return $rec;
+    }
+  }
+  public function getJsonFilters() {
+    return array(
+    	'date' => JsonFilter::informalDateTime());
+  }
+  public function getTableName() {
+    return 'Audit';
+  }
+  public function formatLabel() {
+    $a = array();
+    $a[] = self::$ACTIONS[$this->action];
+    $a[] = $this->recName;
+    if ($this->label)
+      $a[] = ': ' . $this->label;
+    return join(' ' , $a);
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Client = CriteriaJoin::requires(new Client_Rep());
+    $c->User = CriteriaJoin::requires(new UserStub());
+    return $c;
+  }
+}
+class RepCrit_Client extends RepCritRec {
+  //
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $age;
+  public $birth;
+  public $deceased;
+  public $race;
+  public $ethnicity;
+  public $language;
+  //
+  static $JOINS_TO = array(
+    self::T_ADDRESS, 
+    self::T_DIAGNOSES,
+    self::T_MEDS,
+    self::T_MEDHIST,
+    self::T_ALLERGIES,
+    self::T_PROCS,
+    self::T_RESULTS,
+    self::T_IMMUNS,
+    self::T_VITALS,
+    self::T_SESSIONS);
+  //
+  public function getSqlClass() {
+    return 'Client_Rep';
+  }
+  public function getRecSort() {
+    return new RecSort('lastName', 'firstName');
+  }
+  protected function assignSqlCriteriaValue(&$criteria, $fid, $value) {
+    if ($fid == 'age') 
+      $fid = 'birth';
+    parent::assignSqlCriteriaValue($criteria, $fid, $value);
+  }
+}
+class Client_Rep extends Client implements ReadOnly {
+  //
+  public function getJsonFilters() {
+    return array(
+      'userRestricts' => JsonFilter::serializedObject(),
+      'deceased' => JsonFilter::boolean());
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+class RepCrit_Med extends RepCritRec {
+  //
+  public $name;
+  public $active;
+  public $drugSubclass;
+  //
+  public function getSqlClass() {
+    return 'Med_Rep';
+  }
+  protected function assignSqlCriteriaValue(&$criteria, $fid, $value) {
+    if ($fid == 'drugSubclass') {
+      $fid = 'name';
+      $value->value = DrugName::asRegexpValue($value->value);
+    }
+    parent::assignSqlCriteriaValue($criteria, $fid, $value);
+  }
+}
+class Med_Rep extends Med implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->name;
+  }
+  public function getTableName() {
+    return 'Medications'; 
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+}
+class RepCrit_MedHist extends RepCritRec {
+  //
+  public $name;
+  public $date;
+  public $quid;
+  //
+  public function getSqlClass() {
+    return 'MedHist_Rep';
+  }
+}
+class MedHist_Rep extends SessionMedNc implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->getQuidText() . ': ' . $this->name;
+  }
+  public function getTableName() {
+    return 'Med History';
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = self::NEW_CROP_SID;
+    return $c;
+  }
+}
+class RepCrit_Address extends RepCritRec {
+  //
+  public $addr1;
+  public $addr2;
+  public $city;
+  public $state;
+  public $zip;
+  public $phone1;
+  public $email1;
+  //
+  public function getSqlClass() {
+    return 'Address_Rep';
+  }
+}
+class Address_Rep extends Address implements ReadOnly {
+  //
+  public function getClientFk() {
+    return 'tableId';
+  }
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->format();
+  }
+  public function getTableName() {
+    return 'Address';
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->tableCode = Address::TABLE_CLIENTS;
+    $c->type = Address::TYPE_SHIP;
+    return $c;
+  }
+} 
+class RepCrit_Diagnosis extends RepCritRec {
+  //
+  public $icd;
+  public $text;
+  public $active;
+  public $status;
+  //
+  public function getSqlClass() {
+    return 'Diagnosis_Rep';
+  }
+}
+require_once 'php/data/rec/sql/Diagnoses.php';
+class Diagnosis_Rep extends FaceDiagnosis implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->formatName();
+  }
+  public function getTableName() {
+    return 'Diagnoses';
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+}
+class RepCrit_Session extends RepCritRec {
+  //
+  public $templateId;
+  public $dateService;
+  public $title;
+  public $closedBy;
+  //
+  public function getSqlClass() {
+    return 'Session_Rep';
+  }
+}
+class Session_Rep extends SessionNote implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->formatTitle();
+  }
+  public function getTableName() {
+    return 'Sessions';
+  }
+  //
+  static function asCriteria($ugid) {
+    return parent::asCriteria(null);
+  }
+}
+class RepCrit_Allergy extends RepCritRec {
+  //
+  public $agent;
+  public $active;
+  //
+  public function getSqlClass() {
+    return 'Allergy_Rep';
+  }
+}
+class Allergy_Rep extends Allergy implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return $this->agent;
+  }
+  public function getTableName() {
+    return 'Allergies';
+  }
+  //  
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+}
+class RepCrit_Proc extends RepCritRec {
+  //
+  public $ipc;
+  public $date;
+  public $cat;
+  public $providerId;
+  public $addrFacility;
+  public $location;
+  //
+  public function getSqlClass() {
+    return 'Proc_Rep';
+  }
+}
+class Proc_Rep extends Proc implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return formatApproxDate($this->date) . ': ' . (($this->Ipc) ? $this->Ipc->name : '');
+  }
+  public function getTableName() {
+    return 'Procedures';
+  }
+  //
+  static function asCriteria($ugid) {
+    //$c = parent::asCriteria();  // TODO: could modify to exclude joins if arg passed in indicating for COUNT(*)
+    $c = new self();
+    $c->Ipc = Ipc::asOptionalJoin();
+    return $c;
+  }
+}
+class RepCrit_ProcResult extends RepCritRec {
+  //
+  public $ipc;
+  public $date;
+  public $value;
+  public $valueUnit;
+  public $interpretCode;
+  //
+  public function getSqlClass() {
+    return 'ProcResult_Rep';
+  }
+}
+class ProcResult_Rep extends ProcResult implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return formatApproxDate($this->date) . ': ' . self::summarizeResult(null, $this);
+  }
+  public function getTableName() {
+    return 'Results';
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = parent::asCriteria(null);
+    return $c;
+  }
+}
+class RepCrit_Immun extends RepCritRec {
+  //
+  public $name;
+  public $tradeName;
+  public $dateGiven;
+  public $manufac;
+  public $lot;
+  public $dose;
+  public $route;
+  public $site;
+  public $adminBy;
+  //
+  public function getSqlClass() {
+    return 'Immun_Rep';
+  }
+  public function getTemplatePid() {
+    static $pid;
+    if ($pid == null)
+      $pid = Immuns::getPid();
+    return $pid;
+  }
+}
+class Immun_Rep extends Immun implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function formatLabel() {
+    return formatApproxDate($this->dateGiven) . ': ' . $this->name;
+  }
+  public function getTableName() {
+    return 'Immunizations';
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+}
+class RepCrit_Vital extends RepCritRec {
+  //
+  public $date;
+  public $pulse;
+  public $resp;
+  public $bpSystolic;
+  public $bpDiastolic;
+  public $temp;
+  public $wt;
+  public $height;
+  public $bmi;
+  public $hc;
+  public $wc;
+  //
+  public function getSqlClass() {
+    return 'Vital_Rep';
+  }
+}
+class Vital_Rep extends Vital implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    $o->_label = $this->formatLabel();
+    $o->_table = $this->getTableName();
+  }
+  public function getTableName() {
+    return 'Vitals';
+  }
+  public function formatLabel() {
+    return formatMDY($this->date) . ': ' . join(', ', $this->getAllValues());
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->sessionId = CriteriaValue::isNull();
+    return $c;
+  }
+}
+?>

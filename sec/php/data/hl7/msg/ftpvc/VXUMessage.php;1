@@ -1,0 +1,57 @@
+<?php
+require_once 'php/data/hl7/msg/_HL7Message.php';
+require_once 'php/data/hl7/msg/seg/PID.php';
+require_once 'php/data/hl7/msg/seg/ORC.php';
+require_once 'php/data/hl7/msg/seg/RXA.php';
+//
+/**
+ * Vaccine Message
+ * @author Warren Hornsby
+ */
+class VXUMessage extends HL7Message {
+  //
+  /* Segments */
+  public $Header;
+  public $PatientId = 'PID';
+  public $Eof = 'FTS';
+  //
+  public function getPatientId() {
+    return $this->get('PatientId');  
+  }
+  public function getObsRequests() {
+    $pid = $this->getPatientId();
+    return $pid->ObsRequest;
+  }
+  //
+  /**
+   * @param Facesheet_Immun $fs
+   * @return VXUMessage
+   */
+  static function from($fs) {
+    $header = MSH_VXU::from($fs);
+    $me = static::fromHeader($header);
+    $me->PatientId = PID::from($fs);
+    $me->_fs = $fs;
+    return $me;
+  }
+}
+//
+class MSH_VXU extends MSH {
+  //
+  /**
+   * @param Facesheet_Immun $fs
+   */
+  static function from($fs) {
+    $me = parent::asSendable(CM_MsgType_VXU::asVxuV04(), $fs->UserGroup);
+    return $me;
+  }
+}
+class CM_MsgType_VXU extends HL7CompValue {
+  //
+  static function asVxuV04() {
+    $me = new static();
+    $me->type = 'VXU';
+    $me->trigger = 'V04';
+    return $me;
+  }
+}

@@ -1,0 +1,158 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('memory_limit', '1024M');
+set_include_path('../../');
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once "batch/cert-transfer/sql/SqlRecs_Migrate.php";
+//
+/**
+ * Certification transfer
+ */
+$args = arguments($argv);
+$dbFrom = $args[0];
+$dbTo = $args[1];
+$ugid = $args[2];
+echo '<pre>';
+echo "BUILD CERT TRANSFER SQL\n";
+echo "Database From: $dbFrom\n";
+echo "Database To: $dbTo\n";
+echo "UGID: $ugid\n";
+$myHost = 'prod';
+Dao_Migrate::setDb($dbFrom);
+Dao_Cert::setDb($dbTo);
+$pkmap = PkMapper::fetch();
+echo "Building SQL files...";
+$fm = new FileManager($ugid, "USE $dbTo;");
+$fm->open('users');
+UserGroup_Migrate::migrate($fm, $ugid, $pkmap);
+User_Migrate::migrate($fm, $ugid);
+TemplatePreset_Migrate::migrate($fm, $ugid);
+$fm->open('clients', 20000);
+Client_Migrate::migrate($fm, $ugid, $pkmap);
+$fm->open('hm-sched-msg');
+IpcHm_Migrate::migrate($fm, $ugid, $pkmap);
+Sched_Migrate::migrate($fm, $ugid, $pkmap);
+MsgThread_Migrate::migrate($fm, $ugid, $pkmap);
+$fm->open('sessions', 7000);
+Session_Migrate::migrate($fm, $ugid, $pkmap);
+$fm->open('facesheet', 70000);
+DataAllergy_Migrate::migrate($fm, $ugid, $pkmap);
+DataDiagnosis_Migrate::migrate($fm, $ugid, $pkmap);
+DataHm_Migrate::migrate($fm, $ugid, $pkmap);
+DataImmun_Migrate::migrate($fm, $ugid, $pkmap);
+DataMed_Migrate::migrate($fm, $ugid, $pkmap);
+DataSync_Migrate::migrate($fm, $ugid, $pkmap);
+DataVital_Migrate::migrate($fm, $ugid, $pkmap);
+TrackItem_Migrate::migrate($fm, $ugid, $pkmap);
+$fm->close();
+echo "Building map file...";
+$filename = "out/UG" . $ugid. "-map.csv";
+$fp = @fopen($filename, "w");
+$pkmap->write($fp, $dbFrom, $dbTo);
+fclose($fp);
+echo "Script complete.";
+//
+function arguments($argv){
+  array_shift($argv);
+  $out = array();
+  foreach ($argv as $arg){
+    if (substr($arg,0,2) == '--'){
+      $eqPos = strpos($arg,'=');
+      if ($eqPos === false){
+        $key = substr($arg,2);
+        $out[$key] = isset($out[$key]) ? $out[$key] : true;
+      } else {
+        $key = substr($arg,2,$eqPos-2);
+        $out[$key] = substr($arg,$eqPos+1);
+      }
+    } else if (substr($arg,0,1) == '-'){
+      if (substr($arg,2,1) == '='){
+        $key = substr($arg,1,1);
+        $out[$key] = substr($arg,3);
+      } else {
+        $chars = str_split(substr($arg,1));
+        foreach ($chars as $char){
+          $key = $char;
+          $out[$key] = isset($out[$key]) ? $out[$key] : true;
+        }
+      }
+    } else {
+      $out[] = $arg;
+    }
+  }
+  return $out;
+}
+class FileManager {
+  //
+  protected $base;
+  protected $ext = 'sql';
+  protected $header;
+  protected $name;
+  protected $index;
+  protected $lines;
+  protected $max;
+  protected $break;
+  protected $fp;
+  //
+  public function __construct($ugid, $header = null) {
+    $this->base = "out/UG$ugid";
+    $this->header = $header;
+    $this->index = 0;
+  }
+  public function open($name, $maxlines = 0) {
+    if ($this->fp)
+      $this->close();
+    $this->lines = 0;
+    $this->name = $name;
+    $this->max = $maxlines;
+    $this->index++;
+    $this->break = $maxlines > 0 ? 1 : 0;
+    $this->fp = $this->fpOpen();
+  }
+  public function write($line) {
+    if ($this->fp == null)
+      return;
+    $this->lines++;
+    if ($this->max && $this->lines >= $this->max)
+      $this->next();
+    $this->fpWrite($this->fp, $line);
+  }
+  public function close() {
+    if ($this->fp == null)
+      return;
+    $this->fpClose($this->fp);
+    $this->fp = null;
+  }
+  //
+  protected function next() {
+    $this->fpClose($this->fp);
+    $this->break++;
+    $this->lines = 0;
+    if ($this->break > 20) {
+      echo "Too many breaks.";
+      exit;
+    }
+    $this->fp = $this->fpOpen();
+  }
+  protected function fpOpen() {
+    $filename = $this->makeFilename();
+    $fp = @fopen($filename, 'w');
+    if ($this->header)
+      $this->fpWrite($fp, $this->header);
+    return $fp;
+  }
+  protected function fpClose($fp) {
+    fclose($fp);
+  }
+  protected function fpWrite($fp, $line) {
+    fwrite($fp, $line . "\n");
+  }
+  protected function makeFilename() {
+    $filename = $this->base . '_F' . $this->index . '_' . $this->name;
+    if ($this->break > 0)
+      $filename .= '_' . $this->break;
+    return $filename . '.' . $this->ext;
+  }
+
+}

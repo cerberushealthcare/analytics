@@ -1,0 +1,171 @@
+DIV.dsp {
+  padding:5px 5px 10px 5px;
+}
+DIV.dsp DIV.Viewer {
+}
+DIV.dsp DIV.NavBar {
+  height:60px;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TD {
+  width:50%;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TD DIV {
+  text-align:right;
+  padding-right:10px;
+  padding-left:10px;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TH {
+  width:50%;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TH DIV {
+  text-align:left;
+  padding-right:10px;
+  padding-left:10px;
+}
+DIV.dsp DIV.View {
+  margin:5px 0 0 0;
+  border:1px solid #c0c0c0;
+  background-color:white;
+  padding:10px;
+  padding-right:expression('27px');
+  overflow-y:scroll;
+  overflow-x:hidden;
+  border:1px solid #DBD7CD;
+}
+DIV.dsp DIV.linkbox {
+  width:100px;
+  height:50px;
+  cursor:hand;
+  padding-top:2px;
+  padding:2px;
+  border:1px dashed #c0c0c0;
+  overflow:hidden;
+}
+DIV.dsp DIV.linkbox A {
+  white-space:normal;
+}
+DIV.dsp DIV.prevbox {
+  padding-left:24px;
+  background:url(../../img/icons/prev2.png) no-repeat -6px -2px;
+}
+DIV.dsp DIV.nextbox {
+  padding-right:24px;
+  background:url(../../img/icons/next2.png) no-repeat 99px -2px;
+}
+DIV.dsp DIV.hover {
+  border:1px solid #F42941;
+  background-color:white;
+}
+DIV.dsp DIV.empty {
+  visibility:hidden;
+}
+DIV.dsp A.linkbox {
+  display:block;
+  margin-top:5px;
+} 
+DIV.dsp A.linkbox:hover {
+  color:#000099;
+}
+DIV.dsp DIV.hover A.linkbox {
+  color:#F42941;
+}
+DIV.dsp DIV.onbox {
+  text-align:center;
+}
+DIV.dsp DIV.onbox H2 {
+  margin:0;
+  padding:0;
+}
+DIV.dsp DIV.onbox DIV {
+  vertical-align:top;
+  height:1.3em;
+  overflow:hidden;
+}
+DIV.dsp IFRAME {
+  margin:5px 0 0 0;
+  height:490px;
+  width:100%;
+}
+DIV.dsp DIV.ScanImage {
+  margin:5px 0 10px 0;
+  text-align:center;
+}
+DIV.dsp DIV.ScanImage IMG {
+  display:block;
+  margin:0 auto;
+}
+DIV.ViewSession {
+  font-family:Arial;
+  font-size:10pt;
+  line-height:1.4em;
+}
+DIV.ViewSession DIV#sig TABLE {
+  width:100%;
+}
+DIV.ViewSession DIV#sig TABLE B {
+  color:red;
+}
+DIV.ViewResult TABLE {
+  width:100%;
+}
+DIV.ViewResult TABLE TBODY TH {
+  padding:2px;
+  font-weight:bold;
+  text-align:right;
+  vertical-align:top;
+  padding:2px 5px 2px 2px;
+  font-size:1.2em;
+}
+DIV.ViewResult TABLE A:hover {
+  text-decoration:underline;
+}
+DIV.ViewResult TABLE TR TD {
+  border:1px solid #c0c0c0;
+  padding:2px 4px;
+  vertical-align:top;
+}
+DIV.ViewResult TABLE TR.row1 TD {
+  background-color:#F5F5F5;
+}
+DIV.ViewResult TABLE TD.L, DIV.dsp DIV.ViewResult TABLE TD.LL {
+  color:green;
+}
+DIV.ViewResult TABLE TD.H, DIV.dsp DIV.ViewResult TABLE TD.HH {
+  color:red;
+}
+DIV.ViewResult TABLE TD.A, DIV.dsp DIV.ViewResult TABLE TD.AA {
+  color:orange;
+}
+DIV.ViewResult H3 {
+  text-transform:uppercase;
+}
+DIV.ViewXml TABLE {
+  width:100%;
+}
+DIV.ViewXml TD {
+  padding:2px 5px;
+}
+DIV.ViewXml DIV.CCD TABLE {
+  border:1px solid black;
+}
+DIV.ViewXml DIV.CCD H2 {
+  margin-top:10px;
+}
+DIV.ViewXml DIV.CCR H2 {
+  margin-top:5px;
+}
+DIV.ViewXml DIV.CCR TABLE TH {
+  width:100px;
+  text-align:right;
+  font-size:11pt;
+  padding-right:4px;
+  vertical-align:top;
+}
+DIV.ViewXml DIV.CCR TABLE TD {
+  border:1px solid #c0c0c0;
+  font-size:10pt;
+  padding:2px 5px;
+}
+DIV.ViewXml DIV.CCR TABLE TD.CxSub {
+  border:none;
+ 

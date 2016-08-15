@@ -1,0 +1,175 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/IProcCodes.php';
+require_once 'php/data/rec/sql/UserStub.php';
+//
+/**
+ * Reporting DAO
+ * @author Warren Hornsby
+ */
+class Reporting {
+  //
+  static function test1() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $diagnosis = new Diagnosis_Rep();
+    $med = new Med_Rep();
+    //
+    $client->birth = CriteriaValue::betweenAge(0, 13);
+    $diagnosis->icd = CriteriaValue::startsWith('493');
+    $diagnosis->status = Diagnosis::getActiveCriteriaValue();
+    $med->name = CriteriaValue::startsWith('advair');
+    $med->active = true;
+    //
+    $client->Diagnosis = CriteriaJoin::requiresAsArray($diagnosis);
+    $client->Med =  CriteriaJoin::requiresAsArray($med);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test2() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $immun = new Immun_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(65);
+    $immun->name = 'Influenza';
+    $immun->dateGiven = CriteriaValue::betweenAge(0, 1);
+    //
+    $client->Immun = CriteriaJoin::notExists($immun); 
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3_old() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $diagnosis = new Diagnosis_Rep();
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $diagnosis->icd = CriteriaValue::startsWith('428');
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(40);
+    //
+    $client->Diagnoses = CriteriaJoin::requires($diagnosis);
+    $client->Result1 = CriteriaJoin::optional($result1);
+    $client->Result2 = CriteriaJoin::optional($result2);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test3() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $diagnosis = new Diagnosis_Rep();
+    $result1 = new ProcResult_Rep();
+    $result2 = new ProcResult_Rep();
+    $result3 = new ProcResult_Rep();
+    $result4 = new ProcResult_Rep();
+    //
+    $client->birth = CriteriaValue::olderThan(18);
+    $diagnosis->icd = CriteriaValue::startsWith('428');
+    $result1->ipc = '600000';
+    $result1->value = CriteriaValue::greaterThanNumeric(200);
+    $result2->ipc = '600001';
+    $result2->value = CriteriaValue::lessThanNumeric(40);
+    $result3->ipc = '600002';
+    $result3->value = CriteriaValue::greaterThanNumeric(100);
+    $result4->ipc = '600003';
+    $result4->value = CriteriaValue::greaterThanNumeric(150);
+    //
+    $client->Diagnoses = CriteriaJoin::requires($diagnosis);
+    $client->Results = CriteriaJoin::requiresAnyOf(array($result1, $result2, $result3, $result4));
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test4() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $med = new Med_Rep();
+    //
+    $client->birth = CriteriaValue::betweenAge(1, 3);
+    //
+    $client->Meds = CriteriaJoin::requiresAsArray($med);
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+  static function test0() {
+    global $myLogin;
+    $client = Client_Rep::asCriteria($myLogin->userGroupId);
+    $address1 = Address_Rep::asClientCriteria();
+    $address2 = Address_Rep::asClientCriteria();
+    $address1->city = CriteriaValue::startsWith('lex');
+    $address2->city = CriteriaValue::startsWith('lou');
+    $client->Address = CriteriaJoin::requiresOneOf(array($address1, $address2), 'tableId');
+    $recs = Client_Rep::fetchAllBy($client);
+    return $recs;
+  }
+}
+class Client_Rep extends ClientRec implements ReadOnly {
+  //
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $active;
+  public $middleName;
+  public $race;
+  public $ethnicity;
+  public $deceased;
+  public $language;
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+class Address_Rep extends AddressRec implements ReadOnly {
+  //
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $email1;
+  //
+  static function asClientCriteria() {
+    $c = new self();
+    $c->tableCode = Address::TABLE_CLIENTS;
+    $c->type = Address::TYPE_SHIP;
+    return $c;
+  }
+} 
+class Proc_Rep extends Proc implements ReadOnly {
+  //
+}
+class ProcResult_Rep extends ProcResult implements ReadOnly {
+//
+}
+class Diagnosis_Rep extends Diagnosis implements ReadOnly {
+  //
+}
+class Med_Rep extends Med implements ReadOnly {
+  //
+}
+class Immun_Rep extends Immun implements ReadOnly {
+  //
+}  
+?>

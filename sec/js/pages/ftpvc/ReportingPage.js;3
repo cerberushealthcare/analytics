@@ -1,0 +1,41 @@
+/**
+ * Reporting Page
+ * @author Warren Hornsby
+ */
+ReportingPage = {
+  load:function(query) {
+    ReportingTile.create(_$('tile'));
+    this.onresize();
+    Page.setEvents();
+//    Ajax.Reporting.newReport(function(report) {
+//      ReportingTile.load(report);
+//    })
+    Ajax.Reporting.getReport(1, function(report) {
+      ReportingTile.load(report);
+    })
+  },
+  onresize:function() {
+    //ReportingTile.setHeight(Html.Window.getViewportDim().height - 275);
+  }
+}
+/**
+ * Tile ReportingTile
+ */
+ReportingTile = {
+  create:function(container) {
+    container.clean();
+    ReportingTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.view = ReportCriteriaView.create(self);
+        },
+        /*
+         * @arg ReportCriteria report
+         */
+        load:function(report) {
+          self.view.load(report);
+        }
+      }
+    })
+  }
+}

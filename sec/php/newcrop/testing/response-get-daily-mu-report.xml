@@ -1,0 +1,670 @@
+<NewDataSet>
+  <xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xs:element name="NewDataSet" msdata:IsDataSet="true" msdata:Locale="en-US">
+      <xs:complexType>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="Table">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="SourceTypeID" type="xs:unsignedByte" minOccurs="0" />
+                <xs:element name="ActionTypeID" type="xs:unsignedByte" minOccurs="0" />
+                <xs:element name="DoctorExternalID" type="xs:string" minOccurs="0" />
+                <xs:element name="LocationExternalID" type="xs:string" minOccurs="0" />
+                <xs:element name="PatientExternalID" type="xs:string" minOccurs="0" />
+                <xs:element name="PerformerUserTypeID" type="xs:unsignedByte" minOccurs="0" />
+                <xs:element name="DocumentMimeType" type="xs:string" minOccurs="0" />
+                <xs:element name="DocumentClassificationType" type="xs:string" minOccurs="0" />
+                <xs:element name="DocumentClassificationSubType" type="xs:string" minOccurs="0" />
+                <xs:element name="DestinationTypeID" type="xs:unsignedByte" minOccurs="0" />
+                <xs:element name="ReconciliationPerformed" type="xs:boolean" minOccurs="0" />
+                <xs:element name="EpisodeID" type="xs:string" minOccurs="0" />
+                <xs:element name="EncounterID" type="xs:string" minOccurs="0" />
+                <xs:element name="CreatedTimestamp" type="xs:string" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4037</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:21:04.943Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>0</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4038</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>true</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:28:10.903Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:55:49.230Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>0</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>true</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:57:43.087Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:01:05.197Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>2</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/plain</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:29:24.133Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:19:06.470Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:42:49.453Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>2</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>4</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:47:17.840Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>2</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>1</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T17:02:38.343Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4037</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:20:53.640Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4038</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:26:27.647Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:55:45.923Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:56:10.200Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:00:24.443Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/plain</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:29:20.430Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>2</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:31:17.703Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:29:52.220Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:44:39.990Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T17:01:41.350Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4037</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:20:22.923Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4038</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:26:18.700Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3824</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:54:24.427Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>1</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:56:09.253Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:00:22.977Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/plain</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:29:15.503Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:31:13.627Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:26:35.417Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>1</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:44:38.933Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>1</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T17:01:40.367Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>2</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:17:16.223Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4038</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T06:26:09.137Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3824</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:53:33.047Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T12:55:54.730Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:00:12.067Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4036</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:01:23.930Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>4039</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>TEXT/XML</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T13:31:10.683Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>2</SourceTypeID>
+    <ActionTypeID>3</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>4</PerformerUserTypeID>
+    <DocumentMimeType />
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>2</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:23:56.230Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T16:43:42.857Z</CreatedTimestamp>
+  </Table>
+  <Table>
+    <SourceTypeID>1</SourceTypeID>
+    <ActionTypeID>1</ActionTypeID>
+    <DoctorExternalID>1</DoctorExternalID>
+    <LocationExternalID>1</LocationExternalID>
+    <PatientExternalID>3913</PatientExternalID>
+    <PerformerUserTypeID>2</PerformerUserTypeID>
+    <DocumentMimeType>text/xml</DocumentMimeType>
+    <DocumentClassificationType />
+    <DocumentClassificationSubType />
+    <DestinationTypeID>0</DestinationTypeID>
+    <ReconciliationPerformed>false</ReconciliationPerformed>
+    <EpisodeID />
+    <EncounterID />
+    <CreatedTimestamp>2014-12-17T17:01:21.473Z</CreatedTimestamp>
+  </Table>
+</NewDataSet>

@@ -1,0 +1,510 @@
+/**
+ * Tile ReportCriteriaView 
+ */
+ReportCriteriaView = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'ReportCriteriaView').extend(function(self) {
+      return {
+        init:function() {
+          self.list = My.List.create(self);
+        },
+        load:function(report) {
+          self.report = report;
+          self.list.load(report);
+        }
+      }
+    })
+  },
+  List:{
+    create:function(container) {
+      var My = this;
+      return Html.Ul.create().into(container).extend(function(self) {
+        return {
+          load:function(report) {
+            self.clean();
+            self.add(0, Html.AnchorAction.create('report', report.name));
+            self.add(1, Html.AnchorAction.create('table', 'Require: Patient'))
+          },
+          add:function(level, e) {
+            return self.li('l' + level).add(e);
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * Pop CritRecEntryPop 
+ */ 
+CritRecEntryPop = {
+  /*
+   * @arg RepCritRec rec 
+   */
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    return CritRecEntryPop = Html.Pop.create().extend(function(self) {
+      return {
+        onsave:function(rec) {},
+        //
+        init:function() {
+          self.form = CritRecForm.create(self.content).bubble('onchange', self.form_onchange);
+          self.cb = Html.CmdBar.create(self.content).save(self.save_onclick).cancel(self.close);
+        },
+        pop:function(rec) {
+          self.setCaption(rec._name + ' Criteria');
+          self.dirty = false;
+          self.form.load(rec);
+          self.show();
+          return self;
+        },
+        //
+        isDirty:function() {
+          return self.dirty;
+        },
+        form_onchange:function() {
+          self.dirty = true;
+        },
+        close:function(saved) {
+          if (saved) 
+            Pop.close(true);
+          else
+            Pop.Confirm.closeCheckDirty(self, self.save_onclick);
+        },
+        save_onclick:function() {
+          self.onsave(self.form.getRec());
+          self.close(true);
+        }
+      }
+    })
+  }
+} 
+/**
+ * Tile CritRecForm
+ */
+CritRecForm = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'CritRecEntry').extend(function(self) {
+      return {
+        onchange:function() {},
+        //
+        init:function() {
+          self.table = Html.Table.create().into(self).tbody();
+        },
+        /*
+         * @arg RepCritRec rec
+         */
+        load:function(rec) {
+          self.rec = rec;
+          self.table.clean();
+          self.entries = [];
+          rec.forEachValue(function(cv) {
+            self.entries.push(My.CritValueEntry.create(self.table.tr(), cv).bubble('onchange', self));
+          })
+        },
+        /*
+         * @return RepCritRec updated record
+         */
+        getRec:function() {
+          self.entries.forEach(function(entry) {
+            self.rec.update(entry.getValue());
+          }) 
+          return self.rec;
+        }
+      }
+    })
+  },
+  CritValueEntry:{
+    /*
+     * @arg TrAppender tr
+     * @arg RepCritValue cv 
+     */
+    create:function(tr, cv) {
+      var My = this;
+      return Html.Span.create('CritValueEntry').extend(function(self) {
+        return {
+          onchange:function() {},
+          //
+          init:function() {
+            self.tr = tr._tr(); 
+            tr.td(self.label = Html.Span.create('FidLabel'), 'Label');
+            self.tdOp = tr.td(self.op = Html.Select.create().bubble('onchange', self.toggle), 'Op')._cell;
+            self.tdSpans = tr.td(self.spans = My.Spans.create().bubble('onchange', self), 'Spans')._cell;
+            self.load(cv);
+          },
+          load:function(cv) {
+            self.cv = cv;
+            self.op.load(Map.extract(RepCritValue.OPS, cv.getFixedOps()), '');
+            self.spans.load(cv.getFixedValues());
+            self.label.text(cv.fid);
+            self.op.setValue(cv.op);
+            self.spans.setValue(cv.value);
+            return self;
+          },
+          getValue:function() {
+            return self.cv.update(self.op.getValue(), self.spans.getValue());
+          },
+          //
+          toggle:function() {
+            self.tr.addClassIf('sel', self.op.getValue());
+            switch (self.op.getValue()) {
+              case '':
+                self.spans.hide();
+                break;
+              case RepCritValue.OP_BETWEEN:
+                self.spans.showBetween();
+                break;
+              case RepCritValue.OP_IS:
+                self.spans.showSelect();
+                break;
+              default:
+                self.spans.showDefault();
+            }
+            self.onchange();
+          }
+        }
+      })
+    },
+    Spans:{
+      create:function() {
+        var My = this;
+        return Html.Span.create().extend(function(self) {
+          return {
+            onchange:function() {},
+            //
+            init:function() {
+              self.spanDefault = My.SpanDefault.create(self).bubble('onchange', self);
+              self.spanBetween = My.SpanBetween.create(self).bubble('onchange', self);
+              self.spanSelect = My.SpanSelect.create(self).bubble('onchange', self);
+              self.hide();
+            },
+            /*
+             * @arg map for spanSelect {'M':'Male','F':'Female'} (optional)
+             */
+            load:function(map) {
+              if (map) 
+                self.spanSelect.load(map);
+            },
+            hide:function() {
+              self.spanDefault.hide();
+              self.spanBetween.hide();
+              self.spanSelect.hide();
+              self.span = null;
+            },
+            showDefault:function() {
+              self.spanBetween.hide();
+              self.spanSelect.hide();
+              self.span = self.spanDefault.show();
+            },
+            showBetween:function() {
+              self.spanDefault.hide();
+              self.spanSelect.hide();
+              self.span = self.spanBetween.show();
+            },
+            showSelect:function() {
+              self.spanDefault.hide();
+              self.spanBetween.hide();
+              self.span = self.spanSelect.show();
+            },
+            setValue:function(value) {
+              if (self.span)
+                self.span.setValue(value);
+            },
+            getValue:function() {
+              if (self.span)
+                return self.span.getValue();
+            }
+          }
+        })  
+      },
+      SpanDefault:{
+        create:function(container) {
+          return Html.Span.create().into(container).extend(function(self) {
+            return {
+              onchange:function() {},
+              //
+              init:function() {
+                self.input = Html.InputText.create().into(self).bubble('onchange', self);
+              },
+              show:function() {
+                Html._proto.show.call(self);
+                self.input.setFocus();
+                return self;
+              },
+              setValue:function(value) {
+                self.input.setValue(value);
+              },
+              getValue:function() {
+                return self.input.getValue();
+              }
+            }
+          })
+        }
+      },
+      SpanBetween:{
+        create:function(container) {
+          return CritRecForm.CritValueEntry.Spans.SpanDefault.create(container).extend(function(self) {
+            return {
+              onchange:function() {},
+              //
+              init:function() {
+                self.input.setSize(5);
+                self.label = Html.Label.create('p5', 'and').into(self);
+                self.input2 = Html.InputText.create(null).setSize(5).into(self).bubble('onchange', self);
+              },
+              setValue:function(value) {
+                var a = value.split(',');
+                self.input.setValue(a[0]);
+                self.input2.setValue((a.length > 0) ? a[1] : null);
+              },
+              getValue:function(value) {
+                var a = [self.input.getValue(), self.input2.getValue()];
+                return a.join(',');
+              }
+            }
+          })
+        }
+      },
+      SpanSelect:{
+        create:function(container) {
+          return Html.Span.create().into(container).extend(function(self) {
+            return {
+              onchange:function() {},
+              //
+              load:function(map) {
+                //self.select = (Map.length(map) > 2) ? Html.Select.create(map) : Html.LabelRadios.create(map);
+                self.select = Html.Select.create(map);
+                self.select.into(self).bubble('onchange', self);
+              },
+              show:function() {
+                Html._proto.show.call(self);
+                self.select.setFocus();
+                return self;
+              },
+              setValue:function(value) {
+                self.select.setValue(value);
+              },
+              getValue:function() {
+                return self.select.getValue();
+              }
+            }
+          })
+        }
+      }
+    }
+  }
+}
+/**
+ * Rec ReportCriteria
+ *   RepCritRec Rec
+ */
+ReportCriteria = Object.Rec.extend({
+  //
+  onload:function(json) {
+    this.Rec = RepCritRec.revive(this.Rec);
+  }
+})
+/**
+ * Rec RepCritRec
+ *   RepCritJoin[] Joins
+ */
+RepCritRec = Object.Rec.extend({
+  //
+  _name:'Record',  // @abstract
+  _getReviveProto:function(json) {
+    switch (json._class) {
+      case 'Client_Rep':
+        return RepCrit_Client;
+      case 'Diagnosis_Rep':
+        return RepCrit_Diagnosis;
+      default:
+        return this;
+    }
+  },
+  onload:function(json) {
+    for (var fid in json) 
+      if (fid == 'Joins')  
+        this.Joins = RepCritJoin.reviveAll(json.Joins);
+      else if (this._isCritValue(fid)) 
+        this[fid] = this._getCritValueProto(fid).revive(json[fid], this._getFidLabel(fid));
+  },
+  /*
+   * @callback(RepCritValue)
+   */
+  forEachValue:function(callback) {
+    for (var fid in this)
+      if (this[fid].fid)
+        callback(this[fid]);
+  },
+  /*
+   * @arg RepCritValue cv
+   */
+  update:function(cv) {
+    self[cv.fid] = cv;
+  },
+  /*
+   * @return string
+   */
+  summary:function() {
+    var s = [];
+    this.forEachValue(function(cv) {
+      if (cv.hasData()) 
+        s.push(cv.summary());
+    })
+    return (s.length == 0) ? 'All' : s.join(' and ');
+  },
+  //
+  _isCritValue:function(fid) {
+    if (fid != '_class') 
+      return true;
+  },
+  _getCritValueProto:function(fid) {
+    return RepCritValue;  
+  },
+  _getFidLabel:function(fid) {
+    return this._fixLabel(fid);
+  },
+  _fixLabel:function(fid) {
+    return fid.substr(0, 1).toUpperCase() + fid.substr(1).replace(/([A-Z])/g, function($1){return " "+$1.toUpperCase()});
+  }
+})
+/**
+ * RepCritRec Subclasses
+ */
+RepCrit_Client = RepCritRec.extend({
+  _name:'Patients',
+  _getCritValueProto:function(fid) {
+    switch (fid) {
+      case 'birth':
+        return RepCritValueNumeric;
+      case 'sex':
+        return RepCritValueSex;
+      case 'deceased':
+        return RepCritValueBool;
+      case 'ethnicity':
+        return RepCritValueEthnicity;
+      case 'race':
+        return RepCritValueRace;
+      default:
+        return RepCritValue;
+    }
+  },
+  _getFidLabel:function(fid) {
+    switch (fid) {
+      case 'uid':
+        return 'Patient ID';
+      case 'birth':
+        return 'Age';
+      default:
+        return RepCritRec._getFidLabel.call(this, fid);
+    }
+  }
+})
+RepCrit_Diagnosis = RepCritRec.extend({
+  _name:'Diagnoses',
+  _getCritValueProto:function(fid) {
+    switch (fid) {
+      case 'icd':
+        return RepCritValueNumeric;
+      default:
+        return RepCritValue;
+    }
+  },
+  _getFidLabel:function(fid) {
+    switch (fid) {
+      case 'icd':
+        return 'ICD Code';
+      default:
+        return RepCritRec._getFidLabel.call(this, fid);
+    }
+  }
+})
+/**
+ * Rec RepCritJoin
+ *   RepCritRec[] Recs
+ */
+RepCritJoin = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Recs) 
+      RepCritRec.reviveAll(this.Recs);
+  }
+})
+/**
+ * Rec RepCritValue
+ */
+RepCritValue = Object.Rec.extend({
+  //
+  onload:function(json, i) {
+    this.fid = i;
+  },
+  /*
+   * @arg String op
+   * @arg String value
+   */
+  update:function(op, value) {
+    this.op = String.nullify(op);
+    this.value = String.nullify(value);
+    return this;
+  },
+  /*
+   * @return bool
+   */
+  hasData:function() {
+    return this.op && this.value;
+  },
+  /*
+   * @return string
+   */
+  summary:function() {
+    return this.fid.toUpperCase() + ' ' + this.OPS[this.op] + ' "' + this.value + '"';
+  },
+  /*
+   * @abstracts
+   */
+  getFixedOps:function() {  
+    return [RepCritValue.OP_EQ, RepCritValue.OP_START, RepCritValue.OP_CONTAIN, RepCritValue.OP_IN];
+  },
+  getFixedValues:function() {}
+})
+/**
+ * RepCritValue Subclasses
+ */
+RepCritValueNumeric = RepCritValue.extend({
+  getFixedOps:function() {
+    return [RepCritValue.OP_EQ, RepCritValue.OP_LTN, RepCritValue.OP_GTN, RepCritValue.OP_BETWEEN];  
+  }
+})
+RepCritValueAge = RepCritValue.extend({ 
+  getFixedOps:function() {
+    return [RepCritValue.OP_EQ, RepCritValue.OP_OLDER, RepCritValue.OP_YOUNGER, RepCritValue.OP_AGERANGE]  
+  }
+})
+RepCritValueFixed = RepCritValue.extend({
+  getFixedOps:function() {
+    return [RepCritValue.OP_IS]  
+  }
+})
+RepCritValueSex = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return {'M':'Male','F':'Female'};
+  }
+})
+RepCritValueBool = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return {'Y':'Yes','N':'No'};
+  }
+})
+RepCritValueEthnicity = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return C_Client.ETHNICITIES;
+  }
+})
+RepCritValueRace = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return C_Client.RACES;
+  }
+})

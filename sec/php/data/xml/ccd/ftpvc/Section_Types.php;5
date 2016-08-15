@@ -1,0 +1,203 @@
+<?php
+require_once 'php/data/xml/ccd/POCD_MT000040.php';
+//
+/**
+ * Section types
+ */
+class Section_Meds extends POCD_Section {
+  // 
+  public function __construct($meds) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionMeds();
+    $this->code = new CE_LOINC('10160-0', 'History of Medication Use');
+    $this->title = ST::asText('Medication');
+    $this->text = new Text_Meds($meds);
+    foreach ($meds as $med) 
+      $this->add(Entry::fromMed($med)); 
+  }
+}
+class Section_Alerts extends POCD_Section {
+  // 
+  public function __construct($allers) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionAlerts();
+    $this->code = new CE_LOINC('48765-2', 'Allergies, Adverse Reactions, Alerts');
+    $this->title = ST::asText('Allergies and Adverse Reactions');
+    $this->text = new Text_Allerts($allers);
+    foreach ($allers as $aller) 
+      $this->add(Entry::fromAller($aller));
+  } 
+}
+class Section_Vitals extends POCD_Section {
+  // 
+  public function __construct($vitals) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionVitals();
+    $this->code = new CE_LOINC('8716-3', 'Vital Signs');
+    $this->title = ST::asText('Vital Signs');
+    $this->text = new Text_Vitals($vitals);
+    foreach ($vitals as $vital) 
+      $this->add(Entry::fromVital($vital)); 
+  }
+}
+class Section_Immuns extends POCD_Section {
+  // 
+  public function __construct($immuns) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionImmuns();
+    $this->code = new CE_LOINC('11369-6', 'History of Immunizations');
+    $this->title = ST::asText('Immunizations');
+    $this->text = new Text_Immuns($immuns);
+    foreach ($immuns as $immun) 
+      $this->add(Entry::fromImmun($immun)); 
+  }
+}
+class Section_Problems extends POCD_Section {
+  //
+  public function __construct($diags, $code = null) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionProblems();
+    $this->code = ($code) ? code : CE_LOINC_ProblemContent::asProblemList();
+    $this->title = ST::asText('Problems');
+    $this->text = new Text_Problems($diags);
+    foreach ($diags as $diag) 
+      $this->add(Entry::fromDiag($diag)); 
+  }
+}
+class Section_Procedures extends POCD_Section {
+  //
+  public function __construct($procs, $code = null) {
+    $this->templateId = InfrastructureRoot_templateId::asSectionProcedures();
+    $this->code = new CE_LOINC('47519-4', 'History of Procedures');
+    $this->title = ST::asText('Procedures');
+    $this->text = new Text_Procedures($procs);
+    foreach ($procs as $proc) 
+      $this->add(Entry::fromProc($proc)); 
+  }
+}
+/**
+ * Text <table> definitions 
+ */
+class Text extends XmlRec {
+  public $table;
+  //
+  public static function denull($value, $with = '') {
+    return (empty($value)) ? $with : $value;
+  }
+}
+class Text_Meds extends Text {
+  //
+  public function __construct($meds) {
+    $this->table = new TextTable('Medication', 'Instructions', 'Date(s)', 'Status');
+    foreach ($meds as $med)
+      $this->table->add($med->name, $med->formatSig(), 'N/A', $med->formatActive());
+  }
+}
+class Text_Allerts extends Text {
+  //
+  public function __construct($allers) {
+    $this->table = new TextTable('Substance', 'Reactions', 'Status');
+    if (! empty($allers)) {
+      $td = $this->table->add('None Known');
+      $td->_colspan = count($this->table->thead->tr->th); 
+    } else {
+      foreach ($allers as $aller)
+        $this->table->add($aller->agent, $aller->formatReactions(), $aller->formatActive());
+    }
+  }
+}
+class Text_Vitals extends Text {
+  //
+  public function __construct($vitals) {
+    $this->table = new TextTable('Date/Time', 'Pulse (BPM)', 'Resp (BPM)', 'Blood Pressure (mmHg)', 'Temp (F)', 'Weight (kg)', 'Height (cm)');
+    foreach ($vitals as $vital)
+      $this->table->add(formatDateTime($vital->date), $vital->pulse, $vital->resp, $vital->getBp(), $vital->temp, $vital->getWtKg(), $vital->getHtCm());
+  }
+}
+class Text_Immuns extends Text {
+  //
+  public function __construct($immuns) {
+    $this->table = new TextTable('Vaccine', 'Date');
+    foreach ($immuns as $immun) 
+      $this->table->add($immun->name, formatApproxDate($immun->dateGiven));
+  }
+}
+class Text_Problems extends Text {
+  //
+  public function __construct($diags) {
+    $this->table = new TextTable('Diagnosis', 'ICD-9', 'Date', 'Status');
+    foreach ($diags as $diag) 
+      $this->table->add($diag->text, $diag->icd, formatApproxDate($diag->date), $diag->formatActive());
+  }
+}
+class Text_Procedures extends Text {
+  //
+  public function __construct($procs) {
+    $this->table = new TextTable('Procedure', 'Date');
+    foreach ($procs as $proc) 
+      $this->table->add($proc->text, formatApproxDate($proc->date));
+  }
+}
+//
+class TextTable extends XmlRec { 
+  public $_border = '1';
+  public $_width = '100%';
+  //
+  public $thead;
+  public $tbody;
+  //
+  /**
+   * @param 'col header 1','col header 2',..
+   */
+  public function __construct() {
+    $ths = func_get_args();
+    $this->thead = new TextTableThead($ths);
+    $this->tbody = new TextTableTbody();
+  }
+  /**
+   * @return TextTableTd last one added
+   * Enter description here ...
+   */
+  public function add() {
+    $tds = func_get_args();
+    return $this->tbody->add($tds);
+  }
+}
+class TextTableThead extends XmlRec {
+  public $tr;
+  //
+  public function __construct($ths) {
+    $this->tr = new TextTableTheadTr($ths);
+  }
+}
+class TextTableTheadTr extends XmlRec {
+  public $th;
+  //
+  public function __construct($ths) {
+    $this->th = $ths;
+  }
+}
+class TextTableTbody extends XmlRec {
+  public $tr;
+  //
+  public function __construct() {
+    $this->tr = array();
+  }
+  public function add($tds) {
+    $tr = new TextTableTbodyTr($tds);
+    $this->tr[] = $tr;
+    return end($tr->td);
+  }
+}
+class TextTableTbodyTr extends XmlRec {
+  public $td;
+  //
+  public function __construct($tds) {
+    $this->td = array();
+    foreach ($tds as $td) 
+      $this->td[] = new TextTableTd($td); 
+  }
+}
+class TextTableTd extends XmlRec {
+  public $_;
+  //
+  public function __construct($td) {
+    $this->_ = Text::denull($td);
+  }
+}
+?>

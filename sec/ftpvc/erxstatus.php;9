@@ -1,0 +1,91 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/ErxStatus.php';
+//
+if (! $myLogin->isErx()) {
+  header('Location: welcome.php');
+}
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('ERX Status Review') ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/page.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TabBar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TableLoader.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TemplateUi.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop.css?<?=Version::getUrlSuffix() ?>' />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == '6') { ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops-font.css?<?=Version::getUrlSuffix() ?>' />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel='stylesheet' type='text/css' href='css/pop-ie6.css?<?=Version::getUrlSuffix() ?>' />
+<![endif]-->    
+    <script language='JavaScript1.2' src='js/pops/DocDownloader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/ErxStatusPage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/libs/ClientUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language='JavaScript1.2' src='js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/event-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TabBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/DateInput.js?<?=Version::getUrlSuffix() ?>'></script>
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <table class='h'>
+          <tr>
+            <th><h1>ERX Status Review</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+          <div id='topbar' class='mb5'>
+            <ul id='topbar-filter' class='topfilter'></ul>
+          </div>
+          <div id='results' class='fstab' style='height:450px'>  <!-- ResultsTile -->
+            <table id='results-tbl' class='fsb'>
+              <thead>
+                <tr id='results-head' class='fixed head'>
+                  <th style='15%'>Patient</th>
+                  <th style=''>Date</th>
+                  <th style='40%'>Medication</th>
+                  <th style=''>Dr / Staff</th>
+                <tr>
+              </thead>
+              <tbody id='results-tbody'>
+              </tbody>
+            </table>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <? include 'inc/footer.php' ?>
+  </body>
+<script>
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  var cErxStatus = <?=ErxStatus::getStaticJson() ?>; 
+  ErxStatusPage.load(query, cErxStatus);
+}
+</script>
+</html>

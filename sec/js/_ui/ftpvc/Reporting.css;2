@@ -1,0 +1,57 @@
+DIV.CritRecEntry TABLE TD {
+  padding:1px 3px;
+}
+DIV.CritRecEntry TD.Label {
+  width:100px;
+  text-align:right;
+  color:#606060;
+}
+DIV.CritRecEntry TD.Op {
+  height:24px;
+  border-left:1px solid #c0c0c0;
+  border-top:1px solid #c0c0c0;
+  border-bottom:1px solid #c0c0c0;
+  background-color:#efefef;
+}
+DIV.CritRecEntry TD.Spans {
+  width:250px;
+  border-right:1px solid #c0c0c0;
+  border-top:1px solid #c0c0c0;
+  border-bottom:1px solid #c0c0c0;
+  background-color:#efefef;
+}
+DIV.CritRecEntry TR SELECT {
+  background-color:#efefef;
+}
+DIV.CritRecEntry TR.sel TD.Label {
+  color:black;
+  background:url(../../img/icons/ok.png) left center no-repeat;
+}
+DIV.CritRecEntry TR.sel TD.Op {
+  background-color:#f9f9f9;
+}
+DIV.CritRecEntry TR.sel TD.Spans {
+  background-color:#f9f9f9;
+}
+DIV.CritRecEntry TR.sel SELECT {
+  background-color:white;
+}
+DIV.ReportCriteriaView LI {
+  padding:0;
+  margin:0 0 4px 0;
+}
+DIV.ReportCriteriaView LI.l1 {
+  margin-left:2em;
+}
+A.report {
+  background:url(../../img/icons/graph.png) no-repeat left 2px;
+  padding-top:2px;
+  font-size:12pt;
+  font-weight:bold;
+}
+A.table {
+  background:url(../../img/icons/grid.gif) no-repeat left 2px;
+  padding-top:2px;
+  font-size:12pt;
+  font-weight:bold;
+}

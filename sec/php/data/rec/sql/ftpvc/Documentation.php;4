@@ -1,0 +1,326 @@
+<?php
+require_once 'php/data/rec/sql/_SessionRec.php';
+require_once 'php/data/rec/sql/_SchedRec.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Messaging.php';
+require_once 'php/data/rec/sql/Scanning.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/LookupScheduling.php';
+//
+/**
+ * Documentation DAO
+ * @author Warren Hornsby
+ */
+class Documentation {
+  //
+  static function getAll($cid) {
+    $recs = DocStub::fetchAllTypes($cid);
+    return $recs;
+  }
+  static function preview($rec) {
+    $rec = DocStub::fetchForPreview($rec);
+    return $rec;
+  }
+}
+class DocStub extends Rec {
+  //
+  public $type;
+  public $id;
+  public $date;
+  public $timestamp;
+  public $name;
+  public $desc;
+  //
+  const TYPE_SESSION = 1;
+  const TYPE_MSG = 2;
+  const TYPE_APPT = 3;
+  const TYPE_ORDER = 4;
+  const TYPE_SCAN = 5;
+  const TYPE_RESULT = 6;
+  static $TYPES = array(
+    self::TYPE_SESSION => 'Document',
+    self::TYPE_MSG => 'Message',
+    self::TYPE_APPT => 'Appt',
+    self::TYPE_ORDER => 'Order',
+    self::TYPE_SCAN => 'Scan',
+    self::TYPE_RESULT => 'Result');
+  //
+  public function getJsonFilters() {
+    return array(
+    	'date' => JsonFilter::editableDate());
+  }
+  public function toJsonObject(&$o) {
+    $o->lookup('type', self::$TYPES);
+  }
+  public function setDate($date) {
+    $this->date = dateToString($date);
+  }
+  //
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(DocStub,..)
+   */
+  static function fetchAllTypes($cid) {
+    $sessions = self::fetchAll('DocSession', $cid);
+    $msgs = self::fetchAll('DocMessage', $cid);
+    $appts = self::fetchAll('DocAppt', $cid);
+    $orders = self::fetchAll('DocOrder', $cid);
+    $scans = self::fetchAll('DocScan', $cid);
+    $results = self::fetchAll('DocProc', $cid);
+    $all = array_merge($sessions, $msgs, $appts, $orders, $scans, $results);
+    return Rec::sort($all, new RecSort('-date', '-timestamp'));
+  }
+  static function fetchForPreview($stub) {
+    $class = self::getRecClass($stub);
+    $rec = sc($class, 'fetchForPreview', $stub->id);
+    return $rec;
+  }
+  //
+  protected static function fetchAll($class, $cid) {
+    $c = sc($class, 'asCriteria', $cid);
+    $recs = sc($class, 'fetchAllBy', $c);
+    foreach ($recs as &$rec) 
+      $rec = $rec->asStub();
+    return $recs;
+  }
+  static function fromRecs($froms, $class) {
+    return parent::fromRecs($froms, 'fromRec', $class);
+  }
+  static function getRecClass($stub) {
+    switch ($stub->type) {
+      case self::TYPE_SESSION:
+        return 'DocSession';
+      case self::TYPE_MSG:
+        return 'DocMessage';
+      case self::TYPE_APPT: 
+        return 'DocAppt';
+      case self::TYPE_ORDER:
+        return 'DocOrder';
+      case self::TYPE_SCAN:
+        return 'DocScan';
+      case self::TYPE_RESULT:
+        return 'DocProc'; 
+    }
+  }
+}
+class DocSession extends SessionRec implements ReadOnly {
+  //
+  public function formatDiagnoses() {
+    if (isset($this->Diagnoses)) {
+      $names = DocDiagnosis::formatNames($this->Diagnoses);
+      return implode(', ', $names);
+    }
+  }
+  public function asStub() {
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_SESSION;
+    $rec->id = $this->sessionId;
+    $rec->setDate($this->dateService);
+    $rec->timestamp = $this->dateCreated;
+    $rec->name = $this->getLabel();
+    $rec->desc = $this->formatDiagnoses();
+    return $rec; 
+  }
+  //
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->Diagnoses = array(new DocDiagnosis());
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = parent::fetch($id, __CLASS__);
+    return $rec;
+  }
+}
+class DocDiagnosis extends Diagnosis implements ReadOnly {
+  //
+  public function formatName() {
+    $name = $this->text;
+    if ($this->icd) 
+      $name .= " ($this->icd)";
+    return $name;
+  }
+  //
+  static function formatNames($recs) {
+    $names = array();
+    foreach ($recs as $rec) 
+      $names[] = $rec->formatName();
+    return $names;
+  }  
+}
+class DocMessage extends MsgThread implements ReadOnly {
+  //
+  public function asStub() {
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_MSG;
+    $rec->id = $this->threadId;
+    $rec->setDate($this->dateCreated);
+    $rec->timestamp = $this->dateCreated;
+    $rec->name = $this->getLabel();
+    $rec->desc = $this->creator;
+    return $rec; 
+  }
+  //
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = self::fetchWithPosts($id);
+    $rec->_html = self::formatHtml($rec);
+    return $rec;
+  }
+  static function formatHtml($rec) {
+    $h = array();
+    foreach ($rec->MsgPosts as $post) {
+      $h[] = '<div class="posthead"><b>From:</b> ';
+      $h[] = $post->author;
+      if ($post->sendTo) {
+        $h[] = ' <b>To:</b> ';
+        $h[] = $post->sendTo;
+      }
+      $h[] = '<br><b>Date:</b> ';
+      $h[] = $post->dateCreated;
+      $h[] = '</div>';
+      $h[] = $post->body;
+    }
+    return implode($h);
+  }
+}
+class DocAppt extends SchedRec implements ReadOnly {
+  //
+  public function asStub() {
+    static $types;
+    static $statuses;
+    if ($types == null) {
+      $types = LookupScheduling::getApptTypes();
+      $statuses = LookupScheduling::getStatuses();
+    }
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_APPT;
+    $rec->id = $this->schedId;
+    $rec->setDate($this->date);
+    $rec->timestamp = $this->date;
+    $rec->name = $this->getLabel($types, $statuses);
+    $rec->desc = null;
+    return $rec; 
+  }
+  //
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = parent::fetch($id, __CLASS__);
+    return $rec;
+  }
+}
+class DocOrder extends TrackItem implements ReadOnly {
+  //
+  public function asStub() {
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_ORDER;
+    $rec->id = $this->trackItemId;
+    $rec->setDate($this->orderDate);
+    $rec->timestamp = $this->orderDate;
+    $rec->name = $this->trackDesc;
+    $rec->desc = $this->orderNotes;
+    return $rec; 
+  }
+  //
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->closedDate = CriteriaValue::isNull();
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = self::fetch($id);
+    return $rec;
+  }
+}
+class DocScan extends ScanIndex implements ReadOnly {
+  //
+  public function formatName() {
+    return $this->getLabel();
+  }
+  public function formatDesc() {
+    return Provider::formatProviderFacility($this);
+  }
+  public function asStub() {
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_SCAN;
+    $rec->id = $this->scanIndexId;
+    $rec->setDate($this->datePerformed);
+    $rec->timestamp = $this->datePerformed;
+    $rec->name = $this->formatName();
+    $rec->desc = $this->formatDesc();
+    return $rec;
+  }
+  //
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->Ipc_ipc = new Ipc();
+    $c->Provider = new Provider();
+    $c->Address_addrFacility = new Address();
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = self::fetch($id);
+    $rec->_html = self::formatHtml($rec);
+    return $rec;
+  }
+  static function formatHtml($rec) {
+    foreach ($rec->ScanFiles as $file) {
+      $o = jsondecode(jsonencode($file));
+      $h[] = "<img src='$o->src'/>";
+    } 
+    return implode($h);
+  }
+}
+class DocProc extends Proc implements ReadOnly {
+  //
+  public function formatName() {
+    return $this->name;
+  }
+  public function formatDesc() {
+    //return Provider::formatProviderFacility($this);
+    return $this->formatSummarizeResults();
+  }
+  public function asStub() {
+    $rec = new DocStub();
+    $rec->type = DocStub::TYPE_RESULT;
+    $rec->id = $this->procId;
+    $rec->setDate($this->date); 
+    $rec->timestamp = $this->date;
+    $rec->name = $this->formatName();
+    $rec->desc = $this->formatDesc();
+    return $rec;
+  }
+  //
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->ProcResults = array(new ProcResult());
+    $c->Provider = new Provider();
+    $c->Address_addrFacility = new Address();
+    //$c->Ipc_ipc = new Ipc();
+    return $c;
+  }
+  static function fetchForPreview($id) {
+    $rec = self::fetch($id);
+    return $rec;
+  }
+} 
+?>

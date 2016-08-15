@@ -1,0 +1,120 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/MsgThread.php';
+/**
+ * Message Inbox
+ */
+class MsgInbox extends SqlRec {
+  //
+  public $inboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  public /*MsgPost*/ $MsgPost;
+  //
+  const IS_UNREAD = '0';
+  const IS_READ = '1';
+  const IS_SENT = '2';
+  const IS_CLOSED = '9';
+  //
+  const ACCESS_READ = 0;
+  const ACCESS_POST = 1;
+  //
+  public function getSqlTable() {
+    return 'msg_inbox';
+  }
+  /**
+   * @param MsgPost $post just added
+   */
+  public function saveAsSent($post) {
+    if ($this->isRead == MsgInbox::IS_READ) {
+      $this->postId = $post->postId;
+      $this->isRead = MsgInbox::IS_SENT;
+      $this->save();
+    }
+  }
+  /**
+   * @param MsgPost $post just added
+   */
+  public function saveAsClose($post) {
+    $this->isRead = MsgInbox::IS_CLOSED;
+    $this->save();
+  }
+  //
+  /**
+   * @return int total unread
+   */
+  public static function fetchMyInboxCt() {
+    global $myLogin;
+    $rec = new MsgInbox();
+    $rec->recipient = $myLogin->userId;
+    $rec->isRead = MsgInbox::IS_UNREAD;
+    return count(SqlRec::fetchAllBy($rec));    
+  }
+  /**
+   * @param int $isRead
+   * @return array(MsgInbox,..) 
+   */
+  public static function fetchMineByIsRead($isRead) {
+    global $myLogin;
+    $rec = new MsgInbox();
+    $rec->recipient = $myLogin->userId;
+    $rec->isRead = $isRead;
+    $rec->MsgPost = new MsgPost();
+    return SqlRec::fetchAllBy($rec);
+  }
+  /**
+   * Fetches (and updates) inbox record for thread read
+   * @param int $access MsgInbox::ACCESS_
+   * @param MsgThread $thread
+   * @return MsgInbox
+   */
+  public static function fetchMineFor($access, $thread) {
+    global $myLogin;
+    $inbox = new MsgInbox();
+    $inbox->recipient = $myLogin->userId;
+    $inbox->threadId = $thread->threadId;
+    $inbox = SqlRec::fetchOneBy($inbox);
+    if ($inbox == null) 
+      if ($access > MsgInbox::ACCESS_READ || $thread->Client == null)
+        LoginDao::throwSecurityError("accesss $access mtid", $mtid);
+    if ($access == MsgInbox::ACCESS_READ)
+      $inbox = MsgInbox::saveAsRead($inbox, $thread);
+    return $inbox;
+  }
+  /**
+   * Create (or update) inboxes for recipients 
+   * @param [$id,..] $sendTos
+   * @param MsgPost $post 
+   */
+  public static function saveAsUnreadFor($sendTos, $post) {
+    $mtid = $post->threadId;
+    $mpid = $post->postId;
+    foreach ($sendTos as &$id) {
+      $inbox = MsgInbox::fetchByThreadAndId($mtid, $id);
+      $inbox->postId = $mpid;
+      $inbox->isRead = MsgInbox::IS_UNREAD;
+      $inbox->save();
+    }
+  }
+  //
+  private static function saveAsRead($inbox, $thread) {
+    if ($inbox && $inbox->isRead == MsgInbox::IS_UNREAD) { 
+      $post = $thread->getLastPost();
+      if ($post) 
+        $inbox->postId = $post->postId;
+      $inbox->isRead = MsgInbox::IS_READ;
+      $inbox->save();
+    }
+    return $inbox;
+  }
+  private static function fetchByThreadAndId($mtid, $id) {
+    $inbox = SqlRec::fetchOneBy(MsgInbox::_threadAndIdCriteria($mtid, $id));
+    return ($inbox) ? $inbox : MsgInbox::_threadAndIdCriteria($mtid, $id);
+  }
+  private static function _threadAndIdCriteria($mtid, $id) {
+    return new MsgInbox(null, $id, $mtid);
+  }
+}
+?>

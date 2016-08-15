@@ -1,0 +1,475 @@
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <realmCode code="US"/>
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.1"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.2"/>
+  <id root="bd2dd8b3-19f0-466f-9323-67c44f9699a6"/>
+  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="34133-9" displayName="Summarization of Episode Note"/>
+  <title>Summary of Care</title>
+  <effectiveTime value="20150113092319+0500"/>
+  <confidentialityCode codeSystem="2.16.840.1.113883.5.25" codeSystemName="HL7 Confidentiality" code="N"/>
+  <languageCode code="en-US"/>
+  <recordTarget>
+    <patientRole>
+      <id root="G1" extension="4094"/>
+      <addr><state>PA</state><city>Recon</city><postalCode>34958</postalCode><streetAddressLine>12 Recon Valley</streetAddressLine></addr>
+      <telecom value="555-555-5555"/>
+      <patient>
+        <name><given>Recon</given><family>Recon</family></name>
+        <administrativeGenderCode codeSystem="2.16.840.1.113883.5.1" codeSystemName="HL7 AdministrativeGender" code="M"/>
+        <birthTime value="19960104"/>
+      </patient>
+      <providerOrganization>
+        <id root="G1"/>
+        <name>Clicktate Practice</name>
+        <telecom value="888 825-4258"/>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </providerOrganization>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="20150113092319"/>
+    <assignedAuthor>
+      <id root="G1" extension="U1"/>
+      <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      <telecom value="888 825-4258"/>
+      <assignedPerson>
+        <name><given>Doctor</given><family>Clicktate</family></name>
+      </assignedPerson>
+      <representedOrganization>
+        <id root="G1"/>
+        <name>Clicktate Practice</name>
+        <telecom value="888 825-4258"/>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="G1"/>
+        <name>Clicktate Practice</name>
+        <telecom value="888 825-4258"/>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <documentationOf>
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low value="20150113092319"/>
+        <high value="20150113092319"/>
+      </effectiveTime>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="48765-2" displayName="Allergies, Adverse Reactions, Alerts"/>
+          <title>Allergies and Adverse Reactions</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Substance</th>
+                  <th>Reactions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td ID="ALL835">Penicillin V</td>
+                  <td>Moderate: Dizziness</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td ID="ALL836">Sulfasalazine</td>
+                  <td>Moderate: Wheezing</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.30"/>
+              <id root="G1" extension="A835"/>
+              <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="48765-2" displayName="Allergies, adverse reactions, alerts"/>
+              <statusCode code="completed"/>
+              <effectiveTime>
+                <low nullFlavor="UNK"/>
+                <high nullFlavor="UNK"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.7"/>
+                  <id root="G1" extension="A835"/>
+                  <code codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActCode" code="ASSERTION"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low nullFlavor="UNK"/>
+                  </effectiveTime>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="416098002" displayName="Drug Allergy" xsi:type="CD"/>
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" code="7984" displayName="Penicillin V">
+                          <originalText>
+                            <reference value="#ALL835"/>
+                          </originalText>
+                        </code>
+                        <name>Penicillin V</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39"/>
+                      <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                      <statusCode code="completed"/>
+                      <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.30"/>
+              <id root="G1" extension="A836"/>
+              <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="48765-2" displayName="Allergies, adverse reactions, alerts"/>
+              <statusCode code="completed"/>
+              <effectiveTime>
+                <low nullFlavor="UNK"/>
+                <high nullFlavor="UNK"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.7"/>
+                  <id root="G1" extension="A836"/>
+                  <code codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActCode" code="ASSERTION"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low nullFlavor="UNK"/>
+                  </effectiveTime>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="416098002" displayName="Drug Allergy" xsi:type="CD"/>
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" code="9524" displayName="Sulfasalazine">
+                          <originalText>
+                            <reference value="#ALL836"/>
+                          </originalText>
+                        </code>
+                        <name>Sulfasalazine</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39"/>
+                      <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                      <statusCode code="completed"/>
+                      <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="10160-0" displayName="History of Medication Use"/>
+          <title>Medications</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Instructions</th>
+                  <th>Date(s)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Lantus 100 unit/mL subcutaneous solution</td>
+                  <td>10 unit DAILY inject below the skin</td>
+                  <td>13-Jan-2015</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>lorazepam 0.5 mg tablet</td>
+                  <td>1 tablet TID by mouth</td>
+                  <td>13-Jan-2015</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>simvastatin 20 mg tablet</td>
+                  <td>1 tablet DAILY by mouth</td>
+                  <td>13-Jan-2015</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+              <id root="G1" extension="M3601"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20150113091800"/>
+                <high value="20150113092319"/>
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI" code="C38288" displayName="Oral"/>
+              <doseQuantity value="10"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23"/>
+                  <manufacturedMaterial>
+                    <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" code="285018" displayName="Lantus 100 unit/mL subcutaneous solution">
+                      <originalText>Lantus 100 unit/mL subcutaneous solution<reference value="MED3601"/></originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.47"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                  <statusCode code="completed"/>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+              <id root="G1" extension="M3599"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20150113091700"/>
+                <high value="20150113092319"/>
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI" code="C38288" displayName="Oral"/>
+              <doseQuantity value="1"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23"/>
+                  <manufacturedMaterial>
+                    <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" code="197900" displayName="lorazepam 0.5 mg tablet">
+                      <originalText>lorazepam 0.5 mg tablet<reference value="MED3599"/></originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.47"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                  <statusCode code="completed"/>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+              <id root="G1" extension="M3603"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20150113091700"/>
+                <high value="20150113092319"/>
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI" code="C38288" displayName="Oral"/>
+              <doseQuantity value="1"/>
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23"/>
+                  <manufacturedMaterial>
+                    <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" code="312961" displayName="simvastatin 20 mg tablet">
+                      <originalText>simvastatin 20 mg tablet<reference value="MED3603"/></originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.47"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                  <statusCode code="completed"/>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="11450-4" displayName="Problem List"/>
+          <title>Problems</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Diagnosis</th>
+                  <th>Code</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Coronary arteriosclerosis (disorder)</td>
+                  <td>53741008</td>
+                  <td>10-May-2012</td>
+                  <td ID="DIAG2235">Active</td>
+                </tr>
+                <tr>
+                  <td>Atrial fibrillation (disorder)</td>
+                  <td>49436004</td>
+                  <td>04-Apr-2012</td>
+                  <td ID="DIAG2237">Active</td>
+                </tr>
+                <tr>
+                  <td>Benign prostatic hyperplasia (disorder)</td>
+                  <td>266569009</td>
+                  <td>23-Jul-2011</td>
+                  <td ID="DIAG2236">Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+              <id root="G1" extension="D2235"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20120510"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <id root="G1" extension="D2235"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="#DIAG2235"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20120510"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" code="414.01" displayName="Coronary arteriosclerosis (disorder)"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+              <id root="G1" extension="D2237"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20120404"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <id root="G1" extension="D2237"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="#DIAG2237"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20120404"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" code="427.31" displayName="Atrial fibrillation (disorder)"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+              <id root="G1" extension="D2236"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20110723"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                  <id root="G1" extension="D2236"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="#DIAG2236"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20110723"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" displayName="Benign prostatic hyperplasia (disorder)"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.7.1"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="47519-4" displayName="History of Procedures"/>
+          <title>Procedures</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Procedure</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="2">No known procedures</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.14"/>
+              <id root="G1"/>
+              <code nullFlavor="UNK"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low nullFlavor="UNK"/>
+              </effectiveTime>
+            </procedure>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>

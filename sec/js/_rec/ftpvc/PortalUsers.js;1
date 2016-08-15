@@ -1,0 +1,137 @@
+/**
+ * Rec PortalUser
+ */
+PortalUser = Object.Rec.extend({
+  //
+  onload:function() {
+    this._status = this.uiStatus();
+    this._scq1 = C_PortalUser.CUSTOM;
+    this._scq2 = C_PortalUser.CUSTOM;
+    this._scq3 = C_PortalUser.CUSTOM;
+    this._lastLogin = this.uiLastLogin();
+  },
+  isActivated:function() {
+    return this.active && this.status == C_PortalUser.STATUS_PW_SET;
+  },
+  isSuspended:function() {
+    return ! this.active;
+  },
+  uiStatus:function() {
+    if (! this.active) 
+      return 'Suspended';
+    switch (this.status) {
+      case C_PortalUser.STATUS_RESET:
+      case C_PortalUser.STATUS_CHALLENGED:
+        return 'Not yet activated';
+      case C_PortalUser.STATUS_PW_SET:
+        return 'Activated on ' + this.pwSet;
+    }
+  },
+  uiLastLogin:function() {
+    return (this.LastLogin) ? this.LastLogin.logDate : 'Never';
+  },
+  //
+  asSelector:function(includeName) {
+    var text = (includeName) ? this.uid + ' (' + this.Client.name + ')' : this.uid;
+    return Html.AnchorAction.asKey(text);
+  },
+  from:function(fs) {
+    if (fs.portalUser)
+      return this.revive(fs.portalUser);
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      create:function(callback) {
+        Ajax.UserGroup.createPortalUser(self, worker, callback);
+      },
+      save:function(callback) {
+        Ajax.UserGroup.savePortalUser(self, worker, callback);
+      },
+      reset:function(callback) {
+        Ajax.UserGroup.resetPortalUser(self.Client.clientId, worker, callback);
+      },
+      suspend:function(callback) {
+        Ajax.UserGroup.suspendPortalUser(self.Client.clientId, worker, callback);
+      }
+    }
+  }
+})
+//
+PortalUsers = Object.RecArray.of(PortalUser, {
+  //
+  ajax:function(worker) {
+    return {
+      fetch:function(callback) {
+        Ajax.UserGroup.getPortalUsers(callback);
+      }
+    }
+  }
+})
+//
+/**
+ * Rec NewPortalUser
+ */
+NewPortalUser = Object.Rec.extend({
+  onload:function(json) {
+    this.setCqs();
+  },
+  setCqs:function() {
+    for (var i = 1; i <= 3; i++)  
+      this.setCq(i);
+  },
+  setCq:function(i) {
+    var sel = this['_scq' + i];
+    var qkey = 'cq' + i;
+    if (sel != C_PortalUser.CUSTOM)
+      this[qkey] = C_PortalUser.QUESTIONS[sel];
+    else if (this[qkey] == C_PortalUser.CUSTOM_Q)
+      this[qkey] = null;
+  },
+  from:function(client) {
+    var id = IdGenerator.makeId(client.clientId);
+    var pw = IdGenerator.makePw(client.clientId);
+    return this.revive({
+      'clientId':client.clientId,
+      'uid':id,
+      'pwpt':pw,
+      'lastName':client.lastName.toUpperCase(),
+      'zipCode':client.Address_Home && client.Address_Home.zip,
+      'email':client.Address_Home && client.Address_Home.email1,
+      '_scq1':'0',
+      '_scq2':'1',
+      '_scq3':'2'
+    });
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      create:function(callback) {
+        Ajax.UserGroup.createPortalUser(self, worker, callback);
+      }
+    }
+  }
+})
+//
+IdGenerator = {
+  LETTERS:'CHJLMNRTWX',
+  DIGITS:'23479',
+  //
+  makeId:function(cid) {
+    return this.encode(String.toInt(cid) + 100000, this.LETTERS) + this.encode(String.toInt(String.rnd(2)), this.DIGITS, 2);
+  },
+  makePw:function(cid) {
+    return this.encode(String.toInt(cid) + 987654, this.LETTERS);
+  },
+  encode:function(n, cipher, len) {
+    var code = '';
+    var s = n.toString(cipher.length);
+    if (len)
+      s = String.zpad(s, len);
+    for (var i = s.length - 1; i >= 0; i--) 
+      code += cipher.charAt(String.toInt(s.charAt(i)));
+    return code;
+  }
+} 

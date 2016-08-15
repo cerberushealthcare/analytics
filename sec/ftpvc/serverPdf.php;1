@@ -1,0 +1,14 @@
+<?php
+require_once 'php/pdf/HTMLPDF.php';
+//
+$htmlBody = stripslashes($_POST['body']);
+$htmlHeader = stripslashes($_POST['head']);
+$filename = $_POST['filename'];
+$author = $_POST['author'];
+$title = $_POST['title'];
+$font = (isset($_POST['font'])) ? $_POST['font'] : null;
+$pdf = new HTMLPDF($font);
+$pdf->setDocInfo($author, $title);
+$pdf->setHTML($htmlBody, $htmlHeader);
+$pdf->Output($filename, 'D');
+?>

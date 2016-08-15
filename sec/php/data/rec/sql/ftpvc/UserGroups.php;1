@@ -1,0 +1,100 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+require_once 'php/data/rec/sql/_UserRec.php';
+/**
+ * User Groups DAO
+ * @author Warren Hornsby
+ */
+class UserGroups {
+  //
+  static $first;
+  /**
+   * @return UserGroup
+   */
+  public function get() {
+    global $myLogin;
+    return UserGroup::fetch($myLogin->userGroupId);
+  }
+  /**
+   * @return array(UserDoctor,..)
+   */
+  public function getDocs() {
+    global $myLogin;
+    return UserDoctor::fetchAll($myLogin->userGroupId);
+  }
+  /**
+   * @return string '{id:"Dr. Name",..}'
+   */
+  public function getDocsJsonList() {
+    $docs = self::getDocs();
+    $list = array();
+    self::$first = current($docs);
+    foreach ($docs as $doc) 
+      $list[$doc->userId] = $doc->name;
+    return jsonencode($list);
+  }
+  /**
+   * @return UserDoctor
+   */
+  public function getFirstDoc() {
+    if (self::$first == null)
+      self::$first = current(self::getDocs());
+    return self::$first;
+  }
+}
+class UserGroup extends SqlRec {
+  //
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  //
+  const USAGE_LEVEL_BASIC = '0';
+  const USAGE_LEVEL_PREMIUM = '1';
+  const USAGE_LEVEL_ERX = '2';
+  //
+  public function getSqlTable() {
+    return 'user_groups';
+  }
+  //
+  /**
+   * @param int $ugid
+   * @return UserGroup 
+   */
+  public static function fetch($ugid) {
+    return parent::fetch($ugid, __CLASS__);
+  }
+}
+class UserDoctor extends UserRec {
+  //
+  public $userId;
+  public $name;
+  public $active;
+  public $userGroupId;
+  public $userType;
+  //
+  public function toJsonObject($o) {
+    $o2 = new stdClass();
+    $o2->name = $o->name;
+    return $o2;
+  }
+  /**
+   * @param int $ugid
+   * @param bool $active (optional)
+   * @return array(UserDoctor,..)
+   */
+  static function fetchAll($ugid, $active = true) {
+    $c = self::asCriteria($ugid);
+    $c->active = $active;
+    return self::fetchAllBy($c);
+  }
+  //
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->userType = self::TYPE_DOCTOR;
+    return $c;
+  }
+}
+?>

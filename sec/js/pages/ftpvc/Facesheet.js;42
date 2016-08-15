@@ -1,0 +1,840 @@
+var SOURCE_NEWCROP = 1;
+/**
+ * Facesheet
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var Facesheet = {
+  cid:null,
+  fs:null,
+  /*
+   * Loader
+   */
+  load:function(query) {
+    Page.setEvents();
+    //Pop.Log.show();
+    if (Ui.browser.isMsie())
+      this.setPrintEvents();
+    this.loadPolling();
+    this.cid = query.id;
+    Page.sessid = query.sess;
+    overlayWorking(true);
+    if (this.cid == null)
+      Page.Nav.goPatients();
+    Page.work(function() {
+      page._getFacesheet(query);
+    });
+  },
+  loadPolling:function() {
+    Polling.StaleFacesheet.load(
+      function(timestamp) {
+        Page.show($('fs-refresh'), true);
+      });
+  },
+  setPrintEvents:function() {
+    var width;
+    var bc = $('bodyContainer');
+    Page.attachEvent('beforeprint', function() {
+      width = bc.style.width;
+      bc.style.width = '100%';
+      $('bodyContent').style.padding = '0';
+    });
+    Page.attachEvent('afterprint', function() {
+      bc.style.width = width;
+      $('bodyContent').style.padding = '';
+    });
+  },
+  onFocus:function() {
+    var fs = this.fs;
+    var self = this;
+    if (fs) {
+      if (Pop.isActive()) {
+        Polling.StaleFacesheet.resume();
+      } else {
+        Polling.StaleFacesheet.stop();
+        overlayWorking(true);
+        Ajax.Facesheet.getIfUpdated(this.cid, fs.cuTimestamp, 
+          function(fs) {  
+            if (fs)
+              self._loadFacesheet(fs);
+            else
+              Polling.StaleFacesheet.start(self.fs);
+            overlayWorking(false);
+          });
+      }
+    }
+  },
+  onBlur:function() {
+    Polling.StaleFacesheet.stop();
+  },
+  /*
+   * Refresh UI after facesheet change
+   */
+  facesheetChanged:function(fs) {
+    if (fs) {
+      this.fs = fs;
+    }
+    overlayWorking(true);
+    this._loadFacesheet();
+    overlayWorking(false);
+  },
+  /*
+   * UI interactions
+   */
+  pRefresh:function() {
+    overlayWorking(true);
+    this._getFacesheet();
+  },
+  pPopNotepad:function() {
+    NotepadTile.pop();
+  },
+  pPopDemo:function() {
+    DemoTile.pop();
+  },
+  pPopMeds:function() {
+    MedTile.pop();
+  },
+  pNewCrop:function(dest) {
+    var fs = this.fs;
+    var self = this;
+    overlayWorking(true);
+    NewCrop.validate(function() {
+      NewCrop.sendFromFacesheet(dest, page.acceptNewCropRefresh);
+    });
+  },
+  requestNewCropRefresh:function() {
+    NewCrop.refreshFromNewCrop(this.fs.clientId, null, false, page.acceptNewCropRefresh);
+  },
+  acceptNewCropRefresh:function(f) {
+    var fs = page.fs;
+    fs.cuTimestamp = f.cuTimestamp;
+    fs.allergies = f.allergies;
+    fs.meds = f.meds;
+    fs.activeMeds = f.activeMeds;
+    page.facesheetChanged(fs);
+    if (fs.FaceAllergies)
+      fs.FaceAllergies.update(f);
+    if (fs.FaceMeds)
+      fs.FaceMeds.update(f);
+  },
+  pPrint:function() {
+    Ajax.Audit.printFacesheet(this.fs.client);
+    call(window.print);
+  },
+  pPopHm:function(pcid) {
+    HmTile.pop(pcid);
+  },
+  pPopVitals:function(fvid) {
+    VitalTile.pop(fvid);
+  },
+  pPopAllergies:function() {
+    AllerTile.pop();
+  },
+  pPopDiagnoses:function() {
+    DiagTile.pop();
+  },
+  pPopDocHx:function() {
+    DocTile.pop();
+  },
+  pPopImmun:function() {
+    ImmunTile.pop();
+  },
+  pPopTrack:function() {
+    TrackTile.pop();
+  },
+  pPopMedSurgHx:function() {
+    HxTile.pop(FaceUi.FACE_HX_TAB_MED);
+  },
+  pPopFamHx:function() {
+    HxTile.pop(FaceUi.FACE_HX_TAB_FAM);
+  },
+  pPopSocHx:function() {
+    HxTile.pop(FaceUi.FACE_HX_TAB_SOC);
+  },
+  pEditDoc:function(sid) {
+    Includer.getDocOpener_open(sid);
+  },
+  pNewDoc:function() {
+    var c = this.fs.client;
+    Includer.getDocOpener_new(c.clientId, c.name);
+  },
+  pNewAppt:function() {
+    Page.Nav.goSchedNew(this.fs.client.clientId);
+  },
+  pAppt:function(id) {
+    Page.Nav.goSchedPop(id);
+  },
+  pNewMsg:function() {
+    Page.Nav.goMessageNew(this.fs.client.clientId);
+  },
+  //
+  _getFacesheet:function(query) {
+    var self = this;
+    Ajax.Facesheet.get(this.cid,
+      function(fs) {
+        self._loadFacesheet(fs);
+        overlayWorking(false);
+        NewCrop.loadFromFacesheet(me.perm.er, fs.client);
+        if (query && query.pe)  // pop edit demo
+          DemoTile.pop();
+        else if (query && query.nc)  // NewCrop
+          NewCrop.sendFromFacesheet(query.nc);
+      });
+  },
+  _loadFacesheet:function(fs) {
+    fs = (fs) ? fs : this.fs;
+    this.fs = fs;
+    this.fs.activeLegacy = false;
+    this.fs.activeErx = false;
+    setPageTitle(fs.client.name);
+    setText('h1-name', fs.client.name);
+    DemoTile.load(fs);
+    NotepadTile.load(fs);
+    WorkflowTile.load(fs);
+    AllerTile.load(fs);
+    DiagTile.load(fs);
+    MedTile.load(fs);
+    HxTile.load(fs);
+    HmTile.load(fs);
+    DocTile.load(fs);
+    VitalTile.load(fs);
+    ImmunTile.load(fs);
+    TrackTile.load(fs);
+    this._resizeDivs();
+    this._renderPageBreaks();
+    Polling.StaleFacesheet.start(fs);
+    Page.show($('fs-refresh'), false);
+    showIf(me.perm.er && fs.activeLegacy, 'legacy-sticky');
+    if (me.perm.er && fs.medsNcStale) {
+      fs.medsNcStale = false;
+      this.requestNewCropRefresh();
+    }
+  },
+  _renderPageBreaks:function() {
+    this._clearPageBreaks();
+    var divs = $$('print');
+    var y = 0;
+    var pgs = 1;
+    var widow;
+    for (var i = 0; i < divs.length; i++) {
+      var div = divs[i];
+      var ht = div.offsetHeight;
+      y += ht;
+      if ((pgs == 1 && y > 950) || (pgs > 1 && y > 760)) {
+        if (pgs == 1) {
+          divs[0].parentElement.insertBefore(createDiv('pgbrk', 'pghead1'), divs[0]);
+        }
+        pgs++;
+        if (widow) {
+          widow.parentElement.insertBefore(createDiv('pgbrk', 'pghead'), widow);
+          y = widow.offsetHeight + ht;      
+          widow = null;
+        } else {
+          div.parentElement.insertBefore(createDiv('pgbrk', 'pghead'), div);
+          y = ht;
+        }
+      } else {
+        widow = (divs[i].className == 'no-widow') ? divs[i] : null; 
+      }
+    }
+    this._setPageBreaks();
+  },
+  _clearPageBreaks:function() {
+    var divs = $$('pgbrk');
+    while (divs.length)
+      divs[0].parentElement.removeChild(divs[0]); 
+  },
+  _setPageBreaks:function() {
+    var fs = this.fs;
+    var h = 'Patient: ' + fs.client.name + ' (' + fs.client.uid + ')<br>DOB: ' + fs.client.birth + ' (age ' + fs.client.age + ')<br>';
+    var divs = $$('pgbrk');
+    var pgs = divs.length;
+    for (var i = 0; i < divs.length; i++) {
+      var p = 'Page ' + (i + 1) + ' of ' + pgs;
+      divs[i].innerHTML = (i == 0) ? p : h + p;
+    }
+  },
+  _resizeDivs:function() {
+    syncHeights(['med-tbl', 'dia-tbl'], 100);
+    syncHeights(['medhx-box', 'famhx-box', 'sochx-box']);
+    syncHeights(['imm-box', 'track-box']);
+  }
+};
+/**
+ * Tiles
+ */
+var DemoTile = {
+  load:function(fs) {
+    var c = fs.client;
+    setText('dem-cid', c.uid);
+    setText('dem-dob', c.birth);
+    setText('dem-age', c.age + ' ' + c._sex.toLowerCase());
+    setText('dem-lbl-flags', '');
+    setText('dem-flags', '');
+    var parents = [];
+    if (c.Address_Father && c.Address_Father.name) parents.push(c.Address_Father.name);
+    if (c.Address_Mother && c.Address_Mother.name) parents.push(c.Address_Mother.name);
+    if (parents.length) {
+      setText('dem-lbl-flags', 'Parent(s):');
+      setHtml('dem-flags', bulletJoin(parents)).className = 'ro';
+    }    
+    if (c.cdata5 || c.cdata6) {
+      var flags = [];
+      if (c.cdata5) flags.push('Living Will');
+      if (c.cdata6) flags.push('Power of Attorney');
+      setText('dem-lbl-flags', 'On File:');
+      setHtml('dem-flags', bulletJoin(flags)).className = 'ro red';
+    }
+    //$('portrait').className = (c.sex == 'F') ? 'pf' : 'pm';
+    var pl = new ProfileLoader('dem-lbl-addr', 'dem-addr');
+    var a = c.Address_Home;
+    pl.add('Address:', bulletJoin([a.addr1, a.addr2, a.csz], true));
+    mergeInto(pl, {
+      phones:[],
+      phoneLabel:'Phone(s):',
+      addPhoneBy:function(label, addr) {
+        if (addr)
+          if (addr.phone1) 
+            this.addPhone(addr.phone1 + ' (' + label + ')');
+          if (addr.phone2) 
+            this.addPhone(addr.phone2 + ' (' + label + ')');
+          if (addr.phone3) 
+            this.addPhone(addr.phone2 + ' (' + label + ')');
+      },
+      addPhone:function(text) {
+        this.phones.push(text);
+        if (this.phones.length > 1)
+          this.writePhone();
+      },
+      writePhone:function() {
+        if (this.phones.length) {
+          this.add(this.phoneLabel, bulletJoin(this.phones, true));
+          this.phones = [];
+          this.phoneLabel = null;
+        }
+      }
+    });
+    pl.addPhone(AddressUi.formatPhone(a.phone1, a.phone1Type));
+    if (a.phone2) 
+      pl.addPhone(AddressUi.formatPhone(a.phone2, a.phone2Type));
+    pl.addPhoneBy('Emer', c.Address_Emergency);
+    pl.addPhoneBy('Father', c.Address_Father);
+    pl.addPhoneBy('Mother', c.Address_Mother);
+    pl.addPhoneBy('Spouse', c.Address_Spouse);
+    pl.addPhoneBy('RX', c.Address_Rx);
+    pl.writePhone();
+    var ulp = clearChildren($('ul-dem-prt'));
+    if (c.icards) {
+      this._loadIcard(ulp, c.icards[0], 'Insurance1:');
+      if (c.icards.length > 1) 
+        this._loadIcard(ulp, c.icards[1], 'Insurance2:');
+    }
+    if (c.cdata1) {
+      this._addUlp(ulp, 'Custom1:', c.cdata1);
+    }
+    if (c.cdata2) {
+      this._addUlp(ulp, 'Custom2:', c.cdata2);
+    }
+    if (c.cdata2) {
+      this._addUlp(ulp, 'Custom3:', c.cdata3);
+    }
+  },
+  _addPhone:function(pl, label, addr) {
+    if (addr && addr.phone1)
+      pl.add(label, AddressUi.formatPhone(addr.phone1, addr.phone1Type));
+  },
+  _loadIcard:function(ulp, ic, lbl) {
+    var a = [ic.planName, ic.groupNo, ic.subscriberNo, ic.dateEffective];
+    this._addUlp(ulp, lbl, bulletJoin(a));
+  },
+  _addUlp:function(ulp, lbl, html) {
+    var li = addListItem(ulp);
+    li.appendChild(createLabel('first', lbl));
+    li.appendChild(createSpan('ro', null, null, html));
+  },
+  pop:function() {
+    Includer.getPatientEditor_pop(page.fs.client, null, 
+      function(client) {
+        page.pRefresh();
+      });
+  }
+}
+var NotepadTile = {
+  load:function(fs) {
+    if (fs.client.notes) {
+      setClass('notepad', 'full');
+      hide('notepad-empty');
+      show('notepad-text').innerHTML = fs.client.notes;
+    } else {
+      setClass('notepad', '');
+      show('notepad-empty');
+      hide('notepad-text');
+    }
+  },
+  pop:function() {
+    var fs = page.fs;
+    if (fs.client.notes) {
+      setValue("pop-cn-text", brToCrlf(fs.client.notes));
+    } else {
+      setValue("pop-cn-text", "");
+    }
+    Pop.zoom("pop-cn", "pop-cn-text");
+  },
+  pSave:function() {
+    var fs = page.fs;
+    var text = value("pop-cn-text");
+    if (isBlank(text)) {
+      text = null; 
+    } else {
+      text = esc(crlfToBr(text));
+    }
+    Pop.close();
+    overlayWorking(true);
+    Ajax.Facesheet.Patients.saveNotes(fs.client.clientId, text, 
+      function(fs) {
+        page.fs.cuTimestamp = fs.cuTimestamp;
+        page.fs.client = fs.client;
+        page.facesheetChanged();
+      });
+  },
+  pDelete:function() {
+    setValue("pop-cn-text", "").select();
+  }
+}
+var WorkflowTile = {
+  load:function(fs) {
+    this.renderWfVital(fs);
+    this.renderWfAppt(fs);
+    this.renderWfDocs(fs);
+  },
+  renderWfVital:function(fs) {
+    var a;
+    var href;
+    var div = clearChildren($('wf-vit'));
+    if (fs.workflow.vital) {
+      href = 'javascript:page.pPopVitals(' + fs.workflow.vital.dataVitalsid + ')';
+      a = createAnchor(null, href, 'qcmd qvital', null, 'Vitals <span>(' + bulletJoin(fs.workflow.vital.all) + ')</span>');
+    } else {
+      href = 'javascript:page.pPopVitals()';
+      a = createAnchor(null, href, 'qicon qnew-vital', "Record Today's Vitals...");
+    }
+    div.appendChild(a);
+    if (a.clientWidth > 400) {
+      a.style.width = 400;
+    }
+  },
+  renderWfAppt:function(fs) {
+    var a;
+    var href;
+    var div = clearChildren($('wf-appt'));
+    if (fs.workflow.appt) {
+      var e = fs.workflow.appt;
+      href = 'javascript:page.pAppt(' + e.id + ')';
+      a = createAnchor('qAppt', href, 'qcmd qappt', null, e.date + ' ' + e.time + ' - ' + e.type);
+    } else {
+      href = 'javascript:page.pNewAppt()';
+      a = createAnchor('qAppt', href, 'qicon qnew-appt', 'New Appointment...');
+    }
+    div.appendChild(a);
+  },
+  renderWfDocs:function(fs) {
+    var a;
+    var href;
+    var ul = clearChildren($('wf-doc-ul'));
+    if (fs.workflow.docs) {
+      var li = addListItem(ul);
+      for (var i = 0; i < fs.workflow.docs.length; i++) {
+        var e = fs.workflow.docs[i];
+        href = 'javascript:page.pEditDoc(' + e.id + ')';
+        a = createAnchor(null, null, 'qcmd qnote', null, e.label + ' <br><span>(' + e.date + ')</span>', href);
+        li.appendChild(a);
+      }
+    }
+    a = createAnchor(null, 'javascript:page.pNewDoc()', 'qicon qnew-note', 'Create New Document...');
+    var a2 = createAnchor(null, 'javascript:page.pNewMsg()', 'qicon qnew-msg', 'New Message...');
+    var ul = addListItem(ul);
+    ul.appendChild(a);
+    ul.appendChild(a2);
+  }
+}
+var AllerTile = {
+  load:function(fs) {
+    $('all-tbl').style.border = (fs.allergies) ? '2px dashed red' : '';
+    $('allprt-tbl').style.border = (fs.allergies) ? '2px dashed red' : '';
+    var t = new TableLoader('all-tbody', 'off', 'all-div');
+    var tp = new TableLoader('allprt-tbody', 'off', 'allprt-div');
+    var self = this;
+    var click = function(){self.pop()};
+    if (fs.allergies) {
+      for (var i = 0; i < fs.allergies.length; i++) {
+        var allergy = fs.allergies[i];
+        var cls = 'fs aller';
+        if (me.perm.er && allergy.source != SOURCE_NEWCROP) {
+          fs.activeLegacy = true;
+          cls = 'fs aller legacy';
+        }
+        if (allergy.source == SOURCE_NEWCROP) {
+          fs.activeErx = true;
+        }
+        var html = bulletJoin(allergy.reactions);
+        t.createTrTd();
+        t.append(createAnchor(null, null, cls, allergy.agent, null, click), createSpan('lpad', null, null, html));
+        tp.createTrTd();
+        tp.append(createAnchor(null, null, cls, allergy.agent, null, click), createSpan('lpad', null, null, html));
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Known)', null, click));
+      tp.createTrTd();
+      tp.tr.className = '';
+      tp.append(createAnchor(null, null, 'fsnone', '(None Known)', null, click));
+    }
+  },
+  pop:function() {
+    Includer.getFaceAllergies_pop(page.fs, true, [page.facesheetChanged, page]);
+  }
+}
+var DiagTile = {
+  load:function(fs) {
+    var t = new TableLoader('dia-tbody', 'off', 'dia-div');
+    if (fs.diagnoses) {
+      for (var i = 0; i < fs.diagnoses.length; i++) {
+        var diagnosis = fs.diagnoses[i];
+        if (diagnosis.active) {
+          t.createTrTd();
+          t.append(createA('fs', diagnosis._name, iife(this.pop)));
+        }
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createA('fsnone', '(None Recorded Active)', DiagTile.pop));
+    }
+  },
+  pop:function() {
+    Includer.getFaceDiagnoses_pop(page.fs, true, [page.facesheetChanged, page]);    
+  }
+}
+var MedTile = {
+  load:function(fs) {
+    var t = new TableLoader('med-tbody', 'off', 'med-div');
+    var self = this;
+    var click = function(){self.pop()};
+    if (fs.activeMeds) {
+      for (var i = 0; i < fs.activeMeds.length; i++) {
+        var med = fs.activeMeds[i];
+        var cls = 'fs';
+        if (me.perm.er && med.source != SOURCE_NEWCROP) {
+          fs.activeLegacy = true;
+          cls = 'fs legacy';
+        }
+        if (med.source == SOURCE_NEWCROP) {
+          fs.activeErx = true;
+        }
+        var name = (! med.expires) ? med.name : bulletJoin([med.name,' <span>' + med.expireText + '</span>']);
+        t.createTrTd();
+        t.append(createAnchor(null, null, cls, null, name, click));
+        t.append(createSpan('lpad', med.text));
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Recorded)', null, click));
+    }
+  },
+  pop:function() {
+    Includer.getFaceMeds_pop(page.fs, true, [page.facesheetChanged, page]);
+  }
+}
+var ImmunTile = {
+  load:function(fs) {
+    setHtml('imm-sum', this.sumAnchor(fs.immuns));
+  },
+  pop:function() {
+    Includer.getFaceImmun_pop(page.fs, true, [page.facesheetChanged, page]);    
+  },
+  sumAnchor:function(immuns) {
+    if (isEmpty(immuns)) 
+      return null;
+    var a = [];
+    for (var i = 0; i < immuns.length; i++) {
+      var imm = immuns[i];
+      a.push(imm.name);
+    }
+    return "<a class='fs0' href='javascript:ImmunTile.pop()'>" + bulletJoin(a) + "</a>";
+  }
+}
+var TrackTile = {
+  load:function(fs) {
+    setHtml('trk-sum', this.sumAnchor(fs.tracking));
+  },
+  pop:function() {
+    Includer.getFaceTrack_pop(page.fs, true, [page.facesheetChanged, page]);    
+  },
+  sumAnchor:function(trackItems) {
+    if (isEmpty(trackItems)) 
+      return null;
+    var stat = [];
+    var rest = [];
+    for (var i = 0; i < trackItems.length; i++) {
+      var item = trackItems[i];
+      if (item.priority == C_TrackItem.PRIORITY_STAT)
+        stat.push(item.trackDesc);
+      else
+        rest.push(item.trackDesc);
+    }
+    var h = [];
+    if (stat.length > 0)
+      h.push("<a class='fstat' href='javascript:TrackTile.pop()'>" + bulletJoin(stat) + "</a>");
+    if (rest.length > 0)
+      h.push("<a class='f0' href='javascript:TrackTile.pop()'>" + bulletJoin(rest) + "</a>");
+    return bulletJoin(h);
+  }
+}
+var HxTile = {
+  load:function(fs) {
+    this.loadMedHx(fs);
+    this.loadFamHx(fs);
+    this.loadSocHx(fs);
+  },
+  loadMedHx:function(fs) {
+    var tp = new TableLoader('medhx-prt-tbody', 'off', 'medhx-prt-div');
+    for (var proc in fs.medhx.recs) {
+      var rec = fs.medhx.recs[proc];
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var rx = bulletJoin(rec.rx);
+      var comment = bulletJoin(rec.comment);
+      tp.createTr();
+      tp.createTd('fs', proc);
+      tp.createTd('w80', null, bulletJoin([date, type, rx, comment], true));
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd('fs', '(None)');
+    }
+    tp = new TableLoader("surghx-prt-tbody", "off", "surghx-prt-div");
+    for (var proc in fs.surghx.recs) {
+      var rec = fs.surghx.recs[proc];
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var comment = bulletJoin(rec.comment);
+      tp.createTr();
+      tp.createTd("fs", proc);
+      tp.createTd("w80", null, bulletJoin([date, type, comment], true));
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd("fs", "(None)");
+    }
+    
+    this.renderHxSummary(fs);    
+  },
+  renderHxSummary:function(fs) {
+    var as = [];
+    pushIfNotNull(as, this.hxSumProcsAnchor(fs.medhx.recs, FaceUi.FACE_HX_TAB_MED));
+    pushIfNotNull(as, this.hxSumProcsAnchor(fs.surghx.recs, FaceUi.FACE_HX_TAB_SURG));
+    if (as.length > 0) {
+      setHtml('fshx-sum', bulletJoin(as));
+    }
+  },
+  hxSumProcsAnchor:function(recs, tab) {
+    var procs = [];
+    for (var proc in recs) {
+      procs.push(proc);
+    }
+    return this.hxSumAnchor(procs, tab);
+  }, 
+  hxSumAnchor:function(a, tab) {
+    if (isEmpty(a)) return null;
+    return "<a class='fs0' href='javascript:HxTile.pop(" + tab + ")'>" + bulletJoin(a) + '</a>';  
+  },
+  loadFamHx:function(fs) {
+    this.renderFamhxSummary(fs);
+  },
+  renderFamhxSummary:function(fs) {
+    setHtml('famhx-sum', this.hxSumAnchor(fs.famhx.sopts, FaceUi.FACE_HX_TAB_FAM));
+  },
+  loadSocHx:function(fs) {
+    var tp = new TableLoader('sochx-prt-tbody', 'off', 'sochx-prt-div');
+    var topics = [];  // topics that have values
+    for (var topic in fs.sochx) {
+      var tpvals = [];  // ['bullet-rec-values',..]
+      var rec = fs.sochx[topic];
+      var dsyncCombo = FaceUi.getDsyncCombo(topic);
+      for (var dsyncId in rec) {
+        var values = rec[dsyncId].v;
+        dsyncCombo = rec[dsyncId].d;
+        if (dsyncCombo) {
+          tpvals.push(bulletJoin(values) + '<br>');
+        } else {
+          tpvals.push(bulletJoin(values));
+        }
+      }
+      var s = bulletJoin(tpvals, true);
+      if (s != '') {
+        topics.push(topic);
+        tp.createTr();
+        tp.createTd('fs', topic);
+        tp.createTd('w80', null, s);
+      }
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd('fs', '(None)');
+    }
+    if (topics.length) {
+      var a = "<a class='fs0' href='javascript:HxTile.pop(FaceUi.FACE_HX_TAB_SOC)'>" + bulletJoin(topics) + '</a>';
+      setHtml('sochx-sum', a);
+    }    
+  },
+  pop:function(tab) {
+    Includer.getFaceHx_pop(page.fs, tab, true, [page.facesheetChanged, page]);    
+  }
+}
+var HmTile = {
+  load:function(fs) {
+    var t = new TableLoader('hm-tbody', 'off', 'hm-div');
+    var self = this;
+    if (fs.hms) {
+      for (var i = 0; i < fs.hms.length; i++) {
+        var hm = fs.hms[i];
+        var click = 'page.pPopHm(' + hm.procId + ')';
+        var name = (hm.nextExpireText) ? bulletJoin([hm.proc, ' <span>' + hm.nextExpireText + '</span>']) : hm.proc; 
+        var next = (hm.nextExpireText) ? '<span class="red">' + hm.nextShort + '</span>' : hm.nextShort;
+        var results = ellips(simpleBulletJoin(hm.results), 120);
+        t.createTrTd('nowrap');
+        t.append(createAnchor(null, null, 'fs', null, name, click));
+        t.createTd('nowrap', null, nbsp(hm.dateShort));
+        t.createTd(null, null, results);
+        t.createTd('nowrap norb', null, nbsp(next));
+      }
+    } else {
+      var click = 'page.pPopHm()';
+      t.createTrTd();
+      t.td.colSpan = 4;
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Recorded)', null, click));
+    }
+    var tp = new TableLoader("hmprt-tbody", "off", "hmprt-div");
+    if (fs.hmsHistory) {
+      for (var i = 0; i < fs.hmsHistory.length; i++) {
+        var hm = fs.hmsHistory[i];
+        var results = bulletJoin(hm.results);
+        if (hm.sessionId == "0") {
+          tp.createTr();
+          tp.createTd("fs", hm.proc);
+          tp.createTd("w80", null, bulletJoin([hm.dateShort, results], true));
+        }
+      }
+    }
+  },
+  pop:function(pcid) {
+    Includer.getFaceHm_pop(page.fs, pcid, true, [page.facesheetChanged, page]);    
+  }
+}
+var DocTile = {
+  load:function(fs) {
+    var t = new TableLoader('his-tbody', 'off', 'his-div');
+    var hist = fs.clientHistory;
+    if (hist && hist.all) {
+      for (var i = 0; i < hist.all.length; i++) {
+        var e = hist.all[i];
+        t.createTr(e.date, [e.date]);
+        t.createTd('bold', e.date);
+        t.createTdAppend(null, this.createHistAnchor(fs, e));
+      }
+    }
+    fs.clientHistory.filteredSessions = fs.clientHistory.sessions;    
+  },
+  createHistAnchor:function(fs, h) {
+    if (h.type == 0) {  // appt
+      return this.createApptAnchor(fs, h.id);
+    } else if (h.type == 1) {  // session
+      return FaceUi.createSessionAnchor(fs, h.id, true);
+    } else {
+      return this.createMsgAnchor(fs, h.id);
+    }
+  },
+  createMsgAnchor:function(fs, id) {
+    var msg = fs.clientHistory.msgs[id];
+    var label = 'Msg: ' + msg.subject;
+    var href = buildHrefFn('Includer.getMsgPreviewer_pop', [fs.client.clientId, id, true]);
+    var a = createAnchor(null, href, 'icon edit-msg', label);
+    return a;
+  },
+  createApptAnchor:function(fs, id) {
+    var click = 'page.pAppt(' + id + ')';
+    var appt = fs.clientHistory.appts[id];
+    var label = appt.time + ' - ' + appt.type; 
+    var a = createAnchor(null, null, 'icon edit-appt', label, null, click);
+    var span = createSpan();
+    span.appendChild(a);
+    var s = createSpan(null, appt.status);
+    if (appt.statusColor) {
+      s.style.backgroundColor = appt.statusColor;
+    } 
+    span.appendChild(s);
+    return span;
+  },
+  pop:function() {
+    Includer.getFaceDocHx_pop(page.fs, null, true, [page.facesheetChanged, page]);
+  }
+}
+var VitalTile = {
+  load:function(fs) {
+    var self = this;
+    var t = new TableLoader('vit-tbody', 'off', 'vit-div');
+    var tp = new TableLoader('vitprt-tbody', 'off', 'vit-div');
+    if (fs.vitals) {
+      for (var i = 0; i < fs.vitals.length; i++) {
+        var vital = fs.vitals[i];
+        var click = 'page.pPopVitals(' + vital.dataVitalsid + ')';
+        t.createTrTd();
+        t.append(createAnchor(null, null, 'fs vital', vital.date, null, click));
+        if (vital.all) {
+          var div = createDiv(null, 'vit-text', null, bulletJoin(vital.all));
+          t.append(div);
+        }
+        tp.createTrTd('main');
+        tp.append(createAnchor(null, click, 'fs vital', vital.date));
+        tp.createTd(null, vital.pulse);
+        tp.createTd(null, vital.resp);
+        tp.createTd('nowrap', vital.bp);
+        tp.createTd(null, vital.temp);
+        tp.createTd(null, this._wtText(vital));
+        tp.createTd(null, this._htText(vital));
+        tp.createTd(null, vital.bmi);
+        tp.createTd(null, vital.wc);
+        tp.createTd(null, vital.hc);
+        tp.createTd('nowrap', vital.o2);
+      }
+    }
+  },
+  _wtText:function(vital) {
+    var text = null;
+    if (vital.wt) {
+      text = vital.wt;
+      if (vital.wtUnits) {
+        text += ' ' + (vital.wtUnits == 'Pounds' ? 'lbs' : 'kg');
+      }
+    }
+    return text;
+  },
+  _htText:function(vital) {
+    var text = null;
+    if (vital.height) {
+      text = vital.height;
+      if (vital.htUnits) {
+        text += ' ' + (vital.htUnits == 'inches' ? 'in' : 'cm');
+      }
+    }
+    return text;
+  },
+  pop:function(fvid) {
+    Includer.getFaceVitals_pop(page.fs, fvid, true, [page.facesheetChanged, page]);
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = Facesheet;  

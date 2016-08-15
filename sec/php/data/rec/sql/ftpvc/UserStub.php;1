@@ -1,0 +1,26 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Stub
+ */
+class UserStub extends SqlRec {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $userType;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  /**
+   * Static fetchers
+   */
+  public static function fetchByUid($uid) {
+    $rec = new UserStub();
+    $rec->uid = $uid;
+    return SqlRec::fetchFirstBy($rec);
+  }
+}
+?>

@@ -1,0 +1,1373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="./CCD.xsl"?>
+<ClinicalDocument xsi:schemaLocation="urn:hl7-org:v3 http://xreg2.nist.gov:8080/hitspValidation/schema/cdar2c32/infrastructure/cda/C32_CDA.xsd" xmlns:sdtc="urn:hl7-org:sdtc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:hl7-org:v3">
+  <realmCode code="US" />
+  <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+  <templateId assigningAuthorityName="CDA/R2" root="2.16.840.1.113883.3.27.1776" />
+  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1" />
+  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.1" />
+  <templateId root="2.16.840.1.113883.10.20.3" assigningAuthorityName="CDA4CDT" />
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.1" assigningAuthorityName="IHE PCC Medical Documents Specification" />
+  <id extension="D9871A99-7EA0-4CEC-A95A-0CB808A036B7" assigningAuthorityName="Medinformatix" root="1.3.6.1.4.1.31837" />
+  <code code="34133-9" displayName="Summarization of patient data" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+  <title>LUIS TEST</title>
+  <effectiveTime value="20101007131817-0500" />
+  <confidentialityCode />
+  <languageCode code="en-US" />
+  <recordTarget>
+    <patientRole>
+      <id extension="010656" />
+      <addr>
+        <streetAddressLine>100 WIVES TALES ROAD</streetAddressLine>
+        <city>LOS ANGELES</city>
+        <state>CA</state>
+        <postalCode>90045</postalCode>
+        <country>US</country>
+      </addr>
+      <telecom use="HP" value="tel:+1-310-348-7367" />
+      <telecom use="WP" value="tel:+1-310-348-7367" />
+      <telecom use="MC" value="tel:+1-310-348-7367" />
+      <patient>
+        <name>
+          <prefix>Mr.</prefix>
+          <given qualifier="CL">LUIS</given>
+          <family qualifier="BR">TEST</family>
+        </name>
+        <administrativeGenderCode code="M" displayName="Male" codeSystemName="HL7 AdministrativeGenderCodes" codeSystem="2.16.840.1.113883.5.1">
+          <originalText>Male</originalText>
+        </administrativeGenderCode>
+        <birthTime value="20100914" />
+        <languageCommunication>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.2.1" assigningAuthorityName="IHE PCC" />
+          <templateId root="2.16.840.1.113883.3.88.11.83.2" assigningAuthorityName="HITSP C83" />
+          <languageCode nullFlavor="UNK" />
+        </languageCommunication>
+      </patient>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="201010071817" />
+    <assignedAuthor>
+      <id extension="SUP" root="1.3.6.1.4.1.31837" />
+      <addr nullFlavor="NI" />
+      <telecom nullFlavor="NI" />
+      <assignedPerson>
+        <name>
+          <given qualifier="CL">MedInfo</given>
+          <family qualifier="BR">Supervisor</family>
+        </name>
+      </assignedPerson>
+      <representedOrganization>
+        <name>Medinformatix</name>
+        <telecom nullFlavor="NI" />
+        <addr nullFlavor="NI" />
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="1.3.6.1.4.1.31837" />
+        <name>Medinformatix</name>
+        <telecom nullFlavor="NI" />
+        <addr nullFlavor="NI" />
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <documentationOf>
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low nullFlavor="ASKU" />
+        <high nullFlavor="ASKU" />
+      </effectiveTime>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.3.88.11.83.103" assigningAuthorityName="HITSP C83" />
+          <templateId root="2.16.840.1.113883.10.20.1.11" assigningAuthorityName="HL7 SDTC CCD" />
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.6" assigningAuthorityName="IHE PCC" />
+          <code code="11450-4" displayName="Problems" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+          <title>Conditions or Problems</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>ICD-9 Code</th>
+                  <th>Patient Problem</th>
+                  <th>Status</th>
+                  <th>Date Diagnosed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>Diagnosis</td>
+                  <td>531.10</td>
+                  <td>
+                    <content ID="problem-0">Acute Gastric Ulcer With Perf &amp; Obsctruction</content>
+                  </td>
+                  <td>INACTIVE</td>
+                  <td>09/30/2010</td>
+                </tr>
+                <tr>Ty
+                  <td>Diagnosis</td>
+                  <td>786.50</td>
+                  <td>
+                    <content ID="problem-1">Chest pain</content>
+                  </td>
+                  <td>ACTIVE</td>
+                  <td>10/05/2010</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.7" assigningAuthorityName="HITSP C83" />
+              <templateId root="2.16.840.1.113883.10.20.1.27" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" assigningAuthorityName="IHE PCC" />
+              <id />
+              <code nullFlavor="NA" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20100930" />
+                <high />
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.28" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" assigningAuthorityName="IHE PCC" />
+                  <id root="E6B263AF-670C-4B49-93EE-FEECF616D3B8" />
+                  <code code="404684003" displayName="Finding" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <text>
+                    <reference value="#problem-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20100930" />
+                    <high />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="abc" displayName="Acute Gastric Ulcer With Perf &amp; Obsctruction" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.7" assigningAuthorityName="HITSP C83" />
+              <templateId root="2.16.840.1.113883.10.20.1.27" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" assigningAuthorityName="IHE PCC" />
+              <id />
+              <code nullFlavor="NA" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20101005" />
+                <high />
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.28" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" assigningAuthorityName="IHE PCC" />
+                  <id root="7030268E-8835-4383-A78A-191517D3D708" />
+                  <code code="404684003" displayName="Finding" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <text>
+                    <reference value="#problem-1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20101005" />
+                    <high />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="abc" displayName="Chest pain" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.2" />
+          <templateId root="2.16.840.1.113883.3.88.11.83.102" assigningAuthorityName="HITSP C83" />
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.13" assigningAuthorityName="IHE PCC" />
+          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" />
+          <title>Allergies, Adverse Reactions, Alerts</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>SNOMED Code</th>
+                  <th>Medication/Agent</th>
+                  <th>Reaction</th>
+                  <th>Status</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>Drug Allergy</td>
+                  <td></td>
+                  <td>
+                    <content ID="allergyname-0">Sildenafil Citrate</content>
+                  </td>
+                  <td>[viagra]</td>
+                  <td>
+                    <content ID="astatus-0">Active</content>
+                  </td>
+                  <td>09/30/2010</td>
+                </tr>
+                <tr>
+                  <td>Drug Allergy</td>
+                  <td>91939003</td>
+                  <td>
+                    <content ID="allergyname-1">Sulfonamides</content>
+                  </td>
+                  <td>Dizziness</td>
+                  <td>
+                    <content ID="astatus-1">Active</content>
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Drug Allergy</td>
+                  <td>91936005</td>
+                  <td>
+                    <content ID="allergyname-2">Penicillin</content>
+                  </td>
+                  <td>Itching</td>
+                  <td>
+                    <content ID="astatus-2">Active</content>
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.6" assigningAuthorityName="HITSP C83" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+              <id root="1.3.6.1.4.1.31837" extension="0" />
+              <code nullFlavor="NA" />
+              <statusCode code="active" />
+              <effectiveTime>
+                <low value="20100930" />
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" assigningAuthorityName="IHE PCC" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" assigningAuthorityName="IHE PCC" />
+                  <templateId root="2.16.840.1.113883.10.20.1.28" assigningAuthorityName="HL7 SDTC CCD" />
+                  <id root="E213E870-78DA-43CC-AA9A-F02B28C94125" />
+                  <code code="416098002" displayName="Drug Allergy" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20100930" />
+                    <high nullFlavor="UNK" />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="416098002" codeSystem="2.16.840.1.113883.6.96" displayName="Drug Allergy" codeSystemName="SNOMED CT" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code code="Sildenafil Citrate" displayName="Sildenafil Citrate" codeSystemName="Medinformatix" codeSystem="1.3.6.1.4.1.31837">
+                          <originalText>
+                            <reference value="#allergyname-0" />
+                          </originalText>
+                        </code>
+                        <name>Sildenafil Citrate</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code code="33999-4" displayName="Status" codeSystemName="AlertStatusCode" codeSystem="2.16.840.1.113883.6.1" />
+                      <statusCode code="completed" />
+                      <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.6" assigningAuthorityName="HITSP C83" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+              <id root="1.3.6.1.4.1.31837" extension="1" />
+              <code nullFlavor="NA" />
+              <statusCode code="active" />
+              <effectiveTime>
+                <low value="20101005" />
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" assigningAuthorityName="IHE PCC" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" assigningAuthorityName="IHE PCC" />
+                  <templateId root="2.16.840.1.113883.10.20.1.28" assigningAuthorityName="HL7 SDTC CCD" />
+                  <id root="F6538716-71DC-48F7-AFD8-16EC491CF844" />
+                  <code code="416098002" displayName="Drug Allergy" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20101005" />
+                    <high nullFlavor="UNK" />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="416098002" codeSystem="2.16.840.1.113883.6.96" displayName="Drug Allergy" codeSystemName="SNOMED CT" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code code="Sulfonamides" displayName="Sulfonamides" codeSystemName="Medinformatix" codeSystem="1.3.6.1.4.1.31837">
+                          <originalText>
+                            <reference value="#allergyname-1" />
+                          </originalText>
+                        </code>
+                        <name>Sulfonamides</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code code="33999-4" displayName="Status" codeSystemName="AlertStatusCode" codeSystem="2.16.840.1.113883.6.1" />
+                      <statusCode code="completed" />
+                      <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.6" assigningAuthorityName="HITSP C83" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+              <id root="1.3.6.1.4.1.31837" extension="2" />
+              <code nullFlavor="NA" />
+              <statusCode code="active" />
+              <effectiveTime>
+                <low value="20101005" />
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" assigningAuthorityName="IHE PCC" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" assigningAuthorityName="IHE PCC" />
+                  <templateId root="2.16.840.1.113883.10.20.1.28" assigningAuthorityName="HL7 SDTC CCD" />
+                  <id root="6CF1257C-FC52-4D1F-97CF-1B26A842BF28" />
+                  <code code="416098002" displayName="Drug Allergy" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20101005" />
+                    <high nullFlavor="UNK" />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="416098002" codeSystem="2.16.840.1.113883.6.96" displayName="Drug Allergy" codeSystemName="SNOMED CT" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code code="Penicillin" displayName="Penicillin" codeSystemName="Medinformatix" codeSystem="1.3.6.1.4.1.31837">
+                          <originalText>
+                            <reference value="#allergyname-2" />
+                          </originalText>
+                        </code>
+                        <name>Penicillin</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code code="33999-4" displayName="Status" codeSystemName="AlertStatusCode" codeSystem="2.16.840.1.113883.6.1" />
+                      <statusCode code="completed" />
+                      <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.3.88.11.83.112" assigningAuthorityName="HITSP C83" />
+          <templateId root="2.16.840.1.113883.10.20.1.8" assigningAuthorityName="HL7 SDTC CCD" />
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.19" assigningAuthorityName="IHE PCC" />
+          <code code="10160-0" displayName="History of medication use" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+          <title>Medications</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>RxNorm Code</th>
+                  <th>Product</th>
+                  <th>Generic Name</th>
+                  <th>Brand Name</th>
+                  <th>Strength</th>
+                  <th>Instructions</th>
+                  <th>Date Started</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>213271</td>
+                  <td>Medication</td>
+                  <td>Sildenafil</td>
+                  <td>
+                    <content ID="medication-2">Viagra</content>
+                  </td>
+                  <td>100</td>
+                  <td>Take as Directed </td>
+                  <td>09/30/2010</td>
+                  <td>inactive</td>
+                </tr>
+                <tr>
+                  <td>207214</td>
+                  <td>Medication</td>
+                  <td>Methyltestosterone</td>
+                  <td>
+                    <content ID="medication-33">Testred</content>
+                  </td>
+                  <td>10</td>
+                  <td>1 PO Q PM </td>
+                  <td>10/05/2010</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>Medication</td>
+                  <td></td>
+                  <td>
+                    <content ID="medication-47">Dentiva</content>
+                  </td>
+                  <td></td>
+                  <td>1 PO Q AM </td>
+                  <td>10/05/2010</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>Medication</td>
+                  <td></td>
+                  <td>
+                    <content ID="medication-48">Resinol</content>
+                  </td>
+                  <td></td>
+                  <td>Take as Directed </td>
+                  <td>01/06/2010</td>
+                  <td>inactive</td>
+                </tr>
+                <tr>
+                  <td>213271</td>
+                  <td>Medication</td>
+                  <td>Sildenafil</td>
+                  <td>
+                    <content ID="medication-56">Viagra</content>
+                  </td>
+                  <td>100</td>
+                  <td>Take as Directed</td>
+                  <td>10/07/2010</td>
+                  <td>inactive</td>
+                </tr>
+                <tr>
+                  <td>213271</td>
+                  <td>Medication</td>
+                  <td>Sildenafil</td>
+                  <td>
+                    <content ID="medication-57">Viagra</content>
+                  </td>
+                  <td>100</td>
+                  <td>Take as Directed</td>
+                  <td>10/07/2010</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>Medication</td>
+                  <td></td>
+                  <td>
+                    <content ID="medication-58">Child Aspirin</content>
+                  </td>
+                  <td></td>
+                  <td>disregard only a test rx </td>
+                  <td>10/07/2010</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td>198349</td>
+                  <td>Medication</td>
+                  <td>Warfarin</td>
+                  <td>
+                    <content ID="medication-59">Coumadin</content>
+                  </td>
+                  <td>4</td>
+                  <td>1 PO QHS </td>
+                  <td>10/07/2010</td>
+                  <td>active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.8" assigningAuthorityName="HITSP C83" />
+              <id root="0C1C01CA-76A6-47E7-9D61-3DFEF30B3CA6" />
+              <statusCode code="completed" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.53" />
+                  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.9" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" assigningAuthorityName="IHE PCC" />
+                  <manufacturedMaterial classCode="MMAT" determinerCode="KIND">
+                    <code code="297714" displayName="Testred 10 mg Capsule" codeSystemName="NDC" codeSystem="2.16.840.1.113883.6.69">
+                      <originalText>
+                        Testred 10 mg Capsule
+                        <reference value="#medication-33" />
+                      </originalText>
+                    </code>
+                    <name>Testred</name>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.1" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                  <code code="329505003" displayName="Over the counter product" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="33999-4" displayName="Status" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+                  <statusCode code="completed" />
+                  <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <supply classCode="SPLY" moodCode="INT">
+                  <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.3" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                  <templateId root="2.16.840.1.113883.10.20.1.34" />
+                  <id extension="33" root="1.3.6.1.4.1.31837" />
+                  <effectiveTime value="20101005" />
+                  <quantity value=".0" unit="" />
+                </supply>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.8" assigningAuthorityName="HITSP C83" />
+              <id root="70D3BC76-5770-400B-8857-DA4D95137E15" />
+              <statusCode code="completed" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.53" />
+                  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.9" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" assigningAuthorityName="IHE PCC" />
+                  <manufacturedMaterial classCode="MMAT" determinerCode="KIND">
+                    <code code="557433" displayName="Dentiva Lozenge, Extended Release" codeSystemName="NDC" codeSystem="2.16.840.1.113883.6.69">
+                      <originalText>
+                        Dentiva Lozenge, Extended Release
+                        <reference value="#medication-47" />
+                      </originalText>
+                    </code>
+                    <name>Dentiva</name>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.1" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                  <code code="73639000" displayName="Prescription Drug" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="33999-4" displayName="Status" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+                  <statusCode code="completed" />
+                  <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <supply classCode="SPLY" moodCode="INT">
+                  <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.3" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                  <templateId root="2.16.840.1.113883.10.20.1.34" />
+                  <id extension="47" root="1.3.6.1.4.1.31837" />
+                  <effectiveTime value="20101005" />
+                  <quantity value="1.0" unit="(One)" />
+                </supply>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.8" assigningAuthorityName="HITSP C83" />
+              <id root="0DAF22F8-8F0A-4DD8-8FCE-A8465336E9E2" />
+              <statusCode code="completed" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.53" />
+                  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.9" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" assigningAuthorityName="IHE PCC" />
+                  <manufacturedMaterial classCode="MMAT" determinerCode="KIND">
+                    <code code="274650" displayName="Viagra 100 mg Tablet" codeSystemName="NDC" codeSystem="2.16.840.1.113883.6.69">
+                      <originalText>
+                        Viagra 100 mg Tablet
+                        <reference value="#medication-57" />
+                      </originalText>
+                    </code>
+                    <name>Viagra</name>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.1" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                  <code code="73639000" displayName="Prescription Drug" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="33999-4" displayName="Status" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+                  <statusCode code="completed" />
+                  <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <supply classCode="SPLY" moodCode="INT">
+                  <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.3" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                  <templateId root="2.16.840.1.113883.10.20.1.34" />
+                  <id extension="57" root="1.3.6.1.4.1.31837" />
+                  <effectiveTime value="20101007" />
+                  <quantity value="1.0" unit="(One)" />
+                </supply>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.8" assigningAuthorityName="HITSP C83" />
+              <id root="038D93FE-A70D-4954-9A08-BCA9A5AF79E5" />
+              <statusCode code="completed" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.53" />
+                  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.9" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" assigningAuthorityName="IHE PCC" />
+                  <manufacturedMaterial classCode="MMAT" determinerCode="KIND">
+                    <code code="163528" displayName="Child Aspirin 81 mg Tablet, Chewable" codeSystemName="NDC" codeSystem="2.16.840.1.113883.6.69">
+                      <originalText>
+                        Child Aspirin 81 mg Tablet, Chewable
+                        <reference value="#medication-58" />
+                      </originalText>
+                    </code>
+                    <name>Child Aspirin</name>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.1" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                  <code code="73639000" displayName="Prescription Drug" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="33999-4" displayName="Status" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+                  <statusCode code="completed" />
+                  <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <supply classCode="SPLY" moodCode="INT">
+                  <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.3" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                  <templateId root="2.16.840.1.113883.10.20.1.34" />
+                  <id extension="58" root="1.3.6.1.4.1.31837" />
+                  <effectiveTime value="20101007" />
+                  <quantity value="1.0" unit="(One)" />
+                </supply>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" assigningAuthorityName="HL7 SDTC CCD" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" assigningAuthorityName="IHE PCC" />
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" assigningAuthorityName="IHE PCC" />
+              <templateId root="2.16.840.1.113883.3.88.11.83.8" assigningAuthorityName="HITSP C83" />
+              <id root="C837BA61-4F19-45BA-B90B-17EAFCC7A136" />
+              <statusCode code="completed" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.53" />
+                  <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.9" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" assigningAuthorityName="IHE PCC" />
+                  <manufacturedMaterial classCode="MMAT" determinerCode="KIND">
+                    <code code="183478" displayName="Coumadin 4 mg Tablet" codeSystemName="NDC" codeSystem="2.16.840.1.113883.6.69">
+                      <originalText>
+                        Coumadin 4 mg Tablet
+                        <reference value="#medication-59" />
+                      </originalText>
+                    </code>
+                    <name>Coumadin</name>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.1" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                  <code code="329505003" displayName="Over the counter product" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                  <statusCode code="completed" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="33999-4" displayName="Status" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+                  <statusCode code="completed" />
+                  <value code="55561003" displayName="Active" xsi:type="CE" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96" />
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="REFR">
+                <supply classCode="SPLY" moodCode="INT">
+                  <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.3" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                  <templateId root="2.16.840.1.113883.10.20.1.34" />
+                  <id extension="59" root="1.3.6.1.4.1.31837" />
+                  <effectiveTime value="20101007" />
+                  <quantity value=".0" unit="" />
+                </supply>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <!-- <component> <section> <templateId root="2.16.840.1.113883.10.20.1.1"/> <code code="42348-3" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Advance Directive</title> <text> <table> <thead> <tr><td>Description</td></tr> </thead> 
+        <tbody> <tr> <td></td> </tr> <midx:sql query="select varid, vartext, varcode from cldictionary where company='MAIN' and ssno='10656' and section='SHADV'" namespace="directive"> <tr> <td> <content ID="advance-directive-directive:varid">directive:vartext</content> 
+        </td> </tr> </midx:sql> </tbody> </table> </text> <midx:sql query="select varid, vartext, varcode from cldictionary where company='MAIN' and ssno='10656' and section='SHADV'" namespace="directive"> <entry> <observation classCode="OBS" moodCode="EVN"> <templateId 
+        assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.17"/> <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.13"/> <id/> <code code="directive:varcode" displayName="directive:vartext" codeSystemName="Medinformatix" codeSystem="1.3.6.1.4.1.31837"> 
+        <originalText> <reference value="#advance-directive-directive:varid"/> </originalText> </code> <statusCode code="completed"/> <effectiveTime> <low nullFlavor="UNK"/> <high nullFlavor="UNK"/> </effectiveTime> <midx:sql query="select rtrim(substring(clu.mailname, 
+        0, charindex(' ', clu.mailname))) as [{AUTHORFIRSTNAME}], ltrim(substring(clu.mailname, charindex(' ', clu.mailname)+1, len(clu.mailname))) as [{AUTHORLASTNAME}] from cluser clu where clu.company='MAIN' and clu.userid='SUP'" namespace="directive"> <participant 
+        typeCode="CST"> <participantRole classCode="AGNT"> <playingEntity> <name> <given qualifier="CL">directive:{AUTHORFIRSTNAME}</given> <family qualifier="BR">directive:{AUTHORLASTNAME}</family> </name> </playingEntity> </participantRole> </participant> </midx:sql> 
+        <entryRelationship typeCode="REFR"> <observation classCode="OBS" moodCode="EVN"> <templateId root="2.16.840.1.113883.10.20.1.37"/> <code code="33999-4" displayName="Status" codeSystem="2.16.840.1.113883.6.1"/> <statusCode code="completed"/> <value code="425392003" 
+        displayName="Current and Verified" xsi:type="CE" codeSystem="2.16.840.1.113883.6.96"/> </observation> </entryRelationship> </observation> </entry> </midx:sql> </section> </component> -->
+      <!-- <component> <section> <templateId root="2.16.840.1.113883.3.88.11.83.117" assigningAuthorityName="HITSP C83"/> <templateId root="2.16.840.1.113883.10.20.1.6" assigningAuthorityName="HL7 SDTC CCD"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.23" 
+        assigningAuthorityName="IHE PCC"/> <code code="11369-6" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Immunizations</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Vaccine</th> <th>Administration Date</th> </tr> </thead> 
+        <tbody> <tr><td></td><td></td></tr> <midx:sql query="select drugname as [{DRUGNAME}], lotnumber as [{LOTNUMBER}], cast(datepart(yyyy, dispensedate) as varchar) +cast(replicate('0', 2-len(cast(datepart(mm, dispensedate) as varchar))) as varchar) +cast(datepart(mm, 
+        dispensedate) as varchar)+cast(replicate('0', 2-len(cast(datepart(dd, dispensedate) as varchar))) as varchar) +cast(datepart(dd, dispensedate) as varchar) as [{DISPENSEDATE}], cast(newid() as varchar(55)) as [{VACCINEID}], cast(replicate('0', 2-len(cast(datepart(mm, 
+        dispensedate) as varchar))) as varchar) +cast(datepart(mm, dispensedate) as varchar)+'/'+cast(replicate('0', 2-len(cast(datepart(dd, dispensedate) as varchar))) as varchar) +cast(datepart(dd, dispensedate) as varchar)+'/'+cast(datepart(yyyy, dispensedate) 
+        as varchar) as [{DISPENSEDATEDISPLAY}], case status when 'R' then 'true' else 'false' end as [{NEGATIVEINDICATION}], note as [{NOTE}] from cldispense where ssno='10656' and company='MAIN' and type='V'" namespace="vaccine"> <tr> <td><content ID="vaccine-vaccine:@@RESULTINDEX@@">vaccine:{DRUGNAME}</content></td> 
+        <td>vaccine:{DISPENSEDATEDISPLAY}</td> </tr> </midx:sql> </tbody> </table> </text> <midx:sql query="select drugname as [{DRUGNAME}], lotnumber as [{LOTNUMBER}], cast(datepart(yyyy, dispensedate) as varchar) +cast(replicate('0', 2-len(cast(datepart(mm, dispensedate) 
+        as varchar))) as varchar) +cast(datepart(mm, dispensedate) as varchar)+cast(replicate('0', 2-len(cast(datepart(dd, dispensedate) as varchar))) as varchar) +cast(datepart(dd, dispensedate) as varchar) as [{DISPENSEDATE}], cast(newid() as varchar(55)) as [{VACCINEID}], 
+        cast(replicate('0', 2-len(cast(datepart(mm, dispensedate) as varchar))) as varchar) +cast(datepart(mm, dispensedate) as varchar)+'/'+cast(replicate('0', 2-len(cast(datepart(dd, dispensedate) as varchar))) as varchar) +cast(datepart(dd, dispensedate) as varchar)+'/'+cast(datepart(yyyy, 
+        dispensedate) as varchar) as [{DISPENSEDATEDISPLAY}], case status when 'R' then 'true' else 'false' end as [{NEGATIVEINDICATION}], note as [{NOTE}] from cldispense where ssno='10656' and company='MAIN' and type='V'" namespace="vaccine"> <entry typeCode="DRIV"> 
+        <substanceAdministration negationInd="false" classCode="SBADM" moodCode="EVN"> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.24"/> <templateId assigningAuthorityName="HITSP/C32" root="2.16.840.1.113883.3.88.11.32.14"/> <templateId 
+        root="2.16.840.1.113883.3.88.11.83.13" assigningAuthorityName="HITSP C83"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.12" assigningAuthorityName="IHE PCC"/> <id root="vaccine:{VACCINEID}"/> <code code="IMMUNIZ" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode"/> 
+        <statusCode code="completed"/> <effectiveTime xsi:type="IVL_TS" value="vaccine:{DISPENSEDATE}"> <center value="vaccine:{DISPENSEDATE}"/> </effectiveTime> <consumable> <manufacturedProduct> <templateId root="2.16.840.1.113883.10.20.1.53"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" 
+        assigningAuthorityName="IHE PCC "/> <manufacturedMaterial> <code code="00" displayName="vaccine:{DRUGNAME}" codeSystem="2.16.840.1.113883.6.59"> <originalText>vaccine:{DRUGNAME} <reference value="#vaccine-vaccine:@@RESULTINDEX@@"/></originalText> </code> <lotNumberText>vaccine:{LOTNUMBER}</lotNumberText> 
+        </manufacturedMaterial> </manufacturedProduct> </consumable> </substanceAdministration> </entry> </midx:sql> </section> </component> -->
+      <!-- <component> <section> <title>Pregnancy</title> <midx:sql query="if exists(select problem from clproblm where ssno='10656' and company='MAIN' and datediff(mm, reported, getdate()) between 0 and 9 and icd9='V22.2') select 'PREGNANT' AS [{PREGNANCY}] 
+        else select 'NOTPREGNANT' AS [{PREGNANCY}]" namespace="pregnancy"> <midx:conditional condition="'pregnancy:{PREGNANCY}'='PREGNANT'"> <text>Patient is currently pregnant</text> <entry> <observation classCode="OBS" moodCode="EVN"> <code code="77386006" displayName="Patient 
+        currently pregnant" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96"/> <value code="77386006" displayName="Patient currently pregnant" xsi:type="CD" codeSystemName="SNOMED CT" codeSystem="2.16.840.1.113883.6.96"/> </observation> </entry> </midx:conditional> 
+        <midx:conditional condition="'pregnancy:{PREGNANCY}'='NOTPREGNANT'"> <text>Patient is not currently pregnant</text> </midx:conditional> </midx:sql> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.5"/> <code code="47420-5" displayName="Functional status assessment" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Functional status 
+        assessment</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Reported</th> <th>Problem</th> <th>Status</th> <th>ICD9</th> <th>Accident</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="select REPORTED as [{REPORTED}],PROBLEM 
+        AS[{PROBLEM}],STATUS AS [{STATUS}],ICD9 AS [{ICD9}], ACCIDENT AS [{ACCIDENT}] from CLPROBLM WHERE COMPANY='MAIN' AND SSNO='10656'" namespace="functionalstatus"> <tr> <td>functionalstatus:{REPORTED}</td> <td>functionalstatus:{PROBLEM}</td> <td>functionalstatus:{STATUS}</td> 
+        <td>functionalstatus:{ICD9}</td> <td>functionalstatus:{ACCIDENT}</td> </tr> </midx:sql> </tbody> </table> </text> </section> </component> -->
+      <!-- <component> <section> <templateId root="2.16.840.1.113883.3.88.11.83.128" assigningAuthorityName="HITSP/C83"/> <templateId root="2.16.840.1.113883.10.20.1.7" assigningAuthorityName="CCD"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.5.3.5" assigningAuthorityName="IHE 
+        PCC"/> <code code="46264-8" displayName="History of medical device use" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>History of medical device use</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Date Time</th> <th>Description</th> 
+        <th>Note</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="SELECT DATETIME AS[{DATETIME}], ODESC AS [{ODESC}], OMEMO AS [{OMEMO}] FROM CLORDER WHERE COMPANY='MAIN' AND SSNO='10656' AND DEPT='DME'" namespace="medicaldevices"> <tr> <td>medicaldevices:{DATETIME}</td> 
+        <td>medicaldevices:{ODESC}</td> <td>medicaldevices:{OMEMO}</td> </tr> </midx:sql> </tbody> </table> </text> <midx:sql query="SELECT CONVERT(VARCHAR,CAST(DATETIME AS DATETIME),112) AS[{DATETIME}], ODESC AS [{ODESC}], OMEMO AS [{OMEMO}] FROM CLORDER WHERE COMPANY='MAIN' 
+        AND SSNO='10656' AND DEPT='DME'" namespace="medicaldevices"> <entry typeCode="DRIV"> <supply classCode="SPLY" moodCode="EVN"> <templateId root="2.16.840.1.113883.10.20.1.34"/> <id root="c4ffe98e-3cd3-4c54-b5bd-08ecb80379e0"/> <statusCode code="completed"/> 
+        <effectiveTime xsi:type="IVL_TS"> <center value="medicaldevices:{DATETIME}"/> </effectiveTime> <participant typeCode="DEV"> <participantRole classCode="MANU"> <templateId root="2.16.840.1.113883.10.20.1.52"/> <addr/> <telecom/> <playingDevice> <code code="abc" 
+        codeSystem="2.16.840.1.113883.6.96" displayName="medicaldevices:{ODESC}"/> </playingDevice> </participantRole> </participant> </supply> </entry> </midx:sql> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.3.88.11.83.126"/> <templateId assigningAuthorityName="IHE" root="1.3.6.1.4.1.19376.1.5.3.1.3.16"/> <templateId root='2.16.840.1.113883.10.20.1.15'/> <code code="29762-2" 
+        displayName="Social history" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Social history</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Reported</th> <th>Question</th> <th>Answer</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> 
+        <midx:sql query="select REPORTED AS [{REPORTED}],VARCODE AS[{QUESTION}],VARTEXT AS[{ANSWER}] FROM CLDICTIONARY WHERE SECTION='SOC' AND STATUS='Y' AND COMPANY='MAIN' AND SSNO='10656'" namespace="socialhistory"> <tr> <td>socialhistory:{REPORTED}</td> <td>socialhistory:{QUESTION}</td> 
+        <td>socialhistory:{ANSWER}</td> </tr> </midx:sql> </tbody> </table> </text> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.2"/> <code code="10157-6" displayName="History of family member diseases" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>History of 
+        family member diseases</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Entry Date</th> <th>Family Member</th> <th>History</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="select ENTRYDATE AS [{ENTRYDATE}],FAMILY AS[{FAMILYMEMBER}],FHISTORY 
+        AS [{FHISTORY}] from CLFAMILY WHERE COMPANY='MAIN' AND SSNO='10656'" namespace="familyhistory"> <tr> <td>familyhistory:{ENTRYDATE}</td> <td>familyhistory:{FAMILYMEMBER}</td> <td>familyhistory:{FHISTORY}</td> </tr> </midx:sql> </tbody> </table> </text> </section> 
+        </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.11.83.105"/> <code code="10154-3" displayName="Chief Complaint" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Chief Complaint</title> <text> 
+        <table border="1" width="100%"> <thead> <tr> <th>Reported</th> <th>Chief Complaint</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="select REPORTED AS [{REPORTED}],CHIEF AS[{CHIEF}] from CLCHIEF WHERE COMPANY='MAIN' AND SSNO='10656'" 
+        namespace="chiefcomplaint"> <tr> <td>chiefcomplaint:{REPORTED}</td> <td>chiefcomplaint:{CHIEF}</td> </tr> </midx:sql> </tbody> </table> </text> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.12"/> <templateId root="2.16.840.1.113883.3.88.11.83.108" assigningAuthorityName="HITSP/C83"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.12" assigningAuthorityName="IHE 
+        PCC"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.11" assigningAuthorityName="IHE PCC"/> <code code="47519-4" displayName="History of Procedures" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>History of Procedures</title> <text> <table 
+        border="1" width="100%"> <thead> <tr> <th>Date</th> <th>Procedure Name</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="SELECT DATETIME AS[{DATETIME}], ODESC AS [{ODESC}], ISNULL(OMEMO,'') AS [{OMEMO}] FROM CLORDER WHERE COMPANY='MAIN' 
+        AND SSNO='10656' AND DEPT IN('LAB','RAD','PROC','DX')" namespace="historyprocedures"> <tr> <td>historyprocedures:{DATETIME}</td> <td><content ID="PROC-historyprocedures:@@RESULTINDEX@@">historyprocedures:{ODESC}</content></td> </tr> </midx:sql> </tbody> </table> 
+        </text> <midx:sql query="SELECT cast(newid() as varchar(55)) as [{NEWNUM}], DATETIME AS[{DATETIME}], DATEPART(YEAR,CAST(CLORDER.DATETIME AS DATETIME)) AS [{PROCYEAR}], ODESC AS [{ODESC}], ISNULL(OMEMO,'') AS [{OMEMO}] FROM CLORDER WHERE COMPANY='MAIN' AND 
+        SSNO='10656' AND DEPT IN('LAB','RAD','PROC','DX')" namespace="historyprocedures"> <entry typeCode="DRIV"> <procedure classCode="PROC" moodCode="EVN"> <templateId root="2.16.840.1.113883.3.88.11.83.17" assigningAuthorityName="HITSP C83"/> <templateId root="2.16.840.1.113883.10.20.1.29" 
+        assigningAuthorityName="CCD"/> <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19" assigningAuthorityName="IHE PCC"/> <id root="historyprocedures:{NEWNUM}"/> <code code="00" codeSystem="2.16.840.1.113883.6.96" displayName="historyprocedures:{ODESC}"> <originalText>historyprocedures:{ODESC}<reference 
+        value="#PROC-historyprocedures:@@RESULTINDEX@@"/> </originalText> </code> <text>historyprocedures:{ODESC}<reference value="#PROC-historyprocedures:@@RESULTINDEX@@"/> </text> <statusCode code="completed"/> <effectiveTime value="historyprocedures:{PROCYEAR}"/> 
+        </procedure> </entry> </midx:sql> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.3"/> <code code="46240-8" displayName="History of hospitalizations+History of outpatient visits" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> 
+        <title>History of hospitalizations+History of outpatient visits</title> <text> <table border="1" width="100%"> <thead> <tr> <th>Reported</th> <th>Type</th> <th>Visit Information</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="select 
+        REPORTED AS [{REPORTED}],VARCODE AS[{TYPE}],VARTEXT AS[{VISIT}] FROM CLDICTIONARY WHERE SECTION='HOSP' AND STATUS='Y' AND COMPANY='MAIN' AND SSNO='10656'" namespace="historyvisits"> <tr> <td>historyvisits:{REPORTED}</td> <td>historyvisits:{TYPE}</td> <td>historyvisits:{VISIT}</td> 
+        </tr> </midx:sql> </tbody> </table> </text> </section> </component> -->
+      <!-- <component> <section> <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.16"/> <code code="8716-3" displayName="Physical findings" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1"/> <title>Physical findings</title> 
+        <text> <table border="1" width="100%"> <thead> <tr> <th>Reported</th> <th>Findings</th> </tr> </thead> <tbody> <tr><td></td><td></td></tr> <midx:sql query="select REPORTED AS [{REPORTED}],VARTEXT AS[{FINDING}] FROM CLDICTIONARY WHERE SECTION like 'ex%' AND 
+        STATUS='Y' AND COMPANY='MAIN' AND SSNO='10656'" namespace="physicalfindings"> <tr> <td>physicalfindings:{REPORTED}</td> <td>physicalfindings:{FINDING}</td> </tr> </midx:sql> </tbody> </table> </text> </section> </component> -->
+      <component>
+        <section>
+          <templateId assigningAuthorityName="CCD" root="2.16.840.1.113883.10.20.1.14" />
+          <templateId root="2.16.840.1.113883.3.88.11.83.122" assigningAuthorityName="HITSP/C83" />
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.28" assigningAuthorityName="IHE PCC" />
+          <code code="30954-2" displayName="Relevant diagnostic tests" codeSystemName="LOINC" codeSystem="2.16.840.1.113883.6.1" />
+          <title>Results</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>LOINC Code</th>
+                  <th>Test</th>
+                  <th>Result</th>
+                  <th>Date Performed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" align="center">
+                    <content ID="labs-0">Blood Chemistry               </content>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Imaging</td>
+                  <td>24648-8</td>
+                  <td>Albumin/Globulin Ratio (0.8-2.0)</td>
+                  <td>
+                    <content ID="results-0-0"> 15</content>
+                    (Calc)
+                  </td>
+                  <td>09/27/2010</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td>Albumin (3.2-5.0)</td>
+                  <td>
+                    <content ID="results-0-1"> 25</content>
+                    G/DL
+                  </td>
+                  <td>09/27/2010</td>
+                </tr>
+                <tr>
+                  <td colspan="5" align="center">
+                    <content ID="labs-1">ONC PROFILE 3                 </content>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Hematology</td>
+                  <td>718-7</td>
+                  <td>Hemoglobin (M14-18 F12-16)</td>
+                  <td>
+                    <content ID="results-1-0"> 1</content>
+                    g/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Hematology</td>
+                  <td>4544-3</td>
+                  <td>Hematocrit (M 40-54 F36-48%)</td>
+                  <td>
+                    <content ID="results-1-1"> 2</content>
+                    %
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Chemistry</td>
+                  <td>14647-2</td>
+                  <td>Total Cholesterol (&lt;200)</td>
+                  <td>
+                    <content ID="results-1-2"> 3</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Chemistry</td>
+                  <td>14646-4</td>
+                  <td>HDL Cholesterol (&gt;40)</td>
+                  <td>
+                    <content ID="results-1-3"> 4</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Chemistry</td>
+                  <td>2089-1</td>
+                  <td>LDL CHolesterol (&lt;100)</td>
+                  <td>
+                    <content ID="results-1-4"> 5</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>14927-8</td>
+                  <td>Triglycerides (&lt;150)</td>
+                  <td>
+                    <content ID="results-1-5"> 6</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td>Cardiology</td>
+                  <td>34534-8</td>
+                  <td>ECG ()</td>
+                  <td>
+                    <content ID="results-1-6"> test</content>
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td>Chest Xray PA LAT (CXRONC)</td>
+                  <td>
+                    <content ID="results-1-7"> this is just a test to see when it shop</content>
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td colspan="5" align="center">
+                    <content ID="labs-2">ONC PROFILE 3                 </content>
+                  </td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>14927-8</td>
+                  <td>Triglycerides (&lt;150)</td>
+                  <td>
+                    <content ID="results-2-0"> 123456789 123456789 abcdefg hijklmnop 12</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+                <tr>
+                  <td colspan="5" align="center">
+                    <content ID="labs-3">ONC PROFILE 3                 </content>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Chemistry</td>
+                  <td>14647-2</td>
+                  <td>Total Cholesterol (&lt;200)</td>
+                  <td>
+                    <content ID="results-3-0"> 123456789 123456789 abcdefg hijklmnop 123</content>
+                    mg/dl
+                  </td>
+                  <td>10/05/2010</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32" />
+              <id root="E813D004-C86C-4B06-85E3-FF064D65BF36" />
+              <code code="abc" codeSystem="2.16.840.1.113883.6.96" displayName="Blood Chemistry               " />
+              <statusCode code="completed" />
+              <effectiveTime value="20100927" />
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.10.20.1.29" assigningAuthorityName="CCD" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19" assigningAuthorityName="IHE PCC" />
+                  <id />
+                  <code code="ABC" codeSystem="2.16.840.1.113883.6.96" displayName="Blood Chemistry               ">
+                    <originalText>
+                      Blood Chemistry
+                      <reference value="#labs-0" />
+                    </originalText>
+                  </code>
+                  <text>
+                    Blood Chemistry
+                    <reference value="labs-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20100927" />
+                  <performer>
+                    <assignedEntity>
+                      <id />
+                      <addr />
+                      <telecom />
+                    </assignedEntity>
+                  </performer>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="E0994A64-3188-4EED-BD31-7A52B57A6CEF" />
+                  <code code="ALBUMIN" displayName="Albumin" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-0-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20100927" />
+                  <value xsi:type="PQ" value="25" unit="G/DL" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="BEA96DBD-95CC-4911-ACAD-99E8689719C8" />
+                  <code code="ALB/GLOB" displayName="Albumin/Globulin Ratio" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-0-1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20100927" />
+                  <value xsi:type="PQ" value="15" unit="(Calc)" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32" />
+              <id root="6F647E71-65AF-41C8-A1E2-C6EFC19D02C5" />
+              <code code="abc" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 " />
+              <statusCode code="completed" />
+              <effectiveTime value="20101005" />
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.10.20.1.29" assigningAuthorityName="CCD" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19" assigningAuthorityName="IHE PCC" />
+                  <id />
+                  <code code="ABC" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 ">
+                    <originalText>
+                      ONC PROFILE 3
+                      <reference value="#labs-1" />
+                    </originalText>
+                  </code>
+                  <text>
+                    ONC PROFILE 3
+                    <reference value="labs-1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <performer>
+                    <assignedEntity>
+                      <id />
+                      <addr />
+                      <telecom />
+                    </assignedEntity>
+                  </performer>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="3441D63C-B754-4F88-8DEA-CC55C8465EA7" />
+                  <code code="42272-5" displayName="Chest Xray PA LAT" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="this is just a test to see when  it shop" unit="" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="1CE1436B-D9D4-4D85-A298-ADBB303A89D0" />
+                  <code code="ECGONC" displayName="ECG" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="test" unit="" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="6CC3A0CA-096D-404C-8ED1-8169670FFB87" />
+                  <code code="HGBONC" displayName="Hemoglobin" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-2" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="1" unit="g/dl" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="F94AC808-4E53-491F-BDA7-AF3CAD2DEAB2" />
+                  <code code="HCTONC" displayName="Hematocrit" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-3" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="2" unit="%" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="C84F9658-B99B-42FB-B883-739359C0BA8B" />
+                  <code code="TOTCONC" displayName="Total Cholesterol" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-4" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="3" unit="mg/dl" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="79EF942E-BECA-45C1-A737-8A0103D288FE" />
+                  <code code="HDLCONC" displayName="HDL Cholesterol" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-5" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="4" unit="mg/dl" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="07FC7265-3E60-46BF-912D-2ACC9AEE95E4" />
+                  <code code="LDLCONC" displayName="LDL CHolesterol" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-6" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="5" unit="mg/dl" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="7FAFE758-A566-4550-930C-73E89527160A" />
+                  <code code="TRIGLYCONC" displayName="Triglycerides" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-1-7" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="6" unit="mg/dl" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32" />
+              <id root="643E9476-0CF3-46E7-A4D7-6BC1605FFE8C" />
+              <code code="abc" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 " />
+              <statusCode code="completed" />
+              <effectiveTime value="20101005" />
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.10.20.1.29" assigningAuthorityName="CCD" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19" assigningAuthorityName="IHE PCC" />
+                  <id />
+                  <code code="ABC" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 ">
+                    <originalText>
+                      ONC PROFILE 3
+                      <reference value="#labs-2" />
+                    </originalText>
+                  </code>
+                  <text>
+                    ONC PROFILE 3
+                    <reference value="labs-2" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <performer>
+                    <assignedEntity>
+                      <id />
+                      <addr />
+                      <telecom />
+                    </assignedEntity>
+                  </performer>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="93B9BC6C-9335-40A8-A6C8-EB6D8E28A5CE" />
+                  <code code="TRIGLYCONC" displayName="Triglycerides" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-2-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="123456789 123456789 abcdefg hijklmnop 12" unit="mg/dl" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32" />
+              <id root="1F20AF6D-C65F-4085-B984-CDA407F4F5E7" />
+              <code code="abc" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 " />
+              <statusCode code="completed" />
+              <effectiveTime value="20101005" />
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17" assigningAuthorityName="HITSP C83" />
+                  <templateId root="2.16.840.1.113883.10.20.1.29" assigningAuthorityName="CCD" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19" assigningAuthorityName="IHE PCC" />
+                  <id />
+                  <code code="ABC" codeSystem="2.16.840.1.113883.6.96" displayName="ONC PROFILE 3                 ">
+                    <originalText>
+                      ONC PROFILE 3
+                      <reference value="#labs-3" />
+                    </originalText>
+                  </code>
+                  <text>
+                    ONC PROFILE 3
+                    <reference value="labs-3" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <performer>
+                    <assignedEntity>
+                      <id />
+                      <addr />
+                      <telecom />
+                    </assignedEntity>
+                  </performer>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" assigningAuthorityName="CCD" />
+                  <templateId root="2.16.840.1.113883.3.88.11.32.16" assigningAuthorityName="HITSP/C32" />
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15" assigningAuthorityName="HITSP C83" />
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13" assigningAuthorityName="IHE PCC" />
+                  <id root="0444D031-DE1A-4C30-AA65-FF56005225EC" />
+                  <code code="TOTCONC" displayName="Total Cholesterol" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                  <text>
+                    <reference value="#results-3-0" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101005" />
+                  <value xsi:type="PQ" value="123456789 123456789 abcdefg hijklmnop 123" unit="mg/dl" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>

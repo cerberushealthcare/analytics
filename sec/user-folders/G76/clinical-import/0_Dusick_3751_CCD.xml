@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:voc="urn:hl7-org:v3/voc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+  <realmCode code="US"/>
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.3.88.11.32.1"/>
+  <templateId root="2.16.840.1.113883.10.20.1"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.6"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.2"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.1"/>
+  <templateId root="2.16.840.1.113883.10.20.3"/>
+  <id root="db734647-fc99-424c-a864-7e3cda82e703"/>
+  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="34133-9" displayName="Summarization of Episode Note"/>
+  <title>Continuity of Care Document</title>
+  <effectiveTime>20130829125122+0500</effectiveTime>
+  <confidentialityCode codeSystem="2.16.840.1.113883.5.25" codeSystemName="HL7 Confidentiality" code="N"/>
+  <languageCode code="en-US"/>
+  <recordTarget>
+    <patientRole>
+      <id root="70129288-ae34-48d7-af30-007166bc9e3e"/>
+      <addr><state>KY</state><city>Lancaster</city><postalCode>40345</postalCode><streetAddressLine>100 Cirhojs Lane</streetAddressLine></addr>
+      <telecom></telecom>
+      <patient>
+        <name><given>Lawrence</given><given>William</given><family>Dusick</family></name>
+        <administrativeGenderCode codeSystem="2.16.840.1.113883.5.1" codeSystemName="HL7 AdministrativeGender" code="M"/>
+        <birthTime>19530708</birthTime>
+      </patient>
+      <providerOrganization>
+        <id root="54c87390-d67e-4644-b514-b40caaed4aa3"/>
+        <name>LCD Solutions, Inc.</name>
+        <telecom>888 825-4258</telecom>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </providerOrganization>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time>20130829005122</time>
+    <assignedAuthor>
+      <id root="9971640c-75fb-4753-9fc5-a25c6cb1119c"/>
+      <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      <telecom>888 825-4258</telecom>
+      <assignedPerson>
+        <name><given>Test</given><family>Adm</family></name>
+      </assignedPerson>
+      <representedOrganization>
+        <id root="54c87390-d67e-4644-b514-b40caaed4aa3"/>
+        <name>LCD Solutions, Inc.</name>
+        <telecom>888 825-4258</telecom>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="54c87390-d67e-4644-b514-b40caaed4aa3"/>
+        <name>LCD Solutions, Inc.</name>
+        <telecom>888 825-4258</telecom>
+        <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <documentationOf>
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low>19530708</low>
+        <high>20130829005122</high>
+      </effectiveTime>
+      <performer typeCode="PRF">
+        <functionCode codeSystem="2.16.840.1.113883.5.88" codeSystemName="HL7 ParticipationFunction" code="PCP"/>
+        <time>
+          <low>20130829005122</low>
+          <high>20130829005122</high>
+        </time>
+        <assignedEntity>
+          <id root="9971640c-75fb-4753-9fc5-a25c6cb1119c"/>
+          <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+          <telecom>888 825-4258</telecom>
+          <assignedPerson>
+            <name><given>Test</given><family>Adm</family></name>
+          </assignedPerson>
+          <representedOrganization>
+            <id root="54c87390-d67e-4644-b514-b40caaed4aa3"/>
+            <name>LCD Solutions, Inc.</name>
+            <telecom>888 825-4258</telecom>
+            <addr><state>KY</state><city>Louisville</city><postalCode>40207</postalCode><streetAddressLine>4350 Brownsboro Rd</streetAddressLine></addr>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.8"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.112"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.19"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="10160-0" displayName="History of Medication Use"/>
+          <title>Medications</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Instructions</th>
+                  <th>Date(s)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">Patient not on any medication</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.32.8"/>
+              <templateId root="2.16.840.1.113883.10.20.1.24"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.8"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7"/>
+              <id root="TODO:asNoMeds"/>
+              <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="182849000" displayName="No Drug Therapy Prescribed"/>
+              <statusCode code="completed"/>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.11"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.103"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.6"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="11450-4" displayName="Problem List"/>
+          <title>Problems</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Diagnosis</th>
+                  <th>ICD-9</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Nevus</td>
+                  <td>448.1</td>
+                  <td>28-Jul-2013</td>
+                  <td ID="diag638">Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.7"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="429f6e49-c8d0-4187-8100-3608cdb78a4d"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low>20130728</low>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="56120a85-cbde-457b-b4f2-fa87593038a7"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="diag638"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low>20130728</low>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" code="448.1" displayName="Nevus"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.12"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="47519-4" displayName="History of Procedures"/>
+          <title>Procedures</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Procedure</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Excis Ben Skin Lesion TrArLeg &gt;4.0cm</td>
+                  <td>28-Jul-2013</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="a6aaab36-7cd3-42ba-87b9-0c6d75c9929b"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="11406" displayName="Excis Ben Skin Lesion TrArLeg &gt;4.0cm">
+                <originalText>Excis Ben Skin Lesion TrArLeg &gt;4.0cm<reference>proc979</reference></originalText>
+              </code>
+              <text>Excis Ben Skin Lesion TrArLeg &gt;4.0cm<reference>proc979</reference></text>
+              <statusCode code="completed"/>
+              <effectiveTime>20130728</effectiveTime>
+            </procedure>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.3"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="46240-8" displayName="Encounters"/>
+          <title>Encounters</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Encounter</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Encounter</td>
+                  <td>28-Jul-2013</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.21"/>
+              <id root="499f0ca1-783d-49de-90ab-c47042147c3d"/>
+              <code codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActCode" code="IMP" displayName="Inpatient Encounter"/>
+              <effectiveTime>20130728</effectiveTime>
+            </encounter>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>

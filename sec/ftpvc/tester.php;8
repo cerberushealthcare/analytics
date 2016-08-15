@@ -1,0 +1,183 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/UserAdministration.php';
+require_once 'php/data/rec/sql/UserLoginReqs.php';
+require_once 'php/data/rec/sql/UserLogin.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/data/rec/sql/Messaging.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/TemplateOrderEntry.php';
+require_once 'php/data/rec/sql/IProcCodes.php';
+//
+echo '<pre>';
+switch ($_GET['t']) {
+  case '1':
+    $text = 'renovascular hypertension';
+    $text = 'abdominal pain';
+    $text = 'edema';
+    $text = 'coronary artery disease';
+    $text = '384.1';
+    $r = IcdCodes::search($text);
+    print_r($r);
+    break;
+  case '2':
+    $search = new SearchText('abdominal pain pain');
+    print_r($search);
+    $expr = $search->expr; 
+    $pattern = "/" . $expr . "/i";
+    $text = 'He has some serious abdominal pain going on with pain in his abdominal region.';
+    //print_r($search->matchDistinct($text));
+    print_r(jsondecode(jsonencode($search)));
+    break;
+  case '3':
+    $user = UserLogin::fetch(46);
+    print_r($user);
+    if ($user->isPrimaryDoc()) 
+      echo 'yep';
+    break;
+  case '4':
+    $reqs = UserLoginReqs::getAllFor(1);
+    print_r($reqs);
+    break;
+  case '5':
+    $reqs = LoginReq::fetchAllActive();
+    print_r($reqs);
+    break;
+  case '6':
+    print_r(Messaging::getListsAsJson());
+    break;
+  case '7':
+    print_r(Messaging::getMyUnreadCt());
+    break;
+  case '8':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $j = jsonencode($dm);
+    print_r(jsondecode($j));
+    break;
+  case '9':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $d = $dm[0];
+    print_r($d);
+    $j = jsonencode($d);
+    $j = jsondecode($j);
+    print_r($j);
+    $j->_dateGiven = 'Nov 1970';
+    print_r($j);
+    $d = DataImmun::fromJsonObject($j);
+    print_r($d);
+    break;
+  case '10':
+    $o = jsondecode('{"dataImmunId":1}');
+    $d = new DataImmun($o);
+    break;
+  case '11':
+    $c = Client::fetchWithDemo(1664);
+    $j = jsonencode($c);
+    print_r(jsondecode($j));
+    break;
+  case '12':
+    $r = TrackItems::getOpen(1666);
+    print_r($r);
+    break;
+  case '13':
+    $s = '2010-11-23 16:00:01';
+    $x = formatDateTime($s);
+    print_r($x);
+    print_r('<br>');
+    $s = formatFromDateTime($x);
+    print_r($s);
+    print_r('<br>');
+    $s = formatFromDateTime('2010-11-23');
+    print_r($s);
+    break;
+  case '14':
+    $u = new UserReport();
+    $u->active = 1;
+    $u->userType = 1;
+    $u->subscription = 0;
+    $users = SqlRec::fetchAllBy($u);
+    foreach ($users as $user) {
+      $user->AddressGroup = AddressReport::fetchByTable('G', $user->userGroupId, 0);
+      $user->UsageYTD = UsageDetails::getUsageYTD($user->userId);
+    }
+    print_r($users);
+    break;
+  case '15':
+    $user = SqlRec::fetch($_GET['id'], 'UserReport');
+    $user->AddressGroup = AddressReport::fetchByTable('G', $user->userGroupId, 0);
+    print_r($user);
+    break;
+  case '16':
+    $reqs = UserLoginReqs::getAll();
+    print_r($reqs);
+    break;
+  case '17':
+    $o = '{"clientId":"1687","userGroupId":"1","uid":"234234","lastName":"Foot","firstName":"Big","sex":"F","birth":"09-Nov-1955","dateCreated":"2010-01-30 23:06:42","active":"1","notes":"ewrwer","dateUpdated":"2011-03-02 12:49:07","Address_Home":{"addressId":"4656","tableCode":"C","tableId":"1687","type":"0","addr1":"500 Main","city":"Lexington","state":"KY","zip":"40207","phone1":"502 999-1212","phone1Type":"1","csz":"Lexington, KY 40207"},"Address_Emergency":{"tableCode":"C","tableId":"1687","type":"2","csz":""},"Address_Spouse":{"tableCode":"C","tableId":"1687","type":"3","csz":""},"Address_Father":{"tableCode":"C","tableId":"1687","type":"6","csz":""},"Address_Mother":{"tableCode":"C","tableId":"1687","type":"5","csz":""},"Address_Rx":{"tableCode":"C","tableId":"1687","type":"4","csz":""},"ICards":[{"clientId":"1687","seq":"1"},{"clientId":"1687","seq":"2","planName":"23423"}],"age":55,"ageYears":55,"name":"Foot, Big","icard":{"clientId":"1687","seq":"1"},"icard2":{"clientId":"1687","seq":"2","planName":"23423"},"middleName":""}';
+    $obj = jsondecode($o);
+    $client = new Client($obj);
+    print_r($client);
+    break;
+  case '18':
+    $s = '19950102';
+    print_r(formatDate($s));
+    exit;
+    $recs = Clients::search('Hornsby', 'W');
+    print_r($recs);
+    break;
+  case '20':
+    $meds = Meds::getActive('1674');
+    print_r($meds);
+    break;
+  case '21':
+    $meds = Meds::getHistory('1663');
+    $meds = jsondecode(jsonencode($meds));
+    print_r($meds);
+    break;
+  case '22':
+    $recs = UserAdministration::searchUsersByName('hornsby');
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case '23':
+    $recs = UserAdministration::getCreatedCounts();
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case '24':
+    $recs = UserAdministration::getUsersByCreateDate('2010-10-15');
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case '25':
+    $recs = UserAdministration::getLoginsByUser(1);
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case '26':
+    $recs = UserAdministration::getLoginsByIp('192.168.1.1');
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case '27':
+    $recs = Diagnoses::getActive('1672');
+    print_r($recs);
+    break;
+  case '28':
+    $cid = 1666;
+    Procedures::migrate($cid);
+    break;
+  case '29':
+    $recs = TemplateOrderEntry::getWithQuestions();
+    print_r($recs);
+    break;
+  case '30':
+    $sql = IProcCodes::buildSqlScript();
+    print_r($sql);
+    break;
+  case '31':
+    $rec = IProcCodes::getByName('AV Repair');
+    print_r($rec);
+    $rec = IProcCodes::getByName('AAA Repair');
+    print_r($rec);
+    break;
+}
+echo '</pre>';
+?>

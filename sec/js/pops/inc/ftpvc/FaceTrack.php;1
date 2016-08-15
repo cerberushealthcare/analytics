@@ -1,0 +1,37 @@
+<?
+/**
+ * Facesheet Tracking 
+ */
+?>
+<div id='fsp-trk' class='pop' style='width:780px'>
+  <div id='fsp-trk-cap' class='pop-cap'>
+    <div id='fsp-trk-cap-text'>
+      Tracking
+    </div>
+    <a href='javascript:FaceTrack.fpClose()' class='pop-close'></a>
+  </div>
+  <div class='pop-content'>
+    <div id='topbar' class='mb5'>
+      <ul id='topbar-filter' class='topfilter'></ul>
+    </div>
+    <div id='results' class='fstab' style='height:450px'>  
+      <table id='results-tbl' class='fsb'>
+        <thead>
+          <tr id='results-head' class='fixed head'>
+            <th style=''></th>
+            <th style=''>Patient</th>
+            <th style=''>Source</th>
+            <th style='width:12%'>Ordered</th>
+            <th style='width:12%'>Scheduled</th>
+            <th style='width:12%'>Closed</th>
+          <tr>
+        </thead>
+        <tbody id='results-tbody'>
+        </tbody>
+      </table>
+    </div>
+    <div class='pop-cmd'>
+      <a href="javascript:FaceTrack.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>

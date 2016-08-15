@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NCScript xmlns="http://secure.newcropaccounts.com/interfaceV7"
+          xmlns:NCStandard="http://secure.newcropaccounts.com/interfaceV7:NCStandard"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Credentials>
+    <partnerName>clicktate</partnerName>
+    <name>demo</name>
+    <password>demo</password>
+    <productName>www.clicktate.com</productName>
+    <productVersion>4.0</productVersion>
+  </Credentials>
+  <UserRole>
+    <user>LicensedPrescriber</user>
+    <role>doctor</role>
+  </UserRole>
+  <Destination>
+    <requestedPage>compose</requestedPage>
+  </Destination>
+  <Account ID="T1">
+    <accountName>LCD Solutions, LLC</accountName>
+    <siteID>1</siteID>
+    <AccountAddress>
+      <address1>100 Clicktate Ave</address1>
+      <address2></address2>
+      <city>Louisville</city>
+      <state>KY</state>
+      <zip>40207</zip>
+      <zip4>0000</zip4>
+      <country>US</country>
+    </AccountAddress>
+    <accountPrimaryPhoneNumber>1-888-825-4258</accountPrimaryPhoneNumber>
+    <accountPrimaryFaxNumber>5025551212</accountPrimaryFaxNumber>
+  </Account>
+  <Location ID="1">
+    <locationName>Clicktate Primary Care</locationName>
+    <LocationAddress>
+      <address1>100 Clicktate Ave</address1>
+      <address2></address2>
+      <city>Louisville</city>
+      <state>KY</state>
+      <zip>40207</zip>
+      <zip4>0000</zip4>
+      <country>US</country>
+    </LocationAddress>
+    <primaryPhoneNumber>1-888-825-4258</primaryPhoneNumber>
+    <primaryFaxNumber>5025551212</primaryFaxNumber>
+    <pharmacyContactNumber>888-555-5555</pharmacyContactNumber>
+  </Location>
+  <LicensedPrescriber ID="3245">
+    <LicensedPrescriberName>
+      <last>Click</last>
+      <first>Doctor</first>
+      <middle></middle>
+    </LicensedPrescriberName>
+    <dea>DE1627384</dea>
+    <licenseState>KY</licenseState>
+    <licenseNumber>16273</licenseNumber>
+    <npi>1627384950</npi>
+  </LicensedPrescriber>
+  <Patient ID="DEMOPTXYZ902">
+    <PatientName>
+      <last>Howell</last>
+      <first>Thurston</first>
+      <middle></middle>
+    </PatientName>
+    <medicalRecordNumber>TX1014</medicalRecordNumber>
+    <PatientAddress>
+      <address1>1 Gilligan Lane</address1>
+      <address2></address2>
+      <city>Louisville</city>
+      <state>KY</state>
+      <zip>40205</zip>
+      <country>US</country>
+    </PatientAddress>
+    <PatientContact>
+      <homeTelephone></homeTelephone>
+    </PatientContact>
+    <PatientCharacteristics>
+      <dob>19960411</dob>
+      <gender>M</gender>
+    </PatientCharacteristics>    
+  </Patient>
+  <NewPrescription>
+    <pharmacyIdentifier>1231212</pharmacyIdentifier>
+    <drugIdentifier>228042</drugIdentifier>
+    <drugIdentifierType>FDB</drugIdentifierType>
+    <dispenseNumber>30</dispenseNumber>
+    <dosage>Take 1 in the morning</dosage>
+    <refillCount>2</refillCount>
+    <substitution>SubstitutionAllowed</substitution>
+    <pharmacistMessage>No child proof caps please</pharmacistMessage>
+  </NewPrescription>  
+</NCScript>

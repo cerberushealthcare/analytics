@@ -1,0 +1,67 @@
+<?php
+require_once 'php/data/rec/sql/_LookupRec.php';
+//
+/**
+ * Lookup Templates
+ * @author Warren Hornsby 
+ */
+class LookupTemplates {
+  //
+  /**
+   * @param int $tid
+   * @return LuTemplateMap + LuSectionReorder 
+   */
+  static function get($tid) {
+    $map = LuTemplateMap::fetch($tid);
+    $reorder = LuSectionReorder::fetch($tid);
+    return new LuTemplate($map, $reorder);
+  }
+}
+class LuTemplate extends Rec {
+  //
+  public $startSection;  // from LuTemplateMap
+  public $main;  
+  public $auto;  
+  public $sort;          // from LuSectionReorder
+  //
+  public function __construct($map, $reorder) {
+    if ($map) {
+      $this->startSection = $map->startSection;
+      $this->main = $map->main;
+      $this->auto = $map->auto;
+    }
+    if ($reorder) {
+      $this->sort = $reorder->sort;
+    }
+  }
+}
+class LuTemplateMap extends LookupRec {
+  //
+  public $startSection;
+  public $main;  // {'suid':['puid',..],..}
+  public $auto;  // {'suid':['puid',..],..}
+  //
+  public function getLookupTable() {
+    return 4;
+  }
+  //
+  static function fetch($tid) {
+    return parent::fetch(__CLASS__, $tid);
+  }
+}
+class LuSectionReorder extends LookupRec {
+  //
+  public $sort;  // {'suid':'#.#',..}
+  //
+  public function getLookupTable() {
+    return 16;
+  }
+  public function getDataFid() {
+    return 'sort';
+  }
+  //
+  static function fetch($tid) {
+    return parent::fetch(__CLASS__, $tid);
+  }
+}
+?>

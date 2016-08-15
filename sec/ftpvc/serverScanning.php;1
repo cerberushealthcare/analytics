@@ -1,0 +1,46 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/Scanning.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverScanning.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverScanning.php (posted)');
+  logit_r($_POST);
+}
+switch ($action) {
+  /**
+   * Upload files
+   */
+  case 'upload':
+    try {
+      Scanning::upload($_FILES['scanfile']);
+      $m = new JAjaxMsg($action, null);
+    } catch (Exception $e) {
+      $m = JAjaxMsg::constructError($e);
+    }
+  /**
+   * Get unindexed files
+   */
+  case 'getUnindexed':
+    $recs = Scanning::getUnindexedFiles();
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+    
+ //
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) 
+  echo $m->out();
+?>

@@ -1,0 +1,46 @@
+<?php
+require_once "php/data/json/_util.php";
+require_once "php/data/json/JHistoryRef.php";
+
+class JClientHistory {
+
+	public $sessions;  // JSessionStub{sid:}  
+	public $appts;  // JSchedStub{kid:}
+	public $msgs;  // MsgDao::getThreadsForClient
+  
+	// Derived
+	public $all;  // JHistoryRef of mixed sessions and appts, ordered by date  
+	
+	public function __construct($sessions, $appts, $msgs) {  
+    $this->sessions = $sessions;
+    $this->appts = $appts;
+    $this->msgs = $msgs;
+    $this->all = $this->buildAll();
+	}
+	
+	private function buildAll() {
+    $all = array();
+    foreach ($this->appts as $a) {
+      $all[$a->id] = new JHistoryRef(JHistoryRef::TYPE_APPT, $a->id, $a->dateService, $a->dateService);
+    }
+    foreach ($this->sessions as $s) {
+      $all[$s->id] = new JHistoryRef(JHistoryRef::TYPE_SESSION, $s->id, $s->dateService, $s->dateService);
+    }
+    foreach ($this->msgs as $m) {
+      $all[$m['mtid']] = new JHistoryRef(JHistoryRef::TYPE_MSG, $m['mtid'], $m['date'], $m['date']);
+
+    }
+    uasort($all, array("JHistoryRef", "cmp"));
+    return $all;
+	}
+		
+	public function out() {
+    $out = "";
+    $out = nqqa($out, "all", $this->all);
+    $out = nqqaa($out, "sessions", $this->sessions);
+    $out = nqqaa($out, "appts", $this->appts);
+    $out = nqqo($out, "msgs", jsonencode($this->msgs)) ;
+    return cb($out);    
+	}
+}
+?>

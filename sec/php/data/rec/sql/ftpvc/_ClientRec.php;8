@@ -1,0 +1,118 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Client Base Class
+ * @author Warren Hornsby
+ */
+abstract class ClientRec extends SqlRec {
+  /*  
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $maiden;
+  public $prefix;
+  public $suffix;
+  public $middleName;
+  public $notes;
+  public $dateUpdated;
+  public $race;
+  public $ethnicity;
+  public $deceased;
+  public $language;
+  public $familyRelease;
+  public $primaryPhys;
+  public $releasePref;
+  public $release;
+  public $userRestricts;
+  */
+  const SEX_MALE = 'M';
+  const SEX_FEMALE = 'F';
+  static $SEXES = array(
+    self::SEX_FEMALE => "Female",
+    self::SEX_MALE => 'Male');
+  //
+  const RELEASE_LETTER = '1';
+  const RELEASE_PHONE = '2';
+  const RELEASE_EMAIL = '3';
+  static $RELEASE_PREFS = array(
+    self::RELEASE_LETTER => 'Letter',
+    self::RELEASE_PHONE => 'Phone',
+    self::RELEASE_EMAIL => 'Email');
+  //
+  static $RACES = array(
+    '1' => 'American Native/Alaskan Native',
+    '2' => 'Asian/Pacific Islander',
+    '3' => 'Black', 
+    '4' => 'White');
+  static $ETHNICITIES = array(
+    '1' => 'Hispanic Origin',
+    '2' => 'Not Hispanic Origin');
+  static $LANGUAGES = array(
+    '3' => 'English',
+    '2' => 'Spanish',
+  	'1' => 'Mandarin',
+  	'4' => 'Hindi-Urdu',
+    '5' => 'Arabic',
+    '6' => 'Bengali',
+    '7' => 'Portuguese',
+    '8' => 'Russian',
+    '9' => 'Japanese',
+    '10' => 'Punjabi',
+    '11' => 'German',
+    '12' => 'Javanese',
+    '13' => 'Vietnamese',
+    '14' => 'Marathi',
+    '15' => 'French',
+    '16' => 'Korean',
+    '17' => 'Turkish',
+    '18' => 'Pashto',
+    '19' => 'Italian',
+    '20' => 'Polish',
+    '21' => 'Ukrainian',
+    '22' => 'Thai',
+    '23' => 'Romanian',
+    '24' => 'Dutch',
+    '25' => 'Greek',
+    '26' => 'Hebrew');
+  //
+  static $FRIENDLY_NAMES = array(
+    'uid' => 'Patient ID');
+  //
+  public function getSqlTable() {
+    return 'clients';
+  }
+  //
+  public function getFullName() {
+    $name = "$this->lastName, $this->firstName";
+    if ($this->middleName) 
+      $name .= " $this->middleName";
+    return trim($name);
+  }  
+  public function getMiddleInitial() {
+    if ($this->middleName) 
+      return substr($this->middleName, 0, 1);
+  }
+  public function setBirth($date) {
+    $this->birth = formatFromDate($date);
+  }
+  public function toJsonObject(&$o) {
+    $o->name = $this->getFullName();
+    if ($this->deceased)
+      $o->name .= " (DECEASED)";
+  }
+  //
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  } 
+}

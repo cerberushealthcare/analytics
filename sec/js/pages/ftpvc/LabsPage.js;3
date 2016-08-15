@@ -1,0 +1,493 @@
+/**
+ * Reporting Page
+ * @author Warren Hornsby
+ */
+LabsPage = page = {
+  //
+  load:function(query) {
+    LabsTile.create(_$('tile')).showInbox();
+    Page.setEvents();
+  },
+  onresize:function() {
+    var i = Html.Window.getViewportDim().height - 200;
+    if (i != self.maxHeight) {
+      self.maxHeight = i;
+      LabsTile.setMaxHeight(i);
+    }
+  }
+}
+/**
+ * Tile LabsTile
+ *   Tiles views
+ */
+LabsTile = {
+  create:function(container) {
+    container.clean();
+    return LabsTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.views = Html.Tiles.create(self, [
+            self.inbox = LabInboxTile.create(self).bubble('onselect', self.inbox_onselect),
+            self.recon = LabReconTile.create(self).bubble('oncancel', self.showInbox).bubble('onsave', self.recon_onsave)]);
+        },
+        showInbox:function() {
+          self.views.select(self.inbox);
+        },
+        showRecon:function(inbox) {
+          self.working(true);
+          Ajax.Labs.getRecon(inbox.hl7InboxId, function(rec) {
+            self.working(false);
+            self.views.select(self.recon.load(rec));
+          })
+        },
+        setMaxHeight:function(i) {
+          self.views.setMaxHeight(i);
+        },
+        inbox_onselect:function(rec) {
+          self.showRecon(rec);
+        },
+        recon_onsave:function() {
+          self.showInbox();
+          self.inbox.load();
+        }
+      }
+    })
+  }
+}
+/**
+ * LabInboxTile
+ */
+LabInboxTile = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        onselect:function(rec) {},
+        //
+        init:function() {
+          self.table = My.Table.create(self).bubble('onselect', self);
+          self.load();
+        },
+        load:function() {
+          self.table.load();
+        },
+        setMaxHeight:function(i) {
+          self.table.setMaxHeight(i);
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container) {
+      return Html.TableLoader.create(container, 'fsb grid').extend(function(self) {
+        return {
+          onselect:function(rec) {},
+          //
+          init:function() {
+            self.thead().trFixed().th('Lab Message').w('30%').th('Received').w('20%').th('Source').w('50%');
+          },
+          //
+          fetch:function(callback_recs) {
+            Ajax.Labs.getInbox(callback_recs);
+          },
+          add:function(rec, tr) {
+            tr.select(Html.AnchorAction.create('msg', rec.patientName)).td(rec.dateReceived).td(rec.source);
+          },
+          setMaxHeight:function(i) {
+            self.setHeight(i);
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * LabReconTile
+ */
+LabReconTile = {
+  create:function(container) {
+    var My = this;
+    return LabReconTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        oncancel:function() {},
+        onsave:function() {},
+        //
+        init:function() {
+          self.table = Html.Table2Col.create(self, 
+            self.message = My.MsgTile.create(),
+            self.patient = My.PatientTile.create());
+          self.cb = Html.CmdBar.create(self).save(self.save_onclick, 'Save Into Chart').cancel(self.cancel_onclick);
+          self.table.left.setWidth('50%');
+          self.table.right.setWidth('50%');
+        },
+        load:function(recon) {
+          self.recon = recon;
+          self.message.load(recon);
+          self.patient.load(recon);
+          return self;
+        },
+        //
+        save_onclick:function() {
+          Ajax.Labs.saveRecon(self.recon, self.patient.getProcRecords(), function() {
+            self.onsave();
+          });
+        },
+        cancel_onclick:function() {
+          self.oncancel();
+        },
+        setMaxHeight:function(i) {
+          i = i - self.cb.height() - 20;
+          self.message.setMaxHeight(i);
+          self.patient.setMaxHeight(i);
+        }
+      }
+    })
+  },
+  //
+  MsgTile:{
+    create:function() {
+      var My = this;
+      return Html.Div.create().extend(function(self) {
+        return {
+          init:function() {
+            self.head = Html.Tile.create(self, 'MsgHead').setHeight(25).extend(function(self) {
+              return {
+                init:function() {
+                  Html.Table2ColHead.create(self,
+                    self.h2 = Html.H2.create().nbsp(),
+                    self.sub = Html.Div.create().nbsp());
+                },
+                load:function(recon) {
+                  var inbox = recon.Inbox;
+                  self.h2.setText('From: ' + inbox.source);
+                  self.sub.setText('Received: ' + inbox.dateReceived);
+                }
+              }
+            })
+            self.tile = Html.Tile.create(self, 'ScrollTile').extend(function(self) {
+              return {
+                load:function(recon) {
+                  self.clean();
+                  My.PidForm.create(self, recon);
+                  My.ObrForm.create(self, recon);
+                }
+              }
+            })
+          },
+          load:function(recon) {
+            self.rec = recon;
+            self.head.load(recon); 
+            self.tile.load(recon);
+          },
+          setMaxHeight:function(i) {
+            self.tile.setHeight(i - self.head.getHeight());
+          }
+        }
+      })
+    },
+    ObrForm:{
+      create:function(container, recon) {
+        var obrs = recon.Msg.getObsRequests();
+        var self = this;
+        obrs.forEach(function(obr) {
+          self.createObr(container, obr);
+          var obxs = obr.getObservations();
+          obxs.forEach(function(obx) {
+            self.createObx(container, obr, obx);
+          })
+        })
+      },
+      createObr:function(container, obr) {
+        return Html.UlEntry.create(container).addClass('mt20').extend(function(self) {
+          return {
+            init:function() {
+              var ef = self.ef;
+              ef.line().h2(null, obr.seq + ': ' + obr.uiServiceId().toUpperCase());
+              ef.line().lbl('Date').readonly(obr.obsDateTime._date);
+              obr._form = self;
+            }
+          }
+        })
+      },
+      createObx:function(container, obr, obx) {
+        return Html.Tile.create(container, 'obx').extend(function(self) {
+          return {
+            init:function() {
+              Html.H3.create(obr.seq + '.' + obx.seq + ': ' + obx.obsId.text).into(self);
+              if (obx.Comment) 
+                Html.Div.create('Comment').html(obx.Comment.ui()).into(self);
+              var ul = Html.UlEntry.create(self);
+              var ef = ul.ef;
+              ef.line().lbl('Value').readonly(obx.uiValue()).lbl(obx.uiAbnormal(), 'red');
+              if (obx.range)
+                ef.line().lbl('Range').readonly(obx.range);
+              obx._form = self;
+            }
+          }
+        })
+      }
+    },
+    PidForm:{
+      create:function(container, recon) {
+        var My = this;
+        return Html.UlEntry.create(container).extend(function(self) {
+          return {
+            init:function() {
+              var pid = recon.Msg.PatientId;
+              var ef = self.ef;
+              ef.line().h2(null, 'Patient: ' + recon.Inbox.patientName);
+              ef.line().lbl('ID').readonly(pid.patientId);
+              ef.line().lbl('Birth').readonly(pid.birthDate._date);
+              ef.line().lbl('Address').readonly(pid.uiAddress());
+            }
+          }
+        })
+      }
+    }
+  },
+  //
+  PatientTile:{
+    create:function() {
+      var My = this;
+      return Html.Div.create().extend(function(self) {
+        return {
+          init:function() {
+            self.head = Html.Tile.create(self, 'MsgHead').setHeight(25);
+            Html.H2.create('Reconcile To').into(self.head);
+            self.tile = My.ScrollTile.create(self);
+          },
+          load:function(recon) {
+            if (recon.Client) {
+              recon.Client = ClientRecon.revive(recon.Client);
+              self.rec = recon;
+              self.tile.load(self.rec);
+            }
+          },
+          getProcRecords:function() {
+            return self.tile.getProcRecords();
+          },
+          setMaxHeight:function(i) {
+            self.tile.setHeight(i - self.head.getHeight());
+          }
+        }
+      })
+    },
+    ScrollTile:{
+      create:function(container) {
+        var My = this;
+        return Html.Tile.create(container, 'ScrollTile').extend(function(self) {
+          return {
+            load:function(recon) {
+              self.clean();
+              My.PidForm.create(self, recon);
+              My.ProcsForm.create(self, recon);
+            },
+            getProcRecords:function() {
+              return My.ProcsForm.getRecords();
+            }
+          }
+        })
+      },
+      ProcsForm:{
+        create:function(container, recon) {
+          this.procs = recon.Client.Procs;
+          var self = this;
+          self.procs.forEach(function(proc) {
+            var obr = recon.Msg.getObsRequest(proc._obr);
+            proc._form = self.createProc(container, proc, obr);
+            proc.ProcResults.forEach(function(result) {
+              var obx = obr.getObservation(result._obx);
+              result._form = self.createResult(container, proc, result, obr, obx);
+            })
+          })
+          return this;
+        },
+        getRecords:function() {  // [Proc+ProcResult[],..]
+          var recs = [];
+          this.procs.forEach(function(proc) {
+            var rec = proc._form.getRecord();
+            rec.ProcResults = [];
+            proc.ProcResults.forEach(function(result) {
+              rec.ProcResults.push(result._form.getRecord());
+            })
+            recs.push(rec);
+          })
+          return recs;
+        },
+        createProc:function(container, proc, obr) {
+          return Html.UlEntry.create(container).addClass('mt20').extend(function(self) {
+            return {
+              init:function() {
+                var ef = self.ef;
+                ef.line().h2(null, obr.seq + ': ' + obr.uiServiceId().toUpperCase());
+                ef.li('Name').picker(IpcPicker_Lab.create(obr.uiServiceId()), 'ipc', 'Ipc');
+                //ef.li('Type/Loc').textbox('location', 40);
+                //ef.li('With').id('li-sched1').picker(ProviderPicker, 'providerId', 'Provider').lbl('Location').picker(FacilityPicker, 'addrFacility', 'Facility').endSpan();
+                ef.li('Date').qdate('date');
+                //ef.li('Comments').textarea('comments');
+                self.load(proc);
+              },
+              hilite:function(on) {
+                if (on == self.hilited)
+                  return;
+                self.style.backgroundColor = (on) ? '#FFFF80' : '';
+                obr._form.style.backgroundColor = (on) ? '#FFFF80' : '';
+                self.hilited = on;
+              },
+              onmouseover:function() {
+                self.hilite(1);
+              },
+              onmouseout:function() {
+                self.hilite(0);
+              }
+            }
+          })
+        },
+        createResult:function(container, proc, result, obr, obx) {
+          return Html.UlEntry.create(container).extend(function(self) {
+            return {
+              init:function() {
+                var ef = self.ef;
+                ef.line().h3(null, obr.seq + '.' + obx.seq + ': ' + obx.obsId.text);
+                ef.li('Name').picker(IpcPicker_Lab.create(obx.obsId.text), 'ipc', 'Ipc');
+                ef.li('Value').textbox('value', 5).lbl('Units').textbox('valueUnit', 5);
+                ef.li('Range').textbox('range', 20);
+                ef.li('Interpret').select('interpretCode', C_ProcResult.INTERPRET_CODES, '');
+                ef.li('Comments').textarea('comments', 6);
+                self.load(result);
+              },
+              onmouseover:function() {
+                self.style.backgroundColor = '#FFFF80';
+                obx._form.style.backgroundColor = '#FFFF80';
+                Html.Animator.scrollTo(LabReconTile.message.tile, obx._form, 100);
+              },
+              onmouseout:function() {
+                self.style.backgroundColor = '';
+                obx._form.style.backgroundColor = '';
+              }
+            }
+          })
+        }
+      },
+      PidForm:{
+        create:function(container, recon) {
+          return Html.UlEntry.create(container).extend(function(self) {
+            return {
+              init:function() {
+                var client = recon.Client;
+                var ef = self.ef;
+                ef.line().h2(null, 'Patient: ' + client.name);
+                ef.line().lbl('ID').readonly(client.uid);
+                ef.line().lbl('Birth').readonly(client.birth);
+                ef.line().lbl('Address').readonly(client.uiAddress());
+              }
+            }
+          })
+        }
+      }
+    }
+  }
+}
+/**
+ * Recs
+ */ 
+LabRecon = Object.Rec.extend({
+  onload:function() {
+    this.Msg = OruMessage.revive(this.Msg);
+  }
+})
+OruMessage = Object.Rec.extend({
+  onload:function() {
+    this.PatientId = Pid.revive(this.PatientId);
+  },
+  getObsRequests:function() {
+    return this.PatientId.CommonOrder.ObsRequest;  
+  },
+  getObsRequest:function(seq) {
+    return this.getObsRequests()[seq - 1];
+  }
+})
+Pid = Object.Rec.extend({
+  onload:function() {
+    this.CommonOrder = Orc.revive(this.CommonOrder);
+  },
+  uiAddress:function() {
+    var a = this.address;
+    var h = [a.addr1];
+    if (a.addr2)
+      h.push(a.addr2);
+    if (a.city) {
+      var csz = a.city;
+      if (a.state)
+        csz += ', ' + a.state;
+      if (a.zip)
+        csz += ' ' + a.zip;
+      h.push(csz);
+    }
+    return h.join('<br/>');
+  }
+})
+Orc = Object.Rec.extend({
+  onload:function() {
+    this.ObsRequest = Obr.reviveAll(this.ObsRequest); 
+  }
+}) 
+Obr = Object.Rec.extend({
+  onload:function() {
+    this.Observation = Obx.reviveAll(this.Observation); 
+  },
+  getObservations:function() {
+    return this.Observation;
+  },
+  getObservation:function(seq) {
+    return this.Observation[seq - 1];
+  },
+  uiServiceId:function() {
+    return this.serviceId.text;
+  }
+})
+Obx = Object.Rec.extend({
+  onload:function() {
+    if (this.Comment)
+      this.Comment = Ntes.revive(this.Comment);
+  },
+  uiValue:function() {
+    var s = String.from(this.value);
+    if (this.units)
+      s += ' ' + this.units.id;
+    return s;
+  },
+  uiAbnormal:function() {
+    return (this.abnormal) ? 'Abnormal: ' + this.abnormal : '';
+  }
+})
+Ntes = Object.RecArray.extend({
+  getItemProto:function() {
+    return Nte;
+  },
+  ui:function() {
+    var a = [];
+    this.forEach(function(rec) {
+      a.push(rec.comment);
+    })
+    return a.join('<br>'); 
+  }
+})
+Nte = Object.Rec.extend({
+  //
+})
+ClientRecon = Object.Rec.extend({
+  uiAddress:function() {
+    var a = this.Address_Home;
+    if (a) {
+      var h = [a.addr1];
+      if (a.addr2)
+        h.push(a.addr2);
+      if (a.csz) 
+        h.push(a.csz);
+      return h.join('<br/>');
+    } else {
+      return 'None on File';
+    }
+  }
+})

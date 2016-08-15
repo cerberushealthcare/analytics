@@ -1,0 +1,103 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/UserReport.php';
+require_once 'php/data/rec/sql/UserLoginReqs.php';
+require_once 'php/data/rec/sql/UserLogin.php';
+require_once 'php/data/rec/sql/Messages.php';
+//
+echo '<pre>';
+switch ($_GET['t']) {
+  case '1':
+    $text = 'renovascular hypertension';
+    $text = 'abdominal pain';
+    $text = 'edema';
+    $text = 'coronary artery disease';
+    $text = '384.1';
+    $r = IcdCodes::search($text);
+    print_r($r);
+    break;
+  case '2':
+    $search = new SearchText('abdominal pain pain');
+    print_r($search);
+    $expr = $search->expr; 
+    $pattern = "/" . $expr . "/i";
+    $text = 'He has some serious abdominal pain going on with pain in his abdominal region.';
+    //print_r($search->matchDistinct($text));
+    print_r(jsondecode(jsonencode($search)));
+    break;
+  case '3':
+    $user = UserLogin::fetch(46);
+    print_r($user);
+    if ($user->isPrimaryDoc()) 
+      echo 'yep';
+    break;
+  case '4':
+    $reqs = UserLoginReqs::getAllFor(1);
+    print_r($reqs);
+    break;
+  case '5':
+    $reqs = LoginReq::fetchAllActive();
+    print_r($reqs);
+    break;
+  case '6':
+    print_r(Messages::getListsAsJson());
+    break;
+  case '7':
+    print_r(Messages::getMyUnreadCt());
+    break;
+  case '8':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $j = jsonencode($dm);
+    print_r(jsondecode($j));
+    break;
+  case '9':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $d = $dm[0];
+    print_r($d);
+    $j = jsonencode($d);
+    $j = jsondecode($j);
+    print_r($j);
+    $j->_dateGiven = 'Nov 1970';
+    print_r($j);
+    $d = DataImmun::fromJsonObject($j);
+    print_r($d);
+    break;
+  case '10':
+    $o = jsondecode('{"dataImmunId":1}');
+    $d = new DataImmun($o);
+    break;
+  case '11':
+    $c = Client::fetch(1663);
+    $j = jsonencode($c);
+    print_r(jsondecode($j));
+    break;
+  case '12':
+    $r = TrackItems::getOpen(1666);
+    print_r($r);
+    break;
+  case '13':
+    $s = '2010-11-23 16:00:01';
+    $x = formatDateTime($s);
+    print_r($x);
+    print_r('<br>');
+    $s = formatFromDateTime($x);
+    print_r($s);
+    print_r('<br>');
+    $s = formatFromDateTime('2010-11-23');
+    print_r($s);
+    break;
+  case '14':
+    $u = new UserReport();
+    $u->active = 1;
+    $u->userType = 1;
+    $u->subscription = 3;
+    $users = SqlRec::fetchAllBy($u);
+    foreach ($users as $user) {
+      $user->AddressGroup = Address::fetchByTable('G', $user->userGroupId, 0);
+      $user->UsageYTD = UsageDetails::getUsageYTD($user->userId);
+    }
+    print_r($users);
+    break;
+}
+echo '</pre>';
+?>

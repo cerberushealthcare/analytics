@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2010 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>
+      Clicktate - Pricing
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation, medical office notes, medical transcription, emr, ehr, medical documentation, progress notes, medical progress notes, soap notes, medical soap notes, medical note generation, medical notes, medical dictation, medical transcription, family practice notes, internal medicine notes, pediatric notes, urgent care notes, urgent care documentation, internal medicine documentation, pediatric documentation, family practice documentation, small office emr, small office ehr" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/home.css" media="screen" />
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/home-ie6.css" media="screen" />
+<![endif]-->    
+  </head>
+  <body>
+    <? include "inc/hheader.php" ?>
+    <div id="body">
+      <div class="content center">
+        <h1>Pricing</h1>
+        <p>
+          Clicktate is available at a monthly subscription fee of $109 per month per provider.
+          <br>There is a one-time activation fee of $99 that covers office setup<br>and electronic prescribing administration.<br/>
+          <br>
+        </p>
+        <div id="pplans"> 
+          <table cellpadding="0" cellspacing="0" class='c'>
+            <tr>
+              <th>
+                &nbsp;
+              </th>
+              <th class="b">
+                <div>$109/month</div>
+              </th>
+              <th>
+                &nbsp;
+              </th>
+            </tr>
+            <tr>
+              <td class="d">Unlimited notes</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">2,000+ medical template library</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Staff accounts and inter-office messaging </td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Patient facesheet</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Medical/surgical/family/social history</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Immunizations, vitals, growth charts</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Health maintenance reminders</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Scheduling</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="d">Order tracking</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+            <tr class="n">
+              <td class="d">Electronic prescribing</td>
+              <td class="b">Yes</td>
+              <td class="c">&nbsp;</td>
+            </tr>
+          </table>
+        </div>
+        <p style='margin-top:1em'>
+          Questions?
+          Send us an <a href="mailto:info@clicktate.com">email</a> or call our support line at 1-888-8CLICK8 (1-888-825-4258).
+        </p>
+        <h2 class="drop">Try Before You Buy</h2>
+        <p>
+          Take a <b>14-day no-risk</b> test drive with full access.<br/>
+          It's completely free without obligation.
+        </p>
+        <div id="trial">
+          <table class='c' cellpadding="0" cellspacing="0">
+            <tr>
+              <td><a href="https://www.clicktate.com/sec/registerTrial.php" class="trial" style='width:200px'>Free Trial Sign Up ></a></td>
+            </tr>
+          </table>
+          Sign up takes seconds
+        </div>
+      </div>
+    </div>
+    <? include "inc/hfooter.php" ?>
+  </body>
+</html>
+
+

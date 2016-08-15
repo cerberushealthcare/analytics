@@ -1,0 +1,267 @@
+<?
+require_once "inc/uiFunctions.php";
+require_once "../inc/getSecurePrefix.php";
+require_once "php/dao/LoginDao.php";
+require_once "php/data/Version.php";
+
+import_request_variables("p", "p_");
+import_request_variables("g", "g_");
+session_start();
+if (isset($g_logout)) {
+  clearSessionVars();
+  session_regenerate_id();
+}
+$badLogin = "";
+if (! isset($p_id)) {
+  $p_id = "";
+} else if (isset($p_pw)) {
+  $r = LoginDao::login($p_id, $p_pw, session_id(), $p_vista, $p_ie);
+  if ($r->isLoginNotAllowed()) {
+    $errors = array("This account is currently inactive: " . User::getExpireReasonDesc($r->expireReason), "Please contact us at 1-888-825-4258 if you have any questions.");
+  } else if (! $r->success) {
+    $errors = array("ID or password is incorrect, please re-enter.");
+  } else {
+    $_SESSION["login"] = $r;
+    if (! $r->active) {
+      if ($r->isDoctor()) {
+        if ($r->isNeedNewBilling()) {
+          session_write_close();
+          header("Location: registerCard.php");
+          exit;
+        }
+      } else {
+        $badLogin = User::getExpireReasonDesc($r->expireReason);
+      }
+    }
+    session_write_close();
+    if (! isset($g_url)) {
+      header("Location: welcome.php");
+      exit;
+    } else {
+      header("Location: " . $g_url);
+      exit;
+    }
+  }
+}
+$focus = "id";
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2010 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>
+      Clicktate - Login
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation, medical office notes, medical transcription, emr, ehr, medical documentation, progress notes, medical progress notes, soap notes, medical soap notes, medical note generation, medical notes, medical dictation, medical transcription, family practice notes, internal medicine notes, pediatric notes, urgent care notes, urgent care documentation, internal medicine documentation, pediatric documentation, family practice documentation, small office emr, small office ehr" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/home.css?2" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css" media="screen" />
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/home-ie6.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/pop-ie6.css" media="screen" />
+<![endif]-->    
+    <script language="JavaScript1.2" src="js/pop.js"></script>
+    <script language="JavaScript1.2" src="js/ajax.js"></script>
+    <script language="JavaScript1.2" src="js/yahoo-min.js"></script>
+    <script language="JavaScript1.2" src="js/json.js"></script>
+    <script language="JavaScript1.2" src="js/connection-min.js"></script>
+    <script language="JavaScript1.2" src="js/ui.js"></script>
+  </head>
+  <body style='background-color:#061203;'>
+    <div id="curtain" class="cdark"></div>
+    <div id="head">
+      <div class="content">
+        <div id="nav">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <a href="../index.php">Home</a>
+                <span>|</span>
+                <a href="../tour.php">Take a Tour</a>
+                <span>|</span>
+                <a href="../pricing.php">Pricing</a>
+                <span>|</span>
+                <a href="https://www.clicktate.com/sec/registerTrial.php">Free Trial Signup</a>
+              </td>
+              <td style="text-align:right">
+                <a href="." class="login">Secure Login for Clicktate Users ></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="body">
+      <div class="content center">
+        <h1 style="margin-top:2em">
+          <?=getLoginLabel()?>
+        </h1>
+        <div class="login">
+          <?php require_once "inc/errors.php" ?>
+        </div>
+        <table border='0' cellpadding='0' cellspacing'0'>
+          <tr>
+            <td class='wm' style='padding-right:1em'>
+              <? renderBoxStart() ?>
+                <div id="login">
+                  <form id="frm" method="post" action="index.php">
+                    <input name="vista" id="vista" type="hidden" value="" />
+                    <input name="ie" id="ie" type="hidden" value="" />
+                    <div class="l" style="margin-top:10px">
+                      <label>User ID</label><br/>
+                      <input type='text' size='20' name='id' value="<?=$p_id ?>" />
+                    </div>
+                    <div class="l">
+                      <label>Password</label><br/>
+                      <input name="pw" type="password" size="20" onkeydown="if ((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)) {sub();return false;} else return true;" />
+                    </div>
+                    <div id="trial" style="padding-bottom:10px">
+                      <a id="alog" href="javascript:sub()" class="tour">Login ></a>
+                    </div>
+                  </form>
+                </div>
+              <? renderBoxEnd() ?>
+            </td>
+          </tr>
+        </table>
+        <div id="forgot">
+          <div>
+            Forgot your <a href="forgot-id.php">login ID</a> or <a href="forgot-pw.php">password</a>?
+          </div>
+          <div style='margin-top:1em'>
+            Looking for <a href='https://www.clicktate.com/legacy/sec/'>legacy version</a>?
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php require_once "inc/browser-check.php" ?>
+    <?php require_once "inc/focus.php" ?>
+    <div id="foot">
+      <div class="content">
+        <div class="foot-text">
+          &copy; 2007-2010 LCD Solutions, Inc.<br/>
+          All rights reserved.
+        </div>
+        <div>
+          <a href="../privacy.php">Privacy Policy</a>
+          <span>|</span>
+          <a href="../terms.php">Terms of Service</a>
+          <span>|</span>
+          <a style="background:url(img/pdf.gif) no-repeat; padding-left:20px" href="../Clicktate-BAA-1.0.pdf">Business Associate Agreement</a>
+          <span>|</span>
+          <a href="../contact-us.php">Contact Us</a>
+        </div>
+      </div>
+    </div>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <div id="pop-cp" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="pop-cp-cap" class="pop-cap">
+        <div id="pop-cp-cap-text">
+          Set New Password
+        </div>
+        <a style="visibility:hidden" href="javascript:" class="pop-close"></a>
+      </div>     
+      <div id="pop-cp-content" class="pop-content" onkeyup="ifCrClick('pop-cp-save')">
+        <div id="pop-cp-info" class="pop-information">
+          <div style="color:black">
+            <big><b>Your current password has expired.</b><br/>
+            Please choose a new password to continue<br/>with your login.<br/><br/></big>
+          </div>      
+          Your new password must be at least 6 characters long<br/>and contain at least one numeric digit.
+        </div>
+        <ul id="pop-ep-myPw" class="entry">
+          <li style="margin-top:1em">
+            <label class="first2">New Password</label>
+            <input id="pop-cp-pw" type="password" size="24" />
+          </li>
+          <li style="margin-bottom:1.5em">
+            <label class="first2">New Password<br/>(Repeat)</label>
+            <input id="pop-cp-pw2" type="password" size="24" />
+          </li>
+        </ul>
+        <div class="pop-cmd">
+          <a id="pop-cp-save" href="javascript:" onclick="setpw()" class="cmd check">Set Password and Continue ></a>
+          <span>&nbsp;</span>
+          <a href="index.php" class="cmd none">Cancel</a>
+        </div>
+        <div id="pop-cp-errors" class="pop-error" style="display:none">
+        </div>
+      </div>      
+    </div>
+  </body>
+</html>
+<script type='text/javascript'>
+<? if (isset($g_cp)) { ?>
+showPop("pop-cp", "pop-cp-pw");
+<? } ?>
+<? if (isset($g_timeout)) { ?>
+    alert("We're sorry, but your session has timed out from inactivity.");
+<? } ?>
+function setpw() {
+  hide("pop-cp-errors");
+  if (validpw()) {
+    var u = {pw:value("pop-cp-pw")};
+    postRequest(4, "action=updateMyPw&obj=" + jsonUrl(u));
+    showOverlayWorking();
+  }
+}
+function updateMyUserCallback(errorMsg) {
+  closeWorking();
+  if (errorMsg == null) {
+    closeOverlayPop();
+    showOverlayWorking();
+    window.location = "welcome.php";
+  } else {
+    showErrorMsg(errorMsg, updateErrorCallback, true);
+  }
+}
+function updateErrorCallback() {
+  focus("pop-cp-pw");
+}
+function validpw() {
+  var errs = [];
+  validateRequired(errs, "pop-cp-pw", "New Password");
+  validateRequired(errs, "pop-cp-pw2", "New Password (Repeat)");
+  var pw = value("pop-cp-pw");
+  if (errs.length == 0) {
+    if (pw != value("pop-cp-pw2")) {
+      errs.push(errMsg("pop-cp-pw", "New password fields do not match."));
+    }
+  }
+  if (errs.length == 0) {
+    if (pw.length < 6) {
+      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
+    }
+    if (pw.length < 6) {
+      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
+    }
+    if (pw.match(/[0-9]/) == null) {
+      errs.push(errMsg("pop-cp-pw", "New password must contain at least 1 numeric character."));
+    }
+  }
+  if (errs.length > 0) {
+    showErrors("pop-cp-errors", errs);
+    focus(errs[0].id);
+    return false;
+  }
+  return true;
+}
+function working() {
+  var a = document.getElementById('alog');
+  a.className = 'working';
+  a.innerText = "";
+}
+function sub() {
+  working();
+  setTimeout('sub2()',1);
+}
+function sub2() {
+  document.getElementById('frm').submit();
+}
+</script>

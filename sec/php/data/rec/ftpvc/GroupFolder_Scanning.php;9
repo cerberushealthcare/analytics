@@ -1,0 +1,182 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Scanning
+ * UserFile_Scanning
+ * @author Warren Hornsby
+ */
+class GroupFolder_Scanning extends GroupFolder {
+  /**
+   * @param GroupUpload_Scanning[] $uploads
+   * @param int $fileIndex next file index
+   */
+  public function uploadAll($uploads, $fileIndex) {
+    foreach ($uploads as &$upload) 
+      $upload = self::upload($upload, $fileIndex++);
+    return $uploads;
+  }
+  public function upload($upload, $fileIndex) {
+    $upload->setNewName($this->ugid, $fileIndex);
+    $filename = $this->getCompleteFilename($upload->newName);
+    $upload->move($filename);
+    return $upload;
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function output($file) {
+    parent::output(GroupFile::from($this, $file->filename), $file->mime);
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function delete($file) {
+    parent::delete(GroupFile::from($this, $file->filename));
+  } 
+  //
+  /**
+   * @return self
+   */
+  static function open($ugid = null) {
+    return parent::open($ugid, 'scan');
+  }
+}
+class GroupFile_Scanning extends GroupFile {
+  //
+  /**
+   * @param string $filename
+   * @return self
+   */
+  static function from($filename) {
+    $me = new static();
+    $me->folder = GroupFolder_Scanning::open();
+    $me->filename = $filename;
+    return $me;
+  }
+}
+class GroupUpload_Scanning extends GroupUpload {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  public $fileseq;  // 12
+  public $newName;  // 'S00000012'
+  public $ext;      // 'jpg'
+  public $mime;     // 'image/jpeg'
+  public $width;    // 306
+  public $height;   // 205
+  //
+  public function validate() {
+    parent::validate();
+    $this->ext = $this->getExt();
+    if (empty($this->ext)) 
+      throw new GroupUploadException($this, "$this->name is an invalid type; only image and PDF files accepted");
+  }
+  public function setNewName($ugid, $i) {
+    $this->fileseq = $i;
+    $this->newName = "G$ugid" . sprintf("S%07d", $i) . "." . $this->getExt();
+  }
+  public function move($filename) {
+    move_uploaded_file($this->tmpName, $filename);
+    $this->setImageInfo($filename);
+  }
+  //
+  protected function setImageInfo($filename) {
+    $info = getimagesize($filename);
+    if (isset($info['mime'])) {
+      $this->width = $info[0];
+      $this->height = $info[1];
+      $this->mime = $info['mime'];
+    } else {
+      $this->mime = $this->type;
+    }
+  }
+  protected function getExt() {
+    switch ($this->type) {
+      case 'image/jpeg':
+      case 'image/pjpeg':
+        return 'jpg';
+      case 'image/bmp':
+      case 'image/x-windows-bmp':
+        return 'bmp';
+      case 'image/gif':
+        return 'gif';
+      case 'image/x-png':
+        return 'png';
+      case 'application/pdf':
+        return 'pdf';
+    }
+  }
+}
+class GroupUpload_ScanningXml extends GroupUpload_Scanning {
+  //
+  public function validate() {
+  }
+  //
+  protected function getExt() {
+    return 'xml';
+  }
+}
+/**
+ * Batch 
+ */
+class GroupFolder_Batch extends GroupFolder {
+  //
+  /**
+   * @return GroupFile
+   */
+  public function upload() {
+    $upload = GroupUpload_Batch::fromSinglePost();
+    return parent::upload($upload);
+  }
+  //
+  /**
+   * @return self
+   */
+  static function open($ugid = null) {
+    return parent::open($ugid, 'scan-batch');
+  }
+}
+class GroupUpload_Batch extends GroupUpload {
+  //
+  protected function getExt() {
+    return 'pdf';
+  }
+  //
+  protected static function getValidTypes() {
+    return array('application/pdf');
+  }
+  protected static function getInvalidTypeMessage() {
+    return array('Batch file must be a PDF.');
+  }
+}
+class GroupUpload_Split extends GroupUpload_Scanning {
+  //
+  public function move($to) {
+    rename($this->tmpName, $to);
+    $this->setImageInfo($to);
+  }
+  //
+  /**
+   * @param GroupFile $file
+   * @return array(self,..)
+   */
+  static function getAllFor($file) {
+    $pattern = $file->folder->dir . "\\" . $file->filename . '-*';
+    $filenames = glob($pattern);
+    $mes = array();
+    logit_r($filenames, 'filenames');
+    foreach ($filenames as $filename)
+      $mes[] = static::from($file->folder->dir, $filename);
+    return $mes;
+  }
+  static function from($dir, $filename) {
+    $name = substr($filename, strlen($dir) + 1);
+    return new static($name, 'image/gif', $filename, 0, 0);
+  }
+}
+?>

@@ -1,0 +1,34 @@
+TD#td-his-1, TD#td-his-2, TD#td-wf-1, TD#td-wf-2 {
+  display:none;
+}
+TD#td-all, TD#td-vit {
+  width:100%;
+}
+DIV#notepad {
+  overflow-y:visible;
+}
+DIV.fstab {
+  height:auto;
+  overflow-y:visible;
+  padding-right:0;
+}
+A.aller {
+  background:none;
+  padding-left:0;
+}
+TBODY#hm-tbody TD {
+  border-bottom:1px solid #dedede;
+}
+A.vital {
+  display:inline-block;
+  width:100px;
+}
+DIV.vit-text {
+  display:inline;
+}
+DIV#vit-div {
+  height:auto;
+}
+DIV#fs-refresh {
+  visibility:hidden;
+}

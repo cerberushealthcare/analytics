@@ -1,0 +1,159 @@
+<?php
+require_once "php/forms/Form.php";
+require_once "php/dao/UserDao.php";
+require_once "php/forms/utils/CommonCombos.php";
+
+class ProfileForm extends Form {
+
+  // Form props
+  public $me;  // User
+  public $practice;  // UserGroup
+  public $docAccts;  // User[]
+  public $supportAccts;  // User[]
+  
+  // HTML helpers
+  public $htmlMyNameEmail;
+  public $htmlLicense;
+  public $htmlPracticeAddress;
+  public $htmlSubscription;
+  public $htmlBillInfo;
+  public $popMsg;
+  public $popEdit;
+  
+  public function __construct() {
+    $this->setFormProps();
+    $this->readPage();
+    $this->buildHelpers();
+  }
+  
+  private function setFormProps() {
+    $this->popEdit = Form::getFormVariable("cp");
+    $m = Form::getFormVariable("m");
+    if ($m != null) {
+      if ($m == 1) { 
+        $this->popMsg = "Your account has been reactivated. Thank you.";
+      } else if ($m == 2) {
+        $this->popMsg = "Your billing info has been updated.";
+      } else if ($m == 3) {
+        $this->popMsg = "Your user information been successfully changed.";
+      } else if ($m == -1) {
+        $this->popMsg = "Your billing info changes have been cancelled.";
+      } else {
+        $this->popMsg = null;
+      }
+    }
+  }
+  
+  private function readPage() {
+    $this->me = UserDao::getMyUser();
+    $this->practice = UserDao::getUserGroup($this->me->userGroupId, true);
+    $this->docAccts = $this->fixLength(UserDao::getDocsOfGroup($this->me->userGroupId), 4);
+    $this->supportAccts = $this->fixLength(UserDao::getNonDocsOfMyGroup(), 7);
+  }
+
+  // HTML builders
+  private function buildHelpers() {
+    $me = $this->me;
+    $h = $me->name . "<br/>";  
+    $h .= $me->email;
+    $tz = CommonCombos::timezones();
+    $this->htmlMyNameEmail = $h;
+    $this->htmlLicense = $me->licenseState . " " . $me->license . "<br/>" . $me->dea . "<br/>" . $me->npi;
+    $this->htmlPracticeAddress = $this->buildAddress($this->practice->address) . "<br/>" . $tz[$this->practice->estAdjust];
+    $this->htmlSubscription = $this->buildSubscription($me);
+    $this->htmlBillInfo = $this->buildBillInfo($me->billInfo);
+  }
+  
+  private function buildBillInfo($billInfo) {
+    if ($billInfo == null) return;
+    $h = $billInfo->getCardTypeDesc() . " ..." . $billInfo->cardLast4 . "<br/>";
+    $h .= $billInfo->expMonth . "/" . $billInfo->expYear . "<br/>";
+    $a = new Address0(null, null, null, null, $billInfo->address1, $billInfo->address2, null, $billInfo->city, $billInfo->state, $billInfo->zip, $billInfo->country, $billInfo->phone, null, null, null, null, null, null, null, null);
+    $h .= $this->buildAddress($a);
+    return $h;
+  }
+  
+  private function buildSubscription($me) {
+    global $login;
+    if ($me->subscription == User0::SUBSCRIPTION_TRIAL) {
+      $h = ProfileForm::buildTrial($me);
+    } else if ($me->subscription == User0::SUBSCRIPTION_FREE) {
+      $h = "<em>Free Subscription</em>";
+    } else if ($me->subscription == User0::SUBSCRIPTION_INVOICE) {
+      $h = "<em>Paid by Invoice</em>";
+    } else {
+      $h = "<div>";
+      $h .= "<em>" . $me->billInfo->billCode->registerText . "</em><br/>";
+//      $h .= "<a href='registerCard.php'>Change plan</a>";
+      $h .= "</div>";
+      $h .= "<p>";
+      $h .= "Thank you for registering with Clicktate!";
+      $h .= "</p>";
+    }
+    $h .= "<div><em>E-Prescribe:</em> " . ($login->isErx() ? 'Yes (NewCrop)' : 'No') . "</div>";
+    return $h;
+  }
+  
+  private function plural($value, $noun) {
+    if ($value == 1) {
+      return "1 " . $noun;
+    } else {
+      return $value . " " . $noun . "s";
+    }
+  }
+  private function buildTrial($me) {
+    global $login;
+    $h = "<div";
+    if ($login->User->isOnTrial() && $login->daysLeft < 25) {
+      $h .= " class='red'>";
+    } else {
+      $h .= ">";
+    }
+    $h .= "<em>Free Trial (";
+    $h .= $this->plural($login->daysLeft, "day");
+    $h .= " left)</em></div>";
+    if ($login->User->isOnTrial()) {
+      if ($login->daysLeft < 7) {
+        $h .= "<p class='bigfont'>";
+        $h .= "<a href='registerCard.php'>Activate now</a> to continue working with this account and retain your patient data.";
+        $h .= "</p>";
+      } else {
+        $h .= "<p class='bigfont'>";
+        $h .= "<a href='registerCard.php'>Click here to activate your account</a> at any time before the countdown ends to convert to a paid subscription.";
+        $h .= "</p>";
+      }
+    }
+    return $h; 
+  }
+  
+  private function fixLength($arr, $length) {
+    for ($i = sizeof($arr); $i < $length; $i++) {
+      $arr[] = null;
+    }
+    return $arr;
+  }
+  
+  private function buildAddress($a) {
+    if ($a == null) {
+      return "";
+    }
+    $h = $a->addr1;
+    $i = "";
+    if ($a->addr2 != "") {
+      $h .= "<br/>" . $a->addr2;
+    } else {
+      $i .= "<br/>";
+    }
+    if ($a->addr3 != "") {
+      $h .= "<br/>" . $a->addr3; 
+    } else {
+      $i .= "<br/>";
+    }
+    $h .= "<br/>" . $a->city . ", " . $a->state . " " . $a->zip;
+    $h .= $i . "<br/>" . $a->phone1;
+    $h .= "<br/>" . (($a->phone2All) ? $a->phone2All : ""); 
+    $h .= "<br/>" . (($a->phone3All) ? $a->phone3All : "");
+    return $h;
+  }
+}
+?>

@@ -1,0 +1,734 @@
+BODY {
+  background-color:orange;
+  font-size:1.05;
+}
+DIV.head {
+  height:43px;
+  background-color:orange;
+}
+DIV.head TABLE {
+  width:100%;
+  color:white;
+}
+DIV.head TD {
+  width:50px;
+  padding:0 5px;
+  height:43px;
+}
+DIV.head TD.r {
+  text-align:right;
+}
+DIV.head TH {
+  font-weight:normal;
+  font-size:1.1em;
+  font-family:'Avenir-Heavy','Verdana';
+}
+DIV.head A {
+  font-weight:normal !important;
+  text-decoration:none;
+  color:white !important;  
+  display:block;
+  height:40px;
+  line-height:40px;
+}
+A.back {
+  background:url(images/ios7-back.png) no-repeat left center;
+}
+A.plus {
+  background:url(images/ios7-plus.png) no-repeat right center;
+}
+A.chord {
+  background:url(images/flat-sign.png) no-repeat left center;
+}
+A.edit {
+  background:url(images/ios7-edit.png) no-repeat right center;
+}
+DIV.body {
+  padding:0;
+  background-color:#f2efea;
+  overflow-y:scroll;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+}
+DIV.body-fixed {
+  padding:0;
+  background-color:black;
+  overflow-y:hidden;
+  position:relative;
+}
+UL.list {
+  margin-top:10px;
+}
+UL.list LI P {
+  margin-top:0 !important;
+}
+UL.list A {
+  font-weight:normal !important;
+  margin-left:5px !important;
+}
+UL.list SPAN.ui-icon-shadow {
+  -moz-box-shadow:0 !important;
+  -webkit-box-shadow:0 !important;
+  box-shadow:0 !important;
+}
+UL.list SPAN.ui-icon-arrow-r {
+  background:url(images/ios7-fwd.png) transparent no-repeat !important;
+  -webkit-border-radius:none !important;
+  border-radius:none !important;
+}
+UL.list .ui-bar-b {
+  background:#c22326;
+  background:#3c7dc4;
+  background:#1c5da4;
+  border:none !important;
+}
+.show {
+  display:block;
+}
+.hide {
+  display:none;
+}
+.unselectable {
+  -moz-user-select:-moz-none;
+  -khtml-user-select:none;
+  -webkit-user-select:none;
+  -o-user-select:none;
+  user-select:none;
+}
+FORM {
+  margin:15px 10px 10px 10px;
+}
+FORM DIV {
+  margin:0 !important;
+}
+FORM LABEL {
+  line-height:1em !important;
+  margin-top:15px !important;
+  font-weight:bold !important;
+}
+DIV.errortext {
+  color:red;
+  font-weight:normal;
+  padding-top:2px;
+}
+DIV.chordbox {
+  margin-top:5px;
+  padding-top:2px;
+  text-align:center;
+  display:inline-block;
+  position:relative;
+}
+DIV.chordbox A {
+  text-decoration:none;
+  font-weight:bold;
+  color:#2489CE;
+  margin:0 3px;
+}
+DIV.chord {
+  display:none;
+}
+DIV.working {
+  background:url(images/big-circle.gif) center center no-repeat;
+}
+DIV.song {
+  padding:5px 0 15px 0;
+  background-color:white;
+  border-bottom:1px solid #ccc;
+}
+DIV.links {
+  background-color:#f9f9f9;
+  padding:5px 0 10px 3px;
+  font-size:11pt;
+  border-top:1px dotted #e0e0e0;
+  text-align:center;
+} 
+DIV.links A {
+  text-decoration:none;
+  color:#2489CE;
+}
+DIV.links A.off {
+  color:#c0c0c0;
+}
+DIV.transpose {
+  padding-top:0;
+  padding-bottom:5px;
+  margin-bottom:5px;
+  border-top:none;
+  border-bottom:1px dotted #e0e0e0;
+}
+TABLE.song {
+  border-spacing:0;
+}
+TABLE.song TR TD {
+  padding:0 3px;
+  vertical-align:top;
+}
+TABLE.song TR.chords TD {
+  vertical-align:bottom;
+  padding-top:3px;
+}
+TABLE.song TR.verse TD {
+  padding-bottom:3px;
+  padding-left:5px;
+}
+TABLE.song TR.head TD {
+  padding-bottom:5px;
+}
+TABLE.song TD.blank {
+  height:16px;
+}
+TABLE.lyrics TD.blank {
+  height:12px;
+}
+DIV.song TABLE.head {
+  width:100%;
+}
+DIV.song TABLE EM {
+  color:orange;
+  font-weight:bold;
+  font-style:normal;
+  line-height:1.4em;
+}
+DIV.song TABLE H2 {
+  margin-top:0 !important;
+  margin-bottom:0 !important;
+  font-size:1.3em;
+}
+DIV.song TABLE H3 {
+  margin-top:0 !important;
+  margin-bottom:5px !important;
+  font-size:1.1em;
+  font-weight:normal;
+}
+DIV.song TABLE TD.tempo {
+  text-align:right;
+  padding-bottom:5px;
+}
+.chord-icon {
+  padding:7px 7px 0 4px;
+  cursor:pointer;
+  position:relative;
+  height:34px;
+  width:30px;
+}
+.chord-icon TABLE {
+  margin-top:1px;
+  border-collapse:collapse;
+  border-spacing:0;
+}
+.chord-icon TABLE TD {
+  border:1px solid #ccc;
+  height:3px;
+  width:3px;
+  padding:1px !important;
+}
+.chord-icon .bullet {
+  font-family:Arial;
+  font-size:24px;
+  position:absolute;
+  z-index:100;
+  color:#2489CE;
+  color:black;
+  cursor:pointer;
+}
+.chord-icon .openclose {
+  font-family:Arial;
+  font-size:24px;
+  position:absolute;
+  z-index:100;  
+  color:#2489CE;
+  cursor:pointer;
+}
+.chord-icon .barre {
+  width:20px;
+  height:5px;
+  background-color:#2489CE;
+  background-color:#a0a0a0;
+  position:absolute;
+  cursor:pointer;
+}
+.chord-icon .fret {
+  font-family:Arial;
+  font-size:13px;
+  position:absolute;
+  z-index:100;    
+  cursor:pointer;
+}
+#edit-at-box {
+  padding-bottom:10px;
+}
+#edit-chord #namer {
+  background-color:#accbe8;
+  background-color:#404040;
+  padding:5px 0;
+  position:relative;
+}
+#edit-chord .namer-boxes {
+  margin:0 auto;
+  text-align:center;
+}
+#edit-chord #namer A {
+  display:inline-block;
+  border:5px solid #404040;
+  vertical-align:middle;
+  width:65px;
+  height:30px;
+  line-height:30px;
+  text-align:center;
+  text-decoration:none;
+  color:#1c5da4;
+  background-color:white;
+  font-size:14pt;
+  font-family:'Segoe UI','Avenir-Heavy','Verdana';
+  opacity:0.6;
+}
+#edit-chord #namer .namer-boxes A {
+  color:#3777cc;
+} 
+#edit-chord #namer .namer-boxes A.unsaved {
+  color:#cc3737;
+}
+#edit-chord #namer .on {
+  opacity:0.9;
+}
+#edit-chord #namer .off {
+  opacity:0;
+  cursor:default;
+}
+#edit-chord #namer A.selected {
+  opacity:1;
+  border-color:#C8DCE4;
+  z-index:200;
+  position:relative;
+}
+#edit-chord #guitar A.selected {
+  opacity:1;
+  background-color:white;
+  color:#1c5da4;
+  border-color:#C8DCE4;
+  z-index:200;
+  position:relative;
+}
+#edit-chord .pos-pop-c {
+  position:absolute;
+  top:30px;
+  left:0;
+  width:100%;
+  z-index:120;
+}
+.curtain {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-color:#24476d;
+  opacity:0.33;
+  z-index:-1;
+}
+.curtain.up {
+  z-index:80;
+}
+.blur {
+  -webkit-filter:blur(1px);
+}
+#edit-chord #pos-pop {
+  background:#24476d;
+  margin:0 auto;
+  width:210px;
+  border:1px solid black;
+  text-align:center;
+  display:none;
+}
+#edit-chord #pos-pop DIV {
+  border:5px solid #C8DCE4;
+  padding:10px 0;
+  display:none;
+}
+#edit-chord #pos-pop TABLE {
+  margin:0 auto;
+}
+#edit-chord #pos-pop A {
+  display:inline-block;
+  vertical-align:middle;
+  text-align:center;
+  text-decoration:none;
+  color:#1c5da4;
+  background-color:white;
+  font-family:'Segoe UI','Avenir-Heavy','Verdana';
+  border:none;
+  margin:0 2px;
+  width:54px;
+  height:30px;
+  line-height:30px;
+  font-size:13pt;
+  opacity: 0.6;
+}
+#edit-chord .namer-pop-c {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:1000px;
+  z-index:-1;
+}
+#edit-chord .namer-pop-c.up {
+  z-index:120;
+}
+#edit-chord #namer-pop {
+  background:#24476d;
+  margin:40px auto 0 auto;
+  border:1px solid black;
+  text-align:center;
+  display:none;
+}
+#edit-chord #namer-pop DIV {
+  border:5px solid #C8DCE4;
+  padding:10px 0;
+  display:none;
+}
+#edit-chord #namer-pop TABLE {
+  margin:0 auto;
+}
+#edit-chord #namer-pop A {
+  border:none;
+  margin:0 2px;
+  width:54px;
+  height:30px;
+  line-height:30px;
+  font-size:13pt;
+  font-weight:normal;
+}
+#edit-chord #namer-pop .flats A {
+  width:34px;
+}
+#edit-chord #namer-pop #omod1 A, #edit-chord #namer-pop #omod2 A {
+  height:35px;
+  line-height:35px;
+  width:60px;
+}
+#edit-chord #namer-pop #omod1 A.null, #edit-chord #namer-pop #omod2 A.null {
+  width:170px;
+}
+#edit-chord #namer-pop #oslash A.null {
+   width:80px;
+   height:140px;
+   line-height:140px;
+}
+#edit-chord #namer-pop TD.s1 {
+  height:10px;
+}
+#edit-chord #namer-pop TD.s2 {
+  height:22px;
+}
+#edit-chord #namer-pop TD.s3 {
+  height:8px;
+}
+#edit-chord #namer-pop TD.s4 {
+  height:4px;
+}
+#edit-chord #guitar {
+  position:relative;
+}
+#edit-chord #guitar .pad {
+  margin:0 5px 5px 5px;
+  padding:5px;
+}
+#edit-chord .ocbar TABLE {
+  border-collapse:collapse;
+  border-spacing:0;
+  margin:0 auto;
+  border-left:3px solid black;
+}
+#edit-chord .ocbar A {
+  display:block;
+  width:25px;
+  height:35px;
+  line-height:19px;
+  text-align:center;
+  text-decoration:none;
+  font-size:24pt;
+  font-family:'Segoe UI','Avenir-Heavy','Verdana';
+  color:white;
+}
+#edit-chord .neck {
+  width:179px;
+  height:240px;
+  margin:5px auto 0 auto;
+  background-color:#f8e1b7;
+  border-left:10px solid #f3c786;
+  border-right:10px solid #f3c786;
+  position:relative;
+}
+#edit-chord .neck .top {
+  position:absolute;
+  top:-5px;
+  left:-12px;
+  width:203px;
+  height:4px;
+  border-top:1px solid #9b836c;
+  background:#4D4135;
+}
+#edit-chord .neck .middle {
+  left:-10px;
+  width:179px;
+  height:5px;
+  background-color:#f8e1b7;
+  border-left:10px solid #f3c786;
+  border-right:10px solid #f3c786;
+  border-top:none;  
+}
+#edit-chord A#chord-default {
+  display:block;
+  position:absolute;
+  top:130px;
+  left:-59px;
+  height:40px;
+  width:40px;
+  z-index:115;
+  -webkit-filter:invert(100%) opacity(60%);
+  background:url(images/uncheck-32.png) center center no-repeat;
+}
+#edit-chord A#chord-default.check {
+  background:url(images/check-32.png) center center no-repeat;
+  -webkit-filter:invert(100%) opacity(100%);
+}
+#edit-chord A.save {
+  display:block;
+  position:absolute;
+  top:70px;
+  left:-59px;
+  height:40px;
+  width:40px;
+  background:url(images/save-32.png) center center no-repeat;
+  z-index:115;
+}
+#edit-chord A.unsave {
+  display:block;
+  position:absolute;
+  top:70px;
+  left:-59px;
+  height:40px;
+  width:40px;
+  background:url(images/delete-32.png) center center no-repeat;
+  z-index:116;
+}
+#edit-chord .neck .pos {
+  position:absolute;
+  display:block;
+  top:5px;
+  left:190px;
+  width:40px;
+  height:40px;
+  line-height:40px;
+  text-align:center;
+  font-size:24pt;
+  font-family:'Segoe UI','Avenir-Heavy','Verdana';
+  font-weight:bold;
+  color:white;
+  text-decoration:none;
+  border:5px solid black;
+}
+#edit-chord .neck .nav {
+  position:absolute;
+  display:block;
+  left:195px;
+  width:40px;
+  height:40px;
+  -webkit-filter:invert(100%);
+}
+#edit-chord .left {
+  position:absolute;
+  display:block;
+  top:0;
+  left:0;
+  width:40px;
+  height:40px;
+  background:url(images/ios7-back-24.png) transparent center center no-repeat;
+  -webkit-filter:invert(100%);
+}
+#edit-chord .right {
+  position:absolute;
+  display:block;
+  top:0;
+  right:0;
+  width:40px;
+  height:40px;
+  background:url(images/ios7-back-24.png) transparent center center no-repeat;
+  -webkit-filter:invert(100%);
+  -webkit-transform:scaleX(-1);
+}
+#edit-chord .neck .up {
+  position:absolute;
+  display:block;
+  top:70px;
+  left:195px;
+  width:40px;
+  height:40px;
+  background:url(images/ios7-up-32.png) transparent center center no-repeat;
+  -webkit-filter:invert(100%);
+}
+#edit-chord .neck .down {
+  position:absolute;
+  display:block;
+  top:130px;
+  left:195px;
+  width:40px;
+  height:40px;
+  background:url(images/ios7-down-32.png) transparent center center no-repeat;
+  -webkit-filter:invert(100%);
+}
+#edit-chord .neck .string {
+  position:absolute;
+  top:-5px;
+  height:245px;
+  width:2px;
+  border-left:1px solid #f2f2f2;
+  background-color:#9cabbe;
+}
+#edit-chord .s1 {
+  left:22px;
+}
+#edit-chord .s2 {
+  left:49px;
+}
+#edit-chord .s3 {
+  left:76px;
+}
+#edit-chord .s4 {
+  left:103px;
+}
+#edit-chord .s5 {
+  left:130px;
+}
+#edit-chord .s6 {
+  left:157px;
+}
+#edit-chord .neck .off {
+  opacity:0.25;
+}
+#edit-chord .neck .fret {
+  position:absolute;
+  left:-12px;
+  width:203px;
+  height:5px;
+  background-color:white;
+  border-bottom:1px solid #f3c786;
+}
+#edit-chord .f1 {
+  top:58px;
+}
+#edit-chord .f2 {
+  top:118px;
+}
+#edit-chord .f3 {
+  top:178px;
+}
+#edit-chord .neck TABLE {
+  border-collapse:collapse;
+  border-spacing:0;
+  margin:0 auto;
+  position:absolute;
+  top:0;
+  left:10px;
+}
+#edit-chord .neck TABLE TD {
+  height:58px;
+  width:25px;
+  position:relative;
+}
+#edit-chord .neck TABLE A {
+  position:absolute;
+  top:0;
+  left:0;
+  display:block;
+  width:25px;
+  height:58px;
+  text-align:center;
+  text-decoration:none;
+  color:black;
+}
+#edit-chord .neck TABLE A.spot {
+  background:#3777cc;
+}
+#edit-chord .neck TABLE A.unsaved {
+  background:#cc3737;
+ }
+#edit-chord .neck TABLE A.on {
+  top:18px;
+  left:1px;
+  border-radius:50%;
+  height:25px;
+  z-index:100;
+}
+#edit-chord .neck TABLE A.b {
+  top:21px;
+  left:-5px;
+  height:19px;
+  width:37px;
+  z-index:99;
+}
+DIV.lock {
+  background:url(images/ios7-lock-32.png) transparent center center no-repeat;
+  background-color:#946243;
+  background-color:#c0c0c0;
+  -webkit-filter:invert(100%) opacity(50%);  
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  z-index:110;
+  display:none;
+  cursor:pointer;
+}
+#namer .lock {
+  height:60px;
+}
+#guitar .lock {
+  top:-5px;
+  height:300px;
+}
+#edit-chord #selector {
+  position:absolute;
+  top:400px;
+  left:0;
+  height:70px;
+  padding:0;
+  white-space:nowrap;
+  width:100%;
+  overflow-x:scroll;
+}
+#edit-chord #selector .box {
+  display:inline-block;
+}
+#edit-chord #selector .null {
+  margin-left:5px;
+}
+#edit-chord #selector .posup {
+  margin-right:8px;
+}
+#selector .chord-icon TABLE TD {
+  border:1px solid #999;
+}
+#selector .chord-icon .bullet {
+  color:white;
+}
+#selector .chord-icon .openclose {
+  color:white;
+}
+#selector .chord-icon .barre {
+  background-color:#e0e0e0;
+}
+#selector .chord-icon .fret {
+  color:white;
+}
+#selector .null .chord-icon .openclose {
+  display:none;
+}
+#ec-cmdbar, #ec-cmdbar-ro {  
+  text-align:center;
+}
+#ec-cmdbar A, #ec-cmdbar-ro A {
+  display:inline-block;
+  margin:0 2px;
+}

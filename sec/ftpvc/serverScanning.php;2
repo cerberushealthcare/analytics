@@ -1,0 +1,54 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/Scanning.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverScanning.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverScanning.php (posted)');
+  logit_r($_POST);
+}
+try {
+  switch ($action) {
+    //
+    case 'upload':
+      Scanning::upload($_FILES['scanfile']);
+      $m = new JAjaxMsg($action, null);
+    case 'getUnindexed':
+      $recs = Scanning::getUnindexedFiles();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'getIndexedToday':
+      $recs = Scanning::getIndexedToday();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'saveIndex':
+      $rec = Scanning::saveIndex($obj->rec, $obj->sfids);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'deleteIndex':
+      $id = Scanning::deleteIndex($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($id));
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+} 
+if ($m != null) 
+  echo $m->out();
+?>

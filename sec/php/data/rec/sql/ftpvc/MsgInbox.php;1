@@ -1,0 +1,73 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/MsgThread.php';
+/**
+ * Message Inbox
+ */
+class MsgInbox extends SqlRec {
+  //
+  public $inboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  public /*MsgPost*/ $MsgPost;
+  //
+  const IS_UNREAD = '0';
+  const IS_READ = '1';
+  const IS_SENT = '2';
+  const IS_CLOSED = '9';
+  //
+  public function getSqlTable() {
+    return 'msg_inbox';
+  }
+  //
+  /**
+   * @return int total unread
+   */
+  public static function fetchMyInboxCt() {
+    global $myLogin;
+    $rec = new MsgInbox();
+    $rec->recipient = $myLogin->userId;
+    $rec->isRead = MsgInbox::IS_UNREAD;
+    return count(SqlRec::fetchAllBy($rec));    
+  }
+  /**
+   * @param int $isRead
+   * @return array(MsgInbox,..) 
+   */
+  public static function fetchMineByIsRead($isRead) {
+    global $myLogin;
+    $rec = new MsgInbox();
+    $rec->recipient = $myLogin->userId;
+    $rec->isRead = $isRead;
+    $rec->MsgPost = new MsgPost();
+    return SqlRec::fetchAllBy($rec);
+  }
+  /**
+   * Fetches (and updates) inbox record for thread read
+   * @param MsgThread $thread
+   * @return MsgInbox
+   */
+  public static function fetchMineForReading($thread) {
+    global $myLogin;
+    $inbox = new MsgInbox();
+    $inbox->recipient = $myLogin->userId;
+    $inbox->threadId = $thread->threadId;
+    $inbox = SqlRec::fetchOneBy($inbox);
+    $inbox = MsgInbox::saveAsRead($inbox, $thread);
+    return $inbox;
+  }
+  //
+  private static function saveAsRead($inbox, $thread) {
+    if ($inbox) {
+      $post = $thread->getLastPost();
+      if ($post) 
+        $inbox->postId = $post->postId;
+      $inbox->isRead = MsgInbox::IS_READ;
+      $inbox->save();
+    }
+    return $inbox;
+  }
+}
+?>

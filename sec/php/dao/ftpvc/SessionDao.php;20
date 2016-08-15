@@ -1,0 +1,731 @@
+<?php
+p_i('SessionDao');
+/*
+ * Sessions and scheduling
+ */
+class SessionDao {
+  
+  const USAGE_SESSION = 0;
+  const USAGE_DOWNLOADS = 1;
+  const USAGE_COPY = 2;
+
+  public static function getDocView($sid) {
+    $dv = new JDocView(JsonDao::buildJSession($sid, false, true));
+    return $dv;
+  }
+
+  // Create a session
+  // If templatePresetId or dupeSessionId provided, session will be defaulted with its actions
+  public static function addSession($userGroupId, $templateId, $clientId, $schedId, $dos, $templatePresetId = null, $sendTo = null, $dupeSessionId = null, $overrideFsActions = false) {
+    global $login;
+    if ($userGroupId == null) {
+      $userGroupId = $login->userGroupId;
+    } else {
+      LoginDao::authenticateUserGroupId($userGroupId);
+    }
+    LoginDao::authenticateClientId($clientId);
+    $data = null;
+    if ($templatePresetId == null && $dupeSessionId == null) {
+      $noteDate = nowNoQuotes();
+    } else {
+      if ($templatePresetId != null) {
+        $templateId = LoginDao::authenticateTemplatePresetId($templatePresetId);
+        $row = SessionDao::getDupePreset($templatePresetId);
+        $data = $row["actions"];
+        $noteDate = $row["date_created"];  // use the created date of the dupe in order to use the same par versions
+      } else {
+        $row = SessionDao::getDupeSession($dupeSessionId);
+        $data = $row["data"];
+        $noteDate = $row["note_date"];
+        if ($noteDate == null) $noteDate = $row["date_created"];
+      }
+    }
+    $title = LoginDao::authenticateReadTemplateId($templateId);
+    if ($login->User->isDoctor()) {
+      $assignedTo = $login->userId; 
+    } else {
+      $assignedTo = $sendTo;
+    }
+    $suppressFsActions = ! $overrideFsActions;
+    logit("overridefs=" . $overrideFsActions . ", suppressfs=" . $suppressFsActions);
+    // $suppressFsActions = ($login->userGroupId != 1094);
+    DataDao::appendInDataActions($data, $noteDate, $templateId, $clientId, $dos, $suppressFsActions);
+    $sql = "INSERT INTO sessions VALUES(NULL";
+    $sql .= ", " . $userGroupId;
+    $sql .= ", " . $clientId;
+    $sql .= ", " . $templateId;
+    $sql .= ", " . now();  // date_created
+    $sql .= ", NULL";  // date_updated
+    $sql .= ", " . quoteDate($dos);  // date_service
+    $sql .= ", " . toBoolInt(false);  // closed
+    $sql .= ", NULL";  // closed by
+    $sql .= ", NULL";  // date closed
+    $sql .= ", 0";  // billed
+    $sql .= ", ";
+    $sql .= ($schedId != null) ? $schedId : "NULL";
+    $sql .= ", " . quote($data, true);
+    $sql .= ", " . $login->userId;  // created by
+    $sql .= ", NULL";  // updated by
+    $sql .= ", " . quote($sendTo); 
+    $sql .= ", " . quote($assignedTo);
+    $sql .= ", NULL";  // HTML
+    $sql .= ", " . quote($title);
+    $sql .= ", 0";  // standard
+    $sql .= ", " . quote($noteDate);
+    $sql .= ")";
+
+    $id = insert($sql);
+    //AuditDao::log($clientId, AuditDao::ENTITY_SESSION, $id, AuditDao::ACTION_CREATE, null, $title);
+    Auditing::log(AuditRec::ACTION_CREATE, $clientId, 'Session', $id, $title, null, null);
+    UsageDao::createUsageDetail($id, SchedDao::USAGE_SESSION, $clientId, "");
+    return $id;
+  }
+  /**
+   * Get requested JQuestion (e.g. HM results question)
+   * @param string $quid 'puid.quid'
+   * @return JQuestion
+   */
+  public static function getQuestion($quid) {
+    $puid = SessionDao::puidFromQuid($quid);
+    $questions = SessionDao::getQuestionsForPuid($puid);
+    $q = $questions[$quid];
+    $q->quid = $quid;
+    return $q;
+  }
+  private static function puidFromQuid($quid) {
+    return substr($quid, 0, strrpos($quid, "."));
+  }
+  private static function getQuestionsForPuid($puid) {
+    return SessionDao::fetchQuestionsForPuid(1, nowNoQuotes(), $puid);
+  }
+  /**
+   * Get requested JQuestions for building UI properties
+   * @param $quids ['prop':'puid.quid',..]
+   * @return array(prop:JQuestion,..)
+   */
+  public static function getQuestions($quids) {  
+    $pars = array();
+    $qs = array();
+    foreach ($quids as $prop => &$quid) {
+      $puid = SessionDao::puidFromQuid($quid);
+      if (! isset($pars[$puid])) {
+        $pars[$puid] = SessionDao::getQuestionsForPuid($puid); 
+      }
+      $qs[$prop] = $pars[$puid][$quid];
+      $qs[$prop]->quid = $quid;
+    }
+    return $qs;
+  }
+  
+  /*
+   * Returns [
+   *    quid=>JQuestion
+   *   ]
+   */
+  public static function fetchQuestionsForPuid($tid, $noteDate, $puid) {
+    $jQuestions = array();
+    $pid = JsonDao::toPid($puid, $tid, $noteDate);
+    $questions = TemplateReaderDao::getQuestions($pid);
+    foreach ($questions as &$q) {
+      $quid = $puid . "." . $q->uid;
+      $jq = JsonDao::buildJQuestion($q);
+      $jQuestions[$quid] = $jq;
+    }
+    return $jQuestions;
+  }
+  
+  public static function lockSession($sessionId) {
+    global $login;
+    $sql = "INSERT INTO session_locks VALUES(" . $sessionId
+        . ", " . $login->userId
+        . ", NULL"
+        . ", " . quote($login->User->name)
+        . ", NULL)"; 
+    SessionDao::unlockSession($sessionId);
+    insert($sql);
+  }
+  
+  public static function unlockSession($sessionId) {
+    return query("DELETE FROM session_locks WHERE session_id=" . $sessionId);
+  }
+  
+  // Reassign session's client
+  // Returns resource
+  public static function reassignSession($sessionId, $clientId) {
+    global $myUserId;
+    LoginDao::authenticateSessionId($sessionId);
+    LoginDao::authenticateClientId($clientId);
+    $sql = "UPDATE sessions SET ";
+    $sql .= "client_id=" . quote($clientId);
+    $sql .= ", date_updated=NULL, updated_by=" . $myUserId;
+    $sql .= " WHERE session_id=" . $sessionId;
+    return query($sql);
+  }
+
+  public static function clearSendTo($sid) {
+    global $myUserId;
+    LoginDao::authenticateSessionId($sid);
+    $sql = "UPDATE sessions SET ";
+    $sql .= "send_to=NULL, date_updated=NULL, updated_by=" . $myUserId;
+    $sql .= " WHERE session_id=" . $sid;
+    return query($sql);
+  }
+  
+  public static function updateSessionEnvelope($se) {
+    global $myUserId;
+    LoginDao::authenticateSessionId($se->id);
+    $sql = "UPDATE sessions SET ";
+    $sql .= "date_service=" . quoteDate($se->dateService);  
+    $sql .= ", send_to=" . quote($se->sendTo); 
+    $sql .= ", date_updated=NULL, updated_by=" . $myUserId;
+    $sql .= " WHERE session_id=" . $se->id;
+    return query($sql);
+  }
+
+  // Close session
+  public static function closeSession($sessionId) {
+    global $myUserId;
+    LoginDao::authenticateSessionId($sessionId);
+    return query("UPDATE sessions SET closed=1, date_updated=NULL, updated_by=" . $myUserId . " WHERE session_id=" . $sessionId);
+  }
+
+  // Reactivate session
+  public static function activateSession($sessionId) {
+    global $myUserId;
+    LoginDao::authenticateSessionId($sessionId);
+    return query("UPDATE sessions SET closed=0, date_updated=NULL, updated_by=" . $myUserId . " WHERE session_id=" . $sessionId);
+  }
+
+  // Delete session
+  // Returns resource
+  public static function deleteSession($sessionId) {
+    $clientId = LoginDao::authenticateSessionId($sessionId);
+    query("DELETE FROM sessions WHERE session_id=" . $sessionId);
+    AuditDao::log($clientId, AuditDao::ENTITY_SESSION, $sessionId, AuditDao::ACTION_DELETE);
+    // SchedDao::saveClientUpdate(new ClientUpdate($clientId, ClientUpdate::TYPE_DOC_DELETED, null, null));    
+  }
+
+  private static function buildSigTable($contents) {
+    return "<DIV id=sig><TABLE border=1><TR><TD align=center>" . $contents . "</TD></TR></TABLE></DIV>";
+  }
+               
+  private static function buildSignature($head) {
+    global $login;
+    $myUserId = $login->userId;
+    $row = fetch("SELECT U.name, UG.name AS ug_name FROM users U, user_groups UG WHERE U.user_id=" . $myUserId . " AND U.user_group_id = UG.user_group_id");
+    $signature = "";
+    $signerName = $row["name"];
+    $signerUgName = $row["ug_name"];
+    $signature = "<b><i>" . $head . "</b></i><br><i>" . formatNowTimestamp() . " by " . $signerName;
+    if ($signerUgName != "") {
+      $signature .= " (" . $signerUgName . ")";
+    }
+    $signature .= "</i>";
+    return $signature;
+  }
+  
+  // Create a new template preset record
+  public static function presetSaveAs($name, $templateId, $actions) {
+    global $login;
+    LoginDao::authenticateReadTemplateId($templateId);
+    $sql = "INSERT INTO template_presets VALUES(NULL";
+    $sql .= ", " . $login->userGroupId;
+    $sql .= ", " . $templateId;
+    $sql .= ", " . quote($name);
+    $sql .= ", " . now();  // date_created
+    $sql .= ", NULL";  // date_updated
+    $sql .= ", " . quote($actions);
+    $sql .= ", " . $login->userId;  // created by
+    $sql .= ", NULL";  // updated by
+    $sql .= ")";
+    $id = insert($sql);
+    return $id;    
+  }
+  
+  // Update an existing template preset record
+  public static function presetSave($templatePresetId, $actions) {
+    global $myUserId;
+    LoginDao::authenticateTemplatePresetId($templatePresetId);
+    $sql = "UPDATE template_presets SET ";
+    $sql .= "actions=" . quote($actions);
+    $sql .= ", date_updated=NULL, updated_by=" . $myUserId;
+    $sql .= " WHERE template_preset_id=" . $templatePresetId;
+    return query($sql);
+  }
+
+  // Delete a template preset record
+  public static function presetDelete($templatePresetId) {
+    LoginDao::authenticateTemplatePresetId($templatePresetId);
+    $sql = "DELETE FROM template_presets WHERE template_preset_id=" . $templatePresetId;
+    return query($sql);
+  }
+  
+  // Return row of a template preset to dupe
+  public static function getDupePreset($templatePresetId) {
+    $row = fetch("SELECT date_created, user_group_id, actions FROM template_presets WHERE template_preset_id=" . $templatePresetId);
+    if (! $row) return null;
+    LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    return $row;
+  }
+  
+  // Return row of session to dupe
+  public static function getDupeSession($sessionId) {
+    $row = fetch("SELECT date_created, closed, user_group_id, data, note_date FROM sessions WHERE session_id=" . $sessionId);
+    if (! $row || $row["closed"] == JSession::CLOSED_DEPRECATED_1 || $row["closed"] == JSession::CLOSED_DEPRECATED_2) {
+      return null;
+    }
+    LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    return $row;
+  }
+  
+  // Return JNewNotePop info for this user
+  public static function getNewNotePopInfo($clientId) {
+    $templates = new JHtmlCombo(
+        null,
+        TemplateReaderDao::getMyTemplatesAsRows(), 
+        "template_id", 
+        "name",
+        LookupDao::getDefaultTemplateId());
+    $presets = new JHtmlCombo(
+        null,
+        SessionDao::getMyTemplatePresetsAsRows(), 
+        "template_preset_id", 
+        "name");
+        
+    // Construct array of standard notes associated with each template  
+    $standards = array();
+    foreach ($templates->keyValues as &$kv) {
+      $tid = $kv->k;
+      $standards[$tid] = SessionDao::getClientStandardSessionStub($clientId, $tid); 
+    }
+    $sendTos = SessionDao::getMySendTos();
+    $j = new JNewNotePop($templates, $presets, $standards, $sendTos);
+    return $j;
+  }
+
+  // Return JHtmlCombo
+  public static function getMySendTos() {  
+    global $login;
+    $default = LookupDao::getDefaultSendTo();
+    if ($default == "null") {
+      $default = "";
+    } else if ($default == null) {
+      if ($login->User->isDoctor()) {
+        $default = $login->userId;
+      } else {
+        $default = "";
+      }
+    }
+    return new JHtmlCombo(
+        "",
+        UserDao::getUsersOfMyGroupAsRows("active=1"), 
+        "user_id", 
+        "name",
+        $default);
+  }
+  
+  public static function getClientStandardSessionStub($clientId, $templateId) {  // returns JSessionStub[]
+    $where = " WHERE s.client_id=" . $clientId
+        . " AND s.template_id=" . $templateId
+        . " AND s.closed<>1 AND s.closed<>2 ORDER BY s.standard DESC, s.date_updated DESC LIMIT 0, 1";
+    $stubs = SchedDao::getJSessionStubs($where);
+    if (sizeof($stubs) == 0) {
+      return null;
+    } else {
+      return $stubs[0];
+    }
+  }
+  
+  public static function getPresets($withActions = false) {
+    $res = SessionDao::getMyPresetsAsRows($withActions);
+    $dtos = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $dtos[] = new TemplatePreset($row["template_preset_id"], $row["user_group_id"], $row["name"], $row["template_id"], $row["date_created"], $row["date_updated"], $row["actions"]);
+    }
+    return $dtos;
+  }
+  
+  public static function getMyPresetsAsRows($withActions = false) {
+    global $login;
+    $sql = "SELECT template_preset_id, user_group_id, name, template_id, date_created, date_updated";
+    $sql .= ($withActions) ? ", actions" : ", null AS actions";
+    $sql .= " FROM template_presets WHERE user_group_id=" . $login->userGroupId . " ORDER BY name";
+    return query($sql);
+  }
+  
+  // Same as getMyPresetsAsRows, but fully qualifies name with template name
+  public static function getMyTemplatePresetsAsRows() {
+    global $login;
+    $sql = "SELECT p.template_preset_id, p.user_group_id, concat(p.name, ' (', t.name, ')') as name, p.template_id, p.date_created, p.date_updated, t.name AS template_name";
+    $sql .= " FROM template_presets p, templates t WHERE p.template_id=t.template_id AND p.user_group_id=" . $login->userGroupId . " ORDER BY p.name";
+    return query($sql);
+  }
+  
+  public static function getJTemplatePresets($where = " ORDER BY date_updated DESC") {
+    global $login;
+    $sql = "SELECT tp.template_preset_id, tp.user_group_id, tp.name as preset_name, tp.template_id, t.name as template_name, tp.date_created, tp.date_updated, t.name, u2.name AS created_by_name, u3.name AS updated_by_name FROM (template_presets tp, templates t) ";
+    $sql .= " LEFT OUTER JOIN users u2 ON (u2.user_id=tp.created_by)";
+    $sql .= " LEFT OUTER JOIN users u3 ON (u3.user_id=tp.updated_by)";
+    $sql .= "WHERE tp.template_id=t.template_id AND tp.user_group_id=" . $login->userGroupId;
+    $sql .= " " . $where;
+    $res = query($sql);
+    $dtos = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $dtos[] = new JTemplatePreset($row["template_preset_id"], $row["user_group_id"], $row["preset_name"], $row["template_id"], $row["date_created"], $row["date_updated"], $row["template_name"], null, $row["created_by_name"], $row["updated_by_name"]);
+    }
+    return $dtos;
+  }
+  
+  public static function getJTemplatePreset($id) {
+    global $login;
+    $sql = "SELECT tp.template_preset_id, tp.user_group_id, tp.name as preset_name, tp.template_id, t.name as template_name, tp.date_created, tp.date_updated, tp.actions, t.name, u2.name AS created_by_name, u3.name AS updated_by_name FROM (template_presets tp, templates t) ";
+    $sql .= " LEFT OUTER JOIN users u2 ON (u2.user_id=tp.created_by)";
+    $sql .= " LEFT OUTER JOIN users u3 ON (u3.user_id=tp.updated_by)";
+    $sql .= "WHERE tp.template_id=t.template_id AND tp.user_group_id=" . $login->userGroupId . " AND tp.template_preset_id=" . $id;
+    $row = fetch($sql);
+    if ($row) {
+      $tp = new JTemplatePreset($row["template_preset_id"], $row["user_group_id"], $row["preset_name"], $row["template_id"], $row["date_created"], $row["date_updated"], $row["template_name"], $row["actions"], $row["created_by_name"], $row["updated_by_name"]);
+      $tp->template = JsonDao::buildJTemplate($row["template_id"], $row["date_created"]);
+      $tp->map = JsonDao::buildDefaultMap($row["template_id"], $row["date_created"]);
+      return $tp;
+    }
+  }
+  
+  public static function newJTemplatePreset($tid, $tname) {
+    $tp = new JTemplatePreset(null, null, "[New File]", $tid, null, null, $tname, null, null, null);
+    $tp->template = JsonDao::buildJTemplate($tid);
+    $tp->map = JsonDao::buildDefaultMap($tid);
+    return $tp;
+  }
+  
+  public static function getPresetIdByName($name) {
+    global $login;
+    $row = fetch("SELECT template_preset_id FROM template_presets WHERE user_group_id=" . $login->userGroupId . " AND name=" . quote($name));
+    return $row["template_preset_id"];    
+  }
+   
+  // Return JicdCodes (hierarchy of IcdCodes for $code)
+  public static function getIcdCodes($code) {
+    $icd3 = substr($code, 0, 3);
+    $sql = "SELECT icd_code, icd_desc, synonyms, includes, excludes, notes FROM icd_codes WHERE icd3='" . $icd3 . "' ORDER BY icd_code";
+    $res = query($sql);
+    $dtos = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $dtos[] = new JIcdCode($row["icd_code"], $row["icd_desc"], $row["synonyms"], $row["includes"], $row["excludes"], $row["notes"]);
+    }
+    return new JIcdCodes($dtos, 1, false, null);
+  }
+  public static function splitSearch($text) {
+    $words = split(' ', $text);
+    $a = array();
+    foreach ($words as $word) {
+      $word = trim(str_replace('/', '', $word));
+      if (strlen($word) > 2 && $word != 'the' && $word != 'this' && $word != 'for') {
+        $a[] = $word;
+        if (count($a) > 7) {
+          break;
+        }
+      }
+    }
+    return implode($a, "|");
+  }
+  
+  public static function searchIcdCodes($text) {
+    logit("** SEARCH ICD CODES: $text");
+    $text = SessionDao::splitSearch($text);
+    $words = explode("|", $text);
+    $words = count($words);
+    $sql = "SELECT DISTINCT icd3 FROM icd_codes WHERE icd_code <= '999' AND icd_code RLIKE '" . $text . "' OR icd_desc RLIKE '" . $text . "' OR synonyms RLIKE '" . $text . "'";
+    $res = query($sql);
+    $in = "";
+    $icd3count = 0;
+    $more = false;
+    $matchCounts = array();
+    $dtosByIcd3 = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $icd3 = strtoupper($row["icd3"]);
+      if ($words == 1 && $icd3count > 50) {
+        $more = true;
+        break;
+      }
+      if ($in != "") {
+        $in .= ",";
+      }
+      $in .= "'" . $icd3 . "'";
+      //$icd3count++; 
+      $matchCounts[$icd3] = 1;
+      $dtosByIcd3[$icd3] = array();
+    }
+    logit_r($matchCounts, 'matchCounts');
+    logit_r($dtosByIcd3, 'dtosByIcd3');
+    if ($in != "") {
+      $sql = "SELECT icd3, icd_code, icd_desc, synonyms, includes, excludes, notes FROM icd_codes WHERE icd3 IN (" . $in . ") ORDER BY icd_code";
+      $res = query($sql);
+      $pattern = "/" . $text . "/i";
+      // Loop thru results and count keyword matches; map the max match count by ICD3 
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {  
+        $icd = new JIcdCode($row["icd_code"], $row["icd_desc"], $row["synonyms"], $row["includes"], $row["excludes"], $row["notes"]);
+        $icd3 = strtoupper($row["icd3"]);
+        $matchCount = $matchCounts[$icd3];
+        $matchCount = SessionDao::highMatchCount($matchCount, $pattern, $row["icd_desc"]);
+        $matchCount = SessionDao::highMatchCount($matchCount, $pattern, $row["synonyms"]);
+        $matchCounts[$icd3] = $matchCount;
+        array_push($dtosByIcd3[$icd3], $icd);
+      }
+    }
+    logit_r($matchCounts, 'matchCounts2');
+    $dtosAll = array();
+    arsort($matchCounts);  // sort the highest match counts to top
+    logit_r($matchCounts, 'matchCounts3');
+    $icd3count = 0;
+    // Build dto array according to new order
+    foreach ($matchCounts as $icd3 => $count) {  
+      array_splice($dtosAll, count($dtosAll), 0, $dtosByIcd3[$icd3]);
+      $icd3count++;
+      if ($icd3count > 50) {
+        $more = true;
+        break;
+      }
+    }
+    return new JIcdCodes($dtosAll, $icd3count, $more, $text);
+  }
+  
+  private static function highMatchCount($matchCount, $pattern, $text) {
+    preg_match_all($pattern, $text, $matches);
+    $matches = array_unique($matches[0]);
+    $ct = count($matches);
+    return ($ct > $matchCount) ? $ct : $matchCount; 
+  }
+  
+  // Update session's actions only
+  public static function updateSessionActions($sessionId, $title, $actions, $html = null) {
+    global $login;
+    $clientId = LoginDao::authenticateSessionId($sessionId);
+    $sql = "UPDATE sessions SET ";
+    $sql .= "data=" . quote($actions);
+    if ($login->User->isDoctor()) {
+      $sql .= ", assigned_to=" . $login->userId;      
+    }
+    $sql .= ", date_updated=NULL, updated_by=" . $login->userId;
+    if ($html)
+      $sql .= ", html=" . quote($html);
+    $sql .= " WHERE session_id=" . $sessionId;
+    query($sql);
+    AuditDao::log($clientId, AuditDao::ENTITY_SESSION, $sessionId, AuditDao::ACTION_UPDATE, null, $title);
+    // SchedDao::saveClientUpdate(new ClientUpdate($clientId, ClientUpdate::TYPE_DOC_UPDATED, $sessionId, $title));
+  }
+  
+  public function updateVisitSum($o) {
+    $iols = $o->iols;
+    $instructs = $o->instructs;
+    $diagnoses = static::getDiagnosesFromOut($o->out);
+    $vitals = static::getVitalsFromOut($o->out);
+    $meds = static::getMedsFromOut($o->out);
+    logit_r($meds, 'meds');
+    //logit_r($diagnoses, 'diagnoses');
+    //logit_r($vitals, '$vitals');
+    $sql = "INSERT INTO client_visitsums (client_id, final_id, dos, session_id, finalized_by, final_head, final_body, diagnoses, iols, instructs, vitals, meds) VALUES("
+    	. $o->cid . ','
+    	. '0,' 
+    	. quoteDate($o->dos) . ','
+    	. $o->sid . ','
+    	. 'null,'  // finalized_by
+    	. 'null,'  // final_head
+    	. 'null,'  // final_body
+    	. quote(jsonencode($diagnoses), true) . ','
+    	. quote($iols, true) . ','
+    	. quote(jsonencode($instructs), true) . ','
+    	. quote(jsonencode($vitals), true) . ','
+    	. quote(jsonencode($meds), true)
+    	. ') ON DUPLICATE KEY UPDATE dos=VALUES(dos), session_id=VALUES(session_id), diagnoses=VALUES(diagnoses), iols=VALUES(iols), instructs=VALUES(instructs), vitals=VALUES(vitals), meds=VALUES(meds)';
+    query($sql); 	
+    logit_r($sql, 'for updatevisitsum');
+  }
+  private static function getDiagnosesFromOut($out) {
+    $a = array();
+    $diags = getr($out, 'diagnoses.records');
+    if ($diags) {
+      foreach ($diags as $key => $diag) 
+        $a[] = $diag->fields->text;
+    }
+    return $a;
+  }
+  private static function getMedsFromOut($out) {
+    $a = array();
+    $meds = getr($out, 'meds.records');
+    if ($meds) {
+      foreach ($meds as $key => $med) {
+        $keys = explode('|', $key);
+        $index = end($keys);
+        $action = static::getMedAction(prev($keys));
+        if ($action) {
+          $o = $med->fields;
+          $o->action = $action;
+          $a[] = $o;
+        }
+      }
+    }
+    return $a;
+  }
+  private static function getMedAction($key) {
+    $parts = explode('.', $key);
+    if ($parts[0] == 'med mgr')
+      return end($parts);
+  }
+  private static function getVitalsFromOut($out) {
+    $vits = getr($out, 'vitals.records');
+    if ($vits) {
+      foreach ($vits as $key => $vit) {
+        $keys = explode('|', $key);
+        $o = $vit->fields;
+        $o->date = end($keys);
+        return $o;
+      }
+    }
+  }
+  // Update session's "preview" HTML only
+  public static function saveSessionHtml($sessionId, $html) {
+
+    LoginDao::authenticateSessionId($sessionId);
+    $sql = "UPDATE sessions SET html=" . quote($html) . " WHERE session_id=" . $sessionId;
+    return query($sql);
+  }
+  
+  public static function addendum($sessionId, $html) {
+    LoginDao::authenticateSessionId($sessionId);
+    $add = "<div id=addendum>" . SessionDao::buildSigTable(SessionDao::buildSignature("Addendum")) . "<div><p>" . $html . "<br><br></p></div></div>"; 
+    $sql = "UPDATE sessions SET html=concat(html, " . quote($add) . ") WHERE session_id=" . $sessionId;
+    return query($sql);
+  }
+  
+  // Save session from console (and optionally close)
+  public static function saveSession($sessionId, $actions, $title, $dos, $standard, $close, $nosign, $html) {
+    global $login;
+    $clientId = LoginDao::authenticateSessionId($sessionId);
+    
+    // Add signature to closed note
+    if ($close && ! $nosign) {
+      //if ($login->isPapyrus()) {
+        $html = $html . SessionDao::buildSigTable(SessionDao::buildSignature("Digitally Signed:"));
+      //} else {
+        // Insert after <div id='dSections'>
+        //$html = substr($html, 0, 20) 
+        //    . SessionDao::buildSigTable(SessionDao::buildSignature("Digitally Signed:"))
+        //    . substr($html, 20);
+      //}
+    }
+    $sql = "UPDATE sessions SET ";
+    $sql .= "data=" . quote($actions);
+    $sql .= ", date_service=" . quoteDate($dos);
+    $sql .= ", standard=" . toBoolInt($standard);
+    $sql .= ", title=" . quote($title, true);
+    if ($close) {
+      $sql .= ", html=" . quote($html, true);
+      $sql .= ", closed='3', date_closed=NULL, closed_by=" . $login->userId;
+    } else if ($login->User->isDoctor()) {
+      $sql .= ", assigned_to=" . $login->userId;      
+    }
+    
+    $sql .= ", date_updated=NULL, updated_by=" . $login->userId;
+    $sql .= " WHERE session_id=" . $sessionId;
+    query($sql);
+    
+    // Save client update
+    // $type = ($close) ? ClientUpdate::TYPE_DOC_CLOSED : ClientUpdate::TYPE_DOC_UPDATED;
+    $action = ($close) ? AuditDao::ACTION_CLOSED : AuditDao::ACTION_UPDATE;
+    AuditDao::log($clientId, AuditDao::ENTITY_SESSION, $sessionId, $action, null, $title);
+    // SchedDao::saveClientUpdate(new ClientUpdate($clientId, $type, $sessionId, $title));
+    return $clientId;
+  }
+  // Save client defaults
+  public static function updateClientDefaults($clientId, $templateId, $defaults) {
+    try {
+      for ($i = 0; $i < sizeof($defaults); $i++) {
+        $d = $defaults[$i];
+        try {
+          $sql = "INSERT INTO client_defaults VALUES(" . quote($clientId) . "," . quote($templateId) . "," . quote($d->type) . "," . quote($d->id) . "," . quote($d->sel) . "," . quote($d->text) . ")";
+          insert($sql);
+        } catch (DuplicateInsertException $e) {
+          $sql = "UPDATE client_defaults SET sel=" . quote($d->sel) . ", text=" . quote($d->text) . " WHERE client_id=" . $clientId . " AND template_id=" . $templateId . " AND type=" . $d->type . " AND id=" . quote($d->id);
+          update($sql);
+        } catch (Exception $e) {
+          // No response from this service, so eat the exception
+        }
+      }
+    } catch (Exception $e) {
+      // No response from this service, so eat the exception
+    }
+  }
+
+  // Checks if session already exists for user ID/client ID
+  // Returns sessionId if so
+  private static function doesClientIdExist($userId, $cid, $cname) {
+    $row = fetch("SELECT session_id FROM sessions WHERE user_id=" . $userId . " AND cid=" . quote($cid) . " AND cname=" . quote($cname));
+    if (! $row) return null;
+    return $row["session_id"];
+  }
+
+  // Utils
+  // TODO 2 Not needed, or change
+  private static function buildSession($row) {
+    if (! $row) return null;
+    if (isset($row["actions"])) {
+      return new Session(
+          $row["session_id"], 
+          $row["user_id"], 
+          $row["template_id"], 
+          $row["date_created"], 
+          $row["date_updated"], 
+          $row["cid"], 
+          $row["cname"], 
+          $row["csex"], 
+          $row["cdata1"], 
+          $row["cdata2"], 
+          $row["cdata3"], 
+          $row["cdata4"], 
+          $row["cdata5"], 
+          $row["cdata6"], 
+          $row["cdata7"], 
+          $row["cdata8"], 
+          $row["cdata9"], 
+          $row["closed"], 
+          $row["actions"]);
+    } else {
+      return new Session(
+          $row["session_id"], 
+          $row["user_id"], 
+          $row["template_id"], 
+          $row["date_created"], 
+          $row["date_updated"], 
+          $row["cid"], 
+          $row["cname"], 
+          $row["csex"], 
+          $row["cdata1"], 
+          $row["cdata2"], 
+          $row["cdata3"], 
+          $row["cdata4"], 
+          $row["cdata5"], 
+          $row["cdata6"], 
+          $row["cdata7"], 
+          $row["cdata8"], 
+          $row["cdata9"], 
+          $row["closed"], 
+          null);
+    }
+  }
+}
+//
+require_once "php/dao/_util.php";
+require_once "php/dao/AuditDao.php";
+require_once "php/data/rec/sql/Auditing.php";
+require_once "php/dao/DataDao.php";
+require_once "php/dao/UserDao.php";
+require_once "php/dao/UsageDao.php";
+require_once "php/data/db/Session.php";
+require_once "php/data/db/ClientUpdate.php";
+require_once "php/data/db/TemplatePreset.php";
+require_once "php/data/json/JTemplatePreset.php";
+require_once "php/data/json/JDocView.php";
+require_once "php/data/json/JIcdCode.php";
+require_once "php/data/json/JIcdCodes.php";
+p_i('/SessionDao');

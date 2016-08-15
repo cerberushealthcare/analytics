@@ -1,0 +1,48 @@
+<?php
+/**
+ * HL7 value
+ */
+class HL7Value extends HL7Rec {
+  //
+  public $_value;  // original field value
+  //
+  public function __construct($value) {
+    $this->_value = $value;
+  }
+}
+/**
+ * HL7 component-delimited value
+ */
+class HL7CompValue extends HL7Value {
+  //
+  /**
+   * @param string $value
+   * @param HL7Segment $seg 
+   * @return HL7Value
+   */
+  public function __construct($value, $seg) {
+    $this->_value = $value;
+    $this->setValues(explode($seg->getCompDelim(), $value));
+  }
+  //
+  protected static function isFid($var, $c1) {
+    return parent::isFid($var, $c1) && ! self::isUpper($c1);
+  }
+}
+//
+class XPN extends HL7CompValue {
+  //
+  public $last;
+  public $first;
+  public $middle;
+  public $suffix;
+  public $prefix;
+}
+class XPA extends HL7CompValue {
+  //
+  public $addr1;
+  public $addr2;
+  public $city;
+  public $state;
+  public $zip;
+}

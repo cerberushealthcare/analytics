@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<NCScript xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://secure.newcropaccounts.com/interfaceV7">
+  <Credentials>
+    <partnerName>clicktate</partnerName>
+    <name>demo</name>
+    <password>demo</password>
+    <productName>www.clicktate.com</productName>
+    <productVersion>4.0</productVersion>
+  </Credentials>
+  <UserRole>
+    <!-- See XML Schema: UserType for valid values -->
+    <user>LicensedPrescriber</user>
+    <!-- See XML Schema: RoleType for valid values -->
+    <role>doctor</role>
+  </UserRole>
+  <Destination>
+    <!-- See XML Schema: RequestedPageType for valid values -->
+    <requestedPage>ws-register-licensedPrescriber</requestedPage>
+  </Destination>
+  <Account ID="T1">
+    <accountName>LCD Solutions, LLC</accountName>
+    <siteID>1</siteID>
+    <AccountAddress>
+      <address1>LCD Headquarters</address1>
+      <address2>100 Providence Way</address2>
+      <city>Lexington</city>
+      <state>KY</state>
+      <zip>40536</zip>
+      <zip4>0000</zip4>
+      <country>US</country>
+    </AccountAddress>
+    <accountPrimaryPhoneNumber>1-888-825-4258</accountPrimaryPhoneNumber>
+    <accountPrimaryFaxNumber>5025551212</accountPrimaryFaxNumber>
+  </Account>
+  <Location ID="1">
+    <locationName>LCD Solutions, LLC</locationName>
+    <LocationAddress>
+      <address1>LCD Headquarters</address1>
+      <address2>100 Providence Way</address2>
+      <city>Lexington</city>
+      <state>KY</state>
+      <zip>40536</zip>
+      <zip4>0000</zip4>
+      <country>US</country>
+    </LocationAddress>
+    <primaryPhoneNumber>1-888-825-4258</primaryPhoneNumber>
+    <primaryFaxNumber>5025551212</primaryFaxNumber>
+    <pharmacyContactNumber>888-555-5555</pharmacyContactNumber>
+  </Location>
+  <LicensedPrescriber ID="1">
+    <LicensedPrescriberName>
+      <last>Clicktate</last>
+      <first>Doctor</first>
+    </LicensedPrescriberName>
+    <dea>9876543210</dea>
+    <prescriberStatus>Active</prescriberStatus>
+    <licenseState>KY</licenseState>
+    <licenseNumber>409329423942</licenseNumber>
+    <npi>9876543210</npi>
+  </LicensedPrescriber>
+  <ClinicalMessagingAddress>
+    <messagingAddress>DrClicktate@newcrop.cert.direct-ci.com</messagingAddress>
+    <MessagingProtocol>Direct</MessagingProtocol>
+    <MessagingNetwork>SureScripts</MessagingNetwork>
+    <MessagingEntityType>LicensedPrescriber</MessagingEntityType>
+    <messagingEntityID>1</messagingEntityID>
+    <MessagingEntityStatus>PrimaryActive</MessagingEntityStatus>
+  </ClinicalMessagingAddress>
+</NCScript>

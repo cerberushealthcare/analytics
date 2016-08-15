@@ -1,0 +1,23 @@
+/**
+ * Tracking Page
+ * Static page controller (instance assigned to global variable 'page')
+ * @author Warren Hornsby
+ */
+var TrackingPage = {
+  recs:null,  // {id:TrackItem,..}
+  table:null,
+  /*
+   * Loader
+   */
+  load:function(query) {
+    Page.setEvents();
+    overlayWorking(true, $('box'));
+    TrackingTable.load('tracking-table-tile', null, '400px', function() {
+      overlayWorking(false);
+    });
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = TrackingPage;  

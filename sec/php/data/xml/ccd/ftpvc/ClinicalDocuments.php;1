@@ -1,0 +1,47 @@
+<?php
+require_once 'php/data/xml/ccd/ClinicalDocument.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Immuns.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Allergies.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/Sessions.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+require_once 'php/data/rec/sql/ErxUsers.php';
+//
+/**
+ * CCD Accessor
+ * @author Warren Hornsby
+ */
+class ClinicalDocuments {
+  //
+  /**
+   * @param int $cid
+   * @return ClinicalDocument
+   */
+  static function get($cid) {
+    $client = Clients::get($cid);
+    $ug = UserGroups::getMine();
+    $user = ErxUsers::getMe();
+    $meds = Meds::getActive($cid);
+    $allers = Allergies::getActive($cid);
+    $vitals = Vitals::getActive($cid);
+    $diags = Diagnoses::getActive($cid);
+    $procs = Procedures::getAll($cid);
+    $immuns = Immuns::getActive($cid);
+    $sessions = Sessions::getNotes($cid);
+    $doc = new ClinicalDocument($client, $ug, $user);
+    $doc->setHeader('db734647-fc99-424c-a864-7e3cda82e703', 'Continuity of Care Document', '2010', '20110423');
+    //$doc->addParticipant(AssociatedEntity::asGuardian($client));
+    //$doc->addParticipant(AssociatedEntity::asNextOfKinMother($client));
+    $doc->setMedsSection($meds);
+    $doc->setAlertsSection($allers);
+    $doc->setVitalsSection($vitals);
+    $doc->setImmunsSection($immuns);
+    $doc->setProblemsSection($diags);
+    $doc->setProcsSection($procs);
+    $doc->setEncountersSection($sessions, $ug);
+    return $doc;
+  }  
+}

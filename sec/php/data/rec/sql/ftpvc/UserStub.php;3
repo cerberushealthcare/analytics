@@ -1,0 +1,64 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Stub
+ */
+class UserStub extends SqlRec {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public /*NcUser*/ $NcUser;
+  //
+  const ENV_LOCAL = 'L';
+  const ENV_TEST = 'T';
+  const ENV_PRODUCTION = 'P'; 
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  public function loadNcUser() {
+    $this->NcUser = NcUser::fetch($this->userId);
+  }
+  /**
+   * Static fetchers
+   */
+  public static function fetchByUid($uid) {
+    $rec = new UserStub();
+    $rec->uid = $uid;
+    return SqlRec::fetchOneBy($rec);
+  }
+  public static function fetchAllByUgid($ugid) {
+    $rec = new UserStub();
+    $rec->userGroupId = $ugid;
+    return SqlRec::fetchAllBy($rec);
+  }
+  public static function fetchMe() {
+    global $myUserId;
+    $rec = new UserStub($myUserId);
+    $rec->NcUser = new NcUser();
+    return SqlRec::fetchOneBy($rec);
+  }
+  //
+  public static function getEnv() {
+    static $env;
+    if ($env == null) {
+      $prefix = substr($_SERVER['HTTP_HOST'], 0, 4);
+      if ($prefix == 'loca') 
+        $env = UserStub::ENV_LOCAL;
+      else if ($prefix == 'test') 
+        $env = UserStub::ENV_TEST;
+      else
+        $env = UserStub::ENV_PROD;
+    }
+    return $env;
+  }
+}
+?>

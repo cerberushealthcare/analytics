@@ -1,0 +1,48 @@
+<?php
+require_once 'php/data/csv/_CsvRec.php';
+//
+/**
+ * CSV File
+ * @author Warren Hornsby
+ */
+abstract class CsvFile {
+  //
+  static $FILENAME;      // 'php/data/csv/SomeFilename.csv'
+  static $CSVREC_CLASS;  // 'SomeRec'
+  static $HAS_FID_ROW;   // true if header row
+  //
+  public /*CsvRec[]*/ $recs;
+  //
+  /**
+   * Output file to browser
+   */
+  public function download() {
+    $filename = static::$FILENAME;
+    header("Content-Type: application/csv"); 
+    header("Content-Disposition: attachment; filename=$filename");
+    foreach ($this->recs as $rec) 
+      echo $rec->formatValues() . "\n";
+  }
+  //
+  /**
+   * @return CsvFile loaded with CsvRecs
+   */
+  static function load($start = 0, $to = 99999) {
+    $filename = static::$FILENAME;
+    if (($handle = fopen($filename, 'r', true)) == false) 
+      throw new Exception("Unable to open file $filename");
+    $me = new static();
+    $me->recs = array();
+    if (static::$HAS_FID_ROW)
+      fgetcsv($handle, 1000, ',');
+    $i = 0;
+    while (($fields = fgetcsv($handle, 1000, ",")) !== false) {
+      if ($i >= $start && $i < $to) 
+        $me->recs[] = new static::$CSVREC_CLASS($fields);
+      if (++$i >= $to)
+        break;
+    } 
+    fclose($handle);
+    return $me;
+  }  
+}

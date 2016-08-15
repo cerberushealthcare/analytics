@@ -1,0 +1,458 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/data/ui/LoginResult.php";
+require_once "php/data/db/User.php";
+require_once "php/data/db/BillInfo.php";
+require_once "inc/uiFunctions.php";
+require_once 'php/data/rec/sql/UserLoginReqs.php';
+require_once 'php/data/rec/sql/ErxUsers.php';
+
+/*
+ * Login and authentication
+ */
+class LoginDao {
+    
+  // For a currently signed in user, refresh login to rebuild session object
+  // (to update changed profile props like name, pw change, etc.)
+  public static function refreshLogin($pw = null) {
+    global $myLogin;
+    if ($pw == null) {
+      $pw = $myLogin->ptpw;
+    }
+    @session_start();
+    $_SESSION["login"] = LoginDao::login($myLogin->uid, $pw, $myLogin->sessionId, $myLogin->tablet, true);
+    session_write_close();
+  }
+
+  // Login user
+  // Returns user ID if authenticated, -1 if user not found, -2 if password wrong
+  public static function login($uid, $pwd, $sid, $tablet, $refreshing = false) {
+
+    $r = new LoginResult();
+    $r->ptpw = $pwd;  // plaintext
+    $r->sessionId = $sid;
+    $r->tablet = ($tablet == "1");
+
+    // Authenticate ID/password
+    $row = fetch("SELECT user_id, uid, pw, u.name as uname, active, subscription, tos_accepted, trial_expdt, u.user_group_id, usage_level, est_tz_adj, session_timeout, user_type, admin, expire_reason, pw_expires FROM users u INNER JOIN user_groups ug ON u.user_group_id = ug.user_group_id WHERE uid=" . quote($uid));
+    $r->pw = LoginDao::generateHash($pwd, $row["pw"]);
+    if (! $row) {
+      // Start of SQL string for logging
+      $lsql = "INSERT INTO login VALUES(";
+      $lsql .= "0";
+      $lsql .= ", " . quote($uid);
+      $lsql .= ", " . quote($sid);
+      $lsql .= ", " . now();
+      $lsql .= ", " . quote($_SERVER['REMOTE_ADDR']);
+      $lsql .= ", 'Bad UID - " . $uid . "'";
+      $lsql .= ")";
+      LoginDao::loglogin($lsql);
+      $r->success = false;
+      return $r;
+    }
+    // Start of SQL string for logging
+    $lsql = "INSERT INTO login VALUES(";
+    $lsql .= $row["user_id"];
+    $lsql .= ", " . quote($uid);
+    $lsql .= ", " . quote($sid);
+    $lsql .= ", " . now();
+    $lsql .= ", " . quote($_SERVER['REMOTE_ADDR']);
+    if ($row["pw"] != $r->pw) {
+      $lsql .= ", 'Bad Password - " . $pwd . "'";
+      $lsql .= ")";
+      if (! $refreshing) LoginDao::loglogin($lsql);
+      $r->success = false;
+      return $r;
+    }
+
+    // Check for "bad" users
+    if ($_SERVER['REMOTE_ADDR'] == '69.27.229.11' || substr($_SERVER['REMOTE_ADDR'], 0, 10) == '75.127.204') {
+      $lsql .= ", 'Bad IP - " . $_SERVER['REMOTE_ADDR'] . "'";
+      $lsql .= ")";
+      if (! $refreshing) LoginDao::loglogin($lsql);
+      $r->success = false;
+      return $r;
+    }
+    if ($uid == 'lcddemo') $row['user_id'] = 1;
+    $r->uid = $row["uid"];
+    $r->success = true;
+    $r->userId = $row["user_id"];
+    $r->name = $row["uname"];
+    $r->userGroupId = $row["user_group_id"];
+    $r->userType = $row["user_type"];
+    $r->admin = ($row["admin"] == 1);
+    //$r->roles = $row["roles"];
+    $r->usageLevel = $row["usage_level"];
+    $r->expireReason = $row["expire_reason"];
+    $r->subscription = $row["subscription"];
+    $r->estAdjust = $row["est_tz_adj"];
+    $r->timeout = $row['session_timeout'] * 60;
+    if ($row["pw_expires"] == null) {
+      $r->pwExpired = false;
+    } else {
+      $r->pwExpired = isTodayOrPast(dateToString($row["pw_expires"]));
+    }
+    // Check if already flagged inactive
+    if (! $row["active"]) {
+      // Log to table
+      $lsql .= ", 'Inactive'";
+      $lsql .= ")";
+      if (! $refreshing) LoginDao::loglogin($lsql);
+      $r->active = false;
+      $r->onTrial = ($r->subscription == 0);
+      $r->setPermissions();
+      return $r;
+    } else {
+      $r->active = true;
+    }
+    
+    // Get login requirements
+    $r->loginReqs = UserLoginReqs::getAllFor($r->userId);
+    if ($r->loginReqs) {
+      foreach ($r->loginReqs as $action => $reqs) {
+        foreach ($reqs as $req) {
+          if ($action == UserLoginReqs::REQ_ACTION_NOTIFY || $action == UserLoginReqs::REQ_ACTION_NOTIFY)
+            if ($req->_daysSince == 0)  
+              $r->showReqs = true;
+        }
+      } 
+    }
+    
+    // Get ERX record
+    if ($r->usageLevel == UserGroup0::USAGE_LEVEL_EPRESCRIBE) {
+      $r->erxUser = ErxUsers::get($r->userId, $r->userGroupId);
+    }
+    
+    // Check for TOS acceptance
+    if ($r->isDoctor() && $row['tos_accepted'] < '2011-07-24') 
+      $r->tosExpired = true;
+
+    // Ensure user is still active-qualified
+    $dnow = strtotime("now");
+    $deactivate = false;
+    logit("1");
+    switch ($r->subscription) {
+      case User::SUBSCRIPTION_TRIAL:
+        $r->onTrial = true;
+        $r->daysLeft = intval((strtotime($row["trial_expdt"]) - strtotime(date("Y-m-d", $dnow))) / 86400);
+        break;
+      case User::SUBSCRIPTION_PAYING:
+        $r->onTrial = false;
+        $bill = fetch("SELECT exp_month, exp_year, last_bill_status FROM billinfo where user_id=" . quote($r->userId));
+        if ($bill) {
+          if ($bill["last_bill_status"] == BillInfo::STATUS_CARD_DECLINED) {
+            $r->active = false;
+            $r->expireReason = User::EXPIRE_CARD_DECLINED;
+            $deactivate = true;
+          } else {
+            $exp = strtotime($bill["exp_month"] . "/01/" . $bill["exp_year"]);
+            $cc_expdt = date("Y-m-d", strtotime($bill["exp_month"] . "/" . date("t", $exp) . "/" .$bill["exp_year"]));
+            $r->daysLeft = (strtotime($cc_expdt) - strtotime(date('Y-m-d',$dnow))) / 86400 + 1;
+          }
+        } else {
+          $r->daysLeft = -1;
+          $r->active = false;
+          $r->expireReason = User::EXPIRE_MISSING_BILLINFO;
+          $deactivate = true;
+        }
+        break;
+      case User::SUBSCRIPTION_FREE:
+        $r->daysLeft = 1000;
+        break;
+      case User::SUBSCRIPTION_INVOICE:
+        $r->daysLeft = 1000;
+        break;
+      default:
+        throw new SecurityException("Invalid subscription type");
+    }
+    if ($r->active && $r->daysLeft < 0) {
+      logit("deactivating");
+      $r->active = false;
+      $r->expireReason = User::EXPIRE_CARD_EXPIRED;
+      $deactivate = true;
+    }
+    if ($deactivate) {
+      LoginDao::deactivate($r->userId, $r->expireReason);
+    } else {
+      $r->active = true;
+    }
+    $r->setPermissions();
+
+    // Log to table
+    $lsql .= ", 'OK'";
+    $lsql .= ")";
+    if (! $refreshing) LoginDao::loglogin($lsql);
+    return $r;
+  }
+  
+  private static function loglogin($lsql) {
+    try {
+      insert($lsql);
+    } catch (Exception $e) {
+    }
+  }
+
+  // On success, returns newpw
+  // If temp, an expiration date assigned
+  public static function changePw($userId, $oldpw, $newpw, $temp = false) {
+    $row = fetch("SELECT pw FROM users WHERE user_id=" . $userId);
+    $pw = LoginDao::generateHash($oldpw, $row["pw"]);
+    $expires = null;
+    if ($temp) {
+      $expires = nowShortNoQuotes();
+    } else {
+      if ($pw != $row["pw"]) {
+        throw new PasswordChangeException("The current password supplied is incorrect.");
+      }
+      if ($newpw == $oldpw) {
+        throw new PasswordChangeException("The new password must be different from the old password.");
+      }
+      if (strlen($newpw) < 6) {
+        throw new PasswordChangeException("The new password must be at least six characters long.");
+      }
+    }
+    $pw = LoginDao::generateHash($newpw);
+    query("UPDATE users SET pw_expires=" . quote($expires) . ", pw=" . quote($pw) . " WHERE user_id=" . $userId);
+    return $newpw;
+  }
+
+  // Manages session to ensure proper login credentials
+  // Intended to be called as first instruction from each secured page (by including requireLogin.php)
+  // Establishes global vars myUserId, myUid, myAdmin
+  // Returns 0 if session alive & login authenticates properly
+  // Returns -1 if session expired
+  // Returns -2 if session alive but login does not authenticate
+  public static function authenticateSession($polling = false) {
+    global $myLogin;
+    global $myUserId;
+    if (isset($_SESSION)) {
+      if (! isset($_SESSION["login"])) 
+        return -1;
+    } else {
+      session_start();
+      if (! isset($_SESSION["login"])) 
+        return -1;
+      if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $_SESSION["login"]->timeout)) {
+        clearSessionVars();
+        return -1;          
+      }
+      if (! $polling)
+        $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp 
+      if (! isset($_SESSION["login"])) {
+        return -1;
+      } else {
+        $myLogin = $_SESSION["login"];
+        $myUserId = $myLogin->userId;
+        $r = LoginDao::authenticate($myLogin, session_id());
+        if ($r < 0) {
+          clearSessionVars();
+          return -2;
+        }
+      }
+    }
+    session_write_close();
+    return 0;
+  }
+  public static function authenticateSession_forPolling() {
+    return self::authenticateSession(true);
+  }
+
+  // Authenticate user (at start of each page)
+  // Returns (positive=OK, negative=bad):
+  // 0 if authenticated regular user
+  // 1 if authenticated admin
+  // -1 if user not found
+  // -2 if password wrong
+  // -3 if user ID wrong
+  // -4 if user group ID wrong
+  // [-5 if last login as not the current session -- not implemented currently]
+  public static function authenticate($myLogin, $sid) {
+
+    $row = fetch("SELECT user_id, pw, admin, active, user_group_id FROM users WHERE uid=" . quote($myLogin->uid), false);
+    if ($myLogin->uid == 'lcddemo') $row['user_id'] = 1;
+    if (! $row) {
+      return -1;
+    }
+    if ($row["pw"] != $myLogin->pw) {
+      return -2;
+    }
+    if ($row["user_id"] != $myLogin->userId) {
+      return -3;
+    }
+    if ($row["user_group_id"] != $myLogin->userGroupId) {
+      return -4;
+    }
+    //if ($sid != $myLogin->sid) {
+    //  return -5;
+    //}
+    return $row["admin"];
+  }
+
+  // Ensures userId passed as DAO argument is valid
+  public static function authenticateUserId($userId) {
+    AuthCache::user($userId, function($userId) {
+      global $myLogin;
+      if (! $myLogin->admin)
+        if ($userId != $myLogin->userId) 
+          LoginDao::throwSecurityError('ui', $userId);
+    });
+  }
+  public static function throwSecurityError($code, $id) {
+    global $myLogin;
+    throw new SecurityException("Access not allowed: $code($id) uid($myLogin->userId) ugid($myLogin->userGroupId)");
+  }
+
+  // Group authentications
+  // If authenticated, user can make updates to group entities
+  public static function authenticateUserGroupId($userGroupId) {
+    global $myLogin;
+    if (! $myLogin->admin)
+      if ($userGroupId != $myLogin->userGroupId) 
+        LoginDao::throwSecurityError('ugi', $userGroupId);
+  }
+  public static function authenticateUserGroupIdWithin($tableName, $pkColumn, $pkValue) {
+    AuthCache::ugidWithin($tableName, $pkColumn, $pkValue, function($tableName, $pkColumn, $pkValue) {
+      LoginDao::authenticateUserGroupId(fetchField("SELECT user_group_id FROM $tableName WHERE $pkColumn ='$pkValue'"));
+    });
+  }
+  public static function authenticateTrackItemId($trackItemId) {
+    LoginDao::authenticateUserGroupIdWithin('track_items', 'track_item_id', $trackItemId);
+  }
+  public static function authenticateSupportUserId($userId) {
+    LoginDao::authenticateUserGroupIdWithin("users", "user_id", $userId);
+  }
+  public static function authenticateSchedId($schedId) {
+    LoginDao::authenticateUserGroupIdWithin("scheds", "sched_id", $schedId);
+  }
+  public static function authenticateClientId($clientId) {
+    LoginDao::authenticateUserGroupIdWithin("clients", "client_id", $clientId);
+  }
+  public static function authenticateDataAllergy($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_allergies", "data_allergies_id", $id);
+  }
+  public static function authenticateDataHm($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_hm", "data_hm_id", $id);
+  }
+  public static function authenticateDataHist($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_hists", "data_hist_id", $id);
+  }
+  public static function authenticateDataMed($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_meds", "data_med_id", $id);
+  }
+  public static function authenticateDataVitals($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_vitals", "data_vitals_id", $id);
+  }
+  public static function authenticateDataImmun($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_immuns", "data_immun_id", $id);
+  }
+  public static function authenticateDataDiagnosis($id) {
+    LoginDao::authenticateUserGroupIdWithin("data_diagnoses", "data_diagnoses_id", $id);
+  }
+  public static function authenticateTemplatePresetId($templatePresetId) {  // returns templateId
+    return AuthCache::getset(__METHOD__, func_get_args(), function() use ($templatePresetId) {
+      $row = fetch("SELECT user_group_id, template_id FROM template_presets WHERE template_preset_id=" . $templatePresetId);
+      LoginDao::authenticateUserGroupId($row["user_group_id"]);
+      return $row["template_id"];
+    });
+  }
+
+  // Admin authentication
+  // If authenticated, user can update
+  public static function authenticateSessionId($sessionId) {  // returns clientId
+    return AuthCache::getset(__METHOD__, func_get_args(), function() use ($sessionId) {
+      $row = fetch("SELECT client_id, user_group_id FROM sessions WHERE session_id=" . $sessionId);
+      LoginDao::authenticateUserGroupId($row["user_group_id"]);
+      $cached = $sessionId;
+      return $row["client_id"];
+    });
+  }
+  public static function authenticateTemplateId($templateId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($templateId) {
+      $row = fetch("SELECT user_id FROM templates WHERE template_id=" . $templateId);
+      LoginDao::authenticateUserId($row["user_id"]);
+    });
+  }
+  public static function authenticateSectionId($sectionId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($sectionId) {
+      $row = fetch("SELECT t.user_id FROM templates t, template_sections s WHERE t.template_id=s.template_id AND s.section_id=" . $sectionId);
+      LoginDao::authenticateUserId($row["user_id"]);
+    });
+  }
+  public static function authenticateGroupId($groupId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($groupId) {
+      $row = fetch("SELECT t.user_id FROM templates t, template_sections s, template_groups g WHERE t.template_id=s.template_id AND s.section_id=g.section_id AND g.group_id=" . $groupId);
+      LoginDao::authenticateUserId($row["user_id"]);
+    });
+  }
+  public static function authenticateParId($parId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($parId) {
+      $row = fetch("SELECT t.user_id FROM templates t, template_sections s, template_pars p WHERE t.template_id=s.template_id AND s.section_id=p.section_id AND p.par_id=" . $parId);
+      LoginDao::authenticateUserId($row["user_id"]);
+    });
+  }
+  public static function authenticateQuestionId($questionId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($questionId) {
+      $row = fetch("SELECT t.user_id FROM templates t, template_sections s, template_pars p, template_questions q WHERE t.template_id=s.template_id AND s.section_id=p.section_id AND q.par_id=p.par_id AND q.question_id=" . $questionId);
+      LoginDao::authenticateUserId($row["user_id"]);
+    });
+  }
+  public static function authenticateThreadId($threadId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($threadId) {
+      $row = fetch("SELECT user_group_id FROM msg_threads WHERE thread_id=$threadId");
+      LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    });
+  }
+
+  // Reader authentication
+  // If authenticated, user can read
+  public static function authenticateReadTemplateId($templateId) {  // returns template name
+    return AuthCache::getset(__METHOD__, func_get_args(), function() use ($templateId) {
+      $row = fetch("SELECT public, user_group_id, name FROM templates WHERE template_id=" . $templateId);
+      if (! LoginDao::toBool($row["public"])) {
+        LoginDao::authenticateUserGroupId($row["user_group_id"]);
+      }
+      return $row["name"];
+    });
+  }
+  public static function authenticateReadSectionId($sectionId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($sectionId) {
+      $row = fetch("SELECT t.public, t.user_group_id FROM templates t, template_sections s WHERE t.template_id=s.template_id AND s.section_id=" . $sectionId);
+      if (! LoginDao::toBool($row["public"])) 
+        LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    });
+  }
+  public static function authenticateReadGroupId($groupId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($groupId) {
+      $row = fetch("SELECT t.public, t.user_group_id FROM templates t, template_sections s, template_groups g WHERE t.template_id=s.template_id AND s.section_id=g.section_id AND g.group_id=" . $groupId);
+      if (! LoginDao::toBool($row["public"])) 
+        LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    });
+  }
+  public static function authenticateReadParId($parId) {
+    AuthCache::getset(__METHOD__, func_get_args(), function() use ($parId) {
+      $row = fetch("SELECT t.public, t.user_group_id FROM templates t, template_sections s, template_pars p WHERE t.template_id=s.template_id AND s.section_id=p.section_id AND p.par_id=" . $parId);
+      if (! LoginDao::toBool($row["public"])) 
+        LoginDao::authenticateUserGroupId($row["user_group_id"]);
+    });
+  }
+
+  // Deactivate user
+  private static function deactivate($userId, $expireReason) {
+    $sql = "UPDATE users SET active=0, trial_expdt=0, expire_reason=" . $expireReason . " WHERE user_id=" . $userId;
+    $res = query($sql);
+  }
+
+  public static function toBool($fld) {
+    return ($fld == 1);
+  }
+
+  public static function generateHash($plainText, $salt = null) {
+    if ($salt === null) {
+      $salt = substr(md5(uniqid(rand(), true)), 0, 9);
+    } else {
+      $salt = substr($salt, 0, 9);
+    }
+    return $salt . sha1($salt . $plainText);
+  }
+}
+?>

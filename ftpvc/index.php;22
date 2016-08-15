@@ -1,0 +1,150 @@
+<?php 
+require_once "sec/php/dao/HomeDao.php";
+require_once "sec/inc/uiFunctions.php";
+$tip = HomeDao::getLatestMikeTip();
+?>
+<? $title = 'Medical office SOAP notes - Web-based EMR - Easy-to-use and affordable - Clicktate' ?>
+<? include "inc/hheader.php" ?>
+<div id="belt">
+  <div class="content">
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td id="belt-left">
+          <div id="logo">
+            <span></span>
+          </div>
+          <div id="tag">
+            A better way to<br/>practice medicine
+          </div>
+          <div id="tag2">
+            <p>
+              Clicktate is a revolutionary EMR and documentation system that is unlike anything you've ever seen. 
+            </p>
+          </div>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td><a href="javascript:pop()" class="trial">Free Trial ></a></td>
+              <td width=5></td>
+              <td><a href="tour.php" class="itour">Learn More ></a></td>
+            </tr>
+          </table>
+        </td>
+        <td id="belt-right">
+          <img src="img/docs5.png" style='display:block;height:294px;width:514px' />
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div id="leg">
+  <div class="content">
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td colspan=2 style='text-align:center'>
+          <h3>ELECTRONIC PRESCRIBING NOW AVAILABLE</h3>
+        </td>
+      </tr>
+      <tr>
+        <td colspan=2>
+          <p>
+            Clicktate now offers electronic prescribing through a partnership with NewCrop, a <b>SureScripts</b>&reg; Gold Solution Provider.
+            Clicktate's full-featured electronic prescribing platform offers the same ease of use that our customers have come to expect while 
+            enhancing patient convenience and improving the care that our customers provide. 
+          </p>
+          <p>
+            To register for Clicktate's electronic prescribing service, please contact us at <a href='mailto:info@clicktate.com'>info@clicktate.com</a>.
+          </p>
+        </td>
+      </tr>
+      <? if ($tip) { ?>
+        <tr>
+          <td colspan=2 style='text-align:center;border-top:1px solid #c0c0c0;padding-top:0.5em'>
+            <h3>DID YOU KNOW?<br><?=$tip['post_subject'] ?></h3>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <p style='margin-bottom:1.5em'>
+              <?=$tip["post_text"] ?>
+            </p>
+          </td>
+        </tr>
+      <? } ?>
+      <tr>
+        <td id="col1">
+          <h3>EFFICIENT DATA MANAGEMENT</h3>
+          <p style='margin-bottom:0.5em'>
+            Clicktate provides seamless integration between the documentation you create and patient data management. 
+            <b>Health data flows automatically</b> between patient documentation and the chart, keeping the health record organized at your fingertips.
+          </p>
+          <h3 class="drop">READY WHEREVER YOU ARE</h3>
+          <p>
+            Because Clicktate is <b>web-based</b>, your documentation
+            and patient information is easily retrievable when you need it,
+            where you need it: in the office, an exam room, or anywhere
+            with Internet access.
+          </p>
+          <h3 class='drop'>SAVE TIME AND MONEY</h3>
+          <p>
+            If you're like most physicians, you spend countless hours dictating or 
+            hand-writing medical progress notes and reviewing transcription.  
+            Add to that the cost of your dictation service, or the difficulty reading 
+            illegible handwritten SOAP notes, and it's easy to see why medical 
+            documentation is one of the least efficient parts of any medical practice. 
+          </p>
+          <p>
+            Turn your <b>dictation</b> into <b>Clicktation</b>, and
+            say goodbye to expensive transcription. 
+          </p>
+        </td>
+        <td id="col2">
+          <h3>STATE OF THE ART NOTE BUILDER</h3>
+          <p>
+            Clicktate builds your documents in <b>paragraph form</b>  
+            on-the-fly, while interacting with patients.
+            Data entry is <b>amazingly intuitive</b>, and 
+            your completed notes will be <b>organized and legible.</b> 
+          </p>
+          <p>
+            With over <b>2,000 templates</b> in our ever-expanding library,
+            you'll find templates for most patient problems that you encounter.
+            And our physician-created templates use real-world defaults for every 
+            option to keep <b>your clicks to a minimum.</b> 
+          </p> 
+          <h3 class="drop">SECURE AND HIPAA COMPLIANT</h3>
+          <p>
+            All Clicktate sessions use SSL encryption and 256-bit encryption
+            to ensure the safety and security of your medical data.
+          </p>
+          <h3 class="drop">BETTER CARE</h3>
+          <p>
+            Take a <a href="javascript:pop()" style='color:blue'>risk-free 14-day trial</a> and you'll see that
+            Clicktate is much more than a means to improve your bottom line. 
+            It's a way to give your patients <b>better care.</b>
+            Our solution allow you to focus on what matters most: <b>your patients</b>.  
+          </p>
+        </td>
+      </tr>
+    </table>
+    <div id="verisign">
+      <script src=https://seal.verisign.com/getseal?host_name=www.clicktate.com&size=M&use_flash=YES&use_transparent=YES&lang=en></script><br />
+      <a href="http://www.verisign.com/ssl/ssl-information-center/" target="_blank"  style="color:#000000; text-decoration:none; font:bold 7px verdana,sans-serif; letter-spacing:.5px; text-align:center; margin:0px; padding:0px;">ABOUT SSL CERTIFICATES</a>
+    </div>
+  </div>
+</div>
+<? include "inc/hfooter.php" ?>
+<?php
+try {
+$f = @fopen("page-hits.csv", "a");
+$a = array();
+$a[] = date("d-M-Y, g:i:s A");
+$a[] = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "";
+$a[] = isset($_SERVER["QUERY_STRING"]) ? $_SERVER["QUERY_STRING"] : "";
+$a[] = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "";
+$a[] = isset($_SERVER["HTTP_USER_AGENT"]) ? $_SERVER["HTTP_USER_AGENT"] : "";
+$a[] = isset($_SERVER["HTTP_COOKIE"]) ? $_SERVER["HTTP_COOKIE"] : "";
+$line = "\"" . implode("\",\"", $a) . "\"\r\n"; 
+@fwrite($f, $line);
+@fclose($f);
+} catch (Exception $e) {}
+?>

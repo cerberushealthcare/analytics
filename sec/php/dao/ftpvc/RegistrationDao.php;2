@@ -1,0 +1,225 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/dao/_exceptions.php";
+require_once "php/dao/LoginDao.php";
+require_once "php/data/db/Registration.php";
+require_once "php/data/db/User.php";
+require_once "php/data/db/UserGroup.php";
+require_once "php/data/db/Address.php";
+require_once "php/data/db/AcctData.php";
+
+class RegistrationDao {
+
+	// Add new Registration and return registration ID
+	public static function addRegistration($reg) {
+
+		if ($_SERVER['REMOTE_ADDR'] == '69.27.229.11') {
+			throw new AddUserException("Invalid user.  Please call 1-888-825-4258 to register.");
+		}
+    if (substr($_SERVER['REMOTE_ADDR'], 0, 10) == '75.127.204') {
+      throw new AddUserException("Invalid user.  Please call 1-888-825-4258 to register.");
+    }
+		if (RegistrationDao::existsUser($reg->uid) != null) {
+			throw new AddUserException("User " . quote($reg->uid) . " already exists.");
+		}
+		if (RegistrationDao::existsLicense($reg->licenseState, $reg->license)!=null) {
+			throw new AddUserException("User with that state and license number already exists.");
+		}
+		
+		// Insert record into REGISTRATIONS table
+		$sql = "INSERT INTO registrations VALUES(NULL";
+		$sql .= ", " . quote($reg->uid);
+		$sql .= ", NULL"; //. quote($reg->pw);
+		$sql .= ", " . quote($reg->name);
+		$sql .= ", " . quote($reg->email);
+		$sql .= ", " . quote($reg->company);
+		$sql .= ", " . quote($reg->licenseState);
+		$sql .= ", " . quote($reg->license);
+		$sql .= ", " . quote($reg->phoneNum);
+		$sql .= ", " . quote($reg->phoneExt);
+		$sql .= ", " . quote($reg->howFound);
+		$sql .= ", " . $reg->dateCreated;
+		$sql .= ", " . quote($reg->referrer);
+		$sql .= ")";
+		$regid = insert($sql);
+
+		return $regid;
+	}
+
+	// Create user group entry and return user group number
+	public static function addUserGroup($userGroup) {
+	
+		// Insert record into USER_GROUPS table
+		$sql = "INSERT INTO user_groups VALUES(NULL";
+		$sql .= ", " . quote($userGroup->name);
+    $sql .= ", " . $userGroup->usageLevel;
+    $sql .= ", " . $userGroup->estAdjust;
+    $sql .= ")";
+		$ug = insert($sql);
+
+		return $ug;
+	}
+		
+	// Create user record and return user ID number
+	public static function addUser($user, $regid, $groupid, $fromApi = false) {
+
+		$sql = "INSERT INTO users VALUES(NULL";
+		$sql .= ", " . quote($user->uid);
+		$sql .= ", " . quote(LoginDao::generateHash($user->pw));
+		$sql .= ", " . quote($user->name);
+		$sql .= ", " . $user->admin;
+		$sql .= ", " . $user->subscription;
+		$sql .= ", " . $user->active;
+		$sql .= ", " . quote($regid);
+		$sql .= ", " . quote($user->trialExpDt);
+		$sql .= ", " . $groupid;
+		$sql .= ", " . $user->userType;
+		$sql .= ", " . now();
+		$sql .= ", " . quote($user->licenseState);
+		$sql .= ", " . quote($user->license);
+		$sql .= ", " . quote($user->dea);
+    $sql .= ", " . quote($user->npi);
+    $sql .= ", " . quote($user->email);
+    $sql .= ", " . quote($user->expiration);
+    $sql .= ", " . quote($user->expireReason);
+    $sql .= ", NULL";  // pw_expires
+    $sql .= ", NULL";  // tos_accepted
+    $sql .= ")";
+		$id = insert($sql);
+
+		// Log to table
+		if (! $fromApi) {
+  		$sql = "INSERT INTO login VALUES(";
+  		$sql .= $id;
+  		$sql .= ", " . quote($user->uid);
+  		$sql .= ", " . quote(session_id());
+  		$sql .= ", " . now();
+  		$sql .= ", " . quote($_SERVER['REMOTE_ADDR']);
+  		$sql .= ", NULL";
+  		$sql .= ")";
+  		insert($sql);
+		}
+
+		return $id;
+	}
+	
+	// Create testing patient
+	public static function createTestPatient($ugid) {
+	  $sql = "INSERT INTO clients VALUES(NULL,$ugid,'1','Patient','Test','F','1977-04-07',NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'This patient record was created automatically for testing. <br/><br/>To create a new medical note, click \"Create New Document\" in the Workflow area to the left.',NULL)";
+	  $cid = insert($sql);
+	  $address = new Address(
+	     null, Address::TABLE_CLIENTS, $cid, Address::ADDRESS_TYPE_SHIP, 
+	     '100 Main Street', null, null, 'Anytown', 'KS', '66699', null,
+	     '800 123-4567', 0);
+	  RegistrationDao::addAddress($address);
+	  $date = now();
+	  query("INSERT INTO client_updates VALUES($cid,$date,'0','$cid',null)");
+	  $date = nowShort();
+	  query("INSERT INTO data_allergies VALUES(null,$ugid,$cid,null,$date,5,'Amoxicillin','[\"Rash\",\"Itching\"]',1,null,null)");
+	}
+
+	// Create address record and return address ID number
+	public static function addAddress($address) {
+		
+		$sql = "INSERT INTO addresses VALUES(NULL";
+		$sql .= ", " . quote($address->tableCode);
+		$sql .= ", " . $address->tableId;
+		$sql .= ", " . $address->type;
+		$sql .= ", " . quote($address->addr1);
+		$sql .= ", " . quote($address->addr2);
+		$sql .= ", " . quote($address->addr3);
+		$sql .= ", " . quote($address->city);
+		$sql .= ", " . quote($address->state);
+		$sql .= ", " . quote($address->zip);
+		$sql .= ", " . quote($address->country);
+		$sql .= ", " . quote($address->phone1);
+		$sql .= ", " . $address->phone1Type;
+		$sql .= ", " . quote($address->phone2);
+		$sql .= ", NULL";
+		$sql .= ", " . quote($address->phone3);
+		$sql .= ", NULL";
+		$sql .= ", " . quote($address->email1);
+		$sql .= ", " . quote($address->email2);
+		$sql .= ", " . quote($address->name);
+		$sql .= ")";
+		$addId = insert($sql);
+		return $addId;
+	}
+
+	public static function existsUser($user_id) {
+		$row = fetch("SELECT user_id FROM users WHERE uid=" . quote($user_id));
+		if (! $row) {
+			return null;
+		} else {
+			return $row["user_id"];
+		}
+	}
+
+	public static function existsEmail($email) {
+		$row = fetch("SELECT uid FROM users WHERE email=" . quote($email));
+		if (! $row) {
+			return null;
+		} else {
+			return $row["uid"];
+		}
+	}
+	
+  public static   function existsLicense($state, $license) {
+    $row = fetch("SELECT uid FROM users WHERE license_state=" . quote($state) . " and license=" . quote($license));
+    if (! $row) {
+      return null;
+    } else {
+      return $row["uid"];
+    }
+  }
+
+ public static   function existsRegistration($state, $uid) {
+    $row = fetch("SELECT uid FROM users WHERE license_state=" . quote($state) . " and uid=" . quote($uid));
+    if (! $row) {
+      return null;
+    } else {
+      return $row["uid"];
+    }
+  }
+
+  public static function checkPractice($practice_id, $practice_pw) {
+		$row = fetch("SELECT practice_name FROM practices WHERE practice_id=" . quote($practice_id) . "and pw=" . quote($practice_pw));
+		if (! $row) {
+			return null;
+		} else {
+			return $row["practice_name"];
+		}
+	}
+
+	public static function getUserInfo($uid) {
+		$row = fetch("SELECT user_id, name, email FROM users WHERE uid=" . quote($uid));
+		if (! $row) {
+			return null;
+		} else {
+			return $row;
+		}
+	}
+	
+	public static function resetPassword($uid) {
+    $row = RegistrationDao::getUserInfo($uid);
+    if ($row == null) return null;
+	  $pw = "a" . mt_rand(10000, 99999);
+	  LoginDao::changePw($row["user_id"], null, $pw, true);
+	  $row["pw"] = $pw;
+	  return $row;
+	}
+
+	// Get specific account info
+	public static function getAcctInfo($userId) {
+		$acctinfo = RegistrationDao::buildAcctInfo(fetch("SELECT u.name, d.practice_id, p.practice_name, p.pw, u.udata1, u.udata2, u.email, u.uid, u.pw FROM clicktate.users u INNER JOIN clicktate.doc2prac d ON u.user_id = d.user_id INNER JOIN clicktate.practices p ON d.practice_id = p.practice_id where u.user_id = " .$userId));
+		return $acctinfo;
+	}
+
+	public static function buildAcctInfo($row) {
+		if (! $row) return null;
+		return new AcctData($row["name"], $row["practice_id"], $row["practice_name"], $row["pw"], $row["udata1"], $row["udata2"], $row["email"], $row["uid"], $row["pw"]);
+	}
+
+
+}
+?>

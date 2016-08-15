@@ -1,0 +1,109 @@
+/**
+ * Tracking Page
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var TrackingPage = {
+  lists:null,
+  recs:null,  // {id:TrackItem,..}
+  table:null,
+  /*
+   * Loader
+   */
+  load:function(query, lists) {
+    Page.setEvents();
+    this.lists = lists;
+    this._loadResults();
+  },
+  pEdit:function(trackItemId) {
+    var rec = this.recs[trackItemId];
+    var filter = this.table.buildFilterFromTopbar();
+    var self = this;
+    Pop.showTrackingEntry(rec, this.lists, function() {
+      self._loadResults(filter);
+    });
+  },
+  _loadResults:function(filter) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl', 'results-head');
+    t.defineFilter(filter ? filter : this.getFilter());
+    overlayWorking(true, $('box'));
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'getTracking', null,
+      function(recs) {
+        TrackingPage.recs = {};
+        var lastCat = null;
+        for (var i = 0, j = recs.length; i < j; i++) {
+          var rec = recs[i];
+          TrackingPage.recs[rec.trackItemId] = rec;
+          var client = rec.ClientStub;
+          var session = rec.SessionStub;
+          var cat = TrackingPage.lists.cats[rec.trackCat];
+          if (cat != lastCat) {
+            t.createTr(true, null, self.getFilter(cat));
+            t.createTd('histbreak', cat);
+            t.td.colSpan = 6;
+            lastCat = cat;
+          }
+          t.createTr(false, null, self.getFilter(cat, rec.UserStub_OrderBy.name, rec.status, ClientUi.formatName(client)));
+          t.createTdAppend(null, self.createTrackingAnchor(rec, rec.trackDesc));
+          t.createTdAppend('nowrap', ClientUi.createClientAnchor(client));
+          t.createTdAppend('nowrap', DocUi.createPreviewAnchor(client.clientId, session));
+          t.createTd('nowrap', rec._orderDate);
+          t.createTd('nowrap', rec._schedDate);
+          t.createTd('nowrap', rec._closedDate);
+        }
+        overlayWorking(false);
+        t.loadFilterTopbar('topbar-filter', filter);
+      }
+    );
+    this.table = t;
+  },
+  getFilter:function(cat, orderedBy, status, patient) {
+    return {
+      'Categories':cat,
+      'Ordered By':orderedBy,
+      'Status':this.formatStatus(status),
+      'Patient':patient
+      };
+  },
+  formatStatus:function(status) {
+    switch (status) {
+      case C_OT.STATUS_ORDERED:
+      case C_OT.STATUS_SCHED:
+        return 'Open';
+      case C_OT.STATUS_CLOSED:
+        return 'Closed';
+      default:
+        return null;
+    }
+  },
+  buildStatusText:function(rec) {
+    var h = [];
+    switch (rec.status) {
+    case C_OT.STATUS_ORDERED:
+      h.push(this.formatDoneBy('Ordered', rec._orderDate, rec.UserStub_OrderBy.name));
+      break;
+    case C_OT.STATUS_SCHED:
+      h.push(this.formatDoneBy('Scheduled', rec._schedDate, rec.UserStub_OrderBy.name));
+      break;
+    case C_OT.STATUS_CLOSED:
+      break;
+    }
+    return h.join('');
+  },
+  formatDoneBy:function(job, date, by) {
+    return '<b>' + job + '</b> ' + date + ' by ' + by;
+  },
+  createTrackingAnchor:function(rec, text) {
+    var href = 'javascript:TrackingPage.pEdit(' + rec.trackItemId + ')';
+    var a = createAnchor(null, href, 'action track', text);
+    if (rec.priority == C_OT.PRIORITY_STAT)
+      a.style.color = 'red';
+    return a;
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = TrackingPage;  

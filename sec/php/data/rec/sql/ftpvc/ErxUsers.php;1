@@ -1,0 +1,158 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Users 
+ * DAO for ErxUser, NCUser
+ * @auther Warren Hornsby  
+ */
+class ErxUsers {
+  /**
+   * @return array(
+   *   'me'=>ErxUser, 
+   *   'lp'=>ErxUser, 
+   *   'staff'=>ErxUser)
+   */
+  public function getMyGroup() {
+    $me = ErxUsers::getMe();
+    $lp = ErxUsers::getMyLp($me);
+    $staff = ErxUsers::getMyStaff($me);
+    return array(
+      'me' => $me,
+      'lp' => $lp,
+      'staff' => $staff);
+  }
+  /**
+   * @return ErxUser
+   */
+  public function getMe() {
+    global $myUserId;
+    $user = ErxUser::fetch($myUserId);
+    if ($user->NcUser->partnerId) 
+      $user->Partner = ErxUser::fetch($user->NcUser->partnerId);
+    return $user;
+  }
+  /**
+   * @param ErxUser $me
+   * @return ErxUser
+   */
+  public function getMyLp($me) {
+    if ($me->NcUser->isLp())
+      return $me;
+    if ($me->Partner && $me->Partner->NcUser->isLp())
+      return $me->Partner;
+    return ErxUser::fetchLp($me->userGroupId);
+  }
+  /**
+   * @param ErxUser $me
+   * @return ErxUser
+   */
+  public function getMyStaff($me) {
+    if ($me->NcUser->isStaff())
+      return $me;
+    if ($me->Partner && $me->Partner->NcUser->isStaff())
+      return $me->Partner;
+    return ErxUser::fetchStaff($me->userGroupId);
+  }
+}
+/**
+ * ERX User
+ */
+class ErxUser extends SqlRec {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public /*NcUser*/ $NcUser;
+  public /*ErxUser*/ $Partner;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  /**
+   * @param int $userId
+   * @return ErxUser
+   */
+  public static function fetch($userId) {
+    $c = new ErxUser();
+    $c->userId = $userId;
+    $c->NcUser = new NcUser($userId);
+    return SqlRec::fetchOneBy($c);
+  }
+  /**
+   * @param int $ugid
+   * @param string $userType @see NCScript.UserType  
+   * @return ErxUser 
+   */
+  public static function fetchByType($ugid, $userType) {
+    $rec = new ErxUser();
+    $rec->userGroupId = $ugid;
+    $rec->NcUser = new NcUser();
+    $rec->NcUser->userType = $userType;
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * @param int $ugid
+   * @return ErxUser 
+   */
+  public static function fetchLp($ugid) {
+    return ErxUser::fetchByType($ugid, UserType::LP);
+  }
+  /**
+	 * @param int $ugid
+   * @return ErxUser 
+   */
+  public static function fetchStaff($ugid) {
+    return ErxUser::fetchByType($ugid, UserType::LP);
+  }
+}
+/**
+ * NewCrop User
+ */
+class NcUser extends SqlRec implements NoUserGroup {
+  //
+  public $userId;
+  public /*NCScript.UserType*/ $userType;
+  public /*NCScript.RoleType*/ $roleType;
+  public $partnerId;
+  public $nameLast;
+  public $nameFirst;
+  public $nameMiddle;
+  public $namePrefix;
+  public $nameSuffix;
+  public $freeformCred;
+  //
+  public static $USER_TYPES = array(
+    UserType::LP => 'Licensed Prescriber',
+    UserType::MIDLEVEL => 'Midlevel Prescriber',
+    UserType::STAFF => 'Staff');
+  public static $ROLE_TYPES = array(
+    RoleType::DOCTOR => 'Doctor',
+    RoleType::NURSE => 'Nurse',
+    RoleType::NURSE_NO_RX => 'Nurse (No RX)',
+    RoleType::MANAGER => 'Midlevel Prescriber');
+  //
+  public function getSqlTable() {
+    return 'nc_users';
+  }
+  public function isLp() {
+    return $this->userType == UserType::LP;
+  }
+  public function isStaff() {
+    return $this->userType == UserType::STAFF;
+  }
+  /**
+   * @param int userId
+   * @return NcUser
+   */
+  public static function fetch($userId) {
+    return SqlRec::fetch($userId, 'NcUser');
+  }
+}
+?>

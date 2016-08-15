@@ -1,0 +1,61 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/ICard.php';
+/**
+ * Client Record
+ */
+class Client extends SqlRec {
+  //
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $cdata5;
+  public $cdata6;
+  public $cdata7;
+  public $cdata8;
+  public $cdata9;
+  public $dateUpdated;
+  //
+  const SEX_MALE = 'M';
+  const SEX_FEMALE = 'F';
+  public static $SEXES = array(
+    Client::SEX_MALE => 'Male',
+    Client::SEX_FEMALE => "Female");
+  //
+  public function getSqlTable() {
+    return 'clients';
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    Rec::addDateProps($o, array('birth'));
+    $o->_name = "$this->lastName, $this->firstName";
+    return $o;
+  }
+  //
+  /**
+   * Static fetchers
+   */
+  public static function fetch($cid) {
+    if ($cid) 
+      return SqlRec::fetch($cid, 'Client');
+    else
+      return null;
+  }
+  public static function fetchByUid($uid) {
+    $rec = new Client();
+    $rec->uid = $uid;
+    return SqlRec::fetchOneBy($rec);
+  }
+}
+?>

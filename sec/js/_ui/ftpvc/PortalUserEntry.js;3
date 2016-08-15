@@ -1,0 +1,135 @@
+/**
+ * AnchorPicker PortalUserPicker
+ */
+PortalUserPicker = {
+  create:function() {
+    return Html.AnchorPicker.create('patient', 'Select Patient Recipient', 'Patient Login Selector').extend(function(self) {
+      return {
+        init:function() {
+          self.thead().tr('fixed head').th('Patient').w('60%').th('ID').w('20%').th('Birth').w('20%');
+        },
+        buttons:function(cmd) {
+          cmd.add('Add New Patient Login...', self.new_onclick).cancel(self.pop.close);
+        },
+        fetch:function(callback_recs) {
+          Ajax.UserGroup.getPortalUsers(callback_recs);
+        },
+        applies:function(rec, search) {
+          if (search)
+            return rec.Client.name.match(search);
+          return true;
+        },
+        add:function(rec, tr) {
+          tr.select(rec, AnchorClient.create(rec.Client)).td(rec.Client.uid).td(rec.Client.birth);
+        },
+        getValueFrom:function(rec) {
+          return rec.portalUserId;
+        },
+        getTextFrom:function(rec) {
+          return rec.Client.name;
+        },
+        //
+        new_onclick:function() {
+          NewPortalUserEntry.pop(null, self.pop_onsave); 
+        },
+        pop_onsave:function(rec) {
+          self.pop.clean();
+          self.pop.select(rec);
+        }
+      }
+    })
+  }
+}
+/**
+ * RecordEntryPop ProviderEntry
+ */
+var QUESTIONS = {'0':'What city were you born?','1':'What was the name of your favorite pet?','CUSTOM':'Custom...'};
+NewPortalUserEntry = {
+  /*
+   * @arg Client client (optional)
+   * @arg fn(PortalUser) onsave (optional)
+   */
+  pop:function(client, callback_onsave) {
+    this.create(client, callback_onsave).pop();
+  },
+  create:function(client, callback_onsave) {
+    var self = Html.RecordEntryPop.create('Provider Entry', 600);
+    return self.aug({
+      buildForm:function(ef) {
+        ef.aug({
+          showCustom:function(i) {
+            var li = ef['licq' + i];
+            var fid = 'cq' + i;
+            if (ef.getValue('_scq' + i) == NewPortalUser.CUSTOM) {
+              li.show();
+              if (ef.getValue(fid) == '')
+                ef.setValue(fid, NewPortalUser.CUSTOM_Q);
+              ef.focus(fid);
+            } else {
+              li.hide();
+            }
+          },
+          auto_onchange:function(lcheck) {
+            if (lcheck.isChecked()) {
+              ef.getField('uid').style.backgroundColor = '#d0d0d0';
+              ef.getField('uid').style.color = '#999999';
+              ef.focus('pw');
+            } else {
+              ef.getField('uid').style.backgroundColor = '';
+              ef.getField('uid').style.color = '';
+              ef.focus('uid');
+            }
+          }
+        })
+        ef.li('Login ID', 'mt10').textbox('uid', 10).check('auto-uid', 'Auto generate', ef.auto_onchange);
+        ef.li('Password').textbox('pw', 20);
+        ef.li('Security 1', 'mt5').select('_scq1', QUESTIONS, '', ef.showCustom.curry(1));
+        ef.li(' ', null, null, 'licq1').textbox('cq1', 60);
+        ef.licq1 = ef._li.hide();
+        ef.li('Answer 1').textbox('ca1', 15);
+        ef.li('Security 2', 'mt5').select('_scq2', QUESTIONS, '', ef.showCustom.curry(2));
+        ef.li(' ', null, null, 'licq2').textbox('cq2', 60);
+        ef.licq2 = ef._li.hide();
+        ef.li('Answer 2').textbox('ca2', 15);
+        ef.li('Security 3', 'mt5').select('_scq3', QUESTIONS, '', ef.showCustom.curry(3));
+        ef.li(' ', null, null, 'licq3').textbox('cq3', 60);
+        ef.licq3 = ef._li.hide();
+        ef.li('Answer 3').textbox('ca3', 15);
+      },
+      onload:function() {
+        self.frame.setCaption(client.name);
+      },
+      save:function(rec, onsuccess, onerror) {
+        rec = NewPortalUser.revive(rec);
+        rec.clientId = client.clientId;
+        Ajax.UserGroup.createPortalUser(rec, onsuccess);
+      },
+      onsave:function(rec) {
+        if (callback_onsave)
+          callback_onsave(rec);
+      }
+    })
+  }
+}
+/**
+ * Rec NewPortalUser
+ */
+NewPortalUser = Object.Rec.extend({
+  CUSTOM:'CUSTOM',
+  CUSTOM_Q:'Enter custom question',
+  onload:function(json) {
+    this.setCqs();
+  },
+  setCqs:function() {
+    for (var i = 1; i <= 3; i++)  
+      this.setCq(i);
+  },
+  setCq:function(i) {
+    var sel = this['_scq' + i];
+    var qkey = 'cq' + i;
+    if (sel != this.CUSTOM)
+      this[qkey] = QUESTIONS[sel];
+    else if (this[qkey] == this.CUSTOM_Q)
+      this[qkey] = null;
+  }
+})

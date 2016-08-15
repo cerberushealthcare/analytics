@@ -1,0 +1,776 @@
+<?php
+require_once 'php/data/rec/sql/IProcCodes.php';
+require_once 'php/dao/DataDao.php';
+//
+/**
+ * Procedures DAO
+ * @author Warren Hornsby
+ */
+class Procedures {
+  //
+  /**
+   * @param int $cid
+   * @return array(Proc+ProcResults,..)
+   */
+  static function getAll($cid) {
+    self::migrate($cid);
+    $recs = Proc::fetchAll($cid);
+    $recs = Proc::summarizeResults($recs);
+    Rec::sort($recs, new RecSort('-date', 'Ipc.name'));
+    return $recs;
+  }
+  /**
+   * Fetch IN DATA in the form expected for DATA_HM
+   */
+  static function getInData($cid) {
+    $recs = Proc::fetchMostRecentMap($cid);
+    $rows = array();
+    foreach ($recs as $ipc => $proc) {
+      $row = array();
+      $row['date_text'] = formatLongApproxDate($rec->date);
+      if ($rec->ProcResults) 
+        $row['results'] = ProcResult::summarizeResults($rec, $rec->ProcResults);
+      $rows[ipc] = $row;
+    }
+    return $rows;
+  }
+  /**
+   * @param int $procId
+   * @return Proc+ProcResults
+   */
+  static function get($procId) {
+    $rec = Proc::fetch($procId);
+    $rec->_results = ProcResult::summarizeResults($rec, $rec->ProcResults);
+    return $rec;
+  }
+  /**
+   * @param stdClass $obj 
+   * @return Proc updated rec
+   */
+  static function save($obj) {
+    global $myLogin;
+    $rec = Proc::fromUi($obj);
+    $rec->save($myLogin->userGroupId);
+    return self::get($rec->procId); 
+  }
+  /**
+   * @param int $procId
+   * @return int ID  
+   */
+  static function delete($procId) {
+    $rec = Proc::fetch($procId);
+    if ($rec) {
+      self::deleteResults($rec);
+      Proc::delete($rec);
+      return $procId;
+    }
+  }
+  /**
+   * @param int $procId
+   * @param stdClass $obj 
+   * @return Proc updated rec
+   */
+  static function saveResult($procId, $obj) {
+    $proc = self::get($procId);
+    $rec = ProcResult::fromUi($obj, $proc);
+    $rec->save();
+    return $rec; 
+  }
+  /**
+   * @param Proc $proc
+   */
+  static function deleteResults($proc) {
+    $recs = ProcResult::fetchAll($proc);
+    foreach ($recs as $rec) 
+      ProcResult::delete($rec);
+  }
+  /**
+   * @param int $resultId
+   * @return int ID
+   */
+  static function deleteResult($resultId) {
+    $rec = ProcResult::fetch($resultId);
+    if ($rec) {
+      ProcResult::delete($rec);
+      return $resultId;
+    }
+  }
+  /**
+   * Migrate from HM and Surgical HX 
+   * @param int $cid
+   */
+  static function migrate($cid) {
+    self::migrateHms($cid);
+    self::migrateSurgHx($cid);
+  }
+  //
+  private static function migrateHms($cid) {
+    $hms = Hm::fetchUnbuiltHistory($cid);
+    logit_r($hms, 'unbuilt history for ' . $cid);
+    if (! empty($hms)) {
+      $procs = Proc::fromHms($hms);
+      Hm::markAsBuilt($cid);
+      SqlRec::saveAll($procs);
+    }
+  }
+  private static function migrateSurgHx($cid) {
+    global $myLogin;
+    $surgs = SurgHx::from($cid);
+    logit_r($surgs, 'unbuilt surgs');
+    if (! empty($surgs)) {
+      logit_r('creating');
+      $procs = Proc::fromSurgHxs($surgs, $myLogin->userGroupId, $cid);
+      logit_r($procs, 'procs');
+      SqlRec::saveAll($procs);
+      SurgHx::markAsBuilt($cid);
+    }
+  }
+}
+//
+/**
+ * Procedure
+ */
+class Proc extends SqlRec {
+  //
+  public $procId;
+  public $userGroupId;
+  public $clientId;
+  public $date;  
+  public $ipc;
+  public $priority;
+  public $location;
+  public $providerId;
+  public $addrFacility;
+  public $comments;
+  public /*Ipc*/ $Ipc;
+  public /*ProcResult[]*/ $ProcResults;
+  public /*Provider*/ $Provider;
+  public /*FacilityAddress*/ $Facility;
+  //
+  public function getSqlTable() {
+    return 'procedures';
+  }
+  public function getAuditLabel() {
+    return ($this->Ipc) ? $this->Ipc->name : $this->ipc;
+  }
+  public function validate(&$rv) {
+    $rv->requires('ipc', 'date');
+  }
+  public function save($ugid = null) {
+    parent::save($ugid);
+    if ($this->ProcResults) {
+      self::setParentage($this->ProcResults);
+      self::saveAll($this->ProcResults);
+    }
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::editableDateApprox()
+    );
+  }
+  public function formatSummarizeResults() {
+    $results = ProcResult::summarizeResults($this, $this->ProcResults);
+    return implode(' - ', $results);
+  }
+  //
+  /*
+   * @param int $id
+   * @return Proc+ProcResults
+   */
+  static function fetch($id) {
+    $rec = parent::fetch($id);
+    $rec->ProcResults = ProcResult::fetchAll($rec);
+    return $rec;
+  }
+  /**
+   * @param int $cid
+   * @return array(Proc+ProcResults,..)
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria();
+    $c->clientId = $cid;
+    $recs = self::fetchAllBy($c);
+    return self::loadResults($recs);
+  }
+  /**
+   * @param int $cid
+   * @return array(ipc=>Proc,..)
+   */
+  static function fetchMostRecentMap($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $recs = self::fetchAllBy($c, new RecSort('ipc', '-date'));
+    $map = array();
+    foreach ($recs as $rec) {
+      if (! isset($map[$rec->ipc])) {
+        $rec->ProcResults = ProcResult::fetchAll($rec);      
+        $map[$rec->ipc] = $rec;
+      }
+    }
+    return $map;
+  } 
+  //
+  private static function loadResults(&$recs) {
+    foreach ($recs as &$rec) 
+      $rec->ProcResults = ProcResult::fetchAll($rec);
+     return $recs;
+  }
+  static function asCriteria() {
+    $c = new static();
+    $c->Ipc = Ipc::asOptionalJoin(); 
+    $c->Provider = Provider::asOptionalJoin();
+    $c->Facility = FacilityAddress::asOptionalJoin();
+    return $c;
+  }
+  static function fromUis($objs) {
+    $recs = array();
+    foreach ($objs as $obj)
+      $recs[] = static::fromUi($obj);
+    return $recs;
+  }
+  static function fromUi($obj) {
+    $rec = new static($obj);
+    //$rec->Ipc = Ipc::fetch($rec->ipc);
+    if ($rec->ProcResults)
+      $rec->ProcResults = ProcResult::fromUis($rec->ProcResults, $rec);
+    return $rec;
+  }
+  /**
+   * @param Proc[] $recs
+   * @return Proc[]  
+   */
+  static function summarizeResults(&$recs) {
+    foreach ($recs as &$rec)  
+      $rec->_results = ProcResult::summarizeResults($rec, $rec->ProcResults);
+    return $recs;
+  }
+  /**
+   * @param Hm[] $hms
+   * @return array(Proc+ProcResults,..)
+   */
+  static function fromHms($hms) {
+    $recs = array();
+    foreach ($hms as $hm)
+      $recs[] = self::fromHm($hm);
+    return $recs;
+  }
+  private static function fromHm($hm) {
+    $rec = new self();
+    $rec->userGroupId = $hm->userGroupId;
+    $rec->clientId = $hm->clientId;
+    $rec->date = $hm->getApproxDate();
+    //$rec->cat = $hm->getCat();
+    $rec->name = $hm->proc; 
+    $rec->Ipc = Ipc_MigrateHm::from($hm);
+    $rec->ipc = $rec->Ipc->ipc;
+    $rec->ProcResults = array(ProcResult::fromHm($hm, $rec->Ipc));
+    logit_r($rec, 'rec fromHm');
+    return $rec;
+  }
+  /**
+   * @param SurgHx[] $surgs
+   * @return array(Proc,..)
+   */
+  static function fromSurgHxs($surgs, $ugid, $cid) {
+    $recs = array();
+    foreach ($surgs as $surg) {
+      $rec = self::fromSurgHx($surg, $ugid, $cid);
+      if ($rec)
+        $recs[] = $rec;
+    }
+    return $recs;
+  }
+  private static function fromSurgHx($surg, $ugid, $cid) {
+    if (self::hasData($surg)) { 
+      $rec = new self();
+      $rec->userGroupId = $ugid;
+      $rec->clientId = $cid;
+      $rec->date = $surg->getApproxDate();
+      $rec->location = $surg->type;
+      $rec->comments = $surg->comment;
+      $rec->Ipc = Ipc_MigrateSurg::from($surg, $ugid);
+      logit_r($rec->Ipc, 'ipc from migratesurg');
+      $rec->ipc = $rec->Ipc->ipc;
+      logit_r($rec, 'rec fromSurg');
+      return $rec;
+    }
+  }
+  private static function hasData($surg) {
+    return $surg->date || $surg->type || $surg->comment;
+  }
+}
+/**
+ * Result
+ */
+class ProcResult extends SqlRec {
+  //
+  public $procResultId;
+  public $clientId;
+  public $procId;
+  public $seq;
+  public $date;
+  public $ipc;
+  public $value;
+  public $valueUnit;
+  public $range;
+  public $interpretCode;
+  public $comments;
+  public /*Ipc*/ $Ipc;
+  //
+  public /*Proc*/ $Proc;  // parent supplied by UI
+  //
+  const IC_BETTER = 'B';
+  const IC_DECREASED = 'D';
+  const IC_INCREASED = 'U';
+  const IC_WORSE = 'W';
+  const IC_NORMAL = 'N';
+  const IC_INTERMEDIATE = 'I';
+  const IC_RESISTANT = 'R';
+  const IC_SUSCEPTIBLE = 'S';
+  const IC_VERY_SUSCEPTIBLE = 'VS';
+  const IC_ABNORMAL = 'A';
+  const IC_ABNORMAL_ALERT = 'AA';
+  const IC_HIGH_ALERT = 'HH';
+  const IC_LOW_ALERT = 'LL';
+  const IC_LOW = 'L';
+  const IC_HIGH = 'H';
+  public static $INTERPRET_CODES = array(
+    self::IC_BETTER => 'Better',
+    self::IC_DECREASED => 'Decreased',
+    self::IC_INCREASED => 'Increased',
+    self::IC_WORSE => 'Worse',
+    self::IC_NORMAL => 'Normal',
+    self::IC_INTERMEDIATE => 'Intermediate',
+    self::IC_RESISTANT => 'Resistant',
+    self::IC_SUSCEPTIBLE => 'Susceptible',
+    self::IC_VERY_SUSCEPTIBLE => 'Very Susceptible',
+    self::IC_ABNORMAL => 'Abnormal',
+    self::IC_ABNORMAL_ALERT => 'Abnormal Alert',
+    self::IC_HIGH_ALERT => 'High Alert',
+    self::IC_LOW_ALERT => 'Low Alert',
+    self::IC_HIGH => 'High',
+    self::IC_LOW => 'Low');
+  //
+  public function getSqlTable() {
+    return 'proc_results';
+  }
+  public function getAuditLabel() {
+    return ($this->Ipc) ? $this->Ipc->name : $this->ipc;
+  }
+  public function toJsonObject(&$o) {
+    $o->lookup('interpretCode', self::$INTERPRET_CODES);
+    $o->_value = $this->getResult();
+  }
+  public function save() {
+    if ($this->procId == null) 
+      $this->procId = $this->getFromProc('procId');
+    if ($this->procResultId == null)
+      $this->seq = count($this->getFromProc('ProcResults')); 
+    if ($this->ipc == null)
+      $this->ipc = $this->getFromProc('ipc'); 
+    parent::save();
+  }
+  public function getResult() {
+    $s = array();
+    if ($this->value) 
+      $s[] = $this->value;
+    if ($this->valueUnit) 
+      $s[] = $this->valueUnit;
+    return implode(' ', $s);
+  }
+  public function isAlert() {
+    switch ($this->interpretCode) {
+      case self::IC_ABNORMAL_ALERT:
+      case self::IC_HIGH_ALERT:
+      case self::IC_LOW_ALERT:
+        return true;
+    }
+  }
+  public function getDate() {
+    return ($this->date) ? $this->date : $this->proc->date;
+  }
+  protected function getFromProc($fid) {
+    if ($this->Proc)
+      return $this->Proc->$fid;
+    else
+      throw new SqlRecException($this, 'Parent proc not set');
+  }
+  //
+  /**
+   * @param Proc $proc
+   * @return array(ProcResult,..)
+   */
+  static function fetchAll($proc) {
+    $c = self::asCriteria($proc->procId);
+    return self::fetchAllBy($c, new RecSort('seq'));
+  }
+  static function fetch($id) {
+    $c = self::asCriteria(null);
+    $c->procResultId = $id;
+    return self::fetchOneBy($c);
+  }
+  static function asCriteria($procId) {
+    $c = new static();
+    $c->procId = $procId;
+    $c->Ipc = Ipc::asRequiredJoin();
+    return $c;
+  }
+  static function fromUis($objs, $proc) {
+    $recs = array();
+    foreach ($objs as $obj)
+      $recs[] = static::fromUi($obj, $proc);
+    return $recs;
+  }
+  static function fromUi($obj, $proc) {
+    $rec = new static($obj);
+    $rec->Proc = $proc;
+    //$rec->Ipc = Ipc::fetch($rec->ipc);
+    return $rec;
+  }
+  /**
+   * @param Proc $proc
+   * @param ProcResult[] $recs
+   * @return array(string,..)
+   */
+  static function summarizeResults($proc, $recs) {
+    $s = array();
+    foreach ($recs as $rec) 
+      $s[] = self::summarizeResult($proc, $rec);
+    return $s;
+  }
+  /**
+   * @param Proc $proc
+   * @param ProcResult $rec
+   * @return string
+   */
+  static function summarizeResult($proc, $rec) {
+    $s = array();
+    if ($rec->Ipc) 
+     if ($proc == null || $rec->ipc != $proc->ipc)
+        $s[] = $rec->Ipc->name . ": ";
+    if ($rec->value)
+      $s[] = $rec->getResult();
+    if ($rec->interpretCode) 
+      $s[] = self::$INTERPRET_CODES[$rec->interpretCode];
+    if (count($s) == 0)
+      $s[] = strlen($rec->comments) > 100 ? substr($rec->comments, 0, 100) . '...' : $rec->comments; 
+    return implode(' ', $s);
+  }
+  /**
+   * @param Hm $hm
+   * @return ProcResult
+   */
+  static function fromHm($hm, $ipc) {
+    $results = $hm->getResults();
+    if ($results != '') {
+      $rec = new self();
+      $rec->seq = 0;
+      $rec->comments = $results;
+      $rec->clientId = $hm->clientId;
+      $rec->date = $hm->getApproxDate();
+      $rec->ipc = $ipc->ipc;
+      $rec->Ipc = $ipc;
+      return $rec;
+    }
+  }
+}
+class Ipc_MigrateSurg extends Ipc {
+  //
+  static $S2IPC = array(
+    "AAA Repair" => "917653",
+    "Endovascular AAA Repair" => "917652",
+    "Abdominal Wall Hernia Repair" => "842655",
+    "Abdominoplasty" => "842656",
+    "Adenoidectomy" => "918245",
+    "Aortic Valve Repair" => "842653",
+    "Aortic Valve Replacement" => "842654",
+    "Aorto-Femoral Bypass Left" => "697593",
+    "Aorto-Femoral Bypass Right" => "697594",
+    "Appendectomy" => "842658",
+    "Atrial Septal Defect Repair" => "842652",
+    "Left Axillary Lymph Node Dissection" => "842659",
+    "Right Axillary Lymph Node Dissection" => "842660",
+    "CT guided biopsy" => "687589",
+    "US guided biopsy" => "918964",
+    "Breast Augmentation" => "842662",
+    "Breast Biopsy Left" => "600016",
+    "Breast Biopsy Right" => "600015",
+    "Breast Lift" => "600039",
+    "Left Breast Lumpectomy" => "842663",
+    "Right Breast Lumpectomy" => "842664",
+    "Breast Reduction" => "842665",
+    "Bronchoscopy" => "918261",
+    "CABG 1 vessel" => "842666",
+    "CABG 2 vessel" => "842667",
+    "CABG 3 vessel" => "842668",
+    "CABG 4 vessel" => "842669",
+    "CABG 5 vessel" => "842670",
+    "Elective Cardioversion" => "917636",
+    "Carotid Endarterectomy Left" => "917629",
+    "Carotid Endarterectomy Right" => "697598",
+    "Carpal Tunnel Surgery" => "842673",
+    "Cataract Surgery" => "842674",
+    "Cerebreal Aneurysm Clipping" => "842675",
+    "Cesarean Section" => "600017",
+    "Laparoscopic Cholecystectomy" => "842676",
+    "Open Cholecystectomy" => "842677",
+    "Cleft Lip Revision" => "842678",
+    "Cleft Palate Revision" => "842679",
+    "Colectomy" => "842680",
+    "Colectomy Partial" => "842681",
+    "Dilation and Curettage" => "600018",
+    "Cervical Discectomy" => "600023",
+    "Lumbar Discectomy" => "600024",
+    "Duodenectomy" => "842682",
+    "Bilateral Femoral Popliteal Bypass" => "842683",
+    "Left Femoral Popliteal Bypass" => "842684",
+    "Right Femoral Popliteal Bypass" => "842685",
+    "Left Upper Extremity AV Fistula" => "697630",
+    "Right Upper Extremity AV Fistula" => "917642",
+    "Foam Sclerotherapy" => "697632",
+    "Forehead Lift" => "600040",
+    "Cervical Fusion" => "600022",
+    "Lumbar Fusion" => "600021",
+    "Gastrectomy" => "842686",
+    "Partial Gastrectomy" => "842731",
+    "Gastric Bypass" => "842687",
+    "Gastric Lap Banding" => "842688",
+    "Hemorrhoidectomy" => "600020",
+    "Incisional Hernia Repair" => "842689",
+    "Left Inguinal Hernia Repair" => "842690",
+    "Right Inguinal Hernia Repair" => "842691",
+    "Umbilical Hernia Repair" => "600010",
+    "Hiatal Hernia Repair" => "600011",
+    "Left Total Hip Replacement" => "842692",
+    "Right Total Hip Replacement" => "842693",
+    "Total Abdominal Hysterectomy" => "842743",
+    "Total Vaginal Hysterectomy" => "842746",
+    "Left Knee Arthroscopy" => "842694",
+    "Right Knee Arthroscopy" => "842695",
+    "Left Total Knee Replacement" => "842696",
+    "Right Total Knee Replacement" => "842697",
+    "Lumbar Laminectomy" => "842699",
+    "Laparscopy Exploratory" => "842700",
+    "LASIK Surgery" => "842698",
+    "Varicose vein ligation" => "697640",
+    "Liposuction" => "600035",
+    "Left Upper Lobectomy" => "842702",
+    "Left Lower Lobectomy" => "842701",
+    "Right Lower Lobectomy" => "842703",
+    "Right Middle Lobectomy" => "842704",
+    "Right Upper Lobectomy" => "842705",
+    "Lysis of Peritoneal Adhesions" => "600025",
+    "Mandibular Advancement" => "842708",
+    "Left Mastectomy" => "842709",
+    "Right Mastectomy" => "842710",
+    "Mediastinoscopy" => "842711",
+    "Mitral Valve Repair" => "842706",
+    "Mitral Valve Replacement" => "842707",
+    "Muscle Biopsy" => "699515",
+    "Bilateral Myringotomies" => "842712",
+    "Left Myringotomy" => "842713",
+    "Right Myringotomy" => "842714",
+    "Bilateral Nephrectomy" => "842715",
+    "Left Nephrectomy" => "842716",
+    "Right Nephrectomy" => "842717",
+    "Ocular Enucleation" => "842720",
+    "Oculoplasty" => "842721",
+    "Bilateral Oophorectomy" => "842722",
+    "Left Oophorectomy" => "842723",
+    "Right Oophorectomy" => "842724",
+    "Bilateral Orchiectomy" => "842725",
+    "Left Orchiectomy" => "842726",
+    "Right Orchiectomy" => "842727",
+    "ORIF Left Hip" => "842718",
+    "ORIF Right Hip" => "842719",
+    "Otoplasty" => "842728",
+    "Pacemaker" => "917650",
+    "Pancreatectomy" => "842729",
+    "Parathyroidectomy" => "842730",
+    "Pin Fixation" => "918708",
+    "Left Pneumonectomy" => "842732",
+    "Right Pneumonectomy" => "842733",
+    "Prostate Biopsy" => "719214",
+    "Prostatectomy" => "842734",
+    "Push Enteroscopy" => "710157",
+    "Renal Biopsy" => "918689",
+    "Retinal Reattachment" => "842735",
+    "Rhinoplasty" => "842736",
+    "Rhytidectomy (Face Lift)" => "600038",
+    "Stripping of the Saphenous Vein" => "917654",
+    "Septoplasty" => "842737",
+    "Sinus Surgery" => "842738",
+    "Skin Graft" => "600019",
+    "Small Bowel Resection" => "842739",
+    "Stab Avulsion of Saphenous Vein Tributaries" => "917656",
+    "Strabismus Surgery" => "842741",
+    "Temporal Artery Biopsy" => "717571",
+    "Thoracic Aortic Aneurysm Repair" => "842742",
+    "Thyroidectomy" => "842747",
+    "Left Thyroidectomy" => "842748",
+    "Right Thyroidectomy" => "842749",
+    "Tonsillectomy" => "842750",
+    "Heart Transplant" => "600031",
+    "Left Kidney Transplant" => "600030",
+    "Right Kidney Transplant" => "600029",
+    "Left Lung Transplant" => "600028",
+    "Right Lung Transplant" => "600027",
+    "Tricuspid Valve Repair" => "842744",
+    "Tricuspid Valve Replacement" => "842745",
+    "Tubal Ligation" => "842751",
+    "TM Patch" => "918247",
+    "Tympanoplasty" => "698507",
+    "Urethral dilatation was performed." => "918692",
+    "Vasectomy" => "842753",
+    "Ventricular Septal Defect Repair" => "842752",
+    "Whipple Procedure" => "842754");
+  //
+  static function from($surg, $ugid) {
+    $proc = $surg->proc;
+    $ipc = geta(self::$S2IPC, $proc);
+    if ($ipc)
+      return self::fetch($ipc, $ugid);
+    $ipc = self::fetchCustomByName($proc, $ugid);
+    if ($ipc == null)
+      $ipc = self::saveAsNewCustom($ugid, $proc, self::CAT_SURG);
+    return $ipc;
+  }
+}
+class Ipc_MigrateHm extends Ipc {
+  //
+  static $P2IPC = array(
+    '1' => '918089',
+    '2' => '691795',
+    '3' => '710124',
+    '4' => '600085',
+    '5' => '699288',
+    '6' => '600001',
+    '7' => '600086',
+    '8' => '719487',
+    '9' => '918211',
+    '10' => '686298',
+    '11' => '600087',
+    '12' => '918171',
+    '13' => '600088',
+    '14' => '719539',
+    '15' => '917689',
+    '16' => '697779',
+    '17' => '719475',
+    '18' => '686259',
+    '19' => '719450',
+    '20' => '917989',
+    '21' => '600089',
+    '22' => '600090',
+    '23' => '600091',
+    '24' => '600092',
+    '25' => '699285'); 
+  //
+  static function from($hm) {
+    $pcid = $hm->procId;
+    $ipc = geta(self::$P2IPC, $pcid);
+    if ($ipc) 
+      return self::fetch($ipc, $hm->userGroupId);
+    $ipc = self::fetchCustomByName($hm);
+    if ($ipc == null)
+      $ipc = self::saveAsNewCustom($hm);
+    return $ipc;
+  }
+  static function saveAsNewCustom($hm) {
+    return parent::saveAsNewCustom($hm->userGroupId, $hm->proc, self::CAT_PROC);
+  }
+  static function fetchCustomByName($hm) {
+    return parent::fetchCustomByName($hm->userGroupId, $hm->proc);
+  }
+}
+class Hm extends SqlRec {
+  //
+  public $dataHmId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $type;           
+  public $procId;        
+  public $proc;          
+  public $dateText;      
+  public $dateSort;      
+  public $results;       
+  public $nextTimestamp; 
+  public $active;
+  public $dateUpdated;
+  public $nextText;      
+  public $cint;      
+  public $cevery;         
+  //
+  public function getSqlTable() {
+    return 'data_hm';
+  }
+  public function getApproxDate() {
+    return formatFromLongApproxDate($this->dateText);
+  }
+  public function getResults() {
+    return implode(' - ', jsondecode($this->results));
+  }
+  //
+  static function fetchUnbuiltHistory($cid) {
+    $c = self::asUnbuiltHistCriteria($cid);
+    return self::fetchAllBy($c, new RecSort('proc', 'date_sort'));
+  }
+  static function markAsBuilt($cid) {
+    Dao::query("UPDATE data_hm SET active=2 WHERE client_id=$cid AND session_id=0 AND active=1");
+  }
+  static function asUnbuiltHistCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->sessionId = '0';
+    $c->procId = CriteriaValue::isNotNull();
+    $c->active = true;
+    return $c;
+  }
+}
+class SurgHx extends Rec {
+  //
+  public $proc;
+  public $date;
+  public $type;
+  public $comment;
+  //
+  public function getApproxDate() {
+    return formatFromLongApproxDate($this->date);
+  }
+  /**
+   * @param int $cid
+   * @return array(SurgHx,..)
+   */
+  static function from($cid) {
+    $group = DataDao::fetchDataSyncProcGroup('pshx', $cid);
+    return self::fromDataSyncProcGroup($group);
+  }
+  static function markAsBuilt($cid) {
+    Dao::query("UPDATE data_syncs SET active=0 WHERE client_id=$cid AND dsync_id like 'pshx.%'");
+  }
+  private static function fromDataSyncProcGroup($group) {
+    $recs = array();
+    if ($group->procs) { 
+      foreach ($group->procs as $proc) {
+        $procRec = geta($group->records, $proc);
+        $recs[] = self::fromDataSyncProc($proc, $procRec);
+      }      
+    }
+    return $recs;
+  }
+  private static function fromDataSyncProc($proc, $procRec) {
+    $rec = new self();
+    $rec->proc = $proc;
+    if ($procRec) {
+      $rec->date = self::getProcRecValue($procRec, 'date');
+      $rec->type = self::getProcRecValue($procRec, 'type');
+      $rec->comment = self::getProcRecValue($procRec, 'comment');
+    }
+    return $rec;
+  }
+  private static function getProcRecValue($procRec, $fid) {
+    $value = $procRec->fieldValues[$fid];
+    return substr($value, 2, -2);  // extract [""]
+  }
+}
+?>

@@ -1,0 +1,102 @@
+<?php
+require_once 'php/data/csv/_CsvFile.php';
+//
+/**
+ * Report Download
+ * @author Warren Hornsby
+ */
+class ReportCsvFile extends CsvFile {
+  //
+  /**
+   * @param ReportCriteria $report
+   * @param SqlRec_Rep[] $recs
+   * @return ReportFile 
+   */
+  static function from($report, $recs) {
+    $file = new self();
+    $file->setFilename($report->name);
+    $file->recs = array(ReportCsvRec::asHeader($recs));
+    foreach ($recs as $rec) 
+      $file->recs[] = ReportCsvRec::from($rec);
+    return $file;
+  }
+}
+class ReportCsvRec extends CsvRec {
+  //
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $middleName;
+  public $sex;
+  public $birth;
+  public $release;
+  //
+  function setRelease($rec) {
+    if ($rec->releasePref) {
+      $release = $rec::$RELEASE_PREFS[$rec->releasePref];
+      if ($rec->release) 
+        $release .= ': ' . implode(' ', split_crlf($rec->release));
+      $this->release = $release;
+    } else {
+      $this->release = 'No Preference';
+    }
+  }
+  /**
+   * @param ReportCriteria $report
+   * @param SqlRec_Rep $rec
+   * @return ReportCsvRec
+   */
+  static function from($rec) {
+    $me = new self();
+    $me->uid = $rec->uid;
+    $me->lastName = $rec->lastName;
+    $me->firstName = $rec->firstName;
+    $me->middleName = $rec->middleName;
+    $me->sex = $rec->sex;
+    $me->birth = $rec->birth;
+    $me->setRelease($rec);
+    $me->addJoinValues($rec);
+    return $me;
+  }
+  static function asHeader($recs) {
+    $me = new self();
+    $me->uid = 'UID';
+    $me->lastName = 'LAST_NAME';
+    $me->firstName = 'FIRST_NAME';
+    $me->middleName = 'MIDDLE';
+    $me->sex = 'GENDER';
+    $me->birth = 'BIRTH';
+    $me->release = 'RELEASE PREF';
+    $me->addJoinHeaders(current($recs));
+    return $me;
+  }
+  //
+  public function getJoinFids($rec) {
+    static $fids;
+    if ($fids == null) {
+      $fids = array();
+      foreach ($rec as $fid => $value) 
+        if (substr($fid, 0, 4) == 'Join')
+          $fids[] = $fid;
+    }
+    return $fids;
+  }
+  private function addJoinHeaders($rec) {
+    $fids = $this->getJoinFids($rec);
+    foreach ($fids as $fid) {
+      $data = current($rec->$fid);
+      $this->$fid = strtoupper($data->getTableName());
+    }
+  }
+  private function addJoinValues($rec) {
+    $fids = $this->getJoinFids($rec);
+    foreach ($fids as $fid) 
+      $this->addJoin($fid, $rec->$fid);
+  }
+  private function addJoin($fid, $recs) {
+    $labels = array();
+    foreach ($recs as $rec)
+      $labels[] = $rec->formatLabel();
+    $this->$fid = implode(' - ', $labels);
+  }
+}

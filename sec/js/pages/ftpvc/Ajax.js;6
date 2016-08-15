@@ -1,0 +1,345 @@
+/**
+ * Ajax and Json: global statics 
+ * Requires: yahoo-min.js, connection-min.js
+ * @author Warren Hornsby
+ */
+var Ajax = {
+  // 
+  SVR_ENGINE:'Engine',
+  SVR_LOOKUP:'Lookup',
+  SVR_MSG:'Msg',
+  SVR_POP:'Pop',
+  SVR_SCHED:'Sched',
+  SVR_JSON:'Json',
+  SVR_ERX:'Erx',
+  //
+  NO_CALLBACK:false,
+  //
+  _sur:['.php?', '.htm?', '.gif?', 'server', 'client'],
+  //
+  ERR_GET:'Ajax.get',
+  ERR_POST:'Ajax.post',
+  ERR_CALLBACK:'Ajax.callback',
+  /*
+   * Send 'GET' request
+   * - server: Ajax.SVR_x
+   * - action: string to provide server
+   * - arg: optional, in form:
+   *    {field:value,..}  // field names and string values
+   *    'value'           // single value to pass as field 'id' 
+   * - success: optional callback, in form:
+   *    null: calls page.actionCallback(data) by default
+   *    false (Ajax.NO_CALLBACK): no callback
+   *    function: calls function(data)
+   *    object (i.e. 'this'): calls object.actionCallback(data)
+   *    [function]: calls page.function(data)
+   *    [scope, function]: calls scope.function(data)
+   * - failure: optional callback; if null, Page.showAjaxError called
+   */
+  get:function(server, action, arg, success, failure) {
+    var url = this._fixGetUrl(server, action, arg);
+    try {
+      var scb = this.buildScopedCallback(success, action);
+      var scbErr = this._buildScopedErrorCallback(action, success, failure);
+      YAHOO.util.Connect.asyncRequest('GET', url, this._yuiCallbacks(scb, scbErr, url));
+    } catch (e) {
+      throw Page.error(Ajax.ERR_GET, 'Ajax.get(' + server + ', ' + action + ')', e);
+    }
+  },
+  /*
+   * Send 'POST' request
+   * - see get function for arg description
+   */
+  post:function(server, action, arg, success, failure) {
+    var url = this._fixPostUrl(server);
+    var params = this._buildPostParams(action, arg);
+    try {
+      var scb = this.buildScopedCallback(success, action);
+      var scbErr = this._buildScopedErrorCallback(action, success, failure);
+      YAHOO.util.Connect.asyncRequest('POST', url, this._yuiCallbacks(scb, scbErr, url), params);
+    } catch (e) {
+      throw Page.error(Ajax.ERR_POST, 'Ajax.post(' + server + ', ' + action + ')', e);
+    }
+  },
+  /*
+   * Fetch HTML include
+   * - url: location of HTML or javascript
+   * - container: <e> to put include contents if HTML; if null, javascript will be attached to global 
+   * - callback: optional; if not supplied, no callback (see get/post for forms) 
+   */
+  include:function(url, container, callback) {
+    var yuic = {
+      success:Ajax._yuiIncludeSuccess, 
+      failure:Ajax._yuiIncludeFailure, 
+      scope:Ajax, 
+      argument:{
+        'url':url,
+        'container':container,
+        'scb':this.buildScopedCallback(callback)}};
+    YAHOO.util.Connect.asyncRequest('GET', url + '?' + Math.random(), yuic);
+  },
+  /*
+   * Build scoped callback object
+   * - callback: optional, in form:
+   *    'function': for calling page.function(data)
+   *    function: for calling function(data)
+   *    [function]: for calling page.function(data)
+   *    [function, scope]: for calling scope.function(data)
+   *    ['function', scope]: for calling scope.function(data)
+   * - defaultAction: optional, defaults callback if null (see Ajax.defaultCallback)
+   * Returns {  
+   *    'scope':scope, 
+   *    'fn':function
+   *   }  // or null if callback was null
+   */
+  buildScopedCallback:function(callback, defaultAction) {
+    if (defaultAction) {
+      callback = this.defaultCallback(callback, defaultAction);
+    }
+    var scb = null;
+    if (callback) {
+      scb = {};
+      if (isString(callback)) {
+        scb.scope = page;
+        scb.fn = callback;
+      } else if (isArray(callback)) {
+        scb.scope = (callback.length == 2) ? callback[1] : page;
+        scb.fn = callback[0];
+      } else {
+        scb.scope = null;
+        scb.fn = callback;
+      }
+      if (isString(scb.fn)) {
+        var method = scb.fn
+        scb.fn = scb.scope[method];
+        if (scb.fn == null) {
+          throw Page.error(Ajax.ERR_CALLBACK, 'Ajax.buildScopedCallback: Undefined callback "' + method + '"');
+        }
+      }
+      if (isUndefined(scb.fn)) {
+        throw Page.error(AJAX.ERR_CALLBACK, 'Ajax.buildScopedCallback: Undefined callback.');
+      }
+    }
+    return scb;
+  },
+  /*
+   * - suffix: optional, default 'Callback'
+   * Returns
+   *    if callback=false (Ajax.NO_CALLBACK): null
+   *    if callback=null:                     'actionCallback'
+   *    if callback=object (i.e. "this"):     ['actionCallback',object]
+   *    otherwise:                            callback (unchanged)  
+   */
+  defaultCallback:function(callback, action, suffix) {
+    var suffix = denull(suffix, 'Callback');
+    if (callback === Ajax.NO_CALLBACK) {
+      callback = null;
+    } else if (callback == null) {
+      callback = action + suffix;
+    } else if (isObject(callback) && ! isFunction(callback)) {
+      callback = [action + suffix, callback];
+    }
+    return callback;
+  },
+  /*
+   * Send return data to caller
+   */
+  callScopedCallback:function(scb, data) {
+    if (scb) {
+      if (scb.scope) 
+        scb.fn.call(scb.scope, data);
+      else 
+        scb.fn(data);
+    }
+  },
+  _buildScopedErrorCallback:function(action, success, failure) {
+    if (failure == null) {
+      if (success == Ajax.NO_CALLBACK) 
+        failure = Ajax.NO_CALLBACK;
+      else 
+        failure = Page.showAjaxError;
+    }
+    return this.buildScopedCallback(this.defaultCallback(failure, action, 'Error'));
+  },
+  _yuiCallbacks:function(scb, scbErr, url) {
+    return {
+      success:Ajax._yuiSuccess, 
+      failure:Ajax._yuiFailure, 
+      scope:Ajax, 
+      argument:{
+        'scb':scb, 
+        'scbErr':scbErr,
+        'url':url}
+      };
+  },
+  _yuiSuccess:function(yuiResponse) {
+    var response = trim(yuiResponse.responseText);
+    var arg = yuiResponse.argument;
+    var scbSuccess = arg.scb;
+    var scbError = arg.scbErr;
+    var url = arg.url;
+    if (scbSuccess && response && response.length > 0) {
+      var ajaxMsg = '(' + response  + ')';
+      try {
+        ajaxMsg = eval(ajaxMsg);
+      } catch (e) {
+        this._badResponse(1, response, url);
+        return;
+      }
+      if (ajaxMsg.id != null) {
+        if (ajaxMsg.id == 'save-timeout') {
+          Page.sessionTimeout();
+          return;
+        }
+        if (ajaxMsg.id == 'error') {
+          this.callScopedCallback(scbError, ajaxMsg.obj);
+        } else {
+          this.callScopedCallback(scbSuccess, ajaxMsg.obj);
+        }
+      } else {
+        this._badResponse(2, response, url);
+      }
+    }
+  },
+  _yuiFailure:function(yuiResponse) {
+    //
+  },
+  _yuiIncludeSuccess:function(yuiResponse) {
+    var arg = yuiResponse.argument;
+    var container = arg.container;
+    var scb = arg.scb;
+    if (container) {
+      container.innerHTML = yuiResponse.responseText;
+    } else {
+      window.execScript(yuiResponse.responseText);  // IE-only
+    }
+    if (scb) {
+      this.callScopedCallback(scb, arg.url);
+    }
+  },
+  _yuiIncludeFailure:function(yuiResponse) {
+    var msg = 'Include failed.\n\n' + yuiResponse.argument.url + '\n' + yuiResponse.status + ' - ' + yuiResponse.statusText;
+    alert(msg);
+  },  
+  _badResponse:function(code, response, url) {
+    var msg = 'Error ' + code + ': Server response not recognized.\n' + url + '\n\n' + response.substr(0, 1200);
+    alert(msg);
+  },
+  _fixPostUrl:function(server) {
+    return this._sur[3] + server + this._sur[0] + Math.random();
+  },
+  _buildPostParams:function(action, arg) {
+    var a = ['action=' + action];
+    a.push('obj=' + Json.uriEncode(arg));
+    return a.join('&');
+  },
+  _fixGetUrl:function(server, action, arg) {
+    return this._sur[3] + server + this._sur[0] + this._buildGetParams(action, arg);
+  },
+  _buildGetParams:function(action, arg) {
+    var a = ['action=' + action];
+    if (arg) {
+      if (isObject(arg)) {
+        for (var fid in arg) {
+          a.push(fid + '=' + encodeURIComponent(arg[fid]));
+        }
+      } else {
+        a.push('id=' + arg);
+      }
+    }
+    a.push(Math.random());
+    return a.join('&');
+  },
+  _isJavascript:function(url) {
+    return (url.split('.').pop()) == 'js';
+  }
+};
+/**
+ * Json
+ */
+var Json = {
+  //
+  _re:/[\x00-\x1f\\"]/,
+  _stringescape:{'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"' :'\\"','\\':'\\\\'},
+  //
+  ERR_DECODE:'Json.decode',
+  /*
+   * Encodes object into JSON string
+   */
+  encode:function(obj) {
+    switch (typeof obj) {
+      case 'string':
+        return '"' + (this._re.test(obj) ? this._stringencode(obj) : obj) + '"';
+      case 'number':
+      case 'boolean':
+        return String(obj);
+      case 'object':
+        if (obj) {
+          var a;
+          switch (obj.constructor) {
+            case Array:
+              a = [];
+              for (var i = 0, l = obj.length; i < l; i++)
+                a[a.length] = this.encode(obj[i]);
+              return '[' + a.join(',') + ']';
+            case Object:
+              a = [];
+              for (var prop in obj)
+                if (obj.hasOwnProperty(prop))
+                  a[a.length] = '"' + (this._re.test(prop) ? this._stringencode(prop) : prop) + '":' + this.encode(obj[prop]);
+              return '{' + a.join(',') + '}';
+            case String:
+              return '"' + (this._re.test(obj) ? this._stringencode(obj) : obj) + '"';
+            case Number:
+            case Boolean:
+              return String(obj);
+            case Function:
+            case Date:
+            case RegExp:
+              return 'undefined';
+          }
+        }
+        return 'null';
+      case 'function':
+      case 'undefined':
+      case 'unknown':
+        return 'null';
+      default:
+        return 'null';
+    }
+  },
+  /*
+   * Encodes object into JSON string suitable for passing as URL query string / HTTP form value
+   */
+  uriEncode:function(obj) {
+    return encodeURIComponent(this._fix(this.encode(obj)));
+  },
+  /*
+   * Decodes JSON into object/value
+   */
+  decode:function(string) {
+    try {
+      return ! (/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(string.replace(/"(\\.|[^"\\])*"/g, ''))) && eval('(' + string + ')');
+    } catch (e) {
+      throw Page.error(Json.ERR_DECODE, 'Json.decode(' + string + ')', e);
+    }
+  },
+  //
+  _fix:function(string) {
+    string = string.replace(/\u2022/g, "&bull;")
+    return string;
+  },
+  _stringencode:function(string) {
+    var self = this;
+    return string.replace(
+      /[\x00-\x1f\\"]/g,
+      function(a) {
+        var b = self._stringescape[a];
+        if (b)
+          return b;
+        b = a.charCodeAt();
+        return '\\u00' + Math.floor(b / 16).toString(16) + (b % 16).toString(16);
+      }
+    )
+  }
+};

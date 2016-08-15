@@ -1,0 +1,432 @@
+/**
+ * Patient Editor
+ * Global static 
+ * Requires: ProfileLoader.js
+ */
+PatientEditor = {
+  //
+  EDIT_NONE:0,
+  EDIT_DEMO:1,
+  EDIT_HOME_ADDR:2,
+  EDIT_ICARD:3,
+  EDIT_ICARD2:4,
+  EDIT_CUSTOM:5,
+  EDIT_EMER_ADDR:6,
+  EDIT_RX:7,
+  EDIT_FATHER:8,
+  EDIT_MOTHER:9,
+  EDIT_SPOUSE:10,
+  EDIT_ON_FILE:11,
+  //
+  SECTION_CONTACT:1,
+  SECTION_INSURANCE:2,
+  SECTION_FAMILY:3,
+  SECTION_CUSTOM:4,
+  //
+  client:null,
+  address:null,
+  icard:null,
+  changed:null,
+  editOnly:null,  // popEdit
+  _scb:null,
+  /*
+   * Bring up pop
+   * - client: JClient (null for new client)
+   * - popEdit: for updates, optional automatic edit pop: EDIT_X 
+   * - callback: callback(JClient) if any info changed (patientEditorCallback by default)
+   */
+  pop:function(client, popEdit, callback) {
+    overlayWorking(true);
+    this.client = client;
+    this.editOnly = (popEdit != null);
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(callback, 'patientEditor');
+    var self = this;
+    Includer.get([Includer.HTML_PATIENT_EDITOR, Includer.AP_CALENDAR, Includer.AP_WORKING_CONFIRM], function() {
+      overlayWorking(false);
+      self._renderPo();
+      if (self.client == null) {
+        self.pe1Edit();      
+      } else {
+        if (popEdit) {
+          self.popEdit(popEdit);
+        } else {
+          showOverlayPop('pop-po');
+        }
+      }
+    });
+  },
+  popEdit:function(ix) {
+    switch (ix) {
+      case PatientEditor.EDIT_DEMO:
+        this.pe1Edit('pe1-birth');
+        break;
+      case PatientEditor.EDIT_HOME_ADDR:
+      case PatientEditor.EDIT_EMER_ADDR:
+      case PatientEditor.EDIT_RX:
+        this.peScroll(PatientEditor.SECTION_CONTACT);
+        this.pe2Edit(ix);
+        break;
+      case PatientEditor.EDIT_ICARD:
+      case PatientEditor.EDIT_ICARD2:
+      case PatientEditor.EDIT_ON_FILE:
+        this.peScroll(PatientEditor.SECTION_INSURANCE);
+        this.pe2Edit(ix);
+        break;
+      case PatientEditor.EDIT_FATHER:
+      case PatientEditor.EDIT_MOTHER:
+      case PatientEditor.EDIT_SPOUSE:
+        this.peScroll(PatientEditor.SECTION_FAMILY);
+        this.pe2Edit(ix);
+        break;
+      case PatientEditor.EDIT_CUSTOM:
+        this.peScroll(PatientEditor.SECTION_CUSTOM);
+        this.pe2Edit(ix);
+        break;
+    }
+  },
+  poClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.client);
+    }
+  },
+  pe1Edit:function(focus) {
+    focus = denull(focus, 'pe1-pid');
+    setValue('pe1-pid', this.client.uid);
+    setValue('pe1-lastName', this.client.lastName);
+    setValue('pe1-firstName', this.client.firstName);
+    setValue('pe1-sex', this.client.sex);
+    setValue('pe1-birth', this.client.birth);
+    showHideIf(this.client.id, 'pe1-cmd-update', 'pe1-cmd-add');
+    showOverlayPop('pop-pe1', focus);
+    if (focus == 'pe1-birth') {
+      showCal(focus);
+    }
+  },
+  pe1Save:function() {
+    this.client.uid = value('pe1-pid');
+    this.client.lastName = value('pe1-lastName');
+    this.client.firstName = value('pe1-firstName');
+    this.client.sex = value('pe1-sex');
+    this.client.birth = value('pe1-birth');
+    if (this._showValidateErrors('pop-error-pe1', this._validateClient(this.client))) {
+      return;
+    } 
+    if (this.client.id) {
+      closeOverlayPop();
+    }
+    this.changed = true;
+    showOverlayWorking('Saving');
+    Ajax.post(Ajax.SVR_SCHED, 'savePatient', this.client, this, this);
+  },
+  peScroll:function(section) {
+    switch (section) {
+      case PatientEditor.SECTION_CONTACT:
+        scrollTo('csf','csf-contact');
+        break;
+      case PatientEditor.SECTION_INSURANCE:
+        scrollTo('csf','csf-insurance');
+        break;
+      case PatientEditor.SECTION_FAMILY:
+        scrollTo('csf','csf-family');
+        break;
+      case PatientEditor.SECTION_CUSTOM:
+        scrollTo('csf','csf-custom');
+        break;
+    }
+  },
+  pe2Edit:function(i) {
+    switch (i) {
+      case PatientEditor.EDIT_HOME_ADDR:
+        this.pe2EditContact();
+        break;
+      case PatientEditor.EDIT_ICARD:
+        this.pe2EditInsurance(this.client.icard, 1);
+        break;
+      case PatientEditor.EDIT_ICARD2:
+        this.pe2EditInsurance(this.client.icard2, 2);
+        break;
+      case PatientEditor.EDIT_CUSTOM:
+        this.pe2EditCustom();
+        break;
+      case PatientEditor.EDIT_EMER_ADDR:
+        this.pe2EditEmer();
+        break;
+      case PatientEditor.EDIT_RX:
+        this.pe2EditPharm();
+        break;
+      case PatientEditor.EDIT_FATHER:
+        this.pe2EditFather();
+        break;
+      case PatientEditor.EDIT_MOTHER:
+        this.pe2EditMother();
+        break;
+      case PatientEditor.EDIT_SPOUSE:
+        this.pe2EditSpouse();
+        break;
+      case PatientEditor.EDIT_ON_FILE:
+        this.pe2EditOnFile();
+        break;
+    }
+  },
+  pe2EditContact:function() {
+    this.showAddress(this.client.shipAddress, false, this.client.name + " - Home Address");
+  },
+  pe2EditEmer:function() {
+    this.showAddress(this.client.emerAddress, true, this.client.name + " - Emergency Contact");
+  },
+  pe2EditPharm:function() {
+    this.showAddress(this.client.pharmAddress, true, this.client.name + " - Preferred Pharmacy");
+  },
+  pe2EditFather:function() {
+    this.showAddress(this.client.fatherAddress, true, this.client.name + " - Father");
+  },
+  pe2EditMother:function() {
+    this.showAddress(this.client.motherAddress, true, this.client.name + " - Mother");
+  },
+  pe2EditSpouse:function() {
+    this.showAddress(this.client.spouseAddress, true, this.client.name + " - Spouse");
+  },
+  pe2EditOnFile:function() {
+    setCheck("pof-living-will", this.client.cdata5);
+    setCheck("pof-poa", this.client.cdata6);
+    showOverlayPop("pop-onfile");
+  },
+  pe2EditInsurance:function(icard, seq) {
+    if (icard == null) {
+      icard = {'clientId':this.client.id,'seq':seq};
+    }
+    this.icard = icard;
+    setCaption("pop-icard-cap-text", this.client.name + " - Insurance Info");
+    setValue("pic-ic-plan", icard.planName);
+    setValue("pic-ic-group", icard.groupNo);
+    setValue("pic-ic-policy", icard.subscriberNo);
+    setValue("pic-ic-subscriber", icard.subscriberName);
+    setValue("pic-ic-name", icard.nameOnCard);
+    setValue("pic-ic-effective", icard.dateEffective);
+    showOverlayPop("pop-icard", "pic-ic-plan");
+  },
+  pe2EditCustom:function() {
+    setCaption("pop-custom-cap-text", this.client.name + " - Custom Fields");
+    setValue("pcu-custom1", this.client.cdata1);
+    setValue("pcu-custom2", this.client.cdata2);
+    setValue("pcu-custom3", this.client.cdata3);
+    showOverlayPop("pop-custom", "pcu-custom1");  
+  },
+  pe2SaveAddress:function(a) {
+    var data = {'address':a,'id':this.client.id};
+    this._postSave('savePatientAddress', data);
+  },
+  pcuSave:function() {
+    this.client.cdata1 = value("pcu-custom1");
+    this.client.cdata2 = value("pcu-custom2");
+    this.client.cdata3 = value("pcu-custom3");
+    this._postSave('savePatient', this.client);
+  },
+  pofSave:function() {
+    this.client.cdata5 = isChecked("pof-living-will");
+    this.client.cdata6 = isChecked("pof-poa");
+    this._postSave('savePatient', this.client);
+  },
+  picSave:function() {
+    var c = this.icard;
+    c.planName = value("pic-ic-plan");
+    c.groupNo = value("pic-ic-group");
+    c.subscriberNo = value("pic-ic-policy");
+    c.subscriberName = value("pic-ic-subscriber");
+    c.nameOnCard = value("pic-ic-name");
+    c.dateEffective = nullify(value("pic-ic-effective"));
+    var data = {'icard':c,'id':this.client.id};
+    this._postSave('savePatientIcard', data);
+  },
+  _postSave:function(action, data) {
+    this.changed = true;
+    closeOverlayPop();
+    showOverlayWorking('Saving');
+    Ajax.post(Ajax.SVR_SCHED, action, data, [this.savePatientCallback, this], [this.savePatientError, this]);
+  },
+  showAddress:function(a, includeName, cap) {
+    this.address = a;
+    setCaption("pop-addr-cap-text", cap ? cap : "Address");
+    setValue("pa-name", a.name);
+    setValue("pa-addr1", a.addr1);  
+    setValue("pa-addr2", a.addr2);  
+    setValue("pa-addr3", a.addr3);  
+    setValue("pa-city", a.city);
+    setValue("pa-state", a.state);
+    setValue("pa-zip", a.zip);
+    setValue("pa-phone1", a.phone1); 
+    setValue("pa-phone1Type", a.phone1Type); 
+    setValue("pa-phone2", a.phone2);
+    setValue("pa-phone2Type", a.phone2Type); 
+    setValue("pa-phone3", a.phone3);
+    setValue("pa-phone3Type", a.phone3Type);  
+    setValue("pa-email1", a.email1);
+    showIf(includeName, "pa-li-name"); 
+    showOverlayPop("pop-addr", includeName ? "pa-name" : "pa-addr1");
+  },
+  paSave:function() {
+    var a = this.address;
+    a.name = value("pa-name");
+    a.addr1 = value("pa-addr1");
+    a.addr2 = value("pa-addr2");
+    a.addr3 = value("pa-addr3");
+    a.city = value("pa-city");
+    a.state = value("pa-state");
+    a.zip = value("pa-zip");
+    a.phone1 = value("pa-phone1");
+    a.phone1Type = value("pa-phone1Type");
+    a.phone2 = value("pa-phone2");
+    a.phone2Type = value("pa-phone2Type");
+    a.phone3 = value("pa-phone3");
+    a.phone3Type = value("pa-phone3Type");
+    a.email1 = value("pa-email1");
+    this.pe2SaveAddress(a);
+  },
+  savePatientCallback:function(client) {
+    if (this.editOnly) {
+      this.poClose();
+      return;
+    }
+    closeOverlayPop();
+    if (this.client.id) {
+      this.client = client;
+      this._renderPo();
+    } else {
+      Page.go(Page.PAGE_FACESHEET, {'id':this.client.id,'pe':1});
+    }
+  },
+  savePatientError:function(e) {
+    if (e.type == 'ClientUidExistsException') {
+      closeOverlayWorking();
+      var dupe = e.message;
+      var html = '<b>A patient with ID ' + dupe.uid + ' already exists:</b>';
+      html += '<br/>' + dupe.name + ' (DOB: ' + denull(dupe.birth) + ')';
+      showError('pop-error-pe1', html);
+    } else {
+      Page.showAjaxError(e);
+    }
+  },
+  _renderPo:function() {
+    var pl;
+    setText('po-name', this.client.name);
+    setText('po-cid', this.client.uid);
+    setText('po-sex', this._poFormatSex(this.client.sex));
+    setText('po-dob', this.client.birth);
+    setText('po-age', this.client.age);
+    pl = new ProfileLoader('po-lbl-address', 'po-address');
+    this._renderAddress('Home', pl, this.client.shipAddress);
+    pl = new ProfileLoader('po-lbl-emer', 'po-emer');
+    this._renderAddress('Emergency', pl, this.client.emerAddress);
+    pl = new ProfileLoader('po-lbl-pharm', 'po-pharm');
+    this._renderAddress('Pharmacy', pl, this.client.pharmAddress);
+    pl = new ProfileLoader('po-lbl-ins', 'po-ins');
+    this.client.icard = (this.client.icards && this.client.icards.length > 0) ? this.client.icards[0] : null;
+    this.client.icard2 = (this.client.icards && this.client.icards.length > 1) ? this.client.icards[1] : null;
+    this._poLoadInsurance(pl, this.client.icard);
+    pl = new ProfileLoader('po-lbl-ins2', 'po-ins2');
+    this._poLoadInsurance(pl, this.client.icard2);
+    show('po-ins-ul-2');
+    pl = new ProfileLoader('po-lbl-ichecks', 'po-ichecks');
+    pl.add('Living Will?', yesNo(this.client.cdata5));  
+    pl.add('POA?', yesNo(this.client.cdata6));  
+    pl = new ProfileLoader('po-lbl-father', 'po-father');
+    this._renderAddress('Parent', pl, this.client.fatherAddress);  
+    pl = new ProfileLoader('po-lbl-mother', 'po-mother');
+    this._renderAddress('Parent', pl, this.client.motherAddress);  
+    pl = new ProfileLoader('po-lbl-spouse', 'po-spouse');
+    this._renderAddress('Spouse', pl, this.client.spouseAddress);  
+    pl = new ProfileLoader('po-lbl-custom', 'po-custom');
+    pl.add('Custom 1', this.client.cdata1);  
+    pl.add('Custom 2', this.client.cdata2, -1);  
+    pl.add('Custom 2', this.client.cdata3, -1);    
+  },
+  _renderAddress:function(lbl, pl, a) {
+    var addr = (a) ? [a.addr1, a.addr2, a.csz] : '';
+    if (a && a.name) {
+      addr.unshift(a.name);
+    }
+    pl.add(lbl, addr);
+    if (a && a.phone1) {
+      pl.add('', [this._poFormatPhone(a.phone1, a.phone1Type), this._poFormatPhone(a.phone2, a.phone2Type), this._poFormatPhone(a.phone3, a.phone3Type)], -1);
+    }
+    if (a && a.email1) {
+      pl.add('', [a.email1, a.email2], -1);
+    }  
+  },
+  _poLoadInsurance:function(pl, icard) {
+    pl.add('Plan', icard ? icard.planName : '');
+    pl.add('Group/Policy #', icard ? denull(icard.groupNo) + ' ' + denull(icard.subscriberNo) : '');
+    pl.add('Effective', icard ? icard.dateEffective : '');
+    if (icard && icard.subscriber) {
+      pl.add('Subscriber', icard.subscriber.name, -1);
+    }
+    if (icard && icard.nameOnCard) {
+      pl.add('Name on Card', icard.nameOnCard);
+    }
+  },  
+  _poFormatSex:function(sex) {
+    return (sex == 'F') ? 'Female' : 'Male';
+  },
+  _poFormatPhone:function(phone, type) {
+    if (phone) {
+      var s = phone;
+      if (! isUndefined(type)) {
+        s += ' (' + this._poFormatPhoneType(type) + ')';
+      }
+      return s;
+    }
+  },
+  _poFormatPhoneType:function(type) {
+    switch (type) {
+      case 0: return 'primary';
+      case 1: return 'work';
+      case 2: return 'cell';
+      case 3: return 'emergency';
+      case 4: return 'fax';
+    }
+    return '';
+  },
+  _validateClient:function(client) {
+    var errs = [];
+    if (client.uid == '') {
+      errs.push(errMsg('client.uid', msgReq('Patient ID')));
+    }
+    if (client.lastName == '') {
+      errs.push(errMsg('client.lastName', msgReq('Last name')));
+    }
+    if (client.firstName == '') {
+      errs.push(errMsg('client.firstName', msgReq('First name')));
+    }
+    if (client.sex == '') {
+      errs.push(errMsg('client.sex', msgReq('Gender')));
+    }
+    if (client.birth) {
+      client.birth = formatDate(client.birth); 
+      if (! client.birth) {
+        errs.push(errMsg('client.birth', 'Birth date is not valid. Please use MM/DD/YYYY.'));
+      }
+    }
+    return errs;
+  },
+  _showValidateErrors:function(id, errMsgs) {
+    hide(id);
+    if (errMsgs.length > 0) {
+      showErrors(id, errMsgs);
+      focusError(errMsgs[0].id);
+      return true;
+    }
+  },
+  _focusError:function(id) {
+    if (id == 'client.uid') {
+      focus('pid');
+    } else if (id == 'client.firstName') {
+      focus('firstName');
+    } else if (id == 'client.lastName') {
+      focus('lastName');
+    } else if (id == 'client.sex') {
+      focus('sex');
+    }
+  }
+};

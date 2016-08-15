@@ -1,0 +1,68 @@
+/**
+ * Tracking Item Entry
+ * Static pop controller
+ */
+var TrackingEntry = {
+  callback:null,
+  form:null,
+  /*
+   * Edit tracking item
+   * - item: TrackItem
+   * - lists: TrackingItemDao control lists
+   * - callback() on record save 
+   */
+  pop:function(item, lists, callback) {
+    overlayWorking(true);
+    this.callback = callback;
+    var self = this;
+    Includer.get([Includer.HTML_TRACKING_ENTRY, Includer.AP_CALENDAR], function() {
+      self._load(item, lists);
+      showOverlayPop('pop-tie');
+      overlayWorking(false);
+    });
+  },
+  _load:function(item, lists) {
+    var ef = new EntryForm($('tie-form'), 'first2');
+    ef.addLi();
+    ef.appendTextbox('trackDesc', 40, 'Item');
+    ef.appendSelect('priority', lists.priorities, null, 'Priority');
+    ef.addLi();
+    ef.append(createSpan('rof', item._orderDate + ' by ' + item.UserStub_OrderBy.name), 'Ordered');
+    ef.addLi();
+    ef.append(createSpan('rof rota', item.orderNotes), 'Notes');
+    ef.addLi(null, 'mt15');
+    ef.appendCalendar('schedDate', 'Scheduled');
+    if (item.UserStub_SchedBy)
+      ef.appendLabel('by ' + item.UserStub_SchedBy.name, 'nopad');
+    ef.addLi(null, 'mt5');
+    ef.appendTextbox('schedWith', 18, 'With');
+    ef.appendTextbox('schedLoc', 35, 'Location');
+    ef.addLi();
+    ef.appendTextArea('schedNotes', 'Notes');
+    ef.addLi(null, 'mt15');
+    ef.appendCalendar('closedDate', 'Closed');
+    if (item.UserStub_ClosedBy)
+      ef.appendLabel('by ' + item.UserStub_ClosedBy.name, 'nopad');
+    ef.addLi(null, 'mt5');
+    ef.appendSelect('closedFor', lists.closedFors, '', 'Reason');
+    ef.addLi();
+    ef.appendTextArea('closedNotes', 'Notes');
+    ef.setRecord(item);
+    this.form = ef;
+  },
+  pClose:function() {
+    closeOverlayPop();
+  },
+  pSave:function() {
+    overlayWorking(true);
+    var rec = this.form.getRecord();
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'updateTrack', rec,
+      function() {
+        overlayWorking(false);
+        closeOverlayPop();
+        if (self.callback)
+          self.callback();
+      });
+  }
+};

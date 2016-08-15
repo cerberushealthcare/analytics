@@ -1,0 +1,83 @@
+<?php
+require_once "php/data/json/_util.php";
+require_once "php/data/db/User.php";
+
+class JUser extends User {
+  
+  public $licLine;
+  public $pap;
+  public $ie;
+  
+  const WITH_USER_GROUP = true;
+  
+  public function out($withUserGroup = false) {
+    $out = "";
+    $out = nqq($out, "id", $this->id);
+    $out = nqq($out, "uid", $this->uid);
+    //$out = nqq($out, "pw", $this->pw);
+    $out = nqq($out, "name", $this->name);
+    $out = nqqo($out, "admin", $this->admin);
+    $out = nqq($out, "subscription", $this->subscription);
+    $out = nqqo($out, "active", $this->active);
+    $out = nqq($out, "regId", $this->regId);
+    $out = nqq($out, "trialExpDt", $this->trialExpDt);
+    $out = nqq($out, "userGroupId", $this->userGroupId);
+    $out = nqq($out, "userType", $this->userType);
+    $out = nqq($out, "dateCreated", $this->dateCreated);
+    $out = nqq($out, "licLine", $this->licLine);
+    $out = nqq($out, "licenseState", $this->licenseState);
+    $out = nqq($out, "license", $this->license);
+    $out = nqq($out, "dea", $this->dea);
+    $out = nqq($out, "npi", $this->npi);
+    $out = nqq($out, "email", $this->email);
+    $out = nqq($out, "expiration", $this->expiration);
+    $out = nqq($out, "expireReason", $this->expireReason);
+    $out = nqqo($out, "ie", $this->ie);
+    if ($withUserGroup) {
+      $out = nqqj($out, "userGroup", $this->userGroup);;
+    }
+    $out = nqqo($out, "pap", $this->pap);
+    return cb($out);
+  }
+  
+  public function includeLicLine() {
+    $s = "Lic: " . $this->license;
+    if ($this->licenseState != null) {
+      $s .= " (" . $this->licenseState . ")";
+    }
+    if ($this->dea != null) {
+      $s .= " DEA: " . $this->dea;
+    }
+    if ($this->npi != null) {
+      $s .= " NPI: " . $this->npi;
+    }
+    $this->licLine = $s;
+  }
+  
+  public static function constructFromJson($json) {
+    $o = jsondecode($json);
+    $jUser = new JUser(
+        $o->id,
+        $o->uid,
+        $o->pw,
+        $o->name,
+        $o->admin,
+        $o->subscription,
+        $o->active,
+        $o->regId,
+        $o->trialExpDt,
+        $o->userGroupId,
+        $o->userType,
+        $o->dateCreated,
+        $o->licenseState,
+        $o->license,
+        $o->dea,
+        $o->npi,
+        $o->email,
+        $o->expiration,
+        $o->expireReason
+        );
+    return $jUser;
+  }
+}
+?>

@@ -1,0 +1,344 @@
+<?php
+//
+/**
+ * User Roles and Permissions
+ * @author Warren Hornsby
+ */
+class UserRoles {
+  static $CREATABLE = array(
+    self::TYPE_CLINICAL => 'Clinical',
+    self::TYPE_CLERICAL => 'Clerical');
+  /**
+   * @return UserRole
+   */
+  static function from($userType, $active, $usageLevel) {
+    if ($active)
+      $role = UserRole::by($type);
+    
+  }
+}
+/**
+ * UserRole
+ */
+class UserRole extends Rec {
+  public /*Perms_Profile*/ $Profile;
+  public /*Perms_Account*/ $Account;
+  public /*Perms_Patient*/ $Patient;
+  public /*Perms_NewCrop*/ $NewCrop;
+  public /*Perms_Artifact*/ $Artifact;
+  public /*Perms_Report*/ $Report;
+  public /*Perms_Message*/ $Message;
+  //
+  const TYPE_PROVIDER = 1;
+  const TYPE_CLINICAL = 2;
+  const TYPE_CLERICAL = 3;
+  const TYPE_EXTENDER = 10;
+  static $TYPES = array(
+    self::TYPE_PROVIDER => 'Provider',
+    self::TYPE_EXTENDER => 'Extender (PA/RNP)',
+    self::TYPE_CLINICAL => 'Clinical',
+    self::TYPE_CLERICAL => 'Clerical');
+  //
+  static function by($type) {
+    switch ($type) {
+      case self::TYPE_PROVIDER:
+        return Role_Provider::create();
+      case self::TYPE_EXTENDER:
+        return Role_Extender::create();
+      case self::TYPE_CLINICAL:
+        return Role_Clinical::create();
+      case self::TYPE_CLERICAL:
+        return Role_Clerical::create();
+    }
+  }
+}
+class Role_Provider extends UserRole {
+  static function create() {
+    $me = new static();
+    $me->name = 'Provider';
+    $me->Profile = Perms_Profile::asProvider();
+    $me->Account = Perms_Account::asClerical();
+    $me->Patient = Perms_Patient::asClerical();
+    $me->NewCrop = Perms_NewCrop::asLp();
+    $me->Artifact = Perms_Artifact::asProvider();
+    $me->Report = Perms_Report::asProvider();
+    $me->Message = Perms_Message::asClinical();
+    return $me;
+  }
+}
+class Role_Extender extends UserRole {
+  static function create() {
+    $me = new static();
+    $me->name = 'Extender (PA/RNP)';
+    $me->Profile = Perms_Profile::asExtender();
+    $me->Account = Perms_Account::asClerical();
+    $me->Patient = Perms_Patient::asClerical();
+    $me->NewCrop = Perms_NewCrop::asLp();
+    $me->Artifact = Perms_Artifact::asProvider();
+    $me->Report = Perms_Report::asClerical();
+    $me->Message = Perms_Message::asClinical();
+    return $me;
+  }
+}
+class Role_Clinical extends UserRole {
+  static function create() {
+    $me = new static();
+    $me->name = 'Clinical';
+    $me->Profile = Perms_Profile::asClerical();
+    $me->Account = Perms_Account::asClerical();
+    $me->Patient = Perms_Patient::asClinical();
+    $me->NewCrop = Perms_NewCrop::asNurse();
+    $me->Artifact = Perms_Artifact::asClinical();
+    $me->Report = Perms_Report::asClerical();
+    $me->Message = Perms_Message::asClinical();
+    return $me;
+  }
+}
+class Role_Clerical extends UserRole {
+  static function create() {
+    $me = new static();
+    $me->name = 'Clerical';
+    $me->Profile = Perms_Profile::asClerical();
+    $me->Account = Perms_Account::asClerical();
+    $me->Patient = Perms_Patient::asClerical();
+    $me->NewCrop = Perms_NewCrop::asNurse();
+    $me->Artifact = Perms_Artifact::asClerical();
+    $me->Report = Perms_Report::asClerical();
+    $me->Message = Perms_Message::asClerical();
+    return $me;
+  }
+}
+class Role_Admin extends UserRole {
+  static function create() {
+    $me = new static();
+    $me->name = 'Admin';
+    $me->Profile = Perms_Profile::asAdmin();
+    $me->Account = Perms_Account::asAdmin();
+    $me->Patient = Perms_Patient::asAdmin();
+    $me->NewCrop = Perms_NewCrop::asLp();
+    $me->Artifact = Perms_Artifact::asAdmin();
+    $me->Report = Perms_Report::asAdmin();
+    $me->Message = Perms_Message::asAdmin();
+    return $me;
+  }
+}
+/** 
+ * Permissions
+ */
+abstract class Perms extends Rec {
+  static function asAdmin() {
+    $me = new static();
+    foreach ($me as $fid => $value) 
+      $me->$fid = true;
+    return $me;
+  }
+  static function asInactiveProvider() {
+    $me = new static();
+    return $me;
+  }
+}
+class Perms_Profile extends Perms {
+  public $license;   // can update
+  public $practice;  // can update
+  public $billing;   // can update
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->license = true;
+    $me->practice = true;
+    $me->billing = true;
+    return $me;
+  }
+  static function asExtender() {
+    $me = new static();
+    $me->license = true;
+    return $me;
+  }
+  static function asPayer() {
+    $me = new static();
+    $me->practice = true;
+    $me->billing = true;
+    return $me;
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->practice = true;
+    return $me;
+  }
+  static function asInactiveProvider() {
+    $me = new static();
+    $me->billing = true;
+    return $me;
+  }
+}
+class Perms_Account extends Perms {
+  public $provider;  // manage
+  public $support;   // manage
+  public $portal;    // manage
+  //
+  static function asClerical() {
+    $me = new static();
+    $me->support = true;
+    $me->portal = true;
+    return $me;
+  }
+}
+class Perms_Patient extends Perms {
+  public $create;     // create
+  public $facesheet;  // open
+  public $schedule;   // open 
+  public $demo;       // record
+  public $vitals;     // record
+  public $diagnoses;  // record
+  public $immuns;     // record
+  public $track;      // record
+  public $cds;        // customize
+  public $appts;      // record
+  //
+  static function asClinical() {
+    $me = new static();
+    $me->create = true;
+    $me->facesheet = true;
+    $me->schedule = true;
+    $me->demo = true;
+    $me->vitals = true;
+    $me->diagnoses = true;
+    $me->immuns = true;
+    $me->track = true;
+    $me->cds = true;
+    $me->appts = true;
+    return $me;
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->create = true;
+    $me->facesheet = true;
+    $me->schedule = true;
+    $me->demo = true;
+    $me->track = true;
+    $me->appts = true;
+    return $me;
+  }
+  static function asInactiveProvider() {
+    $me = new static();
+    $me->facesheet = true;
+    return $me;
+  }
+}
+class Perms_NewCrop extends Perms {
+  public $type;  // NewCrop user type
+  public $role;  // NewCrop role type
+  //
+  static function asLp() {
+    $me = new static();
+    $me->type = UserType::LP;
+    $me->role = RoleType::DOCTOR;
+    return $me;
+  }
+  static function asNurse() {
+    $me = new static();
+    $me->type = UserType::STAFF;
+    $me->role = RoleType::NURSE;
+    return $me;
+  }
+  static function asNurseNoRx() {
+    $me = new static();
+    $me->type = UserType::STAFF;
+    $me->role = RoleType::NURSE_NO_RX;
+    return $me;
+  }
+  static function asInactiveProvider() {
+    return null;
+  }
+}
+class Perms_Artifact extends Perms {
+  public $markReview;    // for all artifacts
+  public $markPortal;    // for all artifacts 
+  public $notes;         // create/update/delete
+  public $noteSign;      
+  public $noteAddendum;  
+  public $templates;     // manage
+  public $scan;           
+  public $labs;          // reconcile  
+  public $hl7;           // create and download
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->markReview = true;
+    $me->markPortal = true;
+    $me->notes = true; 
+    $me->noteSign = true;
+    $me->noteAddendum = true;
+    $me->templates = true;
+    $me->scan = true; 
+    $me->labs = true; 
+    $me->hl7 = true;
+    return $me;
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->markPortal = true;
+    $me->notes = true; 
+    $me->templates = true;
+    $me->scan = true; 
+    $me->labs = true; 
+    $me->hl7 = true;
+    return $me;
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->notes = true; 
+    $me->templates = true;
+    $me->scan = true; 
+    $me->labs = true; 
+    $me->hl7 = true;
+    return $me;
+  }
+} 
+class Perms_Report extends Perms {
+  public $patient;  // can
+  public $cds;      // can
+  public $audit;    // can
+  public $custom;   // can
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->patient = true;
+    $me->cds = true;
+    $me->audit = true;
+    $me->custom = true;
+    return $me;
+  }
+  static function asAuditor() {
+    $me = new static();
+    $me->patient = true;
+    $me->cds = true;
+    $me->audit = true;
+    return $me;
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->patient = true;
+    $me->cds = true;
+    return $me;
+  }
+}
+class Perms_Message extends Perms { 
+  public $general;  // general messages
+  public $patient;  // patient messages
+  public $portal;   // portal messages
+  //
+  static function asClinical() {
+    $me = new static();
+    $me->general = true;
+    $me->patient = true;
+    $me->portal = true;
+    return $me;
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->general = true;
+    $me->patient = true;
+    return $me;
+  }
+}

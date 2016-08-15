@@ -1,0 +1,389 @@
+TABLE.datasheet {
+  border:1px solid #8CA6BE;
+  border-collapse:collapse;
+  width:100%;
+}
+TABLE.datasheet .lpipe {
+  border-left:1px solid #9CB2C8;
+}
+TABLE.datasheet .rpipe {
+  border-right:1px solid #9CB2C8;
+}
+TABLE.datasheet TR {
+  vertical-align:top;
+}
+TABLE.datasheet TR.offset {
+  background-color:#E2E5E8;
+}
+TABLE.datasheet TD, TABLE.datasheet TH {
+  font-family:Calibri,Tahoma,Arial;
+  font-size:11pt;
+  padding:2px;
+}
+TABLE.datasheet TH {
+  padding-top:2px;
+  padding-bottom:2px;
+  font-weight:bold;
+  white-space:nowrap;
+  vertical-align:middle;
+  text-align:left;
+  background-color:#9BB1C7;
+  color:#334353;
+  border-bottom:1px solid #8CA6BE;
+}
+TABLE.datasheet TH.lpad {
+  padding-left:24px;
+}
+TABLE.datasheet TD.check {
+  width:1px;
+}
+TABLE.datasheet TD.icons {
+  white-space:nowrap;
+  padding:0;
+}
+TABLE.entrygrid {
+  width:100%;
+}
+TABLE.entrygrid TH {
+  padding:2px 5px 0 7px;
+}
+TABLE.entrygrid TD {
+  white-space:nowrap;
+  background:#D7E1EB;
+  padding:0 3px 0 5px;
+}
+TABLE.entrygrid TR.first TD {
+  padding-top:7px;
+}
+TABLE.entrygrid INPUT {
+  overflow:visible;
+  width:100%;
+}
+TD.icons A.icon {
+  height:26px;
+  display:inline-block;
+  padding-left:24px;
+  padding-right:6px;
+  color:blue;
+  text-decoration:none;
+  font-size:10pt;
+  line-height:22px;
+}
+TD.icons A.icon:hover {
+  color:#d11d35;
+  text-decoration:underline;
+}
+TD.icons A.open {
+  background:url(../img/icons/openFolder.gif) no-repeat 6px center;
+}
+TD.icons A.copy {
+  background:url(../img/icons/copy.gif) no-repeat 6px center;
+}
+TD.icons A.delete {
+  background:url(../img/icons/delete.gif) no-repeat 6px center;
+}
+TD.icons A.edit {
+  background:url(../img/icons/edit.gif) no-repeat 6px center;
+}
+
+
+DIV.gridsheet {
+  clear:both;
+  border:1px solid #8CA6BE;
+  border-bottom:none;
+  background:#D7E1EB url(../img/spreadsheetBack.bmp);
+}
+DIV.scrollable {
+  border:1px solid #8CA6BE;
+  height:200px;
+  overflow-y:scroll;
+  clear:both;
+}
+DIV.gridsheet TABLE {
+  border-collapse:collapse;
+  width:100%;
+}
+DIV.scrollable TABLE {
+  width:97.5%;
+}
+DIV.gridsheet THEAD TR {
+  position:relative;
+  top:expression(this.parentElement.parentElement.parentElement.scrollTop);
+}
+DIV.gridsheet TR.offset TD {
+  background-color:#ECF1F6;
+}
+DIV.gridsheet TD, DIV.gridsheet TH {
+  font-family:Calibri,Tahoma,Arial;
+  font-size:10.5pt;
+}
+DIV.small TD, DIV.small TH {
+  font-size:10pt;
+}
+DIV.gridsheet TH {
+  color:black;
+  font-weight:bold;
+  background-color:#A5B8C9;
+  border-bottom:1px solid #5B6773;
+  border-right:1px solid #8CA6BE;
+  vertical-align:top;
+  text-align:left;
+  padding:3px 4px;
+  white-space:nowrap;
+  font-size:10pt;
+}
+DIV.gridsheet TD {
+  background-color:white;
+  padding:3px 4px;
+  vertical-align:top;
+  white-space:nowrap;
+  border-bottom:1px solid #8CA6BE;
+  border-right:1px solid #8CA6BE;
+}
+DIV.gridsheet TD.middle {
+  vertical-align:middle;
+  white-space:normal;
+  padding:0 4px;
+}
+DIV.gridsheet TD.mp {
+  color:#800000;
+}
+DIV.gridsheet TD.ai {
+  color:#008000;
+  font-weight:bold;
+}
+DIV.gridsheet SPAN.mp {
+  color:#800000;
+}
+DIV.gridsheet SPAN.ai {
+  color:#008000;
+  font-weight:bold;
+}
+DIV.gridsheet TD.check {
+  vertical-align:middle;
+  text-align:top;
+  padding:0 4px;
+  font-size:9pt;
+}
+DIV.gridsheet TD.last {
+  border-right:none;
+}
+DIV.gridsheet TD.small {
+  font-size:9pt;
+  vertical-align:bottom;
+}
+DIV.gridsheet TR.lb TD {
+  border-bottom:1px dashed #C7D4E1;
+}
+DIV.gridsheet TH.last {
+  border-right:none;
+}
+DIV.gridsheet TR.fixed {
+  position:relative;
+  top:expression(this.parentElement.parentElement.parentElement.scrollTop);
+}
+DIV.gridsheet TR.offset TD {
+  background-color:#EDEFF5;
+}
+DIV.gridsheet TH.sorted {
+  background-color:#CCD6E0;
+  font-weight:bold;
+}
+DIV.gridsheet TH A {
+  color:#22007a;
+}
+DIV.gridsheet TH A:hover {
+  color:#f42941;
+}
+DIV.gridsheet A.sort-a {
+  color:black; 
+  background:url(../img/icons/sort-up.gif) no-repeat center right;
+  padding-right:17px;
+}
+DIV.gridsheet A.sort-a:hover {
+  color:#d11d35;
+}
+DIV.gridsheet A.sort-d {
+  color:black; 
+  background:url(../img/icons/sort-down.gif) no-repeat center right;
+  padding-right:17px;
+}
+DIV.gridsheet A.sort-d:hover {
+  color:#d11d35;
+}
+DIV.gridsheet .bold {
+  font-weight:bold;
+}
+
+A.icon {
+  padding:0 0 0 20px;
+  text-decoration:none;
+  display:inline-block;
+  height:16px;
+}
+A.icon:hover {
+  text-decoration:underline;
+}
+A.open {
+  background:url(../img/icons/openFolder.gif) no-repeat left center;
+}
+A.edit {
+  background:url(../img/icons/edit-yellow.gif) no-repeat 2px 3px;
+}
+A.edit-note {
+  background:url(../img/icons/edit-yellow.gif) no-repeat 2px 1px;
+}
+A.no-edit-note {
+  background:url(../img/icons/no-edit.gif) no-repeat 2px 1px;
+}
+A.edit-appt {
+  background:url(../img/icons/clock-edit.gif) no-repeat top left;
+}
+A.edit-msg {
+  background:url(../img/icons/email.png) no-repeat top left;
+}
+A.edit-cal {
+  background:url(../img/icons/cal.gif) no-repeat top left;
+}
+A.new-folder {
+  background:url(../img/newFolder.gif) no-repeat -2px -1px;
+}
+A.new-page {
+  background:url(../img/icons/new.gif) no-repeat 0 0;
+}
+A.edit-faded {
+  background:url(../img/icons/edit-red-faded.gif) no-repeat 2px 3px;
+}
+A.edit-green {
+  background:url(../img/icons/edit-green.gif) no-repeat 2px 3px;
+}
+A.edit-blue {
+  background:url(../img/icons/edit-blue.gif) no-repeat 3px 0;
+}
+A.edit-red {
+  background:url(../img/icons/edit-red.gif) no-repeat 2px 1px;
+}
+A.flag {
+  background:url(../img/icons/bookmark.gif) no-repeat -2px top;
+}
+A.grid {
+  background:url(../img/icons/grid.gif) no-repeat left 2px;
+}
+A.print {
+  background:url(../img/icons/print.gif) no-repeat 1px 1px;
+}
+A.excel {
+  background:url(../img/icons/excel.gif) no-repeat left 2px;
+}
+A.pdf {
+  background:url(../img/icons/pdf.gif) no-repeat 0 top;
+}
+A.view {
+  background:url(../img/icons/mGlass.gif) no-repeat 1px 2px;  
+}
+A.edittable {
+  background:url(../img/icons/edittable.gif) no-repeat -2px -3px;  
+}
+A.refresh {
+  background:url(../img/icons/refresh.gif) no-repeat 1px 1px;  
+}
+A.go {
+  background:url(../img/icons/view.gif) no-repeat left 2px;
+  height:17px;  
+}
+A.go-pencil {
+  background:url(../img/pencil.gif) no-repeat left 2px;
+  height:17px;  
+}
+A.arrow-big {
+  background:url(../img/icons/view.gif) no-repeat left 4px;  
+  font-size:11pt;
+}
+A.big {
+  font-size:11pt;
+  height:18px;
+}
+A.med {
+  font-size:10.5pt;
+}
+A.attach {
+  background:url(../img/icons/attachment.gif) no-repeat 1px 2px;
+}
+A.user {
+  background:url(../img/icons/portrait.gif) no-repeat left top;
+}
+A.umale {
+  background:url(../img/icons/portrait-blue.gif) no-repeat left top;
+}
+A.ufemale {
+  background:url(../img/icons/portrait-pink.gif) no-repeat left top;
+}
+A.user-fade {
+  background:url(../img/icons/portrait-faded.gif) no-repeat left top;
+  color:#4554A1;
+}
+A.user-link {
+  background:url(../img/icons/portrait-link.gif) no-repeat left 2px;
+}
+A.link {
+  background:url(../img/icons/link.gif) no-repeat left 3px;
+}
+A.max {
+  background:url(../img/icons/window-max.gif) no-repeat left 2px;
+}
+A.back {
+  background:url(../img/icons/back.gif) no-repeat left -2px;
+  padding-left:21px;
+}
+A.fwd {
+  background:url(../img/icons/forward-green.gif) no-repeat left top;
+  padding-left:21px;
+}
+A.filter {
+  background:url(../img/icons/filter.gif) no-repeat left center;
+  padding-left:14px;
+}
+A.noimg {
+  padding-left:0px;
+}
+A.nav-prev {
+  text-decoration:none;
+  display:inline-block;
+  height:15px;
+  padding:3px 0 0 21px;
+  background:url(../img/icons/back-green.gif) no-repeat left top;
+  font-weight:bold;
+  font-size:10pt;
+}
+A.nav-next {
+  text-decoration:none;
+  display:inline-block;
+  height:15px;
+  padding:3px 22px 0 0;
+  background:url(../img/icons/forward-green.gif) no-repeat right top;
+  font-weight:bold;
+  font-size:10pt;
+}
+DIV.nav {
+  font-size:10pt;
+  font-weight:bold;
+  padding-bottom:5px;
+}
+DIV.nav TABLE {
+  width:100%;
+}
+DIV.nav TABLE TD {
+}
+DIV.nav TD.prev {
+  text-align:left;
+  width:50%;
+}
+DIV.nav TD.next {
+  width:50%;
+  text-align:right;
+}
+DIV.nav TD.nav {
+  white-space:nowrap;
+  text-align:center;
+  font-size:11pt;
+}

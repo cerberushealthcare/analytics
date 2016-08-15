@@ -1,0 +1,42 @@
+<?php
+//
+require_once 'php/data/csv/client-import/Kerkering/KerkeringRec.php';
+$class= 'KerkeringRec';
+$batchsize = 50;
+//
+require_once 'inc/requireLogin.php';
+if (! $myLogin->admin)
+  header('Location: welcome.php');
+echo '<pre style="font-size:9pt">';
+//
+$step = intval(geta($_GET, 'step', 0));
+$next = false;
+switch ($step) {
+  case 0:
+    $_SESSION['csv'] = null;
+    $next = "Read $class";
+    break;
+  case '1':
+    $recs = $class::read();
+    $_SESSION['csv'] = $recs;
+    print_r($recs);
+    $next = "Upload first $batchsize";
+    break;
+  case '2':
+    $recs = $_SESSION['csv'];
+    $recs = $class::export($recs, $batchsize);
+    if ($recs) {
+      $_SESSION['csv'] = $recs;
+      $step--;
+      $next = 'Upload next batch (' . count($recs) . ' remain)';
+    }
+    break;
+}
+//
+if ($next) {
+  $step++;
+  $rnd = rnd();
+  echo "<div><br><a href='csv-import.php?step=$step$rnd'>$next</a></div>";
+}
+echo '</pre>';
+?>

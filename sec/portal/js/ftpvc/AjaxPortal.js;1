@@ -1,0 +1,11 @@
+Ajax.Login = {
+  _SVR:'Login',
+  /*
+   * @arg string id
+   * @arg string pw
+   * @arg fn(PortalSession) onsuccess
+   */
+  login:function(id, pw, onsuccess) {
+    Ajax.postr(this._SVR, 'login', {'id':id,'pw':pw}, PortalSession, onsuccess);
+  }
+}

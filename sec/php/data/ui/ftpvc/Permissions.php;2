@@ -1,0 +1,165 @@
+<?php
+require_once "php/data/db/User.php";
+
+class Permissions {
+  
+  // Profile
+  public $accessProfile;
+  public $accessBillingInfo;
+  
+  // Notes
+  public $accessOfficeNotes;
+  public $accessMyNotes;
+  public $canSignNotes;
+  public $accessTemplates;
+  
+  // Patients
+  public $accessPatients;
+  
+  // Schedule
+  public $accessSchedule;
+  
+  // E-RX
+  public $canErx;
+  
+  const ACCESS_NONE = 0;  // no access
+  const ACCESS_READ = 1;  // read only
+  const ACCESS_UPDATE = 2;  // read and update
+  const ACCESS_INSERT = 3;  // read, update, and insert
+  const ACCESS_DELETE = 4;  // read, update, insert and delete
+
+  const CAN_NO = 0;
+  const CAN_YES = 1;
+  
+  public function __construct($userType, $active, $usageLevel) {
+    if (! $active) {
+      if ($userType == User::USER_TYPE_DOCTOR) {
+        $this->setForInactiveDoctor();
+      } else {
+        $this->setForInactive();        
+      }
+      $this->canErx = Permissions::CAN_NO;
+    } else {
+      switch ($userType) {
+        case User::USER_TYPE_DOCTOR:
+          $this->setForDoctor();
+          break;
+        case User::USER_TYPE_OFFICE_EDITOR:
+          $this->setForOfficeEditor();
+          break;
+        case User::USER_TYPE_OFFICE_READER:
+          $this->setForOfficeReader();
+          break;
+        case User::USER_TYPE_RECIPIENT_EDITOR:
+          $this->setForRecipientEditor();
+          break;
+        case User::USER_TYPE_RECIPIENT_READER:
+          $this->setForRecipientReader();
+          break;
+      }
+      $this->canErx = ($usageLevel == UserGroup::USAGE_LEVEL_EPRESCRIBE) ? Permissions::CAN_YES : Permissions::CAN_NO;
+    }
+  }
+  
+  /*
+   * Returns {
+   *    'pro':accessProfile,
+   *    'bi':accessBillingInfo,
+   *    'on':accessOfficeNotes,
+   *    'mn':accessMyNotes,
+   *    'sn':accessSignNotes,
+   *    'temp':accessTemplates,
+   *    'p':accessPatients,
+   *    's':accessSchedule
+   *   }
+   */
+  public function toJson() {
+    $p = array();
+    $p['pro'] = $this->accessProfile;
+    $p['bi'] = $this->accessBillingInfo;
+    $p['on'] = $this->accessOfficeNotes; 
+    $p['mn'] = $this->accessMyNotes; 
+    $p['sn'] = $this->canSignNotes;
+    $p['temp'] = $this->accessTemplates; 
+    $p['p'] = $this->accessPatients; 
+    $p['s'] = $this->accessSchedule;
+    $p['er'] = $this->canErx;
+    
+    return jsonencode($p);
+  }
+  
+  /* Active profiles */
+  private function setForDoctor() {
+    $this->accessProfile = Permissions::ACCESS_UPDATE;
+    $this->accessBillingInfo = Permissions::ACCESS_UPDATE;
+    $this->accessOfficeNotes = Permissions::ACCESS_DELETE;
+    $this->accessMyNotes = Permissions::ACCESS_DELETE;
+    $this->canSignNotes = Permissions::CAN_YES;
+    $this->accessTemplates = Permissions::ACCESS_DELETE;
+    $this->accessPatients = Permissions::ACCESS_UPDATE;
+    $this->accessSchedule = Permissions::ACCESS_DELETE;
+  }
+  private function setForOfficeEditor() {
+    $this->accessProfile = Permissions::ACCESS_NONE;
+    $this->accessBillingInfo = Permissions::ACCESS_NONE;
+    $this->accessOfficeNotes = Permissions::ACCESS_UPDATE;
+    $this->accessMyNotes = Permissions::ACCESS_DELETE;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_READ;
+    $this->accessPatients = Permissions::ACCESS_UPDATE;
+    $this->accessSchedule = Permissions::ACCESS_DELETE;
+  }
+  private function setForOfficeReader() {
+    $this->accessProfile = Permissions::ACCESS_NONE;
+    $this->accessBillingInfo = Permissions::ACCESS_NONE;
+    $this->accessOfficeNotes = Permissions::ACCESS_READ;
+    $this->accessMyNotes = Permissions::ACCESS_READ;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_READ;
+    $this->accessPatients = Permissions::ACCESS_READ;
+    $this->accessSchedule = Permissions::ACCESS_READ;
+  }
+  private function setForRecipientEditor() {
+    $this->accessProfile = Permissions::ACCESS_NONE;
+    $this->accessBillingInfo = Permissions::ACCESS_NONE;
+    $this->accessOfficeNotes = Permissions::ACCESS_NONE;
+    $this->accessMyNotes = Permissions::ACCESS_UPDATE;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_READ;
+    $this->accessPatients = Permissions::ACCESS_NONE;
+    $this->accessSchedule = Permissions::ACCESS_NONE;
+  }
+  private function setForRecipientReader() {
+    $this->accessProfile = Permissions::ACCESS_NONE;
+    $this->accessBillingInfo = Permissions::ACCESS_NONE;
+    $this->accessOfficeNotes = Permissions::ACCESS_NONE;
+    $this->accessMyNotes = Permissions::ACCESS_READ;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_READ;
+    $this->accessPatients = Permissions::ACCESS_NONE;
+    $this->accessSchedule = Permissions::ACCESS_NONE;
+  }
+
+  /* Inactive profiles */
+  private function setForInactiveDoctor() {
+    $this->accessProfile = Permissions::ACCESS_UPDATE;
+    $this->accessBillingInfo = Permissions::ACCESS_UPDATE;
+    $this->accessOfficeNotes = Permissions::ACCESS_READ;
+    $this->accessMyNotes = Permissions::ACCESS_READ;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_READ;
+    $this->accessPatients = Permissions::ACCESS_READ;
+    $this->accessSchedule = Permissions::ACCESS_READ;
+  }
+  private function setForInactive() {
+    $this->accessProfile = Permissions::ACCESS_NONE;
+    $this->accessBillingInfo = Permissions::ACCESS_NONE;
+    $this->accessOfficeNotes = Permissions::ACCESS_NONE;
+    $this->accessMyNotes = Permissions::ACCESS_NONE;
+    $this->canSignNotes = Permissions::CAN_NO;
+    $this->accessTemplates = Permissions::ACCESS_NONE;
+    $this->accessPatients = Permissions::ACCESS_NONE;
+    $this->accessSchedule = Permissions::ACCESS_NONE;
+  }
+}
+?>

@@ -1,0 +1,36 @@
+<?php
+//
+require_once 'php/data/rec/sql/Procedures.php';
+/**
+ * Procedures (Administrative Category) 
+ * @author Warren Hornsby
+ */
+class Procedures_Admin {
+  //
+  static function saveSmokingHxRecorded($cid) {
+    Proc_SmokingHxRecorded::record($cid);
+  }
+  static function saveReviewedGrowthChart($cid) {
+    
+  }
+}
+//
+abstract class Proc_Admin extends Proc {
+  static $IPC;
+  //
+  static function record($cid) {
+    global $myLogin;
+    $me = new static();
+    $me->userGroupId = $myLogin->userGroupId;
+    $me->clientId = $cid;
+    $me->date = nowNoQuotes();
+    $me->ipc = static::$IPC;
+    $me->save();
+  }
+}
+class Proc_SmokingHxRecorded extends Proc_Admin {
+  static $IPC = 600084;
+} 
+class Proc_ReviewedGrowthChart extends Proc_Admin {
+  static $IPC = 600175;
+} 

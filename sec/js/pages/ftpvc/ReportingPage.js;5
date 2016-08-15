@@ -1,0 +1,73 @@
+/**
+ * Reporting Page
+ * @author Warren Hornsby
+ */
+ReportingPage = page = {
+  //
+  load:function(query) {
+    ReportingTile.create(_$('tile')).showList();
+    Page.setEvents();
+  },
+  onresize:function() {
+    if (ReportingTile.resize)
+      ReportingTile.resize(210);
+  }
+}
+/**
+ * Tile ReportingTile
+ *   ReportStubView listview
+ *   ReportView reportview
+ *   ReportCriteriaView criteriaview
+ */
+ReportingTile = {
+  create:function(container) {
+    container.clean();
+    return ReportingTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.listview = ReportStubView.create(self).bubble('onselect', self.listview_onselect).hide();
+          self.reportview = ReportView.create(self).bubble('onedit', self.reportview_onedit).bubble('onexit', self.reportview_onexit).hide();
+          self.criteriaview = ReportCriteriaView.create(self).bubble('onexit', self.criteriaview_onexit).hide();
+        },
+        showList:function() {
+          self.reportview.hide();
+          self.criteriaview.hide();
+          return self.view = self.listview.show();
+        },
+        showReport:function(stub) {
+          if (stub == null) {
+            self.showCriteria(null);
+          } else {
+            self.listview.hide();
+            self.criteriaview.hide();
+            return self.view = self.reportview.show().loadFromStub(stub);
+          }
+        },
+        showCriteria:function(report) {
+          self.listview.hide();
+          self.reportview.hide();
+          return self.view = self.criteriaview.show().load(report);
+        },
+        resize:function(pad) {
+          if (self.view) { 
+            self.listview.resize(pad);
+            self.reportview.resize(pad);
+          }
+        },
+        //
+        listview_onselect:function(stub) {
+          self.showReport(stub);
+        },
+        reportview_onedit:function(report) {
+          self.showCriteria(report);
+        },
+        reportview_onexit:function() {
+          self.showList();
+        },
+        criteriaview_onexit:function() {
+          self.showList().load();
+        }
+      }
+    })
+  }
+}

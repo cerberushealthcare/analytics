@@ -1,0 +1,347 @@
+<?php
+require_once 'php/data/rec/sql/_UserRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+require_once 'php/data/rec/sql/UserStub.php';
+//
+/**
+ * DAO for User Administration
+ * @author Warren Hornsby
+ */
+class UserAdministration {
+  //
+  public static function searchUsersByName($name) {
+    $c = new UserAdmin();
+    $c->name = CriteriaValue::contains($name);
+    $users = UserAdmin::fetchAllBy($c);
+    return $users;
+  }
+  public static function getUserByUid($uid) {
+    return UserAdmin::fetchByUid($uid);
+  }
+  public static function getUsersByUgid($ugid) {
+    return UserAdmin::fetchAllByUgid($ugid);
+  }
+  public static function getCreatedCounts() {
+    $recs = CreatedCount::fetchAll();
+    return $recs;
+  }
+  public static function getUsersByCreateDate($date) {
+    $users = UserAdmin::fetchAllByCreateDate($date);
+    return $users;
+  }
+  public static function getLoginsByUid($uid) {
+    $logins = Login::fetchAllByUid($uid);
+    Rec::sort($logins, new RecSort('-logdate'));
+    return $logins;
+  }
+  public static function getLoginsByDate($date) {
+    $logins = Login::fetchAllByDate($date);
+    Rec::sort($logins, new RecSort('-logdate'));
+    return $logins;
+  }
+  public static function getLoginsByIp($ip) {
+    $logins = Login::fetchAllByIp($ip);
+    Rec::sort($logins, new RecSort('-logdate'));
+    return $logins;
+  }
+  public static function asHtmlTable($recs) {
+    if (count($recs) == 0)
+      return '(none)';
+    $html = array('<table>');
+    $html[] = self::asHtmlTr(current($recs), 'TH');
+    foreach ($recs as $rec)
+      $html[] = self::asHtmlTr($rec);
+    return implode('', $html);
+  }
+  public static function asHtmlVTables($recs) {
+    if (count($recs) == 0)
+      return '(none)';
+    $html = array();
+    foreach ($recs as $rec)
+      $html[] = self::asHtmlVTable($rec);
+    return implode('', $html);
+  }
+  public static function asHtmlVTable($rec) {
+    if ($rec == null)
+      return '(none)';
+    $html = array('<table class=v>');
+    $values = array_combine($rec->getHtmlThs(), $rec->getHtmlTds());
+    foreach ($values as $th => $td)
+      $html[] = "<tr><th>$th</th><td>$td</td></tr>";
+    return implode('', $html);
+  }
+  public static function asHtmlAnchor($action, $value, $text = null) {
+    if ($text == null)
+      $text = $value;
+    return "<a href='adminUsers.php?a=$action&v=$value'>$text</a>";
+  }
+  //
+  private static function asHtmlTr($rec, $tag = 'TD') {
+    $values = ($tag == 'TD') ? $rec->getHtmlTds() : $rec->getHtmlThs();
+    $html = array("<tr><$tag>");
+    $html[] = implode("</$tag><$tag>", $values);
+    $html[] = "</$tag></tr>";
+    return implode('', $html);
+  }
+}
+/**
+ * User Admin
+ */
+class UserAdmin extends UserRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $dateCreated;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  public /*UserGroupAdmin*/ $UserGroup;
+  public /*Login*/ $Login;
+  //
+  public function getHtmlThs() {
+    $fids = $this->getValues();
+    unset($fids['regId']);
+    unset($fids['userGroupId']);
+    return array_keys($fids);
+  }
+  public function getHtmlTds() {
+    $this->name = UserAdministration::asHtmlAnchor('userByUid', $this->uid, $this->name);
+    $this->uid = UserAdministration::asHtmlAnchor('loginsByUid', $this->uid);
+    if ($this->UserGroup)
+      $this->UserGroup = UserAdministration::asHtmlAnchor('usersByUgid', $this->userGroupId, $this->UserGroup->name);
+    if ($this->Login)
+      $this->Login = UserAdministration::asHtmlAnchor('loginsByIp', $this->Login->ipAddress) . ' ' . formatInformalTimeDay($this->Login->logdate);
+    unset($this->regId);
+    unset($this->userGroupId);
+    return $this->getValues();
+  }
+  //
+  private function attachChildren() {
+    $this->Login = Login::fetchLast($this->userId);
+    $this->UserGroup = UserGroupAdmin::fetchWithAddress($this->userGroupId);
+  }
+  //
+  public static function fetch($userId) {
+    $rec = parent::fetch($id, $class);
+    $rec->attachChildren();
+    return $rec;
+  }
+  public static function fetchOneBy($criteria) {
+    $rec = parent::fetchOneBy($criteria);
+    $rec->attachChildren();
+    return $rec;
+  }
+  public static function fetchByUid($uid) {
+    $c = new UserAdmin();
+    $c->uid = $uid;
+    return self::fetchOneBy($c);
+  }
+  public static function fetchAllBy($criteria) {
+    $recs = parent::fetchAllBy($criteria);
+    foreach ($recs as &$rec)
+      $rec->attachChildren();
+    return $recs;
+  }
+  public static function fetchAllByCreateDate($date) {
+    $c = new UserAdmin();
+    $c->dateCreated = CriteriaValue::datePortionEquals($date);
+    return self::fetchAllBy($c);
+  }
+  public static function fetchAllByUgid($ugid) {
+    $c = new UserAdmin();
+    $c->userGroupId = $ugid;
+    return self::fetchAllBy($c);
+  }
+  public static function asCriteriaTrial() {
+    $c = new UserAdmin();
+    $c->subscription = self::SUBSCRIPTION_TRIAL;
+    return $c;
+  }
+}
+/**
+ * Login
+ */
+class Login extends SqlRec implements ReadOnly, NoUserGroup {
+  //
+  public $userId;
+  public $uid;
+  public $logdate;
+  public $ipAddress;
+  public $logtext;
+  public /*UserStub*/ $User;
+  //
+  public function getSqlTable() {
+    return 'login';
+  }
+  public function getHtmlThs() {
+    return $this->getFids();
+  }
+  public function getHtmlTds() {
+    $this->uid = UserAdministration::asHtmlAnchor('loginsByUid', $this->uid);
+    $this->logdate = formatInformalTimeDay($this->logdate);
+    $this->ipAddress = UserAdministration::asHtmlAnchor('loginsByIp', $this->ipAddress);
+    if ($this->User)
+      $this->User = UserAdministration::asHtmlAnchor('userByUid', $this->User->uid, $this->User->name);
+    return $this->getValues();
+  }
+  //
+  public static function fetch($userId, $logdate) {
+    $c = new Login();
+    $c->userId = $userId;
+    $c->logdate = $logdate;
+    return parent::fetchOneBy($c);
+  }
+  public static function fetchLast($userId) {
+    $sql = "SELECT MAX(logdate) FROM login WHERE user_id=$userId";
+    $logdate = fetchField($sql);
+    return self::fetch($userId, $logdate);
+  }
+  public static function fetchAllByUid($uid) {
+    $c = new Login();
+    $c->uid = $uid;
+    $c->User = new UserStub();
+    return self::fetchAllBy($c);
+  }
+  public static function fetchAllByDate($date) {
+    $c = new Login();
+    $c->logdate = CriteriaValue::datePortionEquals($date);
+    $c->User = new UserStub();
+    return self::fetchAllBy($c);
+  }
+  public static function fetchAllByIp($ipAddress) {
+    $c = new Login();
+    $c->ipAddress = $ipAddress;
+    $c->User = new UserStub();
+    return self::fetchAllBy($c);
+  }
+}
+/**
+ * UserGroup Admin
+ */
+class UserGroupAdmin extends SqlRec implements ReadOnly {
+  //
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  public /*Address*/ $Address;
+  //
+  const USAGE_LEVEL_BASIC = '0';
+  const USAGE_LEVEL_PREMIUM = '1';
+  const USAGE_LEVEL_ERX = '2';
+  //
+  public function getSqlTable() {
+    return 'user_groups';
+  }
+  //
+  /**
+   * @param int $ugid
+   * @return UserGroup
+   */
+  public static function fetch($ugid) {
+    return parent::fetch($ugid, 'UserGroupAdmin');
+  }
+  /**
+   * @param int $ugid
+   * @return UserGroup
+   */
+  public static function fetchWithAddress($ugid) {
+    $rec = self::fetch($ugid);
+    $rec->Address = AddressAdmin::fetchForUgid($ugid);
+    return $rec;
+  }
+}
+/**
+ * Address Admin
+ */
+class AddressAdmin extends AddressRec implements ReadOnly {
+  //
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $email1;
+  //
+  public static function fetchForUgid($ugid) {
+    $rec = new AddressAdmin();
+    $rec->tableCode = self::TABLE_USER_GROUPS;
+    $rec->tableId = $ugid;
+    $rec->type = self::TYPE_SHIP;
+    return parent::fetchOneBy($rec);
+  }
+}
+/**
+ * Usage Details
+ */
+class UsageDetails extends SqlRec implements ReadOnly {
+  public $userId;
+  public $sessionId;
+  public $usageType;
+  public $date;
+  public $cid;
+  //
+  public function getSqlTable() {
+    return 'usage_details';
+  }
+  //
+  public static function getUsageYTD($userId) {
+    $c = new UsageDetails();
+    $c->userId = $userId;
+    $c->usageType = '0';
+    $c->date = CriteriaValue::greaterThan('2011-01-01');
+    $recs = parent::fetchAllBy($c);
+    return count($recs);
+  }
+}
+/**
+ * User Count By Create Date
+ */
+class CreatedCount extends Rec {
+  //
+  public $date;
+  public $count;
+  //
+  public function getHtmlThs() {
+    return $this->getFids();
+  }
+  public function getHtmlTds() {
+    $text = substr('*************************************', 0, $this->count) . " $this->count";
+    $this->count = UserAdministration::asHtmlAnchor('usersByCreateDate', $this->date, $text);
+    $this->date = formatInformalDay($this->date);
+    return $this->getValues();
+  }
+  //
+  public static function fetchAll() {
+    $sql = <<<eos
+SELECT SUBSTR(date_created,1,10) AS date,
+  COUNT(*) AS count
+  FROM users
+  GROUP BY date
+  ORDER BY date DESC;
+eos;
+    $rows = fetchArray($sql);
+    $recs = array();
+    foreach ($rows as $row)
+      $recs[] = new CreatedCount($row['date'], $row['count']);
+    return $recs;
+  }
+}
+?>

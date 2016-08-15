@@ -1,0 +1,127 @@
+/**
+ * Tracking Item Entry
+ * Static pop controller
+ * Requires: C_TrackItem
+ */
+var TrackingEntry = {
+  callback:null,
+  form:null,
+  /*
+   * Edit tracking item
+   * @arg TrackItem item  
+   * @callback(trackItemId) on record save 
+   */
+  pop:function(item, callback) {
+    this.callback = callback;
+    this.load(item);
+    Pop.show('pop-tie');
+  },
+  load:function(item) {
+    var ef = new EntryForm($('tie-form'), 'first2');
+    ef.addLi();
+    ef.appendTextbox('trackDesc', 40, 'Item');
+    ef.appendSelect('priority', C_TrackItem.PRIORITIES, null, 'Priority');
+    ef.addLi();
+    ef.append(createSpan('rof', item.orderDate + ' by ' + item.UserStub_OrderBy.name), 'Ordered');
+    ef.addLi();
+    ef.append(createSpan('rof rota', item.orderNotes), 'Notes');
+    ef.addLi(null, 'mt15');
+    ef.appendDateInput('schedDate', 'Scheduled');
+    if (item.UserStub_SchedBy)
+      ef.appendLabel('by ' + item.UserStub_SchedBy.name, 'nopad');
+    ef.addLi(null, 'mt5');
+    ef.appendTextbox('schedWith', 18, 'With');
+    ef.appendTextbox('schedLoc', 35, 'Location');
+    ef.addLi();
+    ef.appendTextArea('schedNotes', 'Notes');
+    ef.addLi(null, 'mt15');
+    ef.appendDateInput('closedDate', 'Closed');
+    if (item.UserStub_ClosedBy)
+      ef.appendLabel('by ' + item.UserStub_ClosedBy.name, 'nopad');
+    ef.addLi(null, 'mt5');
+    ef.appendSelect('closedFor', C_TrackItem.CLOSED_FORS, '', 'Reason');
+    ef.addLi();
+    ef.appendTextArea('closedNotes', 'Notes');
+    ef.setRecord(item);
+    this.form = ef;
+  },
+  pClose:function() {
+    Pop.close();
+  },
+  pSave:function() {
+    overlayWorking(true);
+    var rec = this.form.getRecord();
+    var self = this;
+    Ajax.post(Ajax.SVR_TRACKING, 'updateTrack', rec,
+      function() {
+        overlayWorking(false);
+        Pop.close();
+        if (self.callback)
+          self.callback(rec.trackItemId);
+      });
+  }
+};
+/**
+ * Tracking Add Orders
+ * Static pop controller
+ */
+var TrackingAdd = {
+  callback:null,
+  fs:null,
+  tui:null,
+  pid:null,
+  /*
+   * Add tracking item(s) from ordering template
+   * @arg Facesheet fs
+   * @callback() on record save
+   */
+  pop:function(fs, callback) {
+    this.callback = callback;
+    this.fs = fs;
+    var self = this;
+    Page.work(function() {
+      if (self.tui == null) {
+        Ajax.get(Ajax.SVR_TRACKING, 'getPid', null,
+          function(pid) {
+            self.pid = pid;
+            self.tui = new TemplateUi($('ta-tui'), fs, null, pid, TemplateUi.FORMAT_ENTRY_FORM_WIDE, function() {
+              self._pop();
+            });
+          });
+      } else {
+        self.tui.reset();
+        self.tui.getParInfo(self.pid, function() {
+          self._pop();
+        });  
+      }
+    });
+  },
+  _pop:function() {
+    Page.work();
+    Pop.show('pop-ta');      
+  },
+  pClose:function() {
+    Pop.close();
+  },
+  pOrder:function() {
+    var items = [];
+    var rec = this.tui.getSelected();
+    for (var qref in rec) {
+      var q = this.tui.qs[qref];
+      if (q.track) {
+        var opts = rec[qref];
+        for (var i = 0; i < opts.length; i++) {
+          var opt = opts[i];
+          items.push(OrderItem.fromFs(this.fs, q, opt));
+        }
+      }
+    }
+    var self = this;
+    if (items) 
+      OrderSheet.pop(items, function() {
+        Pop.close();
+        if (self.callback) 
+          self.callback();
+      });
+  }
+}

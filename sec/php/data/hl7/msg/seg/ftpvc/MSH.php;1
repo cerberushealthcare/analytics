@@ -1,0 +1,51 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+class MSH extends HL7Segment {
+  //
+  public $encodingChars = 'ST_EncodingChars';
+  public $sendApp;
+  public $sendFacility;
+  public $rcvApp;
+  public $rcvFacility;
+  public $timestamp;
+  public $security;
+  public $msgType = 'CM_MsgType';
+  public $msgControlId;
+  public $processId;
+  public $versionId;
+  //
+  public $_fieldDelim;
+  //
+  public function getCompDelim() {
+    return $this->encodingChars->compDelim;
+  }
+  //
+  static function from($rec) {
+    $fieldDelim = substr($rec, 3, 1);
+    $me = new self(null);
+    $me->setValues(explode($fieldDelim, $rec));
+    $me->_fieldDelim = $fieldDelim;
+    return $me;
+  }
+}
+class ST_EncodingChars extends HL7Value {
+  //
+  public $compDelim;
+  public $repeatDelim;
+  public $escapeChar;
+  public $subDelim;
+  //
+  public function __construct($value) {
+    $this->_value = $value;
+    $this->compDelim = substr($value, 0, 1);
+    $this->repeatDelim = substr($value, 1, 1);
+    $this->escapeChar = substr($value, 2, 1);
+    $this->subDelim = substr($value, 3, 1);
+  }
+}
+class CM_MsgType extends HL7CompValue {
+  //
+  public $type;
+  public $trigger;
+}

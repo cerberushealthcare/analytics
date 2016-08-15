@@ -1,0 +1,21 @@
+<html>
+  <body style='background-color:#008E80;margin:0 5px 0 5px'>
+    <div style='border:3px solid black;border-top:none;border-left:none;padding:20px 5px 20px 5px;background:#FEFF9F;width:240px;font-family:Arial;font-size:11pt'>
+      <div style='padding-left:1em;padding-bottom:10px'>
+        <b>Requested Refills<br>
+        from Clicktate Message</b>
+      </div>
+      <ul id='medDiv' style='margin-top:0;margin-bottom:0;margin-left:1em'>
+      </ul>
+    </div>
+  </body>
+  <script>
+setTimeout(ld, 1000);
+function ld() {
+  var refills = <?=stripslashes($_GET['rf'])?>;
+  var ul = document.getElementById('medDiv');
+  ul.innerHTML = '<li>' + refills.join('</li><li>') + '</li>';
+  ul.style.marginBottom = '40px';
+}
+  </script>  
+</html>

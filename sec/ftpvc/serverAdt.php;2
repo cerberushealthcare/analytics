@@ -1,0 +1,27 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/hl7/msg/AdtMessage.php';
+require_once 'php/data/rec/GroupFolder_Adt.php';
+require_once 'php/data/rec/sql/Facesheets.php';
+//
+try { 
+  LoginSession::verify_forServer()->requires($login->Role->Artifact->hl7);
+  switch ($action) {
+    //
+    case 'get':
+      $password = geta($_GET, 'pw');
+      $fs = Facesheet_Hl7PubHealthSurv::from($id); 
+      $msg = ADTMessage::from($fs);
+      $folder = GroupFolder_Adt::open();
+      $file = $folder->save($msg, $password);
+      AjaxResponse::out($action, $file);
+      exit;
+    case 'download':
+      $folder = GroupFolder_Adt::open();
+      $folder->download($id);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

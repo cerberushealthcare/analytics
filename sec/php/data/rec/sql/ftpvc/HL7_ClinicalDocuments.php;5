@@ -1,0 +1,49 @@
+<?php
+require_once 'php/data/xml/ccd/ClinicalDocument.php';
+require_once 'php/data/rec/sql/Facesheets.php';
+//
+/**
+ * HL7 CCD Accessor
+ * @author Warren Hornsby
+ */
+class HL7_ClinicalDocuments {
+  //
+  /**
+   * @param int $cid
+   * @return ClinicalDocument full
+   */
+  static function buildFull($cid) {
+    $fs = Facesheet_Hl7Ccd::from($cid);
+    return static::build($fs);
+  }
+  /**
+   * @param int $cid
+   * @param string $dos 
+   * @return ClinicalDocument for date-of-service
+   */
+  static function buildDos($cid, $dos) {
+    $fs = Facesheet_Hl7Ccd_Dos::from($cid, $dos);
+    return static::build($fs);
+  }
+  //
+  protected static function build($fs) {
+    $doc = new ClinicalDocument($fs->Client, $fs->UserGroup, $fs->ErxUser);
+    $doc->setHeader('db734647-fc99-424c-a864-7e3cda82e703', 'Continuity of Care Document', null, null);
+    $doc->setMedsSection(get($fs, 'Meds'));
+    if ($fs->Allergies)
+      $doc->setAlertsSection($fs->Allergies);
+    if ($fs->Vitals)
+      $doc->setVitalsSection($fs->Vitals);
+    if ($fs->Immuns)
+      $doc->setImmunsSection($fs->Immuns);
+    if ($fs->Diagnoses)
+      $doc->setProblemsSection($fs->Diagnoses);
+    if ($fs->Procs)
+      $doc->setProcsSection($fs->Procs);
+    if ($fs->Results)
+      $doc->setResultsSection($fs->Results);
+    if ($fs->Sessions)
+      $doc->setEncountersSection($fs->Sessions, $fs->UserGroup);
+    return $doc;
+  } 
+}

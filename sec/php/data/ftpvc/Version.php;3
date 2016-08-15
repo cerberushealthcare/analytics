@@ -1,0 +1,18 @@
+<?php
+/*
+ * Version
+ */
+class Version {
+  
+  const MAJOR = "4.0";  // increment on each major change... and reset below
+  const PROD_DEPLOY = "02";  // increment on each prod deploy... and reset below
+  const TEST_DEPLOY = "00";  // increment on each test deploy
+  
+  public static function getLabel() {
+    return Version::MAJOR . "." . Version::PROD_DEPLOY;
+  }
+  public static function getUrlSuffix() {
+    return Version::MAJOR . "p" . Version::PROD_DEPLOY . "t" . Version::TEST_DEPLOY;
+  }
+}
+?>

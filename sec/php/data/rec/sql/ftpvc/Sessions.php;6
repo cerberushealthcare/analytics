@@ -1,0 +1,119 @@
+<?php
+require_once 'php/data/rec/sql/_TemplateRecs.php';
+/**
+ * Sessions DAO 
+ */
+class Sessions {
+  /**
+   * @param int $cid
+   * @return array(SessionNote,..)
+   */
+  static function getNotes($cid) {
+    $recs = SessionNote::fetchAll($cid); 
+    Rec::sort($recs, new RecSort('-dateService'));
+    return $recs;
+  }
+  static function getStubs($cid) {
+    $recs = SessionNoteStub::fetchAll($cid); 
+    Rec::sort($recs, new RecSort('-dateService'));
+    return $recs;
+  }
+  static function getTemplateJsonList() {
+    return MethodCache::getset(__METHOD__, func_get_args(), function() {
+      global $myLogin;
+      $a = array();
+      $recs = MyTemplate::fetchAll($myLogin->userGroupId);
+      foreach ($recs as $rec) 
+        $a[$rec->templateId] = $rec->name;
+      return jsonencode($a);
+    });
+  }
+}
+class SessionNoteStub extends SqlRec { 
+  //
+  public $sessionId;
+  public $userGroupId;
+  public $clientId;
+  public $templateId;
+  public $dateService;
+  public $closed;
+  public $closedBy;
+  public $dateClosed;
+  public $createdBy;
+  public $updatedBy;
+  public $sendTo;
+  public $assignedTo;
+  public $title;
+  public function getSqlTable() {
+    return 'sessions';
+  }
+  public function isClosed() {
+    return $this->closed > 0;
+  }
+  public function formatTitle() {
+    $s = $this->title;
+    if ($this->isClosed())
+      $s .= ' (Signed)';
+    return $s;
+  }
+  //
+  static function fetchAll($cid) {
+    $c = static::asCriteria($cid);
+    $recs = static::fetchAllBy($c);
+    return $recs;
+  }
+  static function asCriteria($cid) {
+    $c = new static();
+    $c->clientId = $cid;
+    return $c;
+  }
+}
+class SessionNote extends SessionNoteStub {
+  //
+  public $sessionId;
+  public $userGroupId;
+  public $clientId;
+  public $templateId;
+  public $dateCreated;
+  public $dateUpdated;
+  public $dateService;
+  public $closed;
+  public $closedBy;
+  public $dateClosed;
+  public $billed;
+  public $schedId;
+  public $data;
+  public $createdBy;
+  public $updatedBy;
+  public $sendTo;
+  public $assignedTo;
+  public $html;
+  public $title;
+  public $standard;
+  public $noteDate;
+}
+class MyTemplate extends TemplateRec implements ReadOnly {
+  //
+  public $templateId;
+  public $name;
+  public $public;
+  public $userGroupId;
+  public $_authenticated = true;
+  //
+  static function fetchAll($ugid) {
+    $recsMy = self::fetchAllBy(self::asMyCriteria($ugid));
+    $recsPublic = self::fetchAllBy(self::asPublicCriteria());
+    return array_merge($recsMy, $recsPublic);
+  }
+  static function asMyCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+  static function asPublicCriteria() {
+    $c = new self();
+    $c->public = true;
+    return $c;
+  }
+}
+?>

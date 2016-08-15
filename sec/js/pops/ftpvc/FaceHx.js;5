@@ -1,0 +1,639 @@
+/**
+ * Facesheet Med/Surg/Fam/Soc History
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceHx = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-hx',  
+  /*
+   * callback(facesheet) if anything changed (calls page.hxChangedCallback by default)
+   */
+  pop:function(fs, tab, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'hxChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_HX, Includer.AP_TEMPLATE_POPS], function() {
+      new TabBar(FaceHx._POP, 
+        ['Medical History', 'Surgical History', 'Family History', 'Psycho-Social History'], 
+        ['Medical', 'Surgical', 'Family', 'Psycho-Social'],
+        tab);
+      if (fs.client) {
+        setCaption('fsp-hx-cap-text', fs.client.name + ' - History');
+        setCaption("pop-hxe-cap-text", fs.client.name + " - History Entry");
+      }
+      self._load();
+      overlayWorking(false);
+      if (zoom) {
+        zoomPop(FaceHx._POP);
+      } else {
+        showOverlayPop(FaceHx._POP);
+      }
+    });
+  },
+  update:function(fs) {
+    this.fs = fs;
+    this.changed = true;
+    this._load();
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpAddMedHx:function() {
+    FaceMedSurgHxEntry.showProcQuestion(this.fs.medhx);
+  },
+  fpAddSurgHx:function() {
+    FaceMedSurgHxEntry.showProcQuestion(this.fs.surghx);
+  },
+  fpEditMedHx:function(proc, focus) {
+    FaceMedSurgHxEntry.pop(this.fs.medhx, proc, focus);
+  },
+  fpEditSurgHx:function(proc, focus) {
+    FaceMedSurgHxEntry.pop(this.fs.surghx, proc, focus);
+  },
+  fpAddFamHx:function() {
+    FaceFamHxEntry.showFamQuestion();
+  },
+  fpEditFamHx:function(puid, focus) {
+    FaceFamHxEntry.pop(puid, focus);
+  },
+  fpEditSocHx:function(topic, focus, dsyncCombo) {
+    FaceSocHxEntry.pop(topic, focus, dsyncCombo);
+  },
+  //
+  _load:function() {
+    this._loadMedSurgHx();
+    this._loadFamHx();
+    this._loadSocHx();
+    overlayWorking(false);
+  },
+  /* 
+   * Medical/Surgical HX
+   * Added to fs:
+   *   hx        // hx working on (e.g. fs.medhx)
+   *   hx.pq     // JQuestion of proc list question
+   *   hx.proc   // selected proc
+   *   hx.rec    // rec being edited
+   *   hx.focus  // field to focus on edit
+   *   hx.qs     // entry form questions {dsync:JQuestion,..} 
+   * UI class added as array element to field defs:
+   *   hx.fields[field][label,className]
+   */
+  _loadMedSurgHx:function() {
+    this._loadMedHx();
+    this._loadSurgHx();
+    this._setMedSurgHxFieldInfo();
+  }, 
+  _loadMedHx:function() {
+    var fs = this.fs;
+    var t = new TableLoader('fsp-medhx-tbody', 'off', 'fsp-medhx-div');
+    for (var proc in fs.medhx.recs) {
+      var rec = fs.medhx.recs[proc];
+      t.createTr(proc);
+      t.createTd('nowrap nbb');
+      t.append(createAnchor(null, buildHrefFn('FaceHx.fpEditMedHx', [proc, null]), 'fs', null, proc));
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var rx = bulletJoin(rec.rx);
+      var comment = bulletJoin(rec.comment);
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditMedHx', [proc, 'date']), 'hxa', null, nbsp(date)));
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditMedHx', [proc, 'type']), 'hxa', null, nbsp(type)));
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditMedHx', [proc, 'rx']), 'hxa', null, nbsp(rx)));
+      t.createTr(proc);
+      t.createTd('nrbc', null, 'Comment:');
+      t.createTdAppend('top', createAnchor(null, buildHrefFn('FaceHx.fpEditMedHx', [proc, 'comment']), 'hxa', null, nbsp(comment)));
+      t.td.colSpan = 3;
+    }
+  },
+  _loadSurgHx:function() {
+    var fs = this.fs;
+    var t = new TableLoader('fsp-surghx-tbody', 'off', 'fsp-surghx-div');
+    for (var proc in fs.surghx.recs) {
+      var rec = fs.surghx.recs[proc];
+      t.createTr(proc);
+      t.createTd('nowrap nbb');
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var comment = bulletJoin(rec.comment);
+      t.append(createAnchor(null, buildHrefFn('FaceHx.fpEditSurgHx', [proc, null]), 'fs', null, proc));
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditSurgHx', [proc, 'date']), 'hxa', null, nbsp(date)));
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditSurgHx', [proc, 'type']), 'hxa', null, nbsp(type)));
+      t.createTr(proc);
+      t.createTd('nrbc', null, 'Comment:');
+      t.createTdAppend('top', createAnchor(null, buildHrefFn('FaceHx.fpEditSurgHx', [proc, 'comment']), 'hxa', null, nbsp(comment)));
+      t.td.colSpan = 2;
+    }
+  },
+  _setMedSurgHxFieldInfo:function() {
+    var fs = this.fs;
+    if (! this._medSurgHxFieldInfoSet) {
+      this._medSurgHxFieldInfoSet = true;
+      append(fs.medhx.fields['date'], 'qd');
+      append(fs.medhx.fields['type'], 'qd2');
+      append(fs.medhx.fields['rx'], 'qt');
+      append(fs.medhx.fields['comment'], 'qc2');
+      append(fs.surghx.fields['date'], 'qd');
+      append(fs.surghx.fields['type'], 'qd2');
+      append(fs.surghx.fields['comment'], 'qc2');
+    }
+  },
+  /* 
+   * Family HX
+   * Added to fs.famhx:
+   *   sq     // JQuestion of suid ('famHx') question
+   *   puid   // selected puid (injector+clone, e.g. 'father+male')
+   *   puidc  // just clone portion of selected puid ('+male')
+   *   focus  // field to focus on edit
+   *   rec    // rec being edited
+   *   aqs    // all entry form questions, arranged by 'clone' {'+male':{dsync:JQuestion,..},'+female':{dsync:JQuestion,..}}
+   *   qs     // entry form questions for selected 'clone' ('+male')   
+   */
+  _loadFamHx:function() {
+    var fs = this.fs;
+    var t = new TableLoader('fsp-famhx-tbody', 'off', 'fsp-famhx-div');
+    for (var puid in fs.famhx.recs) {
+      var rec = fs.famhx.recs[puid];
+      t.createTr(puid);
+      t.createTd();
+      t.td.rowSpan = 3;
+      t.append(createAnchor(null, buildHrefFn('FaceHx.fpEditFamHx', [puid]), 'fs', null, fs.famhx.puidTexts[puid]));
+      t.createTd('right', 'Status');
+      var v = '&nbsp;';
+      if (rec.status) {
+        v = FaceUi.single(rec.status);
+        if (FaceUi.isDeathAge(v) && rec.deathAge) {
+          v += ' (age ' + FaceUi.single(rec.deathAge) + ')';
+        } else if (rec.age) {
+          v += ' (age ' + FaceUi.single(rec.age) + ')';
+        }
+      }
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditFamHx', [puid]), 'hxa', null, v));
+      t.createTr(puid);
+      t.createTd('right', 'History');
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditFamHx', [puid]), 'hxa', null, nbspJoin(rec.history)));
+      t.createTr(puid);
+      t.createTd('right', 'Comment');
+      t.createTdAppend(null, createAnchor(null, buildHrefFn('FaceHx.fpEditFamHx', [puid]), 'hxa', null, nbsp(rec.comment)));
+    }
+  },
+  _setFamHxFieldInfo:function() {
+    var fs = this.fs;
+    if (! this._famHxFieldInfoSet) {
+      this._famHxFieldInfoSet = true;
+      append(fs.famhx.fields['status'], 'q qd2');
+      append(fs.famhx.fields['age'], 'q qd');
+      append(fs.famhx.fields['deathAge'], 'q qd');
+      append(fs.famhx.fields['history'], 'q qc2');
+      append(fs.famhx.fields['comment'], 'q qc2');
+    }
+  },
+  /*
+   * Social HX
+   */
+  _loadSocHx:function() {
+    var fs = this.fs;
+    var t = new TableLoader('fsp-sochx-tbody', 'off', 'fsp-sochx-div');
+    var topics = [];  // topics that have values
+    for (var topic in fs.sochx) {
+      var tpvals = [];  // ['bullet-rec-values',..]
+      var rec = fs.sochx[topic];
+      var dsyncCombo = FaceUi.getDsyncCombo(topic);
+      t.createTr(topic);
+      var td = t.createTd();
+      t.append(createAnchor(null, buildHrefFn('FaceHx.fpEditSocHx', [topic, null, dsyncCombo]), 'fs', null, topic));
+      var i = 0;
+      for (var dsyncId in rec) {
+        if (i > 0) {
+          t.createTr(topic);
+        }
+        var a;
+        var values = rec[dsyncId].v;
+        var dsyncCombo = rec[dsyncId].d;
+        if (dsyncCombo) {
+          rec[dsyncId].l = values.shift();
+        }
+        t.createTd('right', rec[dsyncId].l);
+        var v = nbsp(bulletJoin(values));
+        if (dsyncCombo) {
+          a = createAnchor(null, buildHrefFn('FaceHx.fpEditSocHx', [topic, dsyncId, dsyncCombo]), 'hxa', null, v);
+        } else {
+          a = createAnchor(null, buildHrefFn('FaceHx.fpEditSocHx', [topic, dsyncId]), 'hxa', null, v);
+        }
+        t.createTdAppend(null, a); 
+        i++;
+      }
+      if (i == 0) {
+        t.createTd();
+        t.createTd();
+      } else {
+        td.rowSpan = i;
+      }
+    }
+  }
+};
+/**
+ * Med/Surg History Entry
+ */
+FaceMedSurgHxEntry = {
+  parent:null,
+  fs:null,
+  pop:function(hx, proc, focus) {
+    var fs = FaceUi.setParentage(FaceHx, this);
+    fs.hx = hx;
+    fs.hx.proc = proc;
+    fs.hx.focus = (focus) ? this._makeProcDsync(focus) : null;
+    fs.hx.rec = fs.hx.recs[proc];
+    var self = this;
+    if (fs.hx.qs) {
+      self._load();
+    } else {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'getHxQuestions', {'cat':fs.hx.cat}, 
+        function(qs) {
+          overlayWorking(false);
+          fs.hx.qs = (qs) ? qs : {};
+          self._load();
+        });
+    }
+  },
+  showProcQuestion:function(hx) {
+    var fs = FaceUi.setParentage(FaceHx, this);
+    fs.hx = hx;
+    var self = this;
+    if (hx.pq) {
+      self._showProcQuestion();
+    } else {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'getProcQuestion', {'cat':fs.hx.cat}, 
+        function(q) {
+          overlayWorking(false);
+          q.multiOnly = true;
+          fs.hx.pq = q;
+          self._showProcQuestion();
+        });
+    }
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    if (fs.contains == FaceUi.CONTAINS_MEDHX) {
+      this.fs.medhx.procs = fs.medhx.procs;
+      this.fs.medhx.recs = fs.medhx.recs;
+    } else {
+      this.fs.surghx.procs = fs.surghx.procs;
+      this.fs.surghx.recs = fs.surghx.recs;
+    }
+    this.parent.update(this.fs);
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var rec = this._buildRec();
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveMedSurgHx', rec, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.update(fs);
+        closeOverlayPop();
+      });
+  },
+  fpDelete:function() {
+    var self = this;
+    confirm('Are you sure you want to remove this record?', function() {
+      closeOverlayPop();
+      overlayWorking(true);
+      self._removeHxProc();
+      self._saveProc();
+    });
+  },
+  _showProcQuestion:function() {
+    var fs = this.fs;
+    qSetByValues(fs.hx.pq, fs.hx.procs);
+    var self = this; 
+    showQuestion(fs.hx.pq, null, null, true, 
+      function(q) {
+        var procs = qSelTextArray(q);
+        fs.hx.procs = denull(fs.hx.procs, []);
+        if (FaceUi.isDirty(procs, fs.hx.procs)) {
+          self._saveProc();
+        }
+      });
+  },
+  _saveProc:function() {
+    var self = this;
+    overlayWorking(true);
+    rec = this._buildProcRec();
+    Ajax.post(Ajax.SVR_POP, 'saveMedSurgHxProcs', rec,
+      function(fs) { 
+        overlayWorking(false);
+        self.update(fs);
+      });
+  },
+  _load:function() {
+    var fs = this.fs;
+    setText('hxe-proc', fs.hx.proc);
+    var tform = new TemplateForm($('ul-hxe-fields'), 'first2', fs.hx.qs);
+    for (var field in fs.hx.rec) {
+      var value = fs.hx.rec[field];
+      var info = fs.hx.fields[field];
+      var lbl = info[0];
+      var className = info[1];
+      var type = (field == 'date') ? TemplateForm.Q_DEF_CALENDAR : null;
+      tform.addLiAppend(lbl, this._makeProcDsync(field), null, value, className, type);
+    }  
+    showOverlayPop('pop-hxe');
+    if (fs.hx.focus) {
+      tform.popup(fs.hx.focus);
+    }
+    fs.hx.tform = tform;
+  },
+  _makeProcDsync:function(field, proc) {  // proc optional
+    var fs = this.fs;
+    return fs.hx.cat + '.' + ((proc) ? proc : fs.hx.proc) + '.' + field;
+  },
+  _buildRec:function() {
+    var fs = this.fs;
+    var rec = {
+      'cat':fs.hx.cat,
+      'cid':fs.client.id,
+      'rec':fs.hx.tform.buildRecord()
+      };
+    return rec;
+  },
+  _buildProcRec:function() {
+    var fs = this.fs;
+    return {
+      'cat':fs.hx.cat,
+      'cid':fs.client.id,
+      'rec':fs.hx.procs
+      };
+  },
+  _removeHxProc:function() {
+    var fs = this.fs;
+    for (var i = 0; i < fs.hx.procs.length; i++) {
+      if (fs.hx.procs[i] == fs.hx.proc) {
+        fs.hx.procs.splice(i, 1);
+        return;
+      }
+    }
+  }
+};
+/**
+ * Family History Entry
+ */
+FaceFamHxEntry = {
+  parent:null,
+  fs:null,
+  pop:function(puid, focus) {
+    var fs = FaceUi.setParentage(FaceHx, this);
+    fs.famhx.puid = puid;
+    fs.famhx.puidc = this._puidClone(puid);
+    fs.famhx.focus = focus;
+    fs.famhx.rec = fs.famhx.recs[puid];
+    var self = this;
+    if (fs.famhx.aqs) {
+      self._load();
+    } else {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'getFamhxQuestions', null, 
+        function(aqs) {
+          overlayWorking(false);
+          fs.famhx.aqs = (aqs) ? aqs : {};
+          self._load();
+        });
+    }
+  },
+  showFamQuestion:function(hx) {
+    var fs = FaceUi.setParentage(FaceHx, this);
+    var self = this;
+    if (fs.famhx.sq) {
+      self._showFamQuestion();
+    } else {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'getSuidQuestion', {'suid':fs.famhx.suid}, 
+        function(q) {
+          overlayWorking(false);
+          q.multiOnly = true;
+          fs.famhx.sq = q;
+          self._showFamQuestion();
+        });
+    }
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.famhx.sopts = fs.famhx.sopts;
+    this.fs.famhx.puids = fs.famhx.puids;
+    this.fs.famhx.recs = fs.famhx.recs;
+    this.parent.update(this.fs);
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var fs = this.fs;
+    var rec = this._buildRec();
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveFamilyHx', rec, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.update(fs);
+        closeOverlayPop();
+      });
+  },
+  fpDelete:function() {
+    var fs = this.fs;
+    var self = this;
+    confirm('Are you sure you want to remove this record?', function() {
+      closeOverlayPop();
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'removeFamhx', {'cid':fs.client.id, 'puid':fs.famhx.puid}, 
+        function(fs) { 
+          overlayWorking(false);
+          self.update(fs);
+        });
+    });
+  },
+  _showFamQuestion:function() {
+    var fs = this.fs;
+    qSetByValues(fs.famhx.sq, fs.famhx.sopts);
+    var self = this; 
+    showQuestion(fs.famhx.sq, null, null, true,
+      function(q) {
+        var sopts = qSelTextArray(q);
+        fs.famhx.sopts = denull(fs.famhx.sopts, []);
+        if (FaceUi.isDirty(sopts, fs.famhx.sopts)) {
+          self._saveFamQuestion();
+        }
+      });
+  },
+  _saveFamQuestion:function() {
+    var fs = this.fs;
+    var self = this;
+    overlayWorking(true);
+    rec = this._buildFamQuestionRec();
+    Ajax.post(Ajax.SVR_POP, 'saveSuidQuestion', rec,
+      function(fs) { 
+        overlayWorking(false);
+        self.update(fs);
+      });
+  },
+  _load:function() {
+    var fs = this.fs;
+    fs.famhx.qs = fs.famhx.aqs[fs.famhx.puidc];  // subset of questions just for selected clone ('+male')
+    setText('fhxe-rel', fs.famhx.puidTexts[fs.famhx.puid]);
+    var self = this;
+    var tform = new TemplateForm($('ul-fhxe-fields'), 'first2', fs.famhx.qs, function(q){self._onChange()});
+    for (var field in fs.famhx.rec) {
+      var value = fs.famhx.rec[field];
+      var info = fs.famhx.fields[field];
+      var lbl = info[0];
+      var className = info[1];
+      var type = (field == 'date') ? TemplateForm.Q_DEF_CALENDAR : null;
+      tform.addLi(this._fhxeLiId(field));
+      tform.append(lbl, field, null, value, className, type);
+    }
+    showOverlayPop('pop-fhxe');
+    if (fs.famhx.focus) {
+      tform.popup(fs.famhx.focus);
+    }
+    fs.famhx.tform = tform;
+    this._onChange();
+  },
+  _onChange:function() {
+    var fs = this.fs;
+    var status = FaceUi.qSingle(fs.famhx.qs['status']);
+    if (FaceUi.isDeathAge(status)) {
+      qClear(fs.famhx.qs['age']);
+      hide(this._fhxeLiId('age'));
+      show(this._fhxeLiId('deathAge'));
+    } else {
+      qClear(fs.famhx.qs['deathAge']);
+      show(this._fhxeLiId('age'));
+      hide(this._fhxeLiId('deathAge'));    
+    } 
+  },
+  _fhxeLiId:function(field) {
+    return 'fxhe-li-' + field;
+  },
+  _buildRec:function() {
+    var fs = this.fs;
+    var prefix = fs.famhx.suid + '.' + fs.famhx.puid + '.';
+    return {
+      'cid':fs.client.id,
+      'rec':fs.famhx.tform.buildRecord(TemplateForm.VALUES_ALWAYS_ARRAY, prefix)
+      };
+  },
+  _buildFamQuestionRec:function() {
+    var fs = this.fs;
+    return {
+      'suid':fs.famhx.suid,
+      'cid':fs.client.id,
+      'rec':fs.famhx.sopts
+      };
+  },
+  _puidClone:function(puid) {  // return clone portion of puid, e.g. '+male' from 'father+male'
+    return '+' + puid.split('+')[1];
+  }
+};
+/**
+ * Social History Entry
+ */
+FaceSocHxEntry = {
+  parent:null,
+  fs:null,
+  pop:function(topic, focus, dsyncCombo) {
+    var fs = FaceUi.setParentage(FaceHx, this);
+    fs.stopic = topic;
+    fs.sfocus = focus;
+    fs.soc = fs.sochx[topic];
+    fs.dsyncCombo = dsyncCombo;
+    var self = this;
+    if (fs.sqs) {
+      self._load();
+    } else {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'getSochxQuestions', null,
+        function(questions) {
+          fs.sqs = questions;
+          var isMale = (fs.client.sex == 'M');
+          for (var dsync in questions) {
+            var q = questions[dsync];
+            qGenderFix(q, isMale);
+          }
+          overlayWorking(false);
+          self._load();
+        } 
+      );
+    }
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.sochx = fs.sochx;
+    this.parent.update(this.fs);
+  },
+  fpClose:function() {
+    var fs = this.fs;
+    var self = this;
+    if (fs.stform && fs.stform.isDirty()) {
+      showConfirmDirtyExit(function(confirm) {
+        if (confirm) {
+          overlayWorking(true);
+          self.fpSave();
+        } else {
+          closeOverlayPop();
+        }
+      });
+    } else {
+      closeOverlayPop();
+    }
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var fs = this.fs;
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveSocialHx', this._buildRec(), 
+      function(fs) {
+        Page.workingCmd(false);
+        overlayWorking(false);
+        self.update(fs);
+        closeOverlayPop();
+      });
+  },
+  _load:function() {
+    var fs = this.fs;
+    setText('she-topic', fs.stopic);
+    var tform = new TemplateForm($('ul-she-fields'), 'first2', fs.sqs, null); //, TemplateForm.NAV_NEXT_ON_FORM);
+    if (fs.dsyncCombo) {
+      var lbl = (fs.dsyncCombo == 'sochx.drugs') ? 'Substance' : 'Occupation';
+      for (var dsync in fs.soc) {
+        var value = [fs.soc[dsync].l, fs.soc[dsync].v];
+        tform.addLiAppend(lbl, fs.dsyncCombo, dsync, value);
+      }    
+      var ix = (dsync) ? val(dsync.split('?')[1]) : 0;
+      for (var i = 1; i < 4; i++) {
+        var dsync = fs.dsyncCombo + '?' + (ix + i);
+        var value = [null, null];
+        tform.addLiAppend(lbl, fs.dsyncCombo, dsync, value);
+      }
+    } else {
+      for (var dsync in fs.soc) {
+        tform.addLiAppend(fs.soc[dsync].l, dsync, null, fs.soc[dsync].v);
+      }
+    }
+    showOverlayPop('pop-she');
+    if (fs.sfocus) {
+      tform.popup(fs.sfocus);
+    }
+    fs.stform = tform;
+  },
+  _buildRec:function() {
+    var fs = this.fs;
+    return {
+      'cid':fs.client.id,
+      'rec':fs.stform.buildRecord()
+      };
+  }
+};

@@ -1,0 +1,31 @@
+MSH|^~\&||||999997|201012030812||ORU^R01|002056206358367557|P|2.3
+PID||PF0009|||TEST^ALLFIELDS^M^JR^MR||19710923|M|TESTY^^||123 MAIN ST^APT 4J, MIDDLE ROOM^NEW YORK^NY^10021^||(212)555-1212|||D|||123456789|NY18882882
+PV1|1||||||9999^Account^Test^^^^^PHYID||||||||U||||||||||||||||||||||||
+ORC|RE||||P
+OBR|1|LE09999970000050||90093^Comp Metabolic Panel|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||1090^Glucose||100|mg/dL|65 - 99|H|||F||||SHIEL
+NTE|1||Criteria for the diagnosis of diabetes:
+NTE|2||(Fasting Glucose)
+NTE|3||<100 mg/dL: Normal fasting glucose
+NTE|4||100-125 mg/dL: Impaired fasting glucose
+NTE|5||>125 mg/dL: Indicative of diabetes
+NTE|6||Ref: Diabetes Care 29:S43-S48, 2006
+OBX|2||1168^Urea Nitrogen||100|mg/dL|7 - 25|HH|||F||||
+OBX|3||1066^Creatinine||5.00|mg/dL|0.5 - 1.3|HH|||F||||
+OBX|4||10662^eGFR (calculation)||13||>60 -|L|||F||||
+NTE|1||For African-Americans, multiply EGFR result  x 1.2
+OBX|5||1039^BUN/Creat Ratio||20.0||5.3 - 50.0||||F||||
+OBX|6||1147^Sodium||<110|mEq/L|135 - 146|LL|||F||||
+OBX|7||1135^Potassium||5.0|mmol/L|3.5 - 5.5||||F||||
+OBX|8||1048^Chloride||<80|mEq/L|98 - 110|LL|||F||||
+OBX|9||1045^Carbon Dioxide||<10|mEq/L|21 - 33|LL|||F||||
+OBX|10||1042^Calcium||55.0|mg/dL|8.6 - 10.4|HH|||F||||
+OBX|11||1144^Protein, Total||5.0|g/dL|6.2 - 8.3|L|||F||||
+OBX|12||1009^Albumin||5.0|g/dL|3.6 - 5.3||||F||||
+OBX|13||1087^Globulin||0.0|g/dL|2.1 - 3.7|L|||F||||
+OBX|14||1003^A/G Ratio||0.0|Ratio|||||F||||
+OBX|15||1012^Alkaline Phosphatase||5|IU/L|40 - 115|L|||F||||
+OBX|16||1027^AST (SGOT)||5|IU/L|10 - 40|L|||F||||
+OBX|17||1018^ALT (SGPT)||5|IU/L|9 - 60|L|||F||||
+OBX|18||1036^Bilirubin, Total||5.0|mg/dL|0.2 - 1.2|HH|||F||||
+FTS|1|End Of File

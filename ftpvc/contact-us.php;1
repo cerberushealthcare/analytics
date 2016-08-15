@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2010 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>
+      Clicktate - Contact Us 
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation, medical office notes, medical transcription, emr, ehr, medical documentation, progress notes, medical progress notes, soap notes, medical soap notes, medical note generation, medical notes, medical dictation, medical transcription, family practice notes, internal medicine notes, pediatric notes, urgent care notes, urgent care documentation, internal medicine documentation, pediatric documentation, family practice documentation, small office emr, small office ehr" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/home.css" media="screen" />
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/home-ie6.css" media="screen" />
+<![endif]-->    
+  </head>
+  <body>
+    <? include "inc/hheader.php" ?>
+    <div id="body" style="background:white">
+      <div class="content center">
+        <h1>Contact Us</h1>
+      </div>
+      <div class="wm">
+        <h2>LCD Solutions, Inc.</h2>
+        <p>
+          Clicktate<br/>
+          4350 Brownsboro Road<br/>
+          Suite 110<br/>
+          Louisville, KY 40207<br/>
+        </p>
+        <h2 style="margin-top:2em">Email</h2>
+        <p><a href="mailto:info@clicktate.com">info@clicktate.com</a></p>
+        <h2 style="margin-top:2em">Support Line</h2>
+        <p><b>1-888-8CLICK8</b> (1-888-825-4258)</p>
+      </div>
+    </div>
+    <? include "inc/hfooter.php" ?>
+  </body>
+</html>

@@ -1,0 +1,243 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Scanning
+ * @author Warren Hornsby
+ */
+class GroupFolder_Scanning extends GroupFolder {
+  /**
+   * @param GroupUpload_Scanning[] $uploads
+   * @param int $fileIndex next file index
+   */
+  public function uploadAll($uploads, $fileIndex) {
+    logit_r($uploads, 'uploads');
+    foreach ($uploads as &$upload) 
+      $upload = self::upload($upload, $fileIndex++);
+    return $uploads;
+  }
+  public function upload($upload, $fileIndex) {
+    logit_r($upload, 'upload ' . $fileIndex);
+    $upload->setNewName($this->ugid, $fileIndex);
+    logit_r($upload, 'after set new name');
+    $filename = $this->getCompleteFilename($upload->newName);
+    logit_r($filename, 'filename, now doing move');
+    $upload->move($filename);
+    return $upload;
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function output($file) {
+    $groupfile = GroupFile_Scanning::from($file->filename, $file->userGroupId);
+    $groupfile->output($file->mime, $file->rotation);
+  }
+  /**
+   * @param ScanFile $file
+   */
+  public function delete($file) {
+    parent::delete(GroupFile::from($this, $file->filename));
+  } 
+  //
+  /**
+   * @return self
+   */
+  static function open($ugid = null) {
+    return parent::open($ugid, 'scan');
+  }
+}
+class GroupFile_Scanning extends GroupFile {
+  //
+  public function output($mime, $rotation = 0) {
+    if ($mime == GroupFolder::MIME_PDF || $rotation == 0)
+      return parent::output($mime);
+    $image = $this->asImage($mime);
+    ob_clean();
+    header("Pragma: ");
+    header("Cache-Control: ");
+    header("Content-type: $mime");
+    if ($image) {
+      $image = imagerotate($image, $rotation, 0);
+      $this->outputImage($image, $mime);
+    } else {
+      return parent::output($mime);
+    }
+  }
+  protected function asImage($mime) {
+    switch ($mime) {
+      case 'image/gif':
+        return imagecreatefromgif($this->getCompleteFilename());
+      case 'image/jpeg':
+        return imagecreatefromjpeg($this->getCompleteFilename());
+      case 'image/bmp':
+        return imagecreatefromwbmp($this->getCompleteFilename());
+      case 'image/png':
+        return imagecreatefrompng($this->getCompleteFilename());
+    }
+  }
+  protected function outputImage($image, $mime) {
+    switch ($mime) {
+      case 'image/gif':
+        imagegif($image);
+      case 'image/jpeg':
+        imagejpeg($image);
+      case 'image/bmp':
+        imagewbmp($image);
+      case 'image/png':
+        imagepng($image);
+    }
+  }
+  //
+  /**
+   * @param string $filename
+   * @return self
+   */
+  static function from($filename, $ugid = null) {
+    $me = new static();
+    $me->folder = GroupFolder_Scanning::open($ugid);
+    $me->filename = $filename;
+    return $me;
+  }
+}
+class GroupUpload_Scanning extends GroupUpload {
+  //
+  public $name;     // 'original.jpg'
+  public $type;     // 'image/jpeg'
+  public $tmpName;  // 'C:\Windows\temp\phpE74.tmp'
+  public $error;    // 0
+  public $size;     // 23308
+  //
+  public $fileseq;  // 12
+  public $newName;  // 'S00000012'
+  public $ext;      // 'jpg'
+  public $mime;     // 'image/jpeg'
+  public $width;    // 306
+  public $height;   // 205
+  //
+  public function validate() {
+    parent::validate();
+    $this->ext = $this->getExt();
+    if (empty($this->ext)) 
+      throw new GroupUploadException($this, "$this->name is an invalid type; only image and PDF files accepted");
+  }
+  public function setNewName($ugid, $i) {
+    $this->fileseq = $i;
+    $this->newName = "G$ugid" . sprintf("S%07d", $i) . "." . $this->getExt();
+  }
+  public function move($filename) {
+    logit_r($filename, 'move');
+    $result = move_uploaded_file($this->tmpName, $filename);
+    logit_r($result, 'result');
+    $this->setImageInfo($filename);
+  }
+  //
+  protected function setImageInfo($filename) {
+    $info = getimagesize($filename);
+    if (isset($info['mime'])) {
+      $this->width = $info[0];
+      $this->height = $info[1];
+      $this->mime = $info['mime'];
+    } else {
+      $this->mime = $this->type;
+    }
+  }
+  protected function getExt() {
+    switch ($this->type) {
+      case 'image/jpeg':
+      case 'image/pjpeg':
+        return 'jpg';
+      case 'image/bmp':
+      case 'image/x-windows-bmp':
+        return 'bmp';
+      case 'image/gif':
+        return 'gif';
+      case 'image/x-png':
+        return 'png';
+      case 'application/pdf':
+        return 'pdf';
+    }
+  }
+}
+class GroupUpload_ScanningXml extends GroupUpload_Scanning {
+  //
+  public function validate() {
+  }
+  //
+  protected function getExt() {
+    return 'xml';
+  }
+}
+/**
+ * Batch 
+ */
+class GroupFolder_Batch extends GroupFolder {
+  //
+  /**
+   * @return GroupFile
+   */
+  public function upload() {
+    $upload = GroupUpload_Batch::asUpload();
+    return parent::upload($upload);
+  }
+  //
+  /**
+   * @return self
+   */
+  static function open($ugid = null) {
+    return parent::open($ugid, 'scan-batch');
+  }
+}
+class GroupUpload_Batch extends GroupUpload {
+  //
+  protected function getExt() {
+    return 'pdf';
+  }
+  //
+  static function asUpload() {
+    logit_r('batch asUpload, max=' . static::getMaxSize());
+    return parent::asUpload();
+  }
+  protected static function getValidTypes() {
+    return array('application/pdf');
+  }
+  protected static function getInvalidTypeMessage() {
+    return array('Batch file must be a PDF.');
+  }
+  protected static function getMaxSize() {
+    return 50 * static::M;
+  }
+}
+class GroupUpload_Split extends GroupUpload_Scanning {
+  //
+  public function __construct() {
+    // no validate; guaranteed to have image files from bat job
+  }
+  public function move($to) {
+    logit_r($to, 'move');
+    rename($this->tmpName, $to);
+  }
+  //
+  /**
+   * @param GroupFile $file
+   * @return array(self,..)
+   */
+  static function getAllFor($file) {
+    $pattern = $file->folder->dir . "\\" . $file->filename . '-*';
+    $filenames = glob($pattern);
+    $mes = array();
+    logit_r($filenames, 'filenames');
+    foreach ($filenames as $filename)
+      $mes[] = static::from($file->folder->dir, $filename);
+    logit_r($mes, 'mes');
+    return $mes;
+  }
+  static function from($dir, $filename) {
+    $me = new static();
+    $me->name = substr($filename, strlen($dir) + 1);
+    $me->tmpName = $filename;
+    $me->setImageInfo($filename);
+    $me->type = $me->mime;
+    return $me;
+  }
+}
+?>

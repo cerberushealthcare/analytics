@@ -1,0 +1,87 @@
+/**
+ * Date/Time Input
+ * Requires: Pop.js, Calendar.css
+ */
+/*
+ * Constructor
+ * - text: optional default date value
+ * - container: optional, to append this after construction
+ * Builds component as:
+ *   <span class='cal' dateInput=this><input type='text' /><a href='.' /></span> 
+ */
+function DateInput(text, container) {
+  var self = this;
+  this.span = createSpan('dical');
+  this.textbox = createTextbox(null, null, 8);
+  this.a = createAnchor(null, 'javascript:', 'dical');
+  this.a.onclick = function(){self._pop()};
+  this.setText(text);
+  this.span.appendChild(this.textbox);
+  this.span.appendChild(this.a);
+  this.span.dateInput = this;
+  if (container) 
+    this.appendTo(container);
+}
+//
+DateInput.prototype = {
+  span:null,
+  textbox:null,
+  a:null,
+  value:null,
+  /*
+   * Set from string in any date format
+   */
+  setText:function(text) {
+    this.value = new DateValue(text);
+    this._setTextFromValue();
+  },
+  /*
+   * Set from DateValue
+   */
+  setValue:function(value) {
+    this.value = value;
+    this._setTextFromValue();
+  },
+  /*
+   * Returns textbox value
+   */
+  getText:function() {
+    return this.textbox.value;
+  },
+  /*
+   * Returns DateValue
+   */
+  getValue:function() {
+    return this.value;
+  },
+  /*
+   * Set focus to textbox
+   */
+  focus:function() {
+    this.textbox.focus();
+    this.textbox.select();
+  },
+  /*
+   * Append this to container
+   */
+  appendTo:function(container) {
+    container.appendChild(this.span);
+  },
+  //
+  _setTextFromValue:function() {
+    this.textbox.value = this.value.toString();
+  },
+  _pop:function() {
+    var self = this;
+//    Pop.showCalendar(self.getText(), 
+//      function(dateValue) {
+//        self.setText(dateValue.toString());
+//        self.focus();
+//      });
+    Calendar.pop(value, 
+      function(dateValue) {
+      self.setText(dateValue.toString());
+      self.focus();
+    });
+  }
+}

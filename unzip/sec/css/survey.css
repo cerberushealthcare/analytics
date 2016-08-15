@@ -1,0 +1,37 @@
+H1 {
+  margin:10px 0;
+}
+H2 {
+  font-size:13pt;
+  margin:6px 0;
+}
+P {
+  margin:12px 0;
+  font-family:Arial;
+  line-height:14pt;
+  font-size:10pt;
+}
+TEXTAREA {
+  font-family:Arial;
+}
+TR.line1 {
+  padding-bottom:4px;
+}
+TR.line2 {
+  font-size:9pt;
+}
+TD {
+  font-family:Verdana;
+}
+TD.index {
+  width:30px;
+  text-align:right;
+  vertical-align:top;
+  font-weight:bold;
+}
+TD.index2 {
+}
+DIV.error {
+  padding:0 0 1px 0;
+  color:red;
+}

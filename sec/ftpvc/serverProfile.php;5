@@ -1,0 +1,24 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/UserProfiles.php'; 
+//
+try {
+  LoginSession::verify_forServer();
+  switch ($action) {
+    //
+    case 'get':
+      $profile = UserProfiles::getMine();
+      AjaxResponse::out($action, $profile);
+      break;
+    case 'changePassword':
+      $login->changePassword($obj->cpw, $obj->pw);
+      AjaxResponse::out($action);
+      exit;
+    case 'setPassword':
+      $login->setPassword($obj->pw);
+      AjaxResponse::out($action);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}

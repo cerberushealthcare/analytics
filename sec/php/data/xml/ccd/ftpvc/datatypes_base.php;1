@@ -1,0 +1,345 @@
+<?php
+class ANY extends XmlRec {
+  public /*cs_NullFlavor*/ $_nullFlavor;
+}
+class BL extends ANY {
+  public /*bl*/ $_value;
+}
+class BIN extends ANY {
+  public /*cs_BinaryDataEncoding*/ $_representation;
+  //
+  public /*(innerText)*/ $_;
+}
+class ED extends BIN {
+  public /*cs*/ $_mediaType;
+  public /*cs*/ $_language;
+  public /*cs_CompressionAlgorithm*/ $_compression;
+  public /*bin*/ $_integrityCheck;
+  public /*cs_IntegrityCheckAlgorithm*/ $_integrityCheckAlgorithm;
+  //
+  public /*TEL*/ $reference;
+  public /*thumbnail*/ $thumbnail;
+  public /*(innerText)*/ $_;
+}
+class thumbnail extends ED {
+  //
+  public /*TEL*/ $reference;
+  public /*thumbnail*/ $thumbnail;
+}
+class ST extends ED {
+  public /*cs_BinaryDataEncoding*/ $_representation;
+  public /*cs*/ $_mediaType;
+  //
+  public /*TEL*/ $reference;
+  public /*ED*/ $thumbnail;
+  public /*(innerText)*/ $_;
+  //
+  static function asText($text) {
+    $e = new static();
+    $e->_ = $text;
+    return $e;
+  }
+}
+class CD extends ANY {
+  public /*cs*/ $_code;
+  public /*uid*/ $_codeSystem;
+  public /*st*/ $_codeSystemName;
+  public /*st*/ $_codeSystemVersion;
+  public /*st*/ $_displayName;
+  //
+  public /*ED*/ $originalText;
+  public /*CR[]*/ $qualifier;
+  public /*CD[]*/ $translation;
+  //
+  static function from($code, $codeSystem, $displayName = null) {
+    $e = new static();
+    $e->_code = $code;
+    $e->_codeSystem = $codeSystem;
+    if ($displayName) 
+      $e->_displayName = $displayName;
+    return $e;
+  }
+  static function asLoinc($code, $displayName = null) {
+    return static::from($code, '2.16.840.1.113883.6.1', $displayName);
+  }
+  static function asSnomed($code, $displayName = null) {
+    return static::from($code, '2.16.840.1.113883.6.96', $displayName);
+  }
+  static function asIcd9($code, $displayName = null) {
+    return static::from($code, '2.16.840.1.113883.6.42', $displayName);
+  }
+  static function asCpt4($code, $displayName = null) {
+    return static::from($code, '2.16.840.1.113883.6.12', $displayName);
+  }
+}
+class CE extends CD {
+  //
+  public /*CR*/ $qualifier;
+  public /*ED*/ $originalText;
+  public /*CD[]*/ $translation;
+  //
+  static function asGender($code) {
+    return static::from($code, '2.16.840.1.113883.5.1');
+  }
+  static function asConfidentiality($code) {
+    return static::from($code, '2.16.840.1.113883.5.25');
+  }
+}
+class CV extends CE {
+  //
+  public /*ED*/ $originalText;
+  public /*CD*/ $translation;
+}
+class CS extends CV {
+  //
+  static function asUsEnglish() {
+    $e = new static();
+    $e->_code = 'en-US';
+    return $e;
+  }
+}
+class CO extends CV {
+}
+class CR extends CD {
+  public /*bl*/ $_inverted;
+  //
+  public /*CV*/ $name;
+  public /*CD*/ $value;
+}
+class SC extends ST {
+  public /*cs*/ $_code;
+  public /*uid*/ $_codeSystem;
+  public /*st*/ $_codeSystemName;
+  public /*st*/ $_codeSystemVersion;
+  public /*st*/ $_displayName;
+  //
+  public /*(innerText)*/ $_;
+}
+class II extends ANY {
+  public /*uid*/ $_root;
+  public /*st*/ $_extension;
+  public /*st*/ $_assigningAuthorityName;
+  public /*bl*/ $_displayable;
+  //
+  static function from($root, $extension = null) {
+    $e = new static();
+    $e->_root = $root;
+    if ($extension)
+      $e->_extension = $extension; 
+    return $e;
+  }
+  static function fromExtension($extension) {
+    $e = new static();
+    $e->_extension = $extension; 
+    return $e;
+  }
+  static function fromUserGroup($userGroup) {
+    return static::fromUgid($userGroup->userGroupId);
+  }
+  static function fromClient($client) {
+    $e = static::fromUgid($client->userGroupId);  // TODO
+    $e->_extension = $client->uid;
+    return $e;
+  }
+  static function fromUser($user) {
+    $e = static::fromUgid($user->userGroupId);  // TODO
+    $e->_extension = $user->userId;
+    return $e;
+  }
+  //
+  private static function fromUgid($ugid) {
+    $root = '2.16.840.1.113883.19.5';  // TODO
+    return static::from($root);
+  }
+}
+class URL extends ANY {
+  public /*url*/ $_value;
+}
+class TS extends QTY {
+  public /*ts*/ $_value;
+  //
+  static function fromDate($date = null) {
+    $e = new static();
+    $ts = strtotime($date);
+    if (date('H:i:s', $ts) == '00:00:00')
+      $e->_value = date('Ymd', $ts);
+    else
+      $e->_value = date("YmdHis", $ts);
+    return $e;
+  }
+  static function fromNow() {
+    return self::fromDate();
+  }
+}
+class TEL extends URL {
+  public /*set_cs_TelecommunicationAddressUse*/ $_use;
+  //
+  public /*SXCM_TS[]*/ $useablePeriod;
+}
+class ADXP extends ST {
+  public /*cs_AddressPartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class AD extends ANY {
+  public /*cs_AddressPartType*/ $_partType;
+  public /*set_cs_PostalAddressUse*/ $_use;
+  public /*bl*/ $_isNotOrdered;
+  //
+  public /**/ $delimiter; 
+  public /**/ $country; 
+  public /**/ $state; 
+  public /**/ $county; 
+  public /**/ $city; 
+  public /**/ $postalCode; 
+  public /**/ $streetAddressLine; 
+  public /**/ $houseNumber; 
+  public /**/ $houseNumberNumeric; 
+  public /**/ $direction; 
+  public /**/ $streetName; 
+  public /**/ $streetNameBase; 
+  public /**/ $streetNameType; 
+  public /**/ $additionalLocator; 
+  public /**/ $unitID; 
+  public /**/ $unitType; 
+  public /**/ $carrier; 
+  public /**/ $censusTract; 
+  public /*SXCM_TS[]*/ $useablePeriod;
+  public /*(innerText)*/ $_;
+  //
+  static function from($address) {
+    $e = new static();
+    $e->streetAddressLine = $address->addr1;
+    $e->city = $address->city;
+    $e->state = $address->state;
+    $e->postalCode = $address->zip;
+    $e->country = $address->country;
+    return $e;
+  }
+}
+class ENXP extends ST {
+  public /*cs_EntityNamePartType*/ $_partType;
+  public /*set_cs_EntityNamePartQualifier*/ $_qualifier;
+  //
+  public /*(innerText)*/ $_;
+}
+class en_delimiter extends ENXP {
+  public /*cs_EntityNamePartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class en_family extends ENXP {
+  public /*cs_EntityNamePartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class en_given extends ENXP {
+  public /*cs_EntityNamePartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class en_prefix extends ENXP {
+  public /*cs_EntityNamePartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class en_suffix extends ENXP {
+  public /*cs_EntityNamePartType*/ $_partType;
+  //
+  public /*(innerText)*/ $_;
+}
+class EN extends ANY {
+  public /*set_cs_EntityNameUse*/ $_use;
+  //
+  //  public /*en_delimiter*/ $delimiter; 
+  //  public /*en_family*/ $family; 
+  //  public /*en_given*/ $given; 
+  //  public /*en_prefix*/ $prefix; 
+  //  public /*en_suffix*/ $suffix; 
+  //  public /*IVL_TS*/ $validTime;
+  //  public /*(innerText)*/ $_;
+  //
+  public function from($last, $first, $middle = null, $suffix = null, $prefix = null) {
+    $e = new static();
+    if ($prefix) 
+      $e->prefix = $prefix;
+    $e->given = $first;
+    if ($middle) 
+      $e->set('given', $middle);
+    $e->family = $last;
+    if ($suffix)
+      $e->suffix = $suffix;
+    return $e;
+  }
+}
+class PN extends EN {
+  //
+  public /*(innerText)*/ $_;
+  //
+  static function fromClient($client) {
+    return parent::from($client->lastName, $client->firstName, $client->middleName);
+  }
+  static function fromNcUser($user) {
+    return parent::from($user->nameLast, $user->nameFirst, $user->nameMiddle, $user->nameSuffix, $user->namePrefix);
+  }
+}
+class ON extends EN {
+  //
+  public /*en_delimiter*/ $delimiter; 
+  public /*en_prefix*/ $prefix; 
+  public /*en_suffix*/ $suffix; 
+  public /*IVL_TS*/ $validTime;
+  public /*(innerText)*/ $_;
+  //
+  static function asText($text) {
+    $e = new static();
+    $e->_ = $text;
+    return $e;
+  }
+}
+class TN extends EN {
+  //
+  public /*(innerText)*/ $_;
+}
+class QTY extends ANY {
+}
+class INT extends QTY {
+  public /*int*/ $_value;
+}
+class REAL extends QTY {
+  public /*real*/ $_value;
+}
+class PQR extends CV {
+  public /*real*/ $_value;
+}
+class PQ extends QTY {
+  public /*real*/ $_value;
+  public /*cs*/ $_unit;
+  //
+  public /*PQR[]*/ $translation;
+}
+class MO extends QTY {
+  public /*real*/ $_value;
+  public /*cs*/ $_currency;
+}
+class RTO extends RTO_QTY_QTY {
+}
+class SXCM_TS extends TS {
+  public /*cs_SetOperator*/ $_operator;
+}
+class IVL_TS extends SXCM_TS {
+  //
+  public /*IVXB_TS*/ $low; //REQ 
+  public /*PQ*/ $width;
+  public /*IVXB_TS*/ $high; 
+  public /*TS*/ $center; //REQ 
+}
+class IVXB_TS extends TS {
+  public /*bl*/ $_inclusive;
+}
+class RTO_QTY_QTY extends QTY {
+  //
+  public /*QTY*/ $numerator;  //REQ
+  public /*QTY*/ $denominator; //REQ
+}
+?>

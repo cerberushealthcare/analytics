@@ -1,0 +1,119 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once 'php/data/rec/sql/AllergiesLegacy.php';
+require_once 'php/data/rec/sql/AllergiesNewCrop.php';
+//
+/**
+ * Allergy DAO (wrapper for AllergiesLegacy and AllergiesNewCrop) 
+ * @author Warren Hornsby
+ */
+class Allergies {
+  /**
+   * Build face recs from unprocessed session history
+   * @param int cid
+   */
+  public static function rebuildFromSessions($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Build face recs from NewCrop status
+   * @param int $cid
+   * @param object $current @see NewCrop::pullCurrentMedAllergy()
+   */
+  public static function rebuildFromNewCrop($cid, $current) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get active and inactive facesheet records
+   * @param int $cid
+   * @return array(FaceAllergy,..)
+   */
+  public static function getAll($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceAllergy,..)
+   */
+  public static function getActive($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get facesheet records by name
+   * @param int $cid
+   * @return array(name=>FaceAllergy,..)
+   */
+  public static function getByName($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceAllergy,..] $actives (optional, to sync history active flags)
+   * @return array(SessionAllergy,..)
+   */
+  public static function getHistoryByDate($cid, $actives = null) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get allergy UI question
+   * @return JQuestion
+   */
+  public static function getQuestion() {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Allergy
+   */
+  public static function save($o) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Allergy
+   */
+  public static function deactivate($id) { 
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate records from UI
+   * @param [int,..] $id
+   * @return Allergy last one deactivated
+   */
+  public static function deactivateMultiple($ids) {
+    $recs = null;
+    foreach ($ids as $id) 
+      $rec = self::deactivate($id);
+    return $rec;
+  }
+  /**
+   * Deactivate all legacy-sourced allergies
+   * @param int $cid
+   */
+  public static function deactivateLegacy($cid) {
+    $recs = FaceAllergyNc::fetchAllActive($cid);
+    foreach ($recs as $rec) 
+      if ($rec->isSourceLegacy()) 
+        $rec->deactivate();
+  }
+  //
+  private static function getDao($method) {
+    global $myLogin;
+    $class = ($myLogin->isErx()) ? 'AllergiesNewCrop' : 'AllergiesLegacy';
+    return array($class, $method);
+  }
+}
+?>

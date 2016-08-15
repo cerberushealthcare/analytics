@@ -1,0 +1,425 @@
+<?php
+require_once 'php/newcrop/data/NCScript.php';
+require_once 'php/newcrop/data/SoapData.php';
+require_once 'php/dao/UserDao.php';
+require_once 'php/dao/FacesheetDao.php';
+require_once 'php/data/rec/sql/NcUser.php';
+require_once 'php/data/rec/sql/UserErx.php';
+/**
+ * New Crop integration class
+ */
+class NewCrop {
+  //
+  private /*Credentials*/ $credentials;
+  private $clickThruUrl;
+  private $wsHost;
+  // 
+  const NC_TEST_CT_URL = 'https://preproduction.newcropaccounts.com/InterfaceV7/RxEntry.aspx';
+  const NC_TEST_WSHOST = 'https://preproduction.newcropaccounts.com/v7/WebServices';
+  const NC_PROD_CT_URL = '';  // TODO
+  const NC_PROD_WSHOST = '';  // TODO
+  //
+  const ENV_NC_DEMO = 'NC_DEMO';
+  const FROM_XML_RESPONSE = true;
+  /**
+   * Constructor
+   */
+  public function __construct() {
+    global $myLogin;
+    $this->env = LoginResult::getEnv();
+    //$this->env = NewCrop::ENV_NC_DEMO;
+    switch ($this->env) {
+      case NewCrop::ENV_NC_DEMO:
+        $this->credentials = new Credentials('demo', 'demo', 'demo');
+        $this->credentials->setIds('demo', 'demo', 'DEMOLOC1', 'DEMOLP1');
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+      case LoginResult::ENV_LOCAL:
+        $this->credentials = new Credentials('clicktate', 'demo', 'demo');
+        $this->credentials->setIds("L$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+      case LoginResult::ENV_PAPYRUS_LOCAL:
+        $this->credentials = new Credentials('clicktate', 'demo', 'demo');
+        $this->credentials->setIds("YL$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+      case LoginResult::ENV_TEST:
+        $this->credentials = new Credentials('clicktate', 'demo', 'demo');
+        $this->credentials->setIds("T$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+      case LoginResult::ENV_PAPYRUS_TEST:
+        $this->credentials = new Credentials('clicktate', 'demo', 'demo');
+        $this->credentials->setIds("YT$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+      case LoginResult::ENV_PRODUCTION:
+        $this->credentials = new Credentials('clicktate', '?', '?');  // TODO
+        $this->credentials->setIds("P$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_PROD_CT_URL; 
+        $this->wsHost = NewCrop::NC_PROD_WSHOST;
+        break;
+      case LoginResult::ENV_PAPYRUS_PROD:
+        $this->credentials = new Credentials('clicktate', '?', '?');  // TODO
+        $this->credentials->setIds("YP$myLogin->userGroupId", 1, $myLogin->userGroupId, $myLogin->userId);
+        $this->clickThruUrl = NewCrop::NC_TEST_CT_URL; 
+        $this->wsHost = NewCrop::NC_TEST_WSHOST;
+        break;
+    }
+  }
+  /**
+   * Build <form> XML to submit to NewCrop's click thru quick start
+   * @param(opt) int $cid
+   * @param(opt) string $dest NewCrop landing page
+   * @param(opt) string @renewalRequestIdentifier from Update1.GetAllRenewalRequests
+   * @return array('url'=>'form-post-url','xml'=>'form-xml-content')
+   * @throws DomDataRequiredException if missing required elements
+   */
+  public function buildClickThru($cid = null, $dest = RequestedPageType::COMPOSE, $renewalRequestIdentifier = null) {
+    $user = UserDao::getMyUser();
+    $users = $this->getMyUsers();
+    $fs = null;
+    if ($cid) 
+      $fs = FacesheetDao::getLegacyClickThru($cid);
+    $script = new NCScript(
+      CredentialsType::fromCredentials($this->credentials),
+      UserRoleType::fromUser($users['me']),
+      new DestinationType($dest),
+      AccountType::fromUser($user, $this->credentials),
+      LocationType::fromUserClient($user, get($fs, 'client'), $this->credentials),
+      LicensedPrescriberType::fromUser($users['lp'], $this->credentials),
+      StaffType::fromUser(geta($users, 'staff')),
+      PatientType::fromClient(get($fs, 'client'), get($fs, 'allergies'), get($fs, 'diagnoses')),
+      PrescriptionRenewalResponseType::fromId($renewalRequestIdentifier),
+      OutsidePrescriptionType::fromMeds(get($fs, 'activeMeds')));
+    return array(
+      'url' => $this->clickThruUrl,
+      'xml' => $script->toXml());
+  }
+  private function getMyUsers() {
+    $userMe = UserErx::fetchMe();
+    $usersInRoles = NcUser::fetchUsersInTypes($userMe->userGroupId);
+    switch ($userMe->NcUser->userType) {
+      case UserType::LP:
+        $userLp = $userMe;
+        $userStaff = current($usersInRoles[UserType::STAFF]);
+        break;
+      case UserType::STAFF:
+        $userLp = current($usersInRoles[UserType::LP]);
+        $userStaff = $userMe;
+        break;
+    }
+    return array(
+      'me' => $userMe,
+      'lp' => $userLp,
+      'staff' => $userStaff);
+  }
+  /**
+   * Pull account status
+   * @return AccountStatusDetail  // see https://preproduction.newcropaccounts.com/v7/WebServices/Patient.asmx?op=GetAccountStatus
+   */
+  public function pullAcctStatus() {
+    global $myLogin;
+    $soap = $this->createSoap($this->getPatientWsUrl());
+    $param = new GetAccountStatusParam(
+      SoapCredentials::fromCredentials($this->credentials),
+      SoapAccount::fromCredentials($this->credentials),
+      $myLogin->userGroupId,
+      $myLogin->uid);
+    $response = $soap->GetAccountStatus($param);
+    return $this->getResponseDetail(
+      $response, 
+      'GetAccountStatusResult', 
+      'accountStatusDetail');
+  }
+  /**
+   * Pull account status details for multiple status 
+   * @return array(
+   *   'DrReview'=>[StatusDetail,..],
+   *   'StaffProcessing'=>[StatusDetail,..],
+   *   'FailedElectronicRx'[StatusDetail,..],
+   *   'FailedFax'=>[StatusDetail,..])
+   */
+  public function pullAcctStatusDetails() {
+    $statuses = array(
+      GetAccountStatusDetailParam::STATUS_DR_REVIEW => null,
+      GetAccountStatusDetailParam::STATUS_STAFF_PROC => null,
+      GetAccountStatusDetailParam::STATUS_FAILED_ERX => null,
+      GetAccountStatusDetailParam::STATUS_FAILED_FAX => null);
+    foreach ($statuses as $status => &$recs)
+      $recs = $this->pullAcctStatusDetail($status);
+    return $statuses;
+  }
+  /**
+   * Pull account status detail
+   * @param string $sectionType  // GetAccountStatusDetailParam.STATUS_
+   * @return [StatusDetail,..]   // see https://preproduction.newcropaccounts.com/v7/WebServices/Update1.asmx?op=GetAccountStatusDetail
+   *      <xs:element name="StatusDetail">
+   *        <xs:complexType>
+   *          <xs:sequence>
+   *            <xs:element name="ExternalPatientId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PatientFirstName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PatientMiddleName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PatientLastName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PatientDOB" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalUserId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="UserFirstName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="UserMiddleName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="UserLastName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="UserType" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalStaffId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="StaffFirstName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="StaffMiddleName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="StaffLastName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalMidLevelId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="MidLevelFirstName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="MidLevelMiddleName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="MidLevelLastName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalDoctorId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="DoctorFirstName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="DoctorMiddleName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="DoctorLastName" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalPrescriptionId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="DrugInfo" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionDate" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionStatus" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionSubStatus" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionArchiveStatus" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionAssignor" type="xs:string" minOccurs="0" />
+   *            <xs:element name="PrescriptionRequestedStatus" type="xs:string" minOccurs="0" />
+   *            <xs:element name="ExternalLocationId" type="xs:string" minOccurs="0" />
+   *            <xs:element name="LocationName" type="xs:string" minOccurs="0" />
+   *          </xs:sequence>
+   *        </xs:complexType>
+   *      </xs:element>
+   */
+  public function pullAcctStatusDetail($sectionType) {
+    global $myLogin;
+    $return = null;
+    $soap = $this->createSoap($this->getUpdate1WsUrl());
+    $param = new GetAccountStatusDetailParam(
+      SoapCredentials::fromCredentials($this->credentials),
+      SoapAccount::fromCredentials($this->credentials),
+      $this->credentials->locationId,
+      $this->credentials->lpId,
+      $sectionType,
+      GetAccountStatusDetailParam::NO_SCHEMA);
+    $response = $soap->GetAccountStatusDetail($param);
+    return $this->getResponseDetail(
+      $response, 
+      'GetAccountStatusDetailResult', 
+      'StatusDetailDataSet',
+      'StatusDetail',
+      NewCrop::FROM_XML_RESPONSE);
+  }
+  /**
+   * Pull all renewal requests
+   * @return [RenewalSummaryV2,..]  // see https://preproduction.newcropaccounts.com/v7/WebServices/Update1.asmx?op=GetAllRenewalRequestsV2
+   *      <RenewalSummaryV2>
+   *        <RenewalRequestGuid>string</RenewalRequestGuid>
+   *        <ReceivedTimestamp>string</ReceivedTimestamp>
+   *        <LocationName>string</LocationName>
+   *        <DoctorFullName>string</DoctorFullName>
+   *        <PharmacyInfo>string</PharmacyInfo>
+   *        <PharmacyFullInfo>string</PharmacyFullInfo>
+   *        <PharmacyStoreName>string</PharmacyStoreName>
+   *        <PatientFirstName>string</PatientFirstName>
+   *        <PatientMiddleName>string</PatientMiddleName>
+   *        <PatientLastName>string</PatientLastName>
+   *        <PatientDOB>string</PatientDOB>
+   *        <PatientGender>string</PatientGender>
+   *        <DrugInfo>string</DrugInfo>
+   *        <NumberOfRefills>string</NumberOfRefills>
+   *        <ExternalLocationId>string</ExternalLocationId>
+   *        <ExternalDoctorId>string</ExternalDoctorId>
+   *        <ExternalPatientId>string</ExternalPatientId>
+   *        <ExternalPrescriptionId>string</ExternalPrescriptionId>
+   *        <Quantity>string</Quantity>
+   *        <Sig>string</Sig>
+   *        <NcpdpId>string</NcpdpId>
+   *        <Spare1>string</Spare1>
+   *        <Spare2>string</Spare2>
+   *        <Spare3>string</Spare3>
+   *        <Spare4>string</Spare4>
+   *        <Spare5>string</Spare5>
+   *      </RenewalSummaryV2>
+   */
+  public function pullRenewalRequests() {
+    global $myLogin;
+    $soap = $this->createSoap($this->getUpdate1WsUrl());
+    $param = new GetAllRenewalRequestsV2Param(
+      SoapCredentials::fromCredentials($this->credentials),
+      SoapAccount::fromCredentials($this->credentials),
+      $this->credentials->locationId,
+      $this->credentials->lpId);
+    $response = $soap->GetAllRenewalRequestsV2($param);
+    return $this->getResponseDetail(
+      $response, 
+      'GetAllRenewalRequestsV2Result', 
+      'renewalSummaryArray',
+      'RenewalSummaryV2');
+  }
+  /**
+   * Pull current allergy/med list 
+   * @param int $cuid
+   * @return array(
+   *   'med'=>array(PatientDrugDetail,..),         // see https://preproduction.newcropaccounts.com/v7/WebServices/Patient.asmx?op=GetPatientFullMedicationHistory 
+   *   'allergy'=>array(PatientAllergyDetail,..))  // see https://preproduction.newcropaccounts.com/v7/WebServices/Patient.asmx?op=GetPatientAllergyHistory
+   * @throws SoapResultException if result not 'OK'
+   *      <PatientDrugDetail>
+   *        <AccountName>string</AccountName>
+   *        <ExternalAccountID>string</ExternalAccountID>
+   *        <SiteID>string</SiteID>
+   *        <FullName>string</FullName>
+   *        <ExternalPatientID>string</ExternalPatientID>
+   *        <PrescriptionDate>string</PrescriptionDate>
+   *        <DrugID>string</DrugID>
+   *        <DrugTypeID>string</DrugTypeID>
+   *        <DrugName>string</DrugName>
+   *        <Strength>string</Strength>
+   *        <StrengthUOM>string</StrengthUOM>
+   *        <DosageNumberDescription>string</DosageNumberDescription>
+   *        <DosageForm>string</DosageForm>
+   *        <Route>string</Route>
+   *        <DosageFrequencyDescription>string</DosageFrequencyDescription>
+   *        <Dispense>string</Dispense>
+   *        <TakeAsNeeded>string</TakeAsNeeded>
+   *        <DispenseAsWritten>string</DispenseAsWritten>
+   *        <Refills>string</Refills>
+   *        <Status>string</Status>
+   *        <PrescriptionGuid>string</PrescriptionGuid>
+   *        <OrderGuid>string</OrderGuid>
+   *        <PrescriptionNotes>string</PrescriptionNotes>
+   *        <ExternalPhysicianID>string</ExternalPhysicianID>
+   *        <PhysicianName>string</PhysicianName>
+   *        <DateMovedToPreviousMedications>string</DateMovedToPreviousMedications>
+   *      </PatientDrugDetail>
+   *      <PatientAllergyDetail>
+   *        <Allergy>string</Allergy>
+   *        <AllergyID>string</AllergyID>
+   *        <AllergyConceptID>string</AllergyConceptID>
+   *        <AllergySourceID>string</AllergySourceID>
+   *      </PatientAllergyDetail>
+   */
+  public function pullCurrentMedAllergy($cid) {
+    global $myLogin;
+    $soap = $this->createSoap($this->getPatientWsUrl());
+    $param = new GetPatientHistoryParam(
+      SoapCredentials::fromCredentials($this->credentials),
+      SoapAccount::fromCredentials($this->credentials),
+      new SoapPatient($cid),
+      new SoapRxReq(),
+      new SoapPtInfoReq('test', 'test'));  // TODO what goes in soapptinforeq?
+    return array(
+      'med' => $this->buildMedHistory($soap, $param),
+      'allergy' => $this->buildAllergyHistory($soap, $param));
+  }
+  //
+  private function createSoap($url) {
+    $orig = error_reporting();
+    error_reporting(0);
+    $soap = new SoapClient($url);
+    error_reporting($orig);
+    if ($soap) 
+      return $soap;
+    else
+      throw new NewCropException('Unable to create SOAP client');
+  }
+  private function buildAllergyHistory($soap, $param) {
+    $response = $soap->GetPatientAllergyHistory($param);
+    return $this->getResponseDetail(
+      $response, 
+      'GetPatientAllergyHistoryResult', 
+      'patientAllergyDetail',
+      'PatientAllergyDetail');
+  }
+  private function buildMedHistory($soap, $param) {
+    $response = $soap->GetPatientFullMedicationHistory($param);
+    return $this->getResponseDetail(
+      $response, 
+      'GetPatientFullMedicationHistoryResult', 
+      'patientDrugDetail',
+      'PatientDrugDetail');
+  }
+  /*
+   * Extract response objects from NewCrop SOAP return:
+   *   <GetPatientAllergyHistoryResponse>  // $responseNodeName
+   *     <result>                          // use for $responseNodeName if $useXmlResponse=true 
+   *       <Status>OK</Status>
+   *       <XmlResponse>..</XmlResponse>   // $useXmlResponse=true to get from here 
+   *       ..
+   *     </result>
+   *     <patientAllergyDetail>            // $detailNodeName
+   *       <PatientAllergyDetail>          // $arrayNodeName, if you want to return an array of these
+   *         ..
+   *       </PatientAllergyDetail>
+   *     </patientAllergyDetail>
+   */
+  private function getResponseDetail($response, $responseNodeName, $detailNodeName, $arrayNodeName = null, $useXmlResponse = false) {
+    $return = null;
+    if ($response != null) {
+      $response = $response->$responseNodeName;
+      $result = ($useXmlResponse) ? $response : $response->result;
+      SoapResultException::throwIfNotOk($result);
+      if ($useXmlResponse) {
+        $xmlResponse = DomData::parseXml(base64_decode($result->XmlResponse));
+        $detail = get($xmlResponse, $detailNodeName);                
+      } else {
+        $detail = get($response, $detailNodeName);
+      }
+      if ($detail) {
+        if ($arrayNodeName == null) 
+          $return = $detail;
+        else {
+          $records = get($detail, $arrayNodeName);
+          $return = (is_array($records)) ? $records : array($records);
+        }
+      }
+    } 
+    return $return;
+  }
+  // Web service URLs
+  private function getPatientWsUrl() {
+    return "$this->wsHost/Patient.asmx?WSDL"; 
+  }
+  private function getUpdate1WsUrl() {
+    return "$this->wsHost/Update1.asmx?WSDL";
+  }
+}
+/**
+ * Credentials 
+ */
+class Credentials {
+  public $partner;
+  public $name;
+  public $password;
+  //
+  public $accountId;
+  public $siteId;
+  public $locationId;
+  public $lpId;
+  //
+  public function __construct($partner, $name, $password) {
+    $this->partner = $partner;
+    $this->name = $name;
+    $this->password = $password;
+  }
+  public function setIds($accountId, $siteId, $locationId, $lpId) {
+    $this->accountId = $accountId;
+    $this->siteId = $siteId;
+    $this->locationId = $locationId;
+    $this->lpId = $lpId;
+  }
+}
+/**
+ * Exceptions
+ */
+class NewCropException extends Exception {
+}
+?>

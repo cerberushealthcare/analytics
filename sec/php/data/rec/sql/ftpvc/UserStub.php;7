@@ -1,0 +1,32 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Stub
+ */
+class UserStub extends SqlRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  /**
+   * @param int $id
+   * @return UserStub
+   */
+  public static function fetch($id) {
+    return SqlRec::fetch($id, 'UserStub');
+  }
+  /**
+   * @param string $uid
+   * @return UserStub
+   */
+  public static function fetchByUid($uid) {
+    $rec = new UserStub();
+    $rec->uid = $uid;
+    return SqlRec::fetchOneBy($rec);
+  }
+}
+?>

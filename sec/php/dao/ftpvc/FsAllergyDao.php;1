@@ -1,0 +1,137 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/dao/FacesheetDao.php";
+require_once "php/data/json/JFacesheet.php";
+require_once "php/data/json/JDataAllergy.php";
+//
+class FsAllergyDao {
+  /**
+   * Load allergies into facesheet
+   * @param JFacesheet $fs
+   * @param int $clientId
+   * @param bool $includeHistory
+   */
+  public static function loadAllergies(&$fs, $clientId, $includeHistory = true) {
+    $fs->allergies = FacesheetDao::filterInactive(FsAllergyDao::getAllergies($clientId));
+    if ($includeHistory) {
+      $fs->allergiesHistory = JDataAllergy::getAllergiesHistory($clientId);
+    }
+  }
+  /**
+   * Retrieve active allergies
+   * @param int $clientId
+   * @return array('agent'=>JDataAllergy,..)
+   */ 
+  public static function getAllergies($clientId) {
+    global $myLogin;
+    if ($myLogin->isErx()) {
+      $recs = JDataAllergy::getActiveFacesheetAllergies($clientId);
+    } else {
+      $recs = fsAllergyDao::rebuildFacesheetAllergies($clientId);
+    }
+    return $recs;
+  }
+  /**
+   * Rebuild facesheet allergies from NewCrop status
+   * @param int $clientId
+   * @param object $current  // see NewCrop::pullCurrentMedAllergy
+   */
+  public static function rebuildNewCropAllergies($clientId, $current) {
+    global $myLogin;
+    $allergies = JDataAllergy::fromNewCropAllergies($myLogin->userGroupId, $clientId, $current['allergy']);
+    foreach ($allergies as $allergy) {
+      JDataAllergy::save($allergy, true);
+    }
+  }
+	/**
+   * Get allergy question
+   * @return JQuestion
+   */
+  public static function getQuestion() {
+    $questions = DataDao::fetchQuestionsForTable(1, nowNoQuotes(), "allergies");
+    return $questions[JDataAllergy::QUID];
+  }
+  /**
+   * Save allergy
+   * @param object $a deserialized JSON  
+   * @return JDataAllergy updated
+   */
+  public static function save($a) {
+    global $myLogin;
+    if ($a->id == null) {
+      $a->id = JDataAllergy::getClientAllergyByAgent($a->clientId, $a->agent);  // see if we are really doing a replace
+    }
+    if ($a->id != null) {
+      $allergy = JDataAllergy::getAllergy($a->id);
+      $allergy->date = nowShortNoQuotes();
+      $allergy->index = $a->index;
+      $allergy->agent = $a->agent;
+      $allergy->reactions = $a->reactions;
+      $allergy->active = true;
+    } else {
+      LoginDao::authenticateClientId($a->clientId);
+      $allergy = new JDataAllergy(null,
+          $myLogin->userGroupId,
+          $a->clientId,
+          null,
+          nowShortNoQuotes(),
+          $a->index,
+          $a->agent,
+          $a->reactions,
+          true,
+          null,
+          null);
+    }
+    JDataAllergy::save($allergy, true);
+    return $allergy;
+  }
+  /**
+   * Deactivate allergy
+   * @param int $id
+   * @return JDataAllergy updated
+   */
+  public static function deactivate($id) {
+    $allergy = JDataAllergy::getAllergy($id);
+    $allergy->date = nowShortNoQuotes();
+    $allergy->active = false;
+    JDataAllergy::save($allergy, true);
+    return $allergy;
+  }
+  /**
+   * Deactivate legacy allergies
+   * @param int $clientId
+   */
+  public static function deleteLegacy($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    JDataAllergy::deactivateLegacy($clientId);
+  }
+  //
+  // Rebuild facesheet records from session history and existing facesheet records
+  // If history rec not in facesheet, it will be addded
+  // If history rec is in facesheet, it will be replaced if history rec is newer
+  private static function rebuildFacesheetAllergies($clientId) {
+    $sessRecs = JDataAllergy::getSessionAllergies($clientId);
+    $faceRecs = JDataAllergy::getFacesheetAllergies($clientId);
+    $now = nowShortNoQuotes();
+    foreach ($sessRecs as $agent => $sess) {
+      if (isset($faceRecs[$agent])) {  // facesheet rec exists
+        $face = $faceRecs[$agent];
+        if (FacesheetDao::isSessNewer($sess, $face)) {
+          $face->date = $now;
+          $face->reactions = $sess->reactions;
+          $face->active = true;
+          $faceRecs[$face->agent] = JDataAllergy::save($face, true, FacesheetDao::NO_AUDIT);
+        }
+      } else {  // facesheet rec doesn't exist
+        $face = JDataAllergy::copy($sess);
+        $face->sessionId = null;
+        $face->index = null;
+        $face->date = $now;
+        $face->active = true;
+        $faceRecs[$face->agent] = JDataAllergy::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    return $faceRecs;
+  }
+}
+?>

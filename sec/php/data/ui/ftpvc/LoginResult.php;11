@@ -1,0 +1,139 @@
+<?php
+require_once "php/data/db/User.php";
+require_once "php/data/db/UserGroup.php";
+require_once "php/data/ui/Permissions.php";
+//
+class LoginResult {  // global $myLogin
+  //
+  public $uid;  // user's login ID
+  public $pw;  // user's login password
+  public $name;  // user's name
+  public $sessionId;  // php session ID
+  public $success;  // true if login succeeded (ID and password valid)
+  public $userId;  // user's USERS table ID
+  public $userGroupId;  // user's USER_GROUPS table ID
+  public $usageLevel;  // 0=basic, 1=EMR, 2=ePrescribe
+  public $userType;  // user's USER_TYPE setting
+  public $admin;  // true if Clicktate admin
+  public $subscription;  // 0=trial, 1=paying, 2=free
+  public $active;  // true if user's account still active
+  public $onTrial;  // true if still a trial account
+  public $daysLeft;  // days left until trial expires / CC expires
+  public $expireReason;  // why account is not active
+  public $permissions;  // access levels for site functions
+  public $onProd;  // true if on production environment
+  public $estAdjust;  // EST timezone adjustment
+  public $pwExpired;  // true if pw has expired
+  public $vistaFonts;  // true if can render Calibri
+  public $ie;  // IE version (6/7/8, null if not IE)
+  public $hideStickies = array();
+  public $env; 
+  public $loginReqs;  // UserLoginReqs
+  public $showReqs;
+  public $tosExpired;  // needs to re-accept TOS
+  //
+  const ENV_LOCAL = 1;
+  const ENV_TEST = 2;
+  const ENV_PRODUCTION = 9;
+  //
+  const ENV_PAPYRUS_LOCAL = 11;
+  const ENV_PAPYRUS_TEST = 12;
+  const ENV_PAPYRUS_PROD = 19;
+  //
+  public function __construct() {
+    $this->env = LoginResult::getEnv();
+  }
+  // Called once userType and active established
+  public function setPermissions() {
+    $this->permissions = new Permissions($this->userType, $this->active, $this->usageLevel);
+    if ($this->onTrial) { 
+      if ($this->uid == 'rotty1969') {
+        $this->permissions->accessTemplates = Permissions::ACCESS_DELETE;
+      } else {
+        $this->permissions->accessTemplates = Permissions::ACCESS_NONE;
+      }
+    }
+  }
+  //
+  // Helper functions
+  public function isAdmin() {
+    return $this->admin;
+  }
+  public function isBasic() {
+    return $this->usageLevel == UserGroup0::USAGE_LEVEL_BASIC;
+  }
+  public function isEmr() {
+    return $this->usageLevel >= UserGroup0::USAGE_LEVEL_EMR;
+  }
+  public function isErx() {
+    return $this->usageLevel == UserGroup0::USAGE_LEVEL_EPRESCRIBE;
+  }
+  public function isDoctor() {
+    return $this->userType == User::USER_TYPE_DOCTOR;
+  }
+  public function isInactiveDoctor() {
+    return LoginResult::isDoctor() && ! $this->active;
+  }
+  public function isNeedNewBilling() {
+    return User::isExpireNeedNewBilling($this->expireReason);
+  }
+  public function isLoginNotAllowed() {
+    return User::isExpireNoLogin($this->expireReason);
+  }
+  public function getInactiveReason() {
+    return User::getExpireReasonDesc($this->expireReason);
+  }
+  public function isOnProd() {
+    return ($this->env == LoginResult::ENV_PRODUCTION);
+  }
+  public function isPapyrus() {
+    static $isPapyrus;
+    if ($isPapyrus === null) {
+      $isPapyrus = $this->env == LoginResult::ENV_PAPYRUS_TEST || $this->env == LoginResult::ENV_PAPYRUS_PROD || $this->env == LoginResult::ENV_PAPYRUS_LOCAL;
+    }
+    return $isPapyrus;
+  }
+  public function tosAccept() {
+    $sql = "UPDATE users SET tos_accepted=" . now() . " WHERE user_id=" . $this->userId;
+    query($sql);
+    LoginDao::refreshLogin();
+  }
+  /**
+   * Statics
+   */
+  public static function getEnv() {
+    static $env;
+    if ($env == null) {
+      switch ($_SERVER['SERVER_PORT']) {
+        case '80':
+          $prefix = substr($_SERVER['HTTP_HOST'], 0, 4);
+          if ($prefix == 'loca') 
+            $env = strpos($_SERVER['REQUEST_URI'],'papyrus') ? LoginResult::ENV_PAPYRUS_LOCAL : LoginResult::ENV_LOCAL;
+          else if ($prefix == 'test') 
+            $env = LoginResult::ENV_TEST;
+          else
+            $env = LoginResult::ENV_PRODUCTION;
+          break;
+        case '443':
+          $env = LoginResult::ENV_PRODUCTION;
+          break;
+        case '2900':
+          $env = LoginResult::ENV_PAPYRUS_TEST;
+          break;
+        case '4043':
+          $env = LoginResult::ENV_PAPYRUS_PROD;
+          break;
+      }
+    }
+    return $env;
+  }
+  public static function testingLabel() {
+    switch (LoginResult::getEnv()) {
+      // case LoginResult::ENV_LOCAL:
+        // return "<span style='font-size:21pt; font-weight:bold; font-family:Calibri; color:#1e90ff; vertical-align:top; padding-left:5px; letter-spacing:1px;'>LOCAL MACHINE</span>";
+      case LoginResult::ENV_TEST:
+        return "<span style='font-size:21pt; font-weight:bold; font-family:Calibri; color:orange; vertical-align:top; padding-left:5px; letter-spacing:1px;'>TEST</span>";
+    }
+  } 
+}
+?>

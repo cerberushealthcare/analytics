@@ -1,0 +1,16 @@
+DIV.TreeContainer {
+  background-color:white;
+  border:1px solid #c0c0c0;
+  padding:2px 5px;
+  height:220px;
+  overflow-y:scroll;
+}
+DIV.TreeContainer UL.ReportTree LI.l1 {
+  margin-left:0;
+}
+DIV.TreeContainer UL.ReportTree LI.l2 {
+  margin-left:2em;
+}
+DIV.Tree {
+  margin-top:5px;
+}

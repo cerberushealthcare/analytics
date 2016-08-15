@@ -1,0 +1,183 @@
+/**
+ * Facesheet
+ */
+Facesheet = Object.Rec.extend({
+  //
+  onstale:function() {},
+  //
+  onload:function() {
+    this.cid = this.client && this.client.clientId;
+    this.procedures = Procedures.revive(this.procedures);
+    this.docstubs = DocStubs.revive(this.docstubs);
+    this.diagnoses = Diagnoses.revive(this.diagnoses);
+    this.meds = Meds.revive(this.meds);
+    this.allergies = Allergies.revive(this.allergies);
+    this.hms = IpcHms.from(this);
+    this.portalUser = PortalUser.from(this);
+  },
+  //
+  polling:function() {
+    var self = this;
+    var p = Polling.StaleFacesheet;
+    return {
+      start:function() {
+        if (p.isLoaded())
+          p.resume();
+        else
+          p.load(self.onstale).start(self);
+      },
+      stop:function() {
+        p.stop();
+      }
+    }
+  },
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    var self = this;
+    return {
+      /*
+       * @arg int cid
+       * @arg fn(Facesheet) callback
+       */
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.get(cid, worker, callback);
+      },
+      /*
+       * @arg fn(Facesheet) callback only if facesheet updated
+       */
+      refetchIfChanged:function(callback) {
+        Polling.StaleFacesheet.stop();
+        Ajax.Facesheet.getIfUpdated(self.cid, self.cuTimestamp, worker, function(fs) {
+          if (fs) 
+            callback(fs);
+          else 
+            Polling.StaleFacesheet.start(self);
+        })
+      },
+      refetch:function(callback) {
+        Ajax.Facesheet.get(self.cid, worker, callback);
+      },
+      refetchProcs:function(callback) {
+        Ajax.Procedures.getAll(self.cid, function(recs) {
+          self.procedures = recs;
+          callback(recs);
+        })
+      },
+      refetchHms:function(callback) {
+        Ajax.Ipc.getIpcHmsFor(IpcHms.cid, worker, function(recs) {
+          Ajax.Ipc.getIpcHmsFor(IpcHms.cid, worker, callback);
+          self.hms = recs;
+          callback(recs);
+        })
+      }
+    }
+  }
+})
+/**
+ * DocStub
+ */
+DocStub = Object.Rec.extend({
+  resetPreview:function(callback) {
+    this._preview = null;
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      /*
+       * @arg fn(Rec) callback e.g. DocSession, DocMsg, etc.
+       */
+      fetchPreview:function(callback) {
+        if (self._preview) {
+          callback(self._preview);
+        } else {
+          Ajax.Facesheet.Documentation.preview(self, worker, function(rec) {
+            self._preview = rec;
+            callback(rec);
+          })
+        }
+      }
+    }
+  }
+})
+//
+DocStubs = Object.RecArray.of(DocStub, {
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      /*
+       * @arg int cid
+       * @arg fn(DocStubs) callback
+       */
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.Documentation.getAll(cid, callback);
+      }
+    }
+  }
+})
+/**
+ * Diagnosis
+ */
+Diagnosis = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+  },
+  //
+  uiDateRange:function() {
+    var s = this.date;
+    if (this.dateClosed)
+      s += ' - ' + this.dateClosed;
+    return s;
+  },
+  cloneNewActive:function() {
+    var rec = Diagnosis.asNew(this.clientId);
+    rec.text = this.text;
+    rec.icd = this.icd;
+    return rec;
+  },
+  //
+  asNew:function(cid) {
+    return Diagnosis.revive({
+      clientId:cid,
+      date:DateUi.getToday(),
+      status:C_Diagnosis.STATUS_ACTIVE});
+  }
+})
+//
+Diagnoses = Object.RecArray.of(Diagnosis, {
+  //
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    return {
+      setNone:function(cid, callback) {
+        Ajax.Facesheet.Diagnoses.setNone(cid, worker, callback);
+      }
+    }
+  }
+})
+/**
+ * Med
+ */
+Med = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+    this._status = (this.active) ? 'Active' : 'Discontinued';
+  }
+})
+//
+Meds = Object.RecArray.of(Med, {
+  //
+})
+/**
+ * Allergy
+ */
+Allergy = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+  }
+})
+//
+Allergies = Object.RecArray.of(Allergy, {
+  //
+})

@@ -1,0 +1,105 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/sql/Scanning.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header('Location: welcome.php');
+}
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('Scanning') ?>
+    <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TabBar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TableLoader.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TemplateUi.css?<?=Version::getUrlSuffix() ?>' />
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/ScanningPage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/event-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TabBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/CmdBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/DateInput.js?<?=Version::getUrlSuffix() ?>'></script>
+    <style>
+TABLE.c2 TD {
+  vertical-align:top;
+}
+DIV.ScanIndex {
+  overflow-y:scroll;
+  padding-right:5px;
+}
+DIV.ScanFile {
+  border:1px dashed #c0c0c0;
+  padding:5px;
+  margin-bottom:0.2em;
+  cursor:hand;
+}    
+DIV.ScanFile IMG {
+  border:1px solid #c0c0c0;
+}
+DIV.check {
+  border:1px solid #c0c0c0;
+  background-color:#C3FDB8;
+}
+DIV.EntryFolder {
+  padding:5px;
+  background-color:#FFF8C6;
+  border:1px solid #C8B560;
+  margin-right:10px;
+}
+DIV.EntryFolderList {
+  border:1px solid #c0c0c0;
+  height:200px;
+  background-color:white;
+  overflow-y:scroll;
+  padding:4px;
+  margin-top:10px;
+}
+UL.eform A.client {
+  font-size:12pt;
+  font-weight:bold;
+  background-position:1px left;
+}
+    </style>
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <table class='h'>
+          <tr>
+            <th><h1>Scanning Center</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+          <div id='scan-indexing'>
+            <div class='spacer'>&nbsp;</div>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <? include 'inc/footer.php' ?>
+  </body>
+<script type='text/javascript'>
+var C_ScanIndex = <?=ScanIndex::getStaticJson() ?>;
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  ScanningPage.init(query);
+}
+</script>      
+</html>

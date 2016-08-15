@@ -1,0 +1,68 @@
+<?php
+require_once 'php/data/rec/sql/_LookupRec.php';
+//
+/**
+ * Lookup Areas
+ * @author Warren Hornsby 
+ */
+class LookupAreas {
+  //
+  /**
+   * @return array(Area,..)
+   */
+  static function getAll() {
+    $recs = Area::fetchAll();
+    Rec::sort($recs, new RecSort('name'));
+    return $recs;
+  }
+  /**
+   * @return string "'AREAS':['name',..]"
+   */
+  static function getJsonList() {
+    $recs = self::getAll();
+    $opts = array();
+    foreach ($recs as &$rec) 
+      $opts[$rec->_instance] = $rec->name;
+    return "'AREAS':" . jsonencode($opts);
+  }
+  static function save($o) {
+    //TODO
+  }
+}
+/**
+ * Areas
+ */
+class Area extends LookupRec {
+  //
+  public $name;
+  public $inactive;
+  //
+  const FIRST_CUSTOM_ID = 1000;  // first ID to use when creating custom recs 
+  //
+  public function getLookupTable() {
+    return 28;
+  }
+  public function getAssociation() {
+    return self::ASSOCIATE_BY_INSTANCE_ID;
+  }
+  public function _toJsonObject() {
+    $this->id = $this->_instance;
+    $this->removeLookupProps();
+    return parent::_toJsonObject();
+  }
+  //
+  static function fetchAll() {
+    $c = new self();
+    $recs = parent::fetchAll($c);
+    return self::eliminateInactives($recs);
+  }
+  static function eliminateInactives($recs) {
+    $actives = array(); 
+    foreach ($recs as $rec) {
+      if (! $rec->inactive)
+        $actives[] = $rec;
+    }
+    return $actives;
+  }
+}
+?>

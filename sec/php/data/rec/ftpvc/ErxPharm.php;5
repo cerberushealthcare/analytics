@@ -1,0 +1,69 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/data/rec/sql/ClientStub.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Pharmacy Renewal Line
+ */
+class ErxPharm extends Rec {
+  //
+  public $renewalRequestGuid;
+  public $receivedTimestamp;
+  public $locationName;
+  public $doctorFullName;
+  public $pharmacyInfo;
+  public $pharmacyFullInfo;
+  public $pharmacyStoreName;
+  public $patientFirstName;
+  public $patientMiddleName;
+  public $patientLastName;
+  public $patientDOB;
+  public $patientGender;
+  public $drugInfo;
+  public $numberOfRefills; 
+  public $externalLocationId;
+  public $externalDoctorId;
+  public $externalPatientId;
+  public $externalPrescriptionId;
+  public $quantity;
+  public $sig;
+  public $ncpdpId;
+  public $spare1;
+  public $spare2;
+  public $spare3;
+  public $spare4;
+  public $spare5;
+  public /*ClientStub*/ $ClientStub;
+  public /*UserStub*/ $UserStub_Doctor;
+  //
+  public function getJsonFilters() {
+    return array(
+      'patientDOB' => JsonFilter::informalDate(),
+    	'receivedTimestamp' => JsonFilter::informalDateTime());
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    $o->_name = "$this->patientLastName, $this->patientFirstName $this->patientMiddleName";
+    return $o;
+  }
+  /**
+   * @param [RenewalSummaryV2,..] $reqs
+   * @return array(ErxPharm,..)
+   */
+  public static function fromRenewalRequests($rqs) {
+    $recs = array();
+    if ($rqs !== null) 
+      foreach ($rqs as &$rq) {
+        $rec =  new ErxPharm(get_object_vars($rq));
+        $recs[$rec->renewalRequestGuid] = $rec;
+      } 
+    return $recs;
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('ErxPharm');
+  }
+}
+?>
+

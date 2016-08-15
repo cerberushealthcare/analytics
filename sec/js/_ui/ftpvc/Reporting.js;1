@@ -1,0 +1,331 @@
+/**
+ * Tile CritRecEntry
+ */
+CritRecEntry = {
+  create:function(container) {
+    return Html.Tile.create(container, 'CritRecEntry').extend(function(self) {
+      return {
+        init:function() {
+          self.table = Html.Table.create().into(self).tbody();
+        },
+        /*
+         * @arg RepCritRec rec
+         */
+        load:function(rec) {
+          self.rec = rec;
+          self.table.clean();
+          rec.forEachValue(function(cv) {
+            CritValueEntry.create(self.table.tr(), cv);
+          })
+        }
+      }
+    })
+  }
+}
+/**
+ * Span CritValueEntry
+ */
+CritValueEntry = {
+  /*
+   * @arg TrAppender tr
+   * @arg RepCritValue cv 
+   */
+  create:function(tr, cv) {
+    return Html.Span.create('CritValueEntry').extend(function(self) {
+      return {
+        init:function() {
+          tr.td(self.label = Html.Span.create('FidLabel'));
+          tr.td(self.op = Html.Select.create().addClass('mr5').bubble('onchange', self._toggle), 'Op');
+          tr.td(self.spans = CritValueEntry.Spans.create());
+          self.load(cv);
+        },
+        load:function(cv) {
+          self.op.load(Map.extract(RepCritValue.OPS, cv.getFixedOps()), '');
+          self.spans.load(cv.getFixedValues());
+          self.label.text(cv.fid);
+          self.op.setValue(cv.op);
+          self.spans.setValue(cv.value);
+          return self;
+        },
+        //
+        _toggle:function() {
+          switch (self.op.getValue()) {
+            case '':
+              self.spans.hide();
+              break;
+            case RepCritValue.OP_BETWEEN:
+              self.spans.showBetween();
+              break;
+            case RepCritValue.OP_IS:
+              self.spans.showSelect();
+              break;
+            default:
+              self.spans.showDefault();
+          }
+        }
+      }
+    })
+  },
+  Spans:{
+    create:function() {
+      return Html.Span.create().extend(function(self) {
+        return {
+          init:function() {
+            self.spanDefault = CritValueEntry.SpanDefault.create(self);
+            self.spanBetween = CritValueEntry.SpanBetween.create(self);
+            self.spanSelect = CritValueEntry.SpanSelect.create(self);
+            self.hide();
+          },
+          /*
+           * @arg map for spanSelect {'M':'Male','F':'Female'} (optional)
+           */
+          load:function(map) {
+            if (map) 
+              self.spanSelect.load(map);
+          },
+          hide:function() {
+            self.spanDefault.hide();
+            self.spanBetween.hide();
+            self.spanSelect.hide();
+            self.span = null;
+          },
+          showDefault:function() {
+            self.spanBetween.hide();
+            self.spanSelect.hide();
+            self.span = self.spanDefault.show();
+          },
+          showBetween:function() {
+            self.spanDefault.hide();
+            self.spanSelect.hide();
+            self.span = self.spanBetween.show();
+          },
+          showSelect:function() {
+            self.spanDefault.hide();
+            self.spanBetween.hide();
+            self.span = self.spanSelect.show();
+          },
+          setValue:function(value) {
+            if (self.span)
+              self.span.setValue(value);
+          },
+          getValue:function() {
+            if (self.span)
+              return self.span.getValue();
+          }
+        }
+      })  
+    }
+  },
+  SpanDefault:{
+    create:function(container) {
+      return Html.Span.create().into(container).extend(function(self) {
+        return {
+          init:function() {
+            self.input = Html.InputText.create().into(self);
+          },
+          show:function() {
+            Html._proto.show.call(self);
+            self.input.focus();
+            return self;
+          },
+          setValue:function(value) {
+            self.input.setValue(value);
+          },
+          getValue:function() {
+            return self.input.getValue();
+          }
+        }
+      })
+    }
+  },
+  SpanBetween:{
+    create:function(container) {
+      return CritValueEntry.SpanDefault.create(container).extend(function(self) {
+        return {
+          init:function() {
+            self.input.setSize(5);
+            self.label = Html.Label.create('p5', 'and').into(self);
+            self.input2 = Html.InputText.create(null).setSize(5).into(self);
+          },
+          setValue:function(value) {
+            var a = value.split(',');
+            self.input.setValue(a[0]);
+            self.input2.setValue((a.length > 0) ? a[1] : null);
+          },
+          getValue:function(value) {
+            var a = [self.input.getValue(), self.input2.getValue()];
+            return a.join(',');
+          }
+        }
+      })
+    }
+  },
+  SpanSelect:{
+    create:function(container) {
+      return Html.Span.create().into(container).extend(function(self) {
+        return {
+          load:function(map) {
+            self.select = (Map.length(map) > 2) ? Html.Select.create(map) : Html.LabelRadios.create(map);
+            self.select.into(self);
+          },
+          show:function() {
+            Html._proto.show.call(self);
+            self.select.focus();
+            return self;
+          },
+          setValue:function(value) {
+            self.select.setValue(value);
+          },
+          getValue:function() {
+            return self.select.getValue();
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * Rec ReportCriteria
+ *   RepCritRec Rec
+ */
+ReportCriteria = Object.Rec.extend({
+  //
+  onload:function(json) {
+    this.Rec = RepCritRec.revive(this.Rec);
+  }
+})
+/**
+ * Rec RepCritRec
+ *   RepCritJoin[] Joins
+ */
+RepCritRec = Object.Rec.extend({
+  //
+  _getReviveProto:function(json) {
+    switch (json._class) {
+      case 'Client_Rep':
+        return RepCrit_Client;
+      default:
+        return this;
+    }
+  },
+  onload:function(json) {
+    for (var fid in json) 
+      if (fid == 'Joins')  
+        this.Joins = RepCritJoin.reviveAll(json.Joins);
+      else if (this._isCritValue(fid)) 
+        this[fid] = this._getCritValueProto(fid).revive(json[fid], this._getFidLabel(fid));
+  },
+  /*
+   * @callback(RepCritValue)
+   */
+  forEachValue:function(callback) {
+    for (var fid in this)
+      if (this[fid].fid)
+        callback(this[fid]);
+  },
+  //
+  _isCritValue:function(fid) {
+    if (fid != '_class') 
+      return true;
+  },
+  _getCritValueProto:function(fid) {
+    return RepCritValue;  
+  },
+  _getFidLabel:function(fid) {
+    return this._fixLabel(fid);
+  },
+  _fixLabel:function(fid) {
+    return fid.substr(0, 1).toUpperCase() + fid.substr(1).replace(/([A-Z])/g, function($1){return " "+$1.toUpperCase()});
+  }
+})
+/**
+ * RepCritRec RepCrit_Client
+ */
+RepCrit_Client = RepCritRec.extend({
+  //
+  _getCritValueProto:function(fid) {
+    switch (fid) {
+      case 'birth':
+        return RepCritValueNumeric;
+      case 'sex':
+        return RepCritValueSex;
+      case 'deceased':
+        return RepCritValueBool;
+      case 'ethnicity':
+        return RepCritValueEthnicity;
+      case 'race':
+        return RepCritValueRace;
+      default:
+        return RepCritValue;
+    }
+  },
+  _getFidLabel:function(fid) {
+    switch (fid) {
+      case 'uid':
+        return 'Patient ID';
+      case 'birth':
+        return 'Age';
+      default:
+        return RepCritRec._getFidLabel.call(this, fid);
+    }
+  }
+})
+/**
+ * Rec RepCritJoin
+ *   RepCritRec[] Recs
+ */
+RepCritJoin = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Recs) 
+      RepCritRec.reviveAll(this.Recs);
+  }
+})
+/**
+ * Rec RepCritValue
+ */
+RepCritValue = Object.Rec.extend({
+  onload:function(json, i) {
+    this.fid = i;
+  },
+  getFixedOps:function() {
+    return [RepCritValue.OP_EQ, RepCritValue.OP_START, RepCritValue.OP_CONTAIN, RepCritValue.OP_IN];
+  },
+  getFixedValues:function() {
+  }
+})
+RepCritValueNumeric = RepCritValue.extend({
+  getFixedOps:function() {
+    return [RepCritValue.OP_EQ, RepCritValue.OP_LTN, RepCritValue.OP_GTN, RepCritValue.OP_BETWEEN];  
+  }
+})
+RepCritValueAge = RepCritValue.extend({ 
+  getFixedOps:function() {
+    return [RepCritValue.OP_EQ, RepCritValue.OP_OLDER, RepCritValue.OP_YOUNGER, RepCritValue.OP_AGERANGE]  
+  }
+})
+RepCritValueFixed = RepCritValue.extend({
+  getFixedOps:function() {
+    return [RepCritValue.OP_IS]  
+  }
+})
+RepCritValueSex = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return {'M':'Male','F':'Female'};
+  }
+})
+RepCritValueBool = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return {'Y':'Yes','N':'No'};
+  }
+})
+RepCritValueEthnicity = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return C_Client.ETHNICITIES;
+  }
+})
+RepCritValueRace = RepCritValueFixed.extend({
+  getFixedValues:function() {
+    return C_Client.RACES;
+  }
+})

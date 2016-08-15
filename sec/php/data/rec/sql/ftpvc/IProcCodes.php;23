@@ -1,0 +1,108 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  /**
+   * @return array(Ipc,..)
+   */
+  static function getAll($cat) {
+    global $myLogin;
+    $recs = Ipc::fetchAll($myLogin->userGroupId, $cat);
+    return Rec::sort($recs, new RecSort('name'));
+  }
+  /**
+   * @param stdClass $obj
+   * @return Ipc
+   */
+  static function saveCustom($obj) {
+    global $myLogin;
+    $ugid = $myLogin->userGroupId;
+    $rec = Ipc::fromUi($ugid, $obj);
+    if ($rec->ipc == null) {
+      $rec->ipc = Ipc::fetchNextAvailableIpc($ugid);
+      $rec->saveAsInsert();
+    } else {
+      $rec->save();
+    }
+    return $rec;
+  }
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends IpcRec {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $name;
+  public $desc;
+  public $cat;
+  //
+  static function fetch($ipc, $ugid) {
+    return self::fetchTopLevel($ipc, $ugid);
+  }
+  static function fetchByName($ugid, $name) {
+    $c = self::asCriteria($ugid);
+    $c->name = $name;
+    return self::fetchOneBy($c);
+  }
+  static function fetchCustomByName($ugid, $name) {
+    if ($ugid && $name) {
+      $c = new static();
+      $c->userGroupId = $ugid;
+      $c->name = $name;
+      return self::fetchOneBy($c);
+    }
+  }
+  
+  static function fetchAll($ugid, $cat = null) {
+    $c = self::asCriteria($ugid);
+    $c->cat = $cat;
+    return parent::fetchAllBy($c, null, 2000);
+  }
+  static function fetchMapByName($ugid) {
+    return parent::fetchMapBy(self::asCriteria($ugid), 'name');
+  }
+  static function fetchSurgMap($ugid) {
+    $c = self::asCriteria($ugid);
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+  static function asRequiredJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+  static function asOptionalJoin($fk = 'ipc') {
+    $c = new static();
+    return CriteriaJoin::optional($c, $fk);
+  }
+  static function fromUi($ugid, $obj) {
+    $rec = new static($obj);
+    $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  static function fetchNextAvailableIpc($ugid) {
+    $max = Dao::fetchValue("SELECT MAX(ipc) FROM iproc_codes WHERE user_group_id=$ugid");
+    if ($max)
+      return intval($max) + 1;
+    else
+      return 1000000;
+  }
+  static function saveAsNewCustom($ugid, $name, $cat) {
+    $rec = new static();
+    $rec->ipc = self::fetchNextAvailableIpc($ugid);
+    $rec->userGroupId = $ugid;
+    $rec->name = $name;
+    $rec->desc = $name;
+    $rec->cat = $cat;
+    $rec->saveAsInsert();
+    return $rec;
+  }
+  
+}

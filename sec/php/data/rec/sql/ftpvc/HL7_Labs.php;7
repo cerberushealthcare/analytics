@@ -1,0 +1,382 @@
+<?php
+require_once 'php/data/hl7/msg/_HL7Message.php';
+require_once 'php/data/hl7/msg/ORUMessage.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/OrderEntry.php';
+require_once 'php/data/rec/GroupFolder_Labs.php';
+//
+/**
+ * HL7 Lab Interface
+ * @author Warren Hornsby
+ */
+class HL7_Labs {
+  //
+  /**
+   * @param string $data HL7 message data
+   * $param string $source (optional)
+   * @param int $ugid (optional)
+   * @return HL7Inbox
+   */
+  public function receive($data, $source = null, $ugid = null) {
+    global $myLogin;
+    if ($ugid == null)
+      $ugid = $myLogin->userGroupId;
+    $msg = HL7Message::from($data);
+    // todo: auto-reconcile
+    if ($msg) {
+      if ($source == null)
+        $source = $msg->Header->sendApp;
+      $rec = HL7Inbox::add($msg, $source, $ugid);
+      return $rec;
+    }
+  }
+  /**
+   * @return HL7Inbox 
+   */
+  public function upload() {
+    $folder = GroupFolder_Labs::open();
+    $file = $folder->upload();
+    $message = $file->readContents();
+    return self::receive($message);
+  }
+  /**
+   * @return array(HL7Inbox,..) 
+   */
+  public function getInbox() {
+    global $myLogin;
+    $recs = HL7Inbox::fetchUnreconciled($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @return int
+   */
+  public function getInboxCt() {
+    $recs = self::getInboxCt();
+    return (empty($recs)) ? 0 : count($recs);
+  }
+  /**
+   * @param int $id hl7InboxId
+   * @return LabRecon 
+   */
+  public function getLabRecon($id) {
+    $inbox = HL7Inbox::fetch($id);
+    if ($inbox) {
+      $rec = LabRecon::from($inbox);
+      return $rec;
+    }
+  }
+  /**
+   * @param int $inboxId 
+   * @param int $cid
+   * @param stdClass $procs [Proc+ProcResult[],..]
+   */
+  public function saveLabRecon($inboxId, $cid, $procs) {
+    Dao::begin();
+    try {
+      global $myLogin;
+      $recs = Proc_LabRecon::reviveAll($procs);
+      SqlRec::saveAll($recs);
+      $inbox = HL7Inbox::fetch($inboxId);
+      $inbox->saveAsReconciled($cid, $myLogin->userId);
+      Dao::commit();
+    } catch (Exception $e) {
+      Dao::rollback();
+      throw $e;
+    }
+  }
+  /**
+   * Match lab message to potential client(s)
+   * @param ORUMessage $msg
+   * @return array(cid=>Client,..) or null 
+   */
+  public function match($msg) {
+    $rec = ClientSearch_Lab::from($msg);
+    if ($rec)
+      $recs = $rec->search();
+    return $recs;
+  }
+  /**
+   * Import lab message data
+   * @param int $cid
+   * @param ORUMessage $msg
+   */
+  public function import($cid, $msg) {
+    
+  }
+}
+/**
+ * SqlRec HL7Inbox
+ */
+class HL7Inbox extends SqlRec {
+  //
+  public $hl7InboxId;
+  public $userGroupId;
+  public $msgType; 
+  public $source;
+  public $dateReceived;
+  public $patientName;
+  public $cid;
+  public $reconciledBy;
+  public $data;
+  //
+  public function getSqlTable() {
+    return 'hl7_inbox';
+  }
+  public function getJsonFilters() {
+    return array(
+      'dateReceived' => JsonFilter::informalDateTime());
+  }
+  public function getMessage() {
+    return HL7Message::from($this->data);
+  }
+  public function saveAsReconciled($cid, $userId) {
+    $this->cid = $cid;
+    $this->reconciledBy = $userId;
+    $this->save();
+  }
+  //
+  static function add($msg, $source, $ugid) {
+    $rec = self::from($msg, $source, $ugid);
+    if ($rec) 
+      $rec->save($ugid);
+    return $rec;
+  }
+  static function from($msg, $source, $ugid) {
+    if ($msg) {
+      $head = $msg->Header;
+      $patient = $msg->getPatientId();
+      $me = new static();
+      $me->userGroupId = $ugid;
+      $me->msgType = $head->msgType->getData();
+      $me->source = $source;
+      $me->dateReceived = nowNoQuotes();
+      if ($patient) 
+        $me->patientName = $patient->name->makeFUllName(); 
+      $me->data = $msg->getData();
+      return $me;
+    }
+  }
+  static function fetchUnreconciled($ugid) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->cid = CriteriaValue::isNull();
+    $recs = static::fetchAllBy($c);
+    return $recs;
+  }
+}
+/**
+ * Rec LabUpdate
+ */
+class LabRecon extends Rec {
+  //
+  public /*HL7Inbox*/ $Inbox;
+  public /*HL7Message*/ $Msg;
+  public /*Client[]*/ $Matches;
+  public /*Client_LabRecon*/ $Client; // if only one match
+  //
+  public function toJsonObject(&$o) {
+    $o->Msg = $o->Msg->sanitize();
+  }
+  public function getSoloMatchCid() {
+    if (count($this->Matches) == 1)
+      return key($this->Matches);
+  }
+  //
+  /**
+   * @param HL7Inbox $inbox
+   * @param int $cid (optional, omit to attempt match)
+   * @return LabRecon
+   */
+  static function from($inbox, $cid = null) {
+    $msg = $inbox->getMessage();
+    $me = new static();
+    $me->Inbox = $inbox;
+    $me->Msg = $msg;
+    if ($cid == null) {
+      $me->Matches = self::fetchClientMatches($msg);
+      $cid = $me->getSoloMatchCid();
+      if ($cid)
+        unset($me->Matches); 
+    }
+    if ($cid) 
+      $me->Client = Client_LabRecon::fetch($cid, $msg);
+    return $me;
+  }
+  //
+  private static function fetchClientMatches($msg) {
+    $rec = ClientSearch_Lab::from($msg);
+    if ($rec) {
+      $recs = $rec->search();
+      return $recs;
+    }
+  }
+}
+/**
+ * Client_LabRecon
+ */
+class Client_LabRecon extends Client {
+  /*
+  public TrackItem_LabRecon[] $TrackItems;
+  public Proc_LabRecon[] $Procs; 
+  */
+  static function fetch($cid, $message) {
+    $me = parent::fetch($cid);
+    $me->Address_Home = ClientAddress::fetchHome($cid);
+    $ugid = $me->userGroupId;
+    $me->TrackItems = TrackItem_LabRecon::fetchAll($ugid, $cid);
+    $me->Procs = Proc_LabRecon::from($ugid, $cid, $message);
+    return $me;
+  }
+}
+/**
+ * TrackItem_LabRecon
+ */
+class TrackItem_LabRecon extends TrackItem {
+  /*
+   * public $_checked;
+   */
+  //
+  public function markReceived() {
+    $this->status = self::STATUS_CLOSED;
+    $this->closedFor = self::CLOSED_FOR_RECEIVED;
+    $this->closedDate = nowNoQuotes();
+    $this->save();
+  } 
+  //
+  /**
+   * @return array(TrackItem_Lab,..) of open lab tracking items
+   */
+  static function fetchAll($ugid, $cid) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->clientId = $cid;
+    $c->trackCat = self::TCAT_LAB;
+    $c->status = CriteriaValue::lessThanNumeric(self::STATUS_CLOSED);
+    $recs = self::fetchAllBy($c);
+    $recs = self::check($recs);
+    return $recs;
+  }
+  /**
+   * @param TrackItem_Lab[] $recs
+   */
+  static function updateChecked($recs) {
+    foreach ($recs as $rec) {
+      if ($rec->_checked)   
+        $rec->markReceived();
+    }
+  }
+  //
+  protected static function check($recs) {
+    foreach ($recs as &$rec) 
+      $rec->_checked = true;
+    return $recs;
+  }
+}
+/**
+ * Proc_LabRecon
+ */ 
+class Proc_LabRecon extends Proc {
+  //
+  public function validate(&$rv) {
+    $rv->requires('ipc');
+  }
+  /**
+   * @param int $ugid
+   * @param int $cid
+   * @param ORUMessage $message
+   * @return array(Proc_Lab,..)
+   */
+  static function from($ugid, $cid, $message) {
+    $recs = array();
+    $codeSystem = $message->Header->sendApp;
+    $obsRequests = $message->getObsRequests();
+    foreach ($obsRequests as $obsRequest) 
+      $recs[] = self::fromObsRequest($ugid, $cid, $codeSystem, $obsRequest);
+    return $recs;
+  }
+  static function validateAll($procs) {
+    foreach ($procs as $proc) { 
+      $proc->validateThrow($proc);
+      foreach ($proc->ProcResults as $result) 
+        $result->validateThrow($result);
+    }
+  }
+  //
+  protected static function fromObsRequest($ugid, $cid, $codeSystem, $obsRequest) {
+    $me = new static();
+    $me->Ipc = Ipc::fetchByName($ugid, $obsRequest->serviceId->text);  // TODO: try to get ipc xref from IPC_XREF
+    $me->ipc = get($me->Ipc, 'ipc');
+    $me->userGroupId = $ugid;
+    $me->clientId = $cid;
+    $me->date = $obsRequest->obsDateTime->asSqlValue();
+    $me->ProcResults = ProcResult_LabRecon::from($me, $codeSystem, $obsRequest);
+    $me->_obr = $obsRequest->seq;
+    return $me;
+  }
+}
+/**
+ * ProcResult_LabRecon
+ *
+ */
+class ProcResult_LabRecon extends ProcResult {
+  //
+  public function validate(&$rv) {
+    $rv->requires('ipc');
+  }
+  /**
+   * @param Proc_Lab $proc
+   * @param string codeSystem
+   * @param OBR $obsRequest
+   * @return array(ProcResult_Lab,..)
+   */
+  static function from($proc, $codeSystem, $obsRequest) {
+    $recs = array();
+    foreach ($obsRequest->Observation as $index => $observation) 
+      $recs[] = self::fromObservation($proc, $codeSystem, $obsRequest, $observation, $index);
+    return $recs;
+  }
+  //
+  protected static function fromObservation($proc, $codeSystem, $obr, $obx, $i) {
+    $me = new static();
+    $me->clientId = $proc->clientId;
+    $me->seq = $i;
+    $me->date = $proc->date;
+    $me->Ipc = Ipc::fetchByName($proc->userGroupId, $obx->obsId->text);  // TODO: try to get ipc xref from IPC_XREF
+    $me->ipc = get($me->Ipc, 'ipc');
+    $me->value = $obx->get('value');
+    $me->valueUnit = $obx->get('units.id');
+    $me->range = $obx->get('range');
+    $me->interpretCode = self::makeInterpretCode($obx);
+    $me->comments = self::makeComments($obx);
+    $me->_obr = $obr->seq;
+    $me->_obx = $obx->seq;
+    logit_r($me);
+    return $me;
+  }
+  protected static function makeInterpretCode($obx) {
+    return $obx->get('abnormal');
+  }
+  protected static function makeComments($obx) {
+    return implode('\r\n', $obx->getComments());
+  }
+}
+/**
+ * ClientSearch_Lab
+ */
+class ClientSearch_Lab extends ClientSearch {
+  //
+  static function from($oru) {
+    if ($oru == null)
+      return;
+    $patient = $oru->getPatientId();
+    if ($patient == null)
+      return;
+    $me = new static();
+    $me->last = $patient->name->last;
+    $me->first = $patient->name->first;
+    $me->dob = $patient->birthDate->asSqlValue();
+    $me->sex = $patient->gender;
+    return $me;
+  }
+}

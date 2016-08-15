@@ -1,0 +1,23 @@
+<?php
+require_once "inc/tags.php";
+require_once 'inc/require-login.php';
+set_include_path('../');
+require_once 'php/data/rec/sql/PortalMessaging.php';  
+?>
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <? PHEAD('Messages', 'messaging.css') ?>
+    <? PHEAD_DATA('Messaging') ?>
+  </head>
+  <body>
+    <? PPAGEHEAD($me) ?>
+    <div id='page'></div>
+    <? PPAGEFOOT() ?>
+  </body>
+  <? JsonConstants::writeGlobals('MsgThread','MsgPost','MsgInbox') ?>
+  <script type='text/javascript'>
+		C_SendTos = <?=jsonencode(PortalMessaging::getMySendTos()) ?>;
+  </script>
+  <? PPAGE('MessagingPage', $me) ?>
+</html>

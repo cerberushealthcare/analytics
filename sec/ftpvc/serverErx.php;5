@@ -1,0 +1,117 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/ErxStatus.php'; 
+require_once 'php/data/rec/ErxPharm.php'; 
+require_once 'php/data/rec/ErxStatusCount.php'; 
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/newcrop/NewCrop.php';
+require_once 'php/data/rec/sql/Client.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  if ($action != 'pullNewCropStatus') 
+    logit('serverErx.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverErx.php (posted)');
+  logit_r($_POST);
+}
+switch ($action) {
+  /**
+   * Validate schema
+   * @return null
+   */
+  case 'validNewCropXml':
+    $newcrop = new NewCrop();
+    try {
+      $xml = $newcrop->buildClickThru($_GET['id']);
+      $m = new JAjaxMsg($action, 'null');
+    } catch (DomDataRequiredException $e) {
+      $m = new JAjaxMsg($action, jsonencode($e->required));
+    }
+    break;
+  /**
+   * Refresh meds/allergies
+   * @return Facesheet  
+   */
+  case 'refreshFromNewCrop':
+    $cid = $_GET['id'];
+    $since = geta($_GET, 'since');
+    try {
+      FacesheetDao::refreshFromNewCrop($cid);
+      $facesheet = FacesheetDao::getClientActiveMedsAllergies($cid);
+      if ($since) { 
+        $facesheet->audits = FacesheetDao::getNewCropAuditsSince($cid, $since);
+      }
+      $m = new JAjaxMsg($action, $facesheet->out());
+    } catch (Exception $e) {
+      $m = new JAjaxMsg('error', jsonencode($e->message));
+    }
+    break;
+  /**
+   * Pull status anchor numbers
+   * @return ErxStatusCount 
+   */
+  case 'pullNewCropStatus':
+    $newcrop = new NewCrop();
+    try {
+      $nc = $newcrop->pullAcctStatus();
+      $status = ErxStatusCount::fromNewCrop($nc);
+      $m = new JAjaxMsg($action, jsonencode($status));
+    } catch (SoapResultException $e) {
+      // will throw 'acct not found' prior to first time entering
+      logit_r($e, 'pullNewCropStatus exception');
+      $m = null;
+    }
+    break;
+  /**
+   * Get pharmacy requests
+   * @return array(ErxPharm,..)
+   */
+  case 'getNewCropPharm':
+    $newcrop = new NewCrop();
+    $resp = $newcrop->pullRenewalRequests();
+    $recs = ErxPharm::fromRenewalRequests($resp);
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  /**
+   * Get status detail
+   * @return array(ErxStatus,..) only those with a ClientStub found
+   */
+  case 'getNewCropStatusDetail':
+    $newcrop = new NewCrop();
+    $statuses = $newcrop->pullAcctStatusDetails();
+    $ers = array();
+    foreach ($statuses as $status => &$recs) {
+      if ($recs) 
+        foreach ($recs as &$rec) {
+          $er = ErxStatus::fromNewCrop($status, $rec);
+          if ($er->ClientStub)
+            $ers[] = $er; 
+        }
+    }
+    $m = new JAjaxMsg($action, jsonencode($ers));
+    break;
+  /**
+   * Search for clients
+   * @param ErxPharm $obj
+   * @return array(Client,..)
+   */
+  case 'searchClients':
+    $recs = Client::search($obj->patientLastName, $obj->patientFirstName, $obj->patientDOB, $obj->patientGender);
+    $m = new JAjaxMsg($action, jsonencode($recs));
+    break;
+  //
+  default:
+    $m = new JAjaxMsg('error', $action);
+}
+if ($m != null) 
+  echo $m->out();
+?>

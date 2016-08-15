@@ -1,0 +1,61 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php';
+require_once 'php/data/rec/sql/cms/CmsReports.php';
+require_once 'php/data/rec/GroupFolder_Pqri.php';
+require_once 'php/data/xml/pqri/PQRI.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  $id = geta($_GET, 'id');
+  Logger::debug(currentUrl());
+}
+try { 
+  switch ($action) {
+    //
+    case 'report':
+      $id = str_replace(' ', '', $id);
+      $method = "get$id";
+      $from = '2011-01-01';
+      $to = '2012-01-01';
+      $report = CmsReports::$method($from, $to);
+      $m = new JAjaxMsg($action, jsonencode($report));
+      break;
+    case 'r':
+      $id = str_replace(' ', '', $id);
+      $method = "get$id";
+      $from = '2011-01-01';
+      $to = '2012-01-01';
+      $report = CmsReports::$method($from, $to);
+      echo '<pre>';
+      p_r($report);
+      break;
+    case 'get':
+      $id = str_replace(' ', '', $id);
+      $method = "get$id";
+      $from = '2011-01-01';
+      $to = '2012-01-01';
+      $report = CmsReports::$method($from, $to);
+      $xml = PQRI::from($report);
+      $folder = GroupFolder_Pqri::open();
+      $file = $folder->save($xml);
+      $m = new JAjaxMsg($action, jsonencode($file));
+      break;
+    case 'download':
+      $folder = GroupFolder_Pqri::open();
+      $folder->download($id);
+      exit;
+  }
+} catch (DisplayableException $e) {
+  echo $e->getMessage();
+} catch (Exception $e) {
+  //$e = Logger::logException($e);
+  echo $e->getMessage();
+} 
+if ($m != null) 
+  echo $m->out();

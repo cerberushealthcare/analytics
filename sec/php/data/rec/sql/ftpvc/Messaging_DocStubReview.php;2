@@ -1,0 +1,262 @@
+<?php
+require_once 'php/data/rec/sql/_MessagingRecs.php';
+require_once 'php/data/rec/sql/Documentation.php';
+//
+/**
+ * Messaging for Doc Stub Review
+ * Tracks documentation review (signing)
+ * @author Warren Hornsby
+ */
+class Messaging_DocStubReview {
+  //
+  /**
+   * @return int
+   */
+  static function getUnsignedCt() {
+    global $login;
+    $ct = MsgInbox_Stub::countUnsigned($login->userId);
+    return $ct;
+  }
+  /**
+   * @return array(MsgThread_Stub,..)
+   */
+  static function getUnsignedThreads() {
+    global $login;
+    $inboxes = MsgInbox_Stub::fetchAllUnsigned($login->userId);
+    $recs = MsgThread_Stub::fetchAllByInboxes($inboxes);
+    return $recs;
+  }
+  /**
+   * @param DocStub $stub
+   * @return MsgThread_Stub
+   */
+  static function getThreadForStub($stub) {
+    global $login;
+    $rec = MsgThread_Stub::fetchByStub($stub, $login->userGroupId, $login->userId);
+    return $rec;
+  }
+  /**
+   * @param int $to USER_ID
+   * @param DocStub $stub
+   * @param int $priority MsgThread::PRIORITY 
+   * @return MsgThread_Stub
+   */
+  static function createThread($to, $stub, $priority = MsgThread::PRIORITY_NORMAL) {
+    global $login;
+    Dao::begin();
+    try {
+      $stub = DocStub::refetch($stub);
+      if ($stub == null)
+        throw new Exception("No stub found");
+      $thread = MsgThread_Stub::fetchByStub($stub, $login->userGroupId);
+      if ($thread)
+        throw new Exception("Unsigned thread $thread->threadId already exists for stub.");
+      $client = ClientStub::fetch($stub->cid);
+      $sendTo = UserGroups::lookupUser($to);
+      $thread = MsgThread_Stub::create($login->userGroupId, $login->userId, $login->User->name, $stub, $client, $priority);
+      $post = MsgPost_Stub::create_asRequest($thread, $login->userId, $login->User->name, $sendTo);
+      MsgInbox_Stub::create($thread, $post, $to);
+      Dao::commit();
+      return MsgThread_Stub::fetch($thread->threadId);
+    } catch (Exception $e) {
+      Dao::rollback();
+      throw $e;
+    }
+  }
+  /**
+   * @param int $threadId
+   * @return MsgThread_Stub
+   */
+  static function postSignature($threadId) {
+    global $login;
+    $userId = $login->userId;
+    $thread = MsgThread_Stub::fetchForSigning($threadId, $userId);
+    if ($thread == null) 
+      throw new Exception("No unread thread $threadId user $userId");
+    if ($thread->Stub == null)
+      throw new Exception("No stub for thread $threadId user $userId");
+    Dao::begin();
+    try {
+      DocStub::postSignature($thread->Stub, $userId);
+      MsgPost_Stub::create_asSigned($thread, $userId, $login->User->name);
+      $thread->Inbox->save_asSigned();
+      $thread->save_asClosed();
+      Dao::commit();
+      return MsgThread_Stub::fetch($threadId, $login->userId);
+    } catch (Exception $e) {
+      Dao::rollback();
+      throw $e;
+    }
+  }
+}
+class MsgThread_Stub extends MsgThreadRec implements NoAudit {
+  //
+  public $threadId;
+  public $userGroupId;
+  public $clientId;
+  public $creatorId;
+  public $creator;
+  public $dateCreated;
+  public $dateToSend;
+  public $dateClosed;
+  public $type;
+  public $status;
+  public $priority;
+  public $subject;
+  public $stubType;
+  public $stubId;
+  public /*DocStub*/ $Stub;
+  public /*MsgPost_Stub[]*/ $Posts;
+  public /*MsgInbox_Stub*/ $Inbox;
+  public /*ClientStub*/ $Client;
+  //
+  public function attachStub() {
+    $this->Stub = DocStub::fetch($this->stubType, $this->stubId);
+  }
+  public function save_asClosed() {
+    $this->status = static::STATUS_CLOSED;
+    $this->dateClosed = nowNoQuotes();
+    $this->save();
+  }
+  //
+  static function create($ugid, $creatorId, $creator, $stub, $client, $priority) {
+    $me = new static();
+    $me->userGroupId = $ugid;
+    $me->creatorId = $creatorId;
+    $me->creator = $creator;
+    $me->type = static::TYPE_STUB_REVIEW;
+    $me->status = static::STATUS_OPEN;
+    $me->priority = $priority;
+    $me->subject = $stub->lookupType();
+    if ($client) {
+      $me->clientId = $client->clientId;
+      $me->subject .= ': ' . $client->getFullName();
+    } 
+    $me->stubType = $stub->type;
+    $me->stubId = $stub->id;
+    $me->save();
+    return $me;
+  }
+  static function fetch($threadId, $userId = null) {
+    $c = new static();
+    $c->threadId = $threadId;
+    $c->Posts = MsgPost_Stub::asJoin();
+    $c->Client = new ClientStub();
+    if ($userId)
+      $c->Inbox = MsgInbox_Stub::asJoin($userId); 
+    $rec = static::fetchOneBy($c);
+    return $rec;
+  }
+  static function fetchByStub($stub, $ugid, $userId = null) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->stubType = $stub->type;
+    $c->stubId = $stub->id;
+    $c->Posts = MsgPost_Stub::asJoin();
+    if ($userId)
+      $c->Inbox = MsgInbox_Stub::asJoin($userId); 
+    $rec = static::fetchOneBy($c);
+    return $rec;
+  }
+  static function fetchForSigning($threadId, $userId) {
+    $c = new static();
+    $c->threadId = $threadId;
+    $c->Inbox = MsgInbox_Stub::asUnsignedJoin($userId);
+    $rec = static::fetchOneBy($c);
+    if ($rec)
+      $rec->attachStub();
+    return $rec;
+  }
+  static function fetchAllByInboxes($inboxes) {
+    $recs = array();
+    foreach ($inboxes as $inbox) 
+      $recs[] = static::fetchByInbox($inbox);
+    return $recs;
+  }
+  static function fetchByInbox($inbox) {
+    $rec = static::fetch($inbox->threadId);
+    $rec->attachStub();
+    return $rec;
+  }
+}
+class MsgPost_Stub extends MsgPostRec implements NoAudit {
+  //
+  public $postId;
+  public $threadId;
+  public $action;
+  public $dateCreated;
+  public $authorId;
+  public $author;
+  public $body;
+  public $sendTo;
+  public $data;
+  //
+  static function asJoin() {
+    $c = new static();
+    return CriteriaJoin::requires($c);
+  }
+  static function create($thread, $userId, $name, $sendTo, $action) {
+    $me = new static();
+    $me->threadId = $thread->threadId;
+    $me->action = $action;
+    $me->dateCreated = nowNoQuotes();
+    $me->authorId = $userId;
+    $me->author = $name;
+    $me->sendTo = $sendTo;
+    $me->save();
+    return $me;
+  }
+  static function create_asSigned($thread, $userId, $name) {
+    return static::create($thread, $userId, $name, null, static::ACTION_SIGNED);
+  }
+  static function create_asRequest($thread, $userId, $name, $sendTo) {
+    return static::create($thread, $userId, $name, $sendTo, static::ACTION_CREATE);
+  }
+}
+class MsgInbox_Stub extends MsgInboxRec implements NoAudit {
+  //
+  public $inboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  //
+  public function save_asSigned() {
+    $this->isRead = static::IS_SIGNED;
+    $this->save();
+    return $this;
+  }
+  //
+  static function create($thread, $post, $recipient) {
+    $me = new static();
+    $me->recipient = $recipient;
+    $me->threadId = $thread->threadId;
+    $me->postId = $post->postId;
+    $me->isRead = static::IS_UNSIGNED;
+    $me->save();
+    return $me;
+  }
+  static function countUnsigned($userId) {
+    $c = static::asCriteria($userId, static::IS_UNSIGNED);
+    return static::count($c);
+  }
+  static function fetchAllUnsigned($userId) {
+    $c = static::asCriteria($userId, static::IS_UNSIGNED);
+    return static::fetchAllBy($c);
+  } 
+  static function asJoin($userId) {
+    $c = static::asCriteria($userId, null);
+    return CriteriaJoin::requires($c);
+  }
+  static function asUnsignedJoin($userId) {
+    $c = static::asCriteria($userId, static::IS_UNSIGNED);
+    return CriteriaJoin::requires($c);
+  }
+  //
+  private static function asCriteria($userId, $isRead) {
+    $c = new static();
+    $c->recipient = $userId;
+    $c->isRead = $isRead;
+    return $c;
+  }
+}

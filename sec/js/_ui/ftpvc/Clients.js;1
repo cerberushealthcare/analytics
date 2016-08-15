@@ -1,0 +1,46 @@
+/**
+ * Anchor ClientSelector
+ */
+ClientSelector = {
+  create:function() {
+    return Html.AnchorAction.create('client').extend(function(self) {
+      return {
+        onset:function(rec) {},
+        //
+        init:function() {
+          self.set();
+        },
+        /*
+         * @arg Client rec (optional) 
+         */
+        set:function(rec) {
+          self.rec = rec;
+          self.setText((rec) ? rec.name : 'Select a patient');
+        },
+        setValueText:function(value, text) {
+          self.rec = {'clientId':value};
+          self.setText(text);
+        },
+        /*
+         * @return Client
+         */
+        getValue:function() {
+          return self.rec.clientId;
+        },
+        /*
+         * @return string
+         */
+        getText:function() {
+          return self.innerText;
+        },
+        //
+        onclick:function() {
+          PatientSelector.pop(function(client) {
+            self.set(client);
+            self.onset(client);
+          })
+        }
+      }
+    })
+  }
+}

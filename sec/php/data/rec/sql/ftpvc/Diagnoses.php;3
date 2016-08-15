@@ -1,0 +1,331 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once "php/dao/DataDao.php";
+//
+/**
+ * Diagnoses DAO
+ * - FaceDiagnosis (sid=null): Diagnosiss record (by date)
+ * - SessionDiagnosis (sid>0): Built from closed note (generates a FaceDiagnosis) 
+ * @author Warren Hornsby
+ */
+class Diagnoses {
+  /**
+   * Build facesheet records from unprocessed session history and old facesheet records
+   * @param int $cid
+   */
+  static function rebuild($cid) {
+    Diagnosis::buildFacesFromSessions($cid);
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceDiagnosis,..)
+   */
+  static function getActive($cid) {
+    self::rebuild($cid);
+    $recs = FaceDiagnosis::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort('-date', 'text'));
+    return $recs; 
+  }
+  /**
+   * Get all facesheet records
+   * @param int $cid
+   * @return array(FaceDiagnosis,..)
+   */
+  static function getAll($cid) {
+    self::rebuild($cid);
+    $recs = FaceDiagnosis::fetchAll($cid);
+    Rec::sort($recs, new RecSort('-active', '-date', 'text'));
+    return $recs; 
+  }
+  /**
+   * Get session records by date
+   * @param int $cid
+   * @return array(SessionDiagnosis,..)
+   */
+  static function getHistory($cid) {
+    $recs = SessionDiagnosis::fetchAll($cid);
+    Rec::sort($recs, new RecSort('-date', 'sessionId', 'text'));
+    return $recs;
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return FaceDiagnosis
+   */
+  static function save($o) {
+    global $myLogin;
+    return FaceDiagnosis::saveFromUi($o, $myLogin->userGroupId);
+  }
+  /**
+   * @param int $id
+   * @return int client ID
+   */
+  public static function delete($id) {
+    $rec = FaceDiagnosis::fetch($id);
+    if ($rec) {
+      $cid = $rec->clientId;
+      FaceDiagnosis::delete($rec);
+      return $cid;
+    }
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return FaceDiagnosis
+   */
+  static function deactivate($id) { 
+    $face = FaceDiagnosis::fetch($id);
+    if ($face) {
+      $face->deactivate();
+      return $face;
+    }
+  }
+}
+//
+/**
+ * Diagnosis
+ */
+class Diagnosis extends FsDataRec {
+  //
+  public $dataDiagnosesId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+  public $parUid;
+  public $text;
+  public $parDesc;
+  public $icd;
+  public $active;
+  public $dateUpdated;
+  public $dateClosed;
+  public $status;
+  //
+  const STATUS_ACTIVE = '1';
+  const STATUS_CHRONIC = '2';
+  const STATUS_INTERMITTENT = '3';
+  const STATUS_RECURRENT = '4';
+  const STATUS_RULE_OUT = '5';
+  const STATUS_RESOLVED = '0';
+  const STATUS_INACTIVE = '10';
+  const STATUS_RULED_OUT = '11';
+  static $STATUSES = array(
+    self::STATUS_ACTIVE => 'Active',
+    self::STATUS_CHRONIC => 'Chronic',
+    self::STATUS_INTERMITTENT => 'Intermittent',
+    self::STATUS_RECURRENT => 'Recurrent',
+    self::STATUS_RULE_OUT => 'Rule Out',
+    self::STATUS_RESOLVED => 'Resolved',
+    self::STATUS_INACTIVE => 'Inactive',
+    self::STATUS_RULED_OUT => 'Ruled Out');
+  static $ACTIVES = array(
+    self::STATUS_ACTIVE => 1,
+    self::STATUS_CHRONIC => 1,
+    self::STATUS_INTERMITTENT => 1,
+    self::STATUS_RECURRENT => 1,
+    self::STATUS_RULE_OUT => 1);
+  //
+  public function getSqlTable() {
+    return 'data_diagnoses';
+  }
+  public function getKey() {
+    return 'text';
+  }
+  public function getFaceClass() {
+    return 'FaceDiagnosis';
+  }
+  public function getJsonFilters() {
+    return array(
+      'active' => JsonFilter::boolean(),
+      'date' => JsonFilter::editableDateApprox(),
+      'dateUpdated' => JsonFilter::informalDateTime(),
+      'dateClosed' => JsonFilter::editableDateApprox());
+  }
+  public function getAuditRecName() {
+    return 'Diagnosis';
+  }
+  public function save() {
+    $this->active = self::isActiveStatus($this->status);
+    parent::save();  
+  }
+  public function isActiveStatus() {
+    return isset(self::$ACTIVES[$this->status]);
+  }
+  //
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  } 
+  /**
+   * @param object $o JSON
+   * @param int $ugid
+   * @return Diagnosis 
+   */
+  static function fromUi($o, $ugid) {
+    $rec = new Diagnosis($o);
+    $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  /**
+   * Build new face records from session history
+   * @param int cid
+   */
+  static function buildFacesFromSessions($cid) {
+    $sessions = SessionDiagnosis::fetchAllUnbuilt($cid);
+    if ($sessions) {
+      $faces = FaceDiagnosis::fetchActiveMap($cid);
+      parent::_buildFacesFromSessions($sessions, $faces);
+    }
+  }
+}
+/**
+ * Diagnosis Face Record
+ */
+class FaceDiagnosis extends Diagnosis {
+  //
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+  public function toJsonObject(&$o) {
+    $o->_name = $this->formatName(); 
+  }
+  public function formatName() {
+    $name = $this->text;
+    if ($this->status == self::STATUS_RULE_OUT) 
+      $name = 'R/O: ' . $name;
+    if ($this->icd) 
+      $name .= " ($this->icd)";
+    return $name;
+  }
+  //
+  /**
+   * @param int $id
+   * @return FaceDiagnosis
+   */
+  static function fetch($id) {
+    return parent::_fetchFace($id, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceDiagnosis,..) 
+   */
+  static function fetchAll($cid) {
+    return parent::_fetchFaces($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceDiagnosis,..)
+   */
+  static function fetchAllActive($cid) {
+    return parent::_fetchActiveFaces($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(text=>FaceDiagnosis,..)
+   */
+  static function fetchActiveMap($cid) {
+    $c = self::asActiveCriteria($cid);
+    return self::fetchMapBy($c, $c->getKey());
+  }
+  /**
+   * @param object $o JSON
+   * @param int $ugid
+   * @return FaceDiagnosis saved
+   */
+  static function saveFromUi($o, $ugid) {
+    $diagnosis = Diagnosis::fromUi($o, $ugid);
+    $face = $diagnosis->asFace(true);
+    return parent::_saveFromUi($face);
+  }
+  /**
+   * @param int $cid
+   * @return FaceDiagnosis 
+   */
+  static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  } 
+  static function asActiveCriteria($cid) {
+    return parent::_asActiveFaceCriteria($cid, __CLASS__);
+  }
+  static function asGroupCriteria($ugid) {
+    $c = self::asCriteria(null);
+    $c->userGroupId = $ugid;
+    return $c;
+  } 
+}
+//
+/**
+ * Diagnosis Session Record
+ */
+class SessionDiagnosis extends Diagnosis implements ReadOnly {
+  //
+  protected function shouldReplace($face) {
+    return ($this->isNewerThan($face) && $this->icd != $face->icd);  // replace only if ICD changed 
+  }
+  /*
+   * @return FaceDiagnosis
+   */
+  public function asFace($replaceFace = null) {
+    $face = parent::asFace($replaceFace);
+    $face->parUid = null;
+    $face->parDesc = null;
+    if ($replaceFace) 
+      $face->date = $replaceFace->date;  // keep existing diagnosis onset date
+    return $face;
+  }
+  //
+  private function explodeText() {
+    return explode('<br>', $this->text);
+  }
+  //
+  /**
+   * @param int $cid
+   * @return array(SessionDiagnosis,..)
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionDiagnosis,..)
+   */
+  static function fetchAllUnbuilt($cid) {
+    $c = self::asUnbuiltCriteria($cid);
+    $recs = self::fetchAllBy($c);
+    return self::addCloneTextRecs($recs);
+  }
+  /**
+   * @param int $cid
+   * @return SessionDiagnosis
+   */
+  static function asCriteria($cid) {
+    return parent::_asSessCriteria($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return SessionDiagnosis
+   */
+  static function asUnbuiltCriteria($cid) {
+    return parent::_asUnbuiltSessCriteria($cid, __CLASS__);
+  }
+  //
+  private static function addCloneTextRecs($recs) {  // make dupe session recs out of 'multi<br>diagnoses'
+    $crecs = array();
+    foreach ($recs as $rec)
+      array_merge($crecs, self::clonesByText($rec));
+    return $crecs;
+  }
+  private static function clonesByText($rec) {
+    $texts = $rec->explodeText();
+    if (count($texts) == 1) 
+      return array($rec);
+    $recs = array();
+    foreach ($texts as $text) 
+      $sess = clone $rec;
+      $sess->text = $text;
+      $recs[] = $sess;
+    return $recs;
+  }
+}
+?>

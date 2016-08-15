@@ -1,0 +1,668 @@
+/**
+ * IncludedSourcePop PatientEditor
+ */
+PatientEditor = {
+  /*
+   * @arg JClient client (null for new)
+   * @arg EDIT_ popEdit (optional automatic edit pop) 
+   * @callback(JClient) if any info changed (optional, default calls patientEditorCallback)
+   */
+  pop:function(client, popEdit, callback) {
+    this.create(function(self) {
+      PatientEditor = self;
+      PatientEditor.pop(client, null, callback);
+    })
+  },
+  create:function(callback) {
+    Html.IncludedSourcePop.create('PatientEditor', 'pop-po', function(self) {
+      callback(self.aug({
+        init:function() {
+          self.demoform = Html.EntryForm.create(_$('demoform'));
+          self.demoform.li('Patient ID').ro('uid').lbl('Gender').ro('_sex').lbl('DOB').ro('birth').lbl('Age').ro('age');
+          self.demoform.li('Race/Ethnicity').ro('_race').lbl().ro('_ethnicity').lbl('Language').ro('_language');
+          self.demoform.li('Primary Phys').ro('_primaryPhys');
+        },
+        //
+        EDIT_NONE:0,
+        EDIT_DEMO:1,
+        EDIT_HOME_ADDR:2,
+        EDIT_ICARD:3,
+        EDIT_ICARD2:4,
+        EDIT_CUSTOM:5,
+        EDIT_EMER_ADDR:6,
+        EDIT_RX:7,
+        EDIT_FATHER:8,
+        EDIT_MOTHER:9,
+        EDIT_SPOUSE:10,
+        EDIT_RELEASE:11,
+        EDIT_LIVING_WILL:12,
+        EDIT_POA:13,
+        EDIT_RESTRICTS:14,
+        //
+        SECTION_CONTACT:1,
+        SECTION_INSURANCE:2,
+        SECTION_LEGAL:3,
+        SECTION_FAMILY:4,
+        SECTION_CUSTOM:5,
+        //
+        client:null,
+        address:null,
+        icard:null,
+        changed:null,
+        editOnly:null,  // popEdit
+        _scb:null,
+        //
+        pop:function(client, popEdit, callback) {
+          self.client = client;
+          self.editOnly = (popEdit != null);
+          self.changed = false;
+          self._scb = Ajax.buildScopedCallback(callback, 'patientEditor');
+          self._renderPo();
+          if (self.client == null) {
+            self.pe1Edit();      
+          } else {
+            if (popEdit) 
+              self.popEdit(popEdit);
+            else 
+              self.show();
+          }
+        },
+        popEdit:function(ix) {
+          switch (ix) {
+            case PatientEditor.EDIT_DEMO:
+              self.pe1Edit();
+              break;
+            case PatientEditor.EDIT_HOME_ADDR:
+            case PatientEditor.EDIT_EMER_ADDR:
+            case PatientEditor.EDIT_RX:
+              self.peScroll(PatientEditor.SECTION_CONTACT);
+              self.pe2Edit(ix);
+              break;
+            case PatientEditor.EDIT_ICARD:
+            case PatientEditor.EDIT_ICARD2:
+              self.peScroll(PatientEditor.SECTION_INSURANCE);
+              self.pe2Edit(ix);
+              break;
+            case PatientEditor.EDIT_RELEASE:
+            case PatientEditor.EDIT_LIVING_WILL:
+            case PatientEditor.EDIT_POA:
+            case PatientEditor.EDIT_RESTRICTS:
+              self.peScroll(PatientEditor.SECTION_LEGAL);
+              self.pe2Edit(ix);
+              break;
+            case PatientEditor.EDIT_FATHER:
+            case PatientEditor.EDIT_MOTHER:
+            case PatientEditor.EDIT_SPOUSE:
+              self.peScroll(PatientEditor.SECTION_FAMILY);
+              self.pe2Edit(ix);
+              break;
+            case PatientEditor.EDIT_CUSTOM:
+              self.peScroll(PatientEditor.SECTION_CUSTOM);
+              self.pe2Edit(ix);
+              break;
+          }
+        },
+        poClose:function() {
+          Pop.close();
+          if (self.changed) {
+            Ajax.callScopedCallback(self._scb, self.client);
+          }
+        },
+        pe1Edit:function(focus) {
+          PeDemo.pop(self.client, function(rec) {
+            self.rec = rec;
+            self.changed = true;
+            self.afterSave(rec);
+          });
+        },
+        pe1Save:function() {
+          self.client.uid = value('pe1-pid');
+          self.client.lastName = value('pe1-lastName');
+          self.client.middleName = value('pe1-middleName');
+          self.client.firstName = value('pe1-firstName');
+          self.client.sex = value('pe1-sex');
+          self.client.birth = value('pe1-birth');
+          if (self._showValidateErrors('pop-error-pe1', self._validateClient(self.client))) {
+            return;
+          } 
+          if (self.client.clientId) {
+            Pop.close();
+          }
+          self.changed = true;
+          Pop.Working.show('Saving')
+          Ajax.Facesheet.Patients.save(self.client, self, self);
+        },
+        peScroll:function(section) {
+          switch (section) {
+            case PatientEditor.SECTION_CONTACT:
+              scrollTo('csf','csf-contact');
+              break;
+            case PatientEditor.SECTION_INSURANCE:
+              scrollTo('csf','csf-insurance');
+              break;
+            case PatientEditor.SECTION_LEGAL:
+              scrollTo('csf','csf-legal');
+              break;
+            case PatientEditor.SECTION_FAMILY:
+              scrollTo('csf','csf-family');
+              break;
+            case PatientEditor.SECTION_CUSTOM:
+              scrollTo('csf','csf-custom');
+              break;
+          }
+        },
+        pe2Edit:function(i) {
+          switch (i) {
+            case PatientEditor.EDIT_HOME_ADDR:
+              self.pe2EditContact();
+              break;
+            case PatientEditor.EDIT_ICARD:
+              self.pe2EditInsurance(self.client.icard, 1);
+              break;
+            case PatientEditor.EDIT_ICARD2:
+              self.pe2EditInsurance(self.client.icard2, 2);
+              break;
+            case PatientEditor.EDIT_CUSTOM:
+              self.pe2EditCustom();
+              break;
+            case PatientEditor.EDIT_EMER_ADDR:
+              self.pe2EditEmer();
+              break;
+            case PatientEditor.EDIT_RX:
+              self.pe2EditPharm();
+              break;
+            case PatientEditor.EDIT_FATHER:
+              self.pe2EditFather();
+              break;
+            case PatientEditor.EDIT_MOTHER:
+              self.pe2EditMother();
+              break;
+            case PatientEditor.EDIT_SPOUSE:
+              self.pe2EditSpouse();
+              break;
+            case PatientEditor.EDIT_RELEASE:
+              PeRelease.pop(self.client, function(rec) {
+                self.changed = true;
+                self.afterSave(rec);
+              });
+              break;
+            case PatientEditor.EDIT_LIVING_WILL:
+              PofLivingWill.pop(self.client, function(rec) {
+                self.changed = true;
+                self.afterSave(rec);
+              });
+              break;
+            case PatientEditor.EDIT_POA:
+              PofPowerAttorney.pop(self.client, function(rec) {
+                self.changed = true;
+                self.afterSave(rec);
+              });
+              break;
+            case PatientEditor.EDIT_RESTRICTS:
+              PeRestricts.pop(self.client, function(rec) {
+                self.changed = true;
+                self.afterSave(rec);
+              });
+              break;
+          }
+        },
+        pe2EditContact:function() {
+          self.showAddress(self.client.Address_Home, false, self.client.name + " - Home Address");
+        },
+        pe2EditEmer:function() {
+          self.showAddress(self.client.Address_Emergency, true, self.client.name + " - Emergency Contact");
+        },
+        pe2EditPharm:function() {
+          self.showAddress(self.client.Address_Rx, true, self.client.name + " - Preferred Pharmacy");
+        },
+        pe2EditFather:function() {
+          self.showAddress(self.client.Address_Father, true, self.client.name + " - Father");
+        },
+        pe2EditMother:function() {
+          self.showAddress(self.client.Address_Mother, true, self.client.name + " - Mother");
+        },
+        pe2EditSpouse:function() {
+          self.showAddress(self.client.Address_Spouse, true, self.client.name + " - Spouse");
+        },
+        pe2EditOnFile:function() {
+          setCheck("pof-living-will", self.client.cdata5);
+          setCheck("pof-poa", self.client.cdata6);
+          self._rec = Json.encode(self.buildPof());
+          Pop.show("pop-onfile");
+        },
+        pe2EditInsurance:function(icard, seq) {
+          if (icard == null) {
+            icard = {'clientId':self.client.clientId,'seq':seq};
+            self.icard = icard;
+          } else {
+            self.icard = clone(icard);
+          }
+          Pop.setCaption("pop-icard-cap-text", self.client.name + " - Insurance Info");
+          setValue("pic-ic-plan", icard.planName);
+          setValue("pic-ic-group", icard.groupNo);
+          setValue("pic-ic-policy", icard.subscriberNo);
+          setValue("pic-ic-subscriber", icard.subscriberName);
+          setValue("pic-ic-name", icard.nameOnCard);
+          setValue("pic-ic-effective", icard.dateEffective);
+          self._rec = Json.encode(self.buildICard());
+          Pop.show("pop-icard", "pic-ic-plan");
+        },
+        pe2EditCustom:function() {
+          Pop.setCaption("pop-custom-cap-text", self.client.name + " - Custom Fields");
+          setValue("pcu-custom1", self.client.cdata1);
+          setValue("pcu-custom2", self.client.cdata2);
+          setValue("pcu-custom3", self.client.cdata3);
+          self._rec = Json.encode(self.buildCustoms());
+          Pop.show("pop-custom", "pcu-custom1");  
+        },
+        pe2SaveAddress:function(a) {
+          var data = {'address':a,'id':self.client.clientId};
+          self._postSave('saveAddress', data);
+        },
+        pcuSave:function() {
+          self.client.cdata1 = value("pcu-custom1");
+          self.client.cdata2 = value("pcu-custom2");
+          self.client.cdata3 = value("pcu-custom3");
+          self._postSave('save', self.client);
+        },
+        pcuClose:function() {
+          var rec = Json.encode(self.buildCustoms());
+          if (rec != self._rec) {
+            Pop.Confirm.showDirtyExit(function() {
+              self.pcuSave();
+            });
+          } else {
+            Pop.close();
+          }
+        },
+        buildCustoms:function() {
+          var c = {};
+          c.cdata1 = value("pcu-custom1");
+          c.cdata2 = value("pcu-custom2");
+          c.cdata3 = value("pcu-custom3");
+          return c;
+        },
+        pofSave:function() {
+          self.client.cdata5 = isChecked("pof-living-will");
+          self.client.cdata6 = isChecked("pof-poa");
+          self._postSave('save', self.client);
+        },
+        pofClose:function() {
+          var rec = Json.encode(self.buildPof());
+          if (rec != self._rec) {
+            Pop.Confirm.showDirtyExit(function() {
+              self.pofSave();
+            });
+          } else {
+            Pop.close();
+          }
+        },
+        buildPof:function() {
+          var c = {};
+          c.cdata5 = isChecked("pof-living-will");
+          c.cdata6 = isChecked("pof-poa");
+          return c;
+        },
+        picSave:function() {
+          var c = self.buildICard();
+          var data = {'icard':c,'id':self.client.clientId};
+          self._postSave('saveICard', data);
+        },
+        buildICard:function() {
+          var c = self.icard;
+          c.planName = value("pic-ic-plan");
+          c.groupNo = value("pic-ic-group");
+          c.subscriberNo = value("pic-ic-policy");
+          c.subscriberName = value("pic-ic-subscriber");
+          c.nameOnCard = value("pic-ic-name");
+          c.dateEffective = nullify(value("pic-ic-effective"));
+          return c;
+        },
+        picClose:function() { 
+          var rec = Json.encode(self.buildICard());
+          if (rec != self._rec) {
+            Pop.Confirm.showDirtyExit(function() {
+              self.picSave();
+            });
+          } else {
+            Pop.close();
+          }
+        },
+        _postSave:function(action, data) {
+          self.changed = true;
+          Pop.close();
+          Pop.Working.show('Saving');
+          Ajax.Facesheet.Patients[action](data, [self.savePatientCallback, self], [self.savePatientError, self]);
+        },
+        showAddress:function(a, includeName, cap) {
+          self.Address_ = clone(a);
+          Pop.setCaption("pop-addr-cap-text", cap ? cap : "Address");
+          setValue("pa-name", a.name);
+          setValue("pa-addr1", a.addr1);  
+          setValue("pa-addr2", a.addr2);  
+          setValue("pa-addr3", a.addr3);  
+          setValue("pa-city", a.city);
+          setValue("pa-state", a.state);
+          setValue("pa-zip", a.zip);
+          setValue("pa-phone1", a.phone1); 
+          setValue("pa-phone1Type", a.phone1Type); 
+          setValue("pa-phone2", a.phone2);
+          setValue("pa-phone2Type", a.phone2Type); 
+          setValue("pa-phone3", a.phone3);
+          setValue("pa-phone3Type", a.phone3Type);  
+          setValue("pa-email1", a.email1);
+          showIf(includeName, "pa-li-name"); 
+          self._rec = Json.encode(self.buildAddress());
+          Pop.show("pop-addr", includeName ? "pa-name" : "pa-addr1");
+        },
+        paSave:function() {
+          self.pe2SaveAddress(self.buildAddress());
+        },
+        buildAddress:function() {
+          var a = self.Address_;
+          a.name = value("pa-name");
+          a.addr1 = value("pa-addr1");
+          a.addr2 = value("pa-addr2");
+          a.addr3 = value("pa-addr3");
+          a.city = value("pa-city");
+          a.state = value("pa-state");
+          a.zip = value("pa-zip");
+          a.phone1 = value("pa-phone1");
+          a.phone1Type = value("pa-phone1Type");
+          a.phone2 = value("pa-phone2");
+          a.phone2Type = value("pa-phone2Type");
+          a.phone3 = value("pa-phone3");
+          a.phone3Type = value("pa-phone3Type");
+          a.email1 = value("pa-email1");
+          return a;
+        },
+        paClose:function() {
+          var rec = Json.encode(self.buildAddress());
+          if (rec != self._rec) {
+            Pop.Confirm.showDirtyExit(function() {
+              self.paSave();
+            });
+          } else {
+            Pop.close();
+          }
+        },
+        savePatientCallback:function(client) {
+          if (! self.editOnly)
+            Pop.close();
+            self.afterSave(client);
+        },
+        afterSave:function(client) {
+          if (self.editOnly) {
+            self.poClose();
+            return;
+          }
+          if (self.client.clientId) {
+            self.client = client;
+            self._renderPo();
+          } else {
+            Page.go(Page.PAGE_FACESHEET, {'id':self.client.clientId,'pe':1});
+          }
+        },
+        savePatientError:function(e) {
+          if (e.type == 'ClientUidExistsException') {
+            Pop.Working.close();
+            var dupe = e.message;
+            var html = '<b>A patient with ID ' + dupe.uid + ' already exists:</b>';
+            html += '<br/>' + dupe.name + ' (DOB: ' + denull(dupe.birth) + ')';
+            showError('pop-error-pe1', html);
+          } else {
+            Page.showAjaxError(e);
+          }
+        },
+        _renderPo:function() {
+          self.demoform.setRecord(self.client);
+          var pl;
+          setText('po-name', self.client.name);
+          pl = new ProfileLoader('po-lbl-address', 'po-address');
+          self._renderAddress('Home', pl, self.client.Address_Home);
+          pl = new ProfileLoader('po-lbl-emer', 'po-emer');
+          self._renderAddress('Emergency', pl, self.client.Address_Emergency);
+          pl = new ProfileLoader('po-lbl-pharm', 'po-pharm');
+          self._renderAddress('Pharmacy', pl, self.client.Address_Rx);
+          pl = new ProfileLoader('po-lbl-ins', 'po-ins');
+          self._setIcards(self.client.ICards);
+          self._poLoadInsurance(pl, self.client.icard);
+          pl = new ProfileLoader('po-lbl-ins2', 'po-ins2');
+          self._poLoadInsurance(pl, self.client.icard2);
+          show('po-ins-ul-2');
+          pl = new ProfileLoader('po-lbl-famrel', 'po-famrel');
+          pl.add('Preference', self.client._releasePref);
+          pl.add('Family Release', self.client.familyRelease);
+          pl = new ProfileLoader('po-lbl-ichecks1', 'po-ichecks1');
+          pl.add('Living Will?', yesNo(self.client.cdata5));  
+          pl = new ProfileLoader('po-lbl-ichecks2', 'po-ichecks2');
+          pl.add('POA?', yesNo(self.client.cdata6));  
+          pl = new ProfileLoader('po-lbl-restricts', 'po-restricts');
+          pl.add('Chart Restrictions', self.client._userRestricts);
+          pl = new ProfileLoader('po-lbl-father', 'po-father');
+          self._renderAddress('Parent', pl, self.client.Address_Father);  
+          pl = new ProfileLoader('po-lbl-mother', 'po-mother');
+          self._renderAddress('Parent', pl, self.client.Address_Mother);  
+          pl = new ProfileLoader('po-lbl-spouse', 'po-spouse');
+          self._renderAddress('Spouse', pl, self.client.Address_Spouse);  
+          pl = new ProfileLoader('po-lbl-custom', 'po-custom');
+          pl.add('Custom 1', self.client.cdata1);  
+          pl.add('Custom 2', self.client.cdata2, -1);  
+          pl.add('Custom 3', self.client.cdata3, -1);    
+        },
+        _setIcards:function(icards) {
+          self.client.icard = null;
+          self.client.icard2 = null;
+          if (icards == null)
+            return;
+          for (var i = 0; i < icards.length; i++) {
+            icard = icards[i];
+            if (icard.seq == 2)
+              self.client.icard2 = icard;
+            else
+              self.client.icard = icard;
+          } 
+        },
+        _renderAddress:function(lbl, pl, a) {
+          var addr = (a) ? [a.addr1, a.addr2, a.csz] : '';
+          if (a && a.name) {
+            addr.unshift(a.name);
+          }
+          pl.add(lbl, addr);
+          if (a && a.phone1) {
+            pl.add('', [AddressUi.formatPhone(a.phone1, a.phone1Type), AddressUi.formatPhone(a.phone2, a.phone2Type), AddressUi.formatPhone(a.phone3, a.phone3Type)], -1);
+          }
+          if (a && a.email1) {
+            pl.add('', [a.email1, a.email2], -1);
+          }  
+        },
+        _poLoadInsurance:function(pl, icard) {
+          pl.add('Plan', icard ? icard.planName : '');
+          pl.add('Group/Policy #', icard ? denull(icard.groupNo) + ' ' + denull(icard.subscriberNo) : '');
+          pl.add('Effective', icard ? icard.dateEffective : '');
+          if (icard && icard.subscriber) {
+            pl.add('Subscriber', icard.subscriber.name, -1);
+          }
+          if (icard && icard.nameOnCard) {
+            pl.add('Name on Card', icard.nameOnCard);
+          }
+        },  
+        _poFormatSex:function(sex) {
+          return (sex == 'F') ? 'Female' : 'Male';
+        },
+        _validateClient:function(client) {
+          var errs = [];
+          if (client.uid == '') {
+            errs.push(errMsg('client.uid', msgReq('Patient ID')));
+          }
+          if (client.lastName == '') {
+            errs.push(errMsg('client.lastName', msgReq('Last name')));
+          }
+          if (client.firstName == '') {
+            errs.push(errMsg('client.firstName', msgReq('First name')));
+          }
+          if (client.sex == '') {
+            errs.push(errMsg('client.sex', msgReq('Gender')));
+          }
+          if (client.birth) {
+            client.birth = DateUi.validate(client.birth); 
+            if (! client.birth) {
+              errs.push(errMsg('client.birth', 'Birth date is not valid. Please use MM/DD/YYYY.'));
+            }
+          }
+          return errs;
+        },
+        _showValidateErrors:function(id, errMsgs) {
+          hide(id);
+          if (errMsgs.length > 0) {
+            showErrors(id, errMsgs);
+            focusError(errMsgs[0].id);
+            return true;
+          }
+        },
+        _focusError:function(id) {
+          if (id == 'client.uid') {
+            focus('pid');
+          } else if (id == 'client.firstName') {
+            focus('firstName');
+          } else if (id == 'client.lastName') {
+            focus('lastName');
+          } else if (id == 'client.sex') {
+            focus('sex');
+          }
+        }
+      }));
+    });
+  }
+}
+/**
+ * RecordEntryPop PatientEntry
+ */
+PatientEntry = {
+  /*
+   * @callback(Rec) updated
+   */
+  create:function(callback, caption, width, frameCaption) {
+    var self = Html.RecordEntryPop.create(caption || 'Patient Entry', width || 700, frameCaption);
+    return self.aug({
+      onsave:callback,
+      save:function(rec, onsuccess, onerror) {
+        Ajax.Facesheet.Patients.save(rec, onsuccess, onerror); 
+      }
+    });
+  }    
+}
+PeDemo = {
+  pop:function(rec, callback) {
+    PeDemo = this.create(callback).pop(rec);
+  },
+  create:function(callback) {
+    var self = PatientEntry.create(callback, 'Patient Fields', 740);
+    return self.aug({
+      buildForm:function(ef) {
+        ef.li('Patient ID').textbox('uid', 15);
+        ef.li('Last Name').textbox('lastName', 25).lbl('First').textbox('firstName', 15).lbl('Middle').textbox('middleName', 15);
+        ef.li('Gender').select('sex', C_Client.SEXES).lbl('Birth').date('birth').lbl('Gest Age at Birth').select('cdata7', this.getWeeks()).lbl('').check('deceased', 'Deceased?');
+        ef.li('Race', 'mt10').select('race', C_Client.RACES, '').lbl('Ethnicity').select('ethnicity', C_Client.ETHNICITIES, '');
+        ef.li('Language').select('language', C_Client.LANGUAGES, '');
+        ef.li('Primary Phys', 'mt10').select('primaryPhys', C_Docs, '');
+      },
+      getWeeks:function() {
+        var o = {'0':'40 weeks (full-term)'};
+        for (var i = 1; i < 21; i++) 
+          o[i] = (40 - i) + ' weeks';
+        return o;
+      }
+    });
+  }
+}
+PeRelease = {
+  pop:function(rec, callback) {
+    PeRelease = this.create(callback).pop(rec);
+  },
+  create:function(callback) {
+    var self = PatientEntry.create(callback, null, null, 'Confidential Information Release');
+    return self.aug({
+      buildForm:function(ef) {
+        ef.aug({
+          releasePref_onchange:function() {
+            if (ef.getValue('releasePref') == C_Client.RELEASE_PHONE || ef.getValue('releasePref') == C_Client.RELEASE_EMAIL) {
+              ef.showField('release');
+              ef.focus('release');
+            } else {
+              ef.hideField('release');
+            }
+          }
+        });
+        ef.li('Prefer By').select('releasePref', C_Client.RELEASE_PREFS, '(No Preference)', ef.releasePref_onchange).textbox('release');
+        ef.li('Family Members Approved').textarea('familyRelease', 3);
+      }
+    });
+  }
+}
+PeRestricts = {
+  pop:function(rec, callback) {
+    PeRestricts = this.create(callback).pop(rec);
+  },
+  create:function(callback) {
+    var self = PatientEntry.create(callback, null, null, 'Chart Access Restrictions');
+    return self.aug({
+      buildForm:function(ef) {
+        ef.li('Deny To').atab('userRestricts', UserAtab);
+      }
+    });
+  }
+}
+UserAtab = {
+  create:function() {
+    return Html.AnchorTab.create().checks(C_Users, 3).okCancel();
+  }
+}
+PofLivingWill = {
+  pop:function(rec, callback) {
+    PofLivingWill = this.create(callback).pop(rec);
+  },
+  create:function(callback) {
+    var self = PatientEntry.create(callback, null, 450);
+    return self.aug({
+      init:function() {
+        self.list = PofLivingWill.ScanList.create(self).hide(); 
+      },
+      getFid:function() {
+        return 'cdata5';
+      },
+      getLabel:function() {
+        return 'Living Will on File?';
+      },
+      buildForm:function(ef) {
+        ef.li().check(self.getFid(), self.getLabel(), self.check_onclick);
+      },
+      check_onclick:function(lc) {
+        self.list.showIf(lc.isChecked());
+      }
+    });
+  },
+  ScanList:{
+    create:function(pop) {
+      var self = Html.Div.create('EntryFolderList').into(pop.frame);
+      return self;
+    }
+  }
+}
+PofPowerAttorney = {
+  pop:function(rec, callback) {
+    PofPowerAttorney = this.create().pop(rec, callback);
+  },
+  create:function() {
+    var self = PatientEntry.create();
+    return self.aug({
+      buildForm:function(ef) {
+        ef.li().check('cdata6', 'Power of Attorney?', self.pow_onchange);
+      },
+      pow_onchange:function(lcheck) {
+        
+      }
+    });
+  }
+}
+

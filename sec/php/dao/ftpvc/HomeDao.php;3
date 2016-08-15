@@ -1,0 +1,34 @@
+<?php
+class HomeDao {
+
+  public static function getLatestMikeTip() {
+    try {
+      $sql = "SELECT * FROM `phpbb`.`phpbb_posts` where forum_id=18 group by topic_id order by post_id desc";
+      $row = HomeDao::fetch($sql);
+      if ($row) {
+        $row["post_time"] = date("d-M-Y", $row["post_time"]);
+        $row["post_text"] = nl2br($row["post_text"]);
+      }
+    } catch (Exception $e) {
+      $row = null;      
+    }
+    return $row; 
+  }
+  
+  private static function fetch($sql) {
+    $res = HomeDao::query($sql);
+    if (! $res || mysql_num_rows($res) < 1) {
+      return false;
+    }
+    return mysql_fetch_array($res, MYSQL_ASSOC);
+  }
+  private static function query($sql) {
+    $conn = mysql_connect("localhost", "webuser", "click01");
+    if ($conn) {
+      $res = mysql_query($sql);
+      mysql_close($conn);
+      return $res;
+    }
+  }
+}
+?>

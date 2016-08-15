@@ -1,0 +1,108 @@
+<?php
+require_once 'config/MyEnv.php';
+//
+/**
+ * FtpFolder
+ * @author Warren Hornsby
+ */
+class FtpFolder {
+  //
+  public /*Lab*/ $Lab; 
+  public $root;    
+  //
+  public function getPath($subdir) {  
+    return "$this->root\\$subdir"; 
+  }
+  public function getPath_in() {
+    return $this->getPath('in');
+  }
+  /**
+   * @return FtpFile[]
+   */
+  public function getIncoming() {  
+    return $this->getFiles('in');
+  }
+  /**
+   * @param FtpFile $files
+   */
+  public function moveToOut($file) {
+    static::move($file, 'out');
+  }
+  //  
+  protected function getFiles($subdir) {
+    $filenames = $this->getFilenames($subdir);
+    $files = FtpFile::from($this, $subdir, $filenames);
+    return $files;
+  }
+  protected function getFilenames($subdir) {
+    $dh = static::open($subdir);
+    $files = array();
+    while (false !== ($file = readdir($dh))) {
+      if ($file != '.' && $file != '..') 
+        $files[] = $file;
+    }
+    return $files;
+  }
+  protected function open($subdir) {
+    return opendir($this->getPath($subdir));
+  }
+  protected function move($file, $subdir) {
+    $from = $file->getFilepath();
+    $to = $file->getFilepath($this->getPath($subdir));
+    rename($from, $to);
+  }
+  /**
+   * @param Lab $lab
+   * @return static
+   */
+  static function from($lab) {
+    $me = new static();
+    $me->Lab = $lab;
+    $me->root = MyEnv::$SFTP_PATH . "\\$lab->sftpFolder";
+    if (! is_dir($me->root))
+      throw new FtpFolderException('Unable to access directory ' . $me->root);
+    return $me;
+  }
+  protected static function getRoot($lab) {
+    $root = MyEnv::$SFTP_PATH . "\\$lab->sftpFolder";
+    return $root;
+  }
+}
+class FtpFile {
+  //
+  public $Lab;
+  public $path;
+  public $filename;
+  public $msg;
+  //
+  public function readContents() {
+    $contents = file_get_contents($this->getFilepath());
+    return $contents;
+  }
+  public function getFilepath($path = null) {
+    if ($path == null)
+      $path = $this->path;
+    return "$path\\$this->filename";
+  }
+  //
+  static function from($folder, $subdir, $filenames) {  // return static[]
+    $lab = $folder->Lab;
+    $path = $folder->getPath($subdir);
+    $mes = array();
+    foreach ($filenames as $filename) 
+      $mes[] = static::fromFilename($lab, $path, $filename);
+    return $mes;
+  }
+  protected static function fromFilename($lab, $path, $filename) {
+    $me = new static();
+    $me->Lab = $lab;
+    $me->path = $path;
+    $me->filename = $filename;
+    $me->msg = $me->readContents();
+    return $me;
+  } 
+}
+//
+class FtpFolderException extends Exception {
+  //
+}

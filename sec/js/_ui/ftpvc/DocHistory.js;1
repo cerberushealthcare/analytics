@@ -1,0 +1,102 @@
+/**
+ * Pop DocHistoryPop
+ */
+DocHistoryPop = {
+  /*
+   * @arg Facesheet fs
+   * @arg DocStub rec (optional, for instant preview)
+   * @arg fn(DocStub) onselect (optional, to override preview behavior)
+   */
+  pop:function(fs, rec, onselect) {
+    DocHistoryPop = this.create().pop(fs, rec, onselect);
+  },
+  create:function() {
+    var self = Html.Pop.create('Documentation History', 750);
+    return self.aug({
+      onupdate:function() {},
+      //
+      init:function() {
+        self.table = DocHistoryTable.create(self.content).bubble('onload', self.table_onload).bubble('onupdate', self.table_onupdate).bubble('onexit', self.close);
+        Html.Pop.CmdBar.create(self).exit(self.close);
+      },
+      pop:function(fs, rec, onselect) {
+        self.show();
+        self.updated = false;
+        self.cid = fs.client.clientId;
+        self.recs = fs.docstubs;
+        self.rec = rec;
+        self.table.load(self.recs, self.cid, onselect);
+        return self;
+      },
+      onclose:function() {
+        if (self.updated) 
+          self.onupdate();
+      },
+      table_onload:function() {
+        if (self.rec) { 
+          self.table.preview(self.rec);
+          self.rec = null;
+        }
+      },
+      table_onupdate:function() {
+        self.updated = true;
+      }
+    })
+  }
+}
+/**
+ * TableLoader DocHistoryTable
+ */
+DocHistoryTable = {
+  create:function(container) {
+    var self = Html.TableLoader.create(container, 'fsgr');
+    return self.aug({
+      onupdate:function() {},
+      onexit:function() {},
+      //
+      init:function() {
+        self.setHeight(500);
+        self.thead().trFixed().th('Date').w('10%').th('Type').w('10%').th('Name').w('30%').th('').w('50%');
+        self.setTopFilter();
+      },
+      /*
+       * @arg DocStub[] recs (optional)
+       * @arg int cid (req'd on first call)
+       */
+      load:self.load.prepend(function(recs, cid, onselect) {
+        if (cid)
+          self.cid = cid;
+        if (onselect)
+          self.onselect_override = onselect;
+      }),
+      //
+      fetch:function(callback_recs) {
+        DocStubs.fetch(self.cid, callback_recs);
+      },
+      filter:function(rec) {
+        return {'Type':rec._type};
+      },
+      rowBreaks:function(rec) {
+        return [rec.date];
+      },
+      add:function(rec, tr) {
+        tr.td(rec.date, 'bold nw').td(rec._type).select(AnchorDocStub).td(rec.desc);
+      },
+      preview:function(rec) {
+        DocStubPreview.pop(rec, self.recs).bubble('onupdate', function() {
+          self.load();
+          self.onupdate();
+        })
+      },
+      //
+      onselect:function(rec) {
+        if (self.onselect_override) {
+          self.onselect_override(rec);
+          self.onexit();
+        } else {
+          self.preview(rec);
+        }
+      }
+    })
+  }
+}

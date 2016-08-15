@@ -1,0 +1,47 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+/**
+ * Providers DAO
+ * @author Warren Hornsby
+ */
+class Providers {
+  //
+  public function getAll() {
+    global $myLogin;
+    $recs = Provider::fetchAll($myLogin->userGroupId);
+    return $recs;
+  }
+}
+//
+/**
+ * Provider
+ */
+class Provider extends SqlRec {
+  //
+  public $providerId;
+  public $userGroupId;
+  public $last;
+  public $first;
+  public $middle;
+  public $suffix;
+  public $prefix;
+  public $area;
+  public $addrFacility;
+  public /*FacilityAddress*/ $FacilityAddress;  
+  //
+  public function getSqlTable() {
+    return 'providers';
+  }
+  //
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    return $c;
+  }
+}
+?>

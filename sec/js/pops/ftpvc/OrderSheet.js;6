@@ -1,0 +1,119 @@
+/**
+ * Order Sheet
+ * Static pop controller
+ */
+var OrderSheet = {
+  items:null,  // {key:TrackItem,..}
+  /*
+   * Show order sheet
+   * - items: [OrderItem,..]
+   */
+  pop:function(orderItems) {
+    overlayWorking(true);
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'order', orderItems, 
+      function(tracksheet) {
+        self._load(tracksheet);
+        showOverlayPop('pop-os');
+        overlayWorking(false);
+      });
+  },
+  /*
+   * - tracksheet: {'items':..,'add':..,'cl':..}
+   */
+  _load:function(tracksheet) {  
+    this.items = {};
+    var trackItems = tracksheet.items;
+    var t = new TableLoader('os-tbody', null, 'os-div');
+//    for (var tcat in catItems) {
+//      var trackItems = catItems[tcat];
+//      t.createTr(true);
+//      t.createTd('fs', tcat);
+//      t.td.colSpan = 3;
+    var checked;
+    var C = tracksheet.cl.constants;
+    var lists = tracksheet.cl.lists;
+    var self = this;
+    for (var i = 0; i < trackItems.length; i++) {
+      var item = trackItems[i];
+      t.createTr(item.trackCat);
+      item.ui = {};
+      item.ui.sel = createCheckbox();
+      item.ui.sel.tr = t.tr;
+      item.ui.sel.onclick = function(){self._setRowColor(this)}; 
+      item.ui.cat = createSelect(null, null, lists.cats, item.trackCat);
+      item.ui.priority = createSelect(null, null, lists.priorities, item.priority);
+      item.ui.notes = createTextbox(null, item.orderNotes, '40', 'text');
+      t.createTd('check');
+      t.append(item.ui.sel);
+      t.createTd();
+      t.append(item.ui.cat);
+      if (tracksheet.add)
+        checked = item.trackCat != C.TCAT_OTHER;
+      else
+        checked = item.trackItemId != null;
+      item.ui.sel.checked = checked;
+      this._setRowColor(item.ui.sel);
+      t.createTd(null, item.trackDesc);
+      t.createTd();
+      t.append(item.ui.priority);
+      t.createTd();
+      t.append(item.ui.notes);
+      this.items[item.key] = item;
+    }      
+  },
+  _setRowColor:function(e) {
+    if (e.tr) 
+      e.tr.className = (e.checked) ? 'off' : 'disable';
+  },
+  pClose:function() {
+    closeOverlayPop();
+  },
+  pSave:function() {
+    overlayWorking(true);
+    var saveItems = [];
+    for (var key in this.items) {
+      var item = this.items[key];
+      var ui = item.ui;
+      if (ui.sel.checked) {
+        item.trackCat = value_(ui.cat);
+        item.priority = value_(ui.priority);
+        item.orderNotes = value_(ui.notes);
+        delete(item.ui);
+        saveItems.push(item);
+      }
+    }
+    Ajax.post(Ajax.SVR_POP, 'saveOrder', saveItems, 
+      function() {
+        overlayWorking(false);
+        closeOverlayPop();
+      });
+  }
+};
+/**
+ * Order Item
+ * Data class
+ */
+function OrderItem(cid, sid, key, tcat, tdesc, cpt) {
+  this.cid = cid;
+  this.sid = sid;
+  this.key = key;
+  this.tcat = tcat;
+  this.tdesc = tdesc;
+  this.cpt = cpt;
+}
+OrderItem.prototype = {
+  cid:null,
+  sid:null,
+  key:null,
+  tcat:null,
+  tdesc:null,
+  cpt:null
+}
+/*
+ * Static key builder
+ * Returns qidi#oix: '21600@2131#19' 
+ */
+OrderItem.buildKey = function(qidi, oix) {
+  return qidi + '#' + oix;
+}

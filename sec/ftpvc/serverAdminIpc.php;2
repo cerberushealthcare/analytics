@@ -1,0 +1,48 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/IprocCodes.php';
+//
+if (! $myLogin->admin) {
+  header('Location: welcome.php');
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverAdminIpc.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverAdminIpc.php (posted)');
+  logit_r($_POST);
+}
+try {
+  switch ($action) {
+    //
+    case 'getAll':
+      $recs = IProcCodes::getAll();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'save':
+      try { 
+        $rec = IProcCodes::save($obj);
+        $m = new JAjaxMsg($action, jsonencode($rec));
+      } catch (RecValidatorException $e) {
+        $m = JAjaxMsg::constructError($e);
+      }
+      break;
+    case 'delete':
+      IProcCodes::delete($_GET['id']);
+      $m = new JAjaxMsg($action, null);
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+}
+if ($m != null) 
+  echo $m->out();
+?>

@@ -1,0 +1,94 @@
+<?php
+//
+require_once 'php/data/rec/sql/Procedures.php';
+/**
+ * Procedures (Administrative Category) 
+ * @author Warren Hornsby
+ * @example 
+ *   Proc_ReviewedBmiChart::record($cid);  // server-side
+ *   Ajax.Procedures.record(this.fs.client.clientId, 600179);  // client-sidw  
+ */
+class Proc_Admin extends Proc implements NoAudit {
+  static $IPC;
+  //
+  static function record($cid, $date = null, $userId = null, $ipc = null) {
+    global $login;
+    $me = new static();
+    $me->userGroupId = $login->userGroupId;
+    $me->clientId = $cid;
+    $me->date = ($date) ? dateToString($date) : nowNoQuotes();
+    $me->userId = $userId ?: $login->userId;
+    $me->ipc = $ipc ?: static::$IPC;
+    if ($me->clientId && $me->ipc)
+      $me->save();
+  }
+}
+class Proc_AdminOneTime extends Proc_Admin implements NoAudit {
+  //
+  static function record($cid, $active, $ipc = null) {
+    $ipc = $ipc ? : static::$IPC;
+    if ($cid && $ipc) {
+      global $login;
+      Dao::query("DELETE FROM procedures WHERE client_id=$cid AND ipc=$ipc");
+      if ($active)
+        parent::record($cid);
+    }
+  }
+}
+class Proc_OfficeVisit extends Proc_Admin {
+  static $IPC = 600186;
+}
+class Proc_SmokingHxRecorded extends Proc_Admin {
+  static $IPC = 600084;
+} 
+class Proc_ReviewedBmiChart extends Proc_Admin {
+  static $IPC = 600209;
+} 
+class Proc_ImmunInfoProvided extends Proc_Admin {
+  static $IPC = 600179;
+}
+class Proc_MedsReconciled extends Proc_Admin {
+  static $IPC = 600174;
+}
+class Proc_Pneumovax extends Proc_Admin {
+  static $IPC = 600211;
+}
+class Proc_Tetanus extends Proc_Admin {
+  static $IPC = 600210;
+}
+class Proc_GenerateOrders extends Proc_Admin {
+  static $IPC = 600175;
+}
+class Proc_LivingWillPoa extends Proc_Admin {
+  static $IPC = 600173;
+}
+class Proc_PatientSummary extends Proc_Admin {
+  static $IPC = 600212;
+}
+class Proc_NewCropRefresh extends Proc_Admin {
+  static $IPC = 600271;
+}
+class Proc_ACE extends Proc_AdminOneTime {
+  static $IPC = 600416;
+  //
+  static function record($cid, $meds) {
+    $has = DrugClasses::has_ACEInhibitor($meds);
+    parent::record($cid, $has);
+  }
+}
+class Proc_ACEOrARB extends Proc_AdminOneTime {
+  static $IPC = 600417;
+  //
+  static function record($cid, $meds) {
+    $has = DrugClasses::has_ACEInhibitor($meds) || DrugClasses::has_ARB($meds);  
+    parent::record($cid, $has);
+  }
+}
+class Proc_BetaBlocker extends Proc_AdminOneTime {
+  static $IPC = 600418;
+  //
+  static function record($cid, $meds) {
+    $has = DrugClasses::has_BetaBlocker($meds);
+    parent::record($cid, $has);
+  }
+}

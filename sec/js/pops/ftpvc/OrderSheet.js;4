@@ -1,0 +1,100 @@
+/**
+ * Order Sheet
+ * Static pop controller
+ */
+var OrderSheet = {
+  items:null,  // {key:TrackItem,..}
+  /*
+   * Show order sheet
+   * - items: [OrderItem,..]
+   */
+  pop:function(orderItems) {
+    overlayWorking(true);
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'order', orderItems, 
+      function(tracksheet) {
+        self._load(tracksheet);
+        showOverlayPop('pop-os');
+        overlayWorking(false);
+      });
+  },
+  /*
+   * - tracksheet: {'priorities':{key:desc,..},'catItems':{tcat:[TrackItem,..],..}}
+   */
+  _load:function(tracksheet) {  
+    this.items = {};
+    catItems = tracksheet.catItems;
+    var t = new TableLoader('os-tbody', 'off', 'os-div');
+    for (var tcat in catItems) {
+      var trackItems = catItems[tcat];
+      t.createTr(true);
+      t.createTd('fs', tcat);
+      t.td.colSpan = 3;
+      for (var i = 0; i < trackItems.length; i++) {
+        var item = trackItems[i];
+        item.ui = {};
+        item.ui.sel = createCheckbox();
+        item.ui.priority = createSelect(null, null, tracksheet.priorities, item.priority);
+        item.ui.notes = createTextbox(null, item.orderNotes, '40');
+        t.createTr(false);
+        t.createTd('check');
+        t.append(item.ui.sel);
+        item.ui.sel.checked = true;
+        t.createTd('histbreak', item.trackDesc);
+        t.createTd();
+        t.append(item.ui.priority);
+        t.append(item.ui.notes);
+        this.items[item.key] = item;
+      }      
+    }
+  },
+  pClose:function() {
+    closeOverlayPop();
+  },
+  pSave:function() {
+    overlayWorking(true);
+    var saveItems = [];
+    for (var key in this.items) {
+      var item = this.items[key];
+      var ui = item.ui;
+      if (ui.sel.checked) {
+        item.priority = value_(ui.priority);
+        item.orderNotes = value_(ui.notes);
+        delete(item.ui);
+        saveItems.push(item);
+      }
+    }
+    Ajax.post(Ajax.SVR_POP, 'saveOrder', saveItems, 
+      function() {
+        overlayWorking(false);
+        closeOverlayPop();
+      });
+  }
+};
+/**
+ * Order Item
+ * Data class
+ */
+function OrderItem(cid, sid, key, tcat, tdesc, cpt) {
+  this.cid = cid;
+  this.sid = sid;
+  this.key = key;
+  this.tcat = tcat;
+  this.tdesc = tdesc;
+  this.cpt = cpt;
+}
+OrderItem.prototype = {
+  cid:null,
+  sid:null,
+  key:null,
+  tcat:null,
+  tdesc:null,
+  cpt:null
+}
+/*
+ * Static key builder
+ * Returns qidi#oix: '21600@2131#19' 
+ */
+OrderItem.buildKey = function(qidi, oix) {
+  return qidi + '#' + oix;
+}

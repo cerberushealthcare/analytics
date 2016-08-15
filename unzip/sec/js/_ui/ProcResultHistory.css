@@ -1,0 +1,17 @@
+DIV.ResultHistory {
+  height:300px;
+  border:1px solid #c0c0c0;
+  background-color:white;
+  padding:10px 3px 10px 10px;
+  padding-right:expression('20px');
+  overflow-y:scroll;
+  overflow-x:hidden;
+  border:1px solid #DBD7CD;
+}
+DIV.HistoryChart {
+  margin-top:5px;
+  height:250px;
+  border:1px solid #c0c0c0;
+  background-color:white;
+  padding:10px;
+}

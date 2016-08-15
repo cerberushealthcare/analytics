@@ -1,0 +1,87 @@
+var C_UserLoginReq;
+/**
+ * ERX Status Page
+ * Global static, instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var AdminLoginReqsPage = {
+  /*
+   * Loader
+   */
+  load:function(query) {
+    Page.setEvents();
+    flicker('results-head');
+    this._getRecs();
+  },
+  edit:function(rec, asReceived) {
+    var self = this;
+    AdminLoginReqEntry.pop(rec, asReceived, 
+      function(rec) {
+        self._getRecs();
+      });
+  },
+  //
+  _getRecs:function() {
+    var self = this;
+    overlayWorking(true);
+    Ajax.get('Admin', 'getLoginReqs', null,
+      function(recs) {
+        self._loadTable(recs);
+        overlayWorking(false);
+      });
+  },
+  _loadTable:function(recs) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl', 'results-head');
+    var last = null;
+    for (var i = 0, j = recs.length; i < j; i++) {
+      var rec = recs[i];
+      if (rec._name != last) {
+        t.createTr(true);
+        t.createTd('histbreak', rec._name);
+        t.td.colSpan = 5;
+        last = rec._name;
+      }
+      var user = rec.UserStub;
+      var status = C_UserLoginReq.STATUSES[rec.status];
+      t.createTr(false);
+      t.createTdAppend('nowrap', this._createEditAnchor(rec));
+      t.createTd('nowrap', status);
+      if (rec._isExpired) 
+        t.td.style.color = 'red';
+      else if (rec._isReceived) 
+        t.td.style.color = 'green';
+      t.createTd('nowrap', rec._dateNotified);
+      if (rec._dateRcvd)
+        t.createTd('nowrap', rec._dateRcvd);
+      else
+        t.createTdAppend('nowrap', this._createRcvdAnchor(rec));
+      var exp = rec.dateExpires;
+      if (rec.dateExpires && rec._daysLeft >= 0)
+        exp += ' (' + plural(rec._daysLeft, 'day') + ' left)';
+      t.createTd('nowrap', exp);
+      if (rec.comments) {
+        t.createTr(false);
+        t.createTd();
+        t.createTd();
+        t.createTd('ital', rec.comments);
+        t.td.colSpan = 3;
+      }
+    }
+  },
+  _createEditAnchor:function(rec) {
+    var self = this;
+    return createAnchor(null, 'javascript:', 'action user', rec.UserStub.name.substr(0, 30), null, function() {
+      self.edit(rec)}
+    );
+  },
+  _createRcvdAnchor:function(rec) {
+    var self = this;
+    return createAnchor(null, 'javascript:', 'action edit', 'Mark as Received', null, function() {
+      self.edit(rec, true)}
+    );
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = AdminLoginReqsPage;  

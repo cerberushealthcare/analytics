@@ -1,0 +1,200 @@
+/**
+ * Calendar Pop Controller
+ * Requires: DateUi.js
+ */
+var Calendar = {
+  callback:null,
+  //
+  date:null,
+  now:null,
+  //
+  todayVal:null,
+  year:null, 
+  month:null,
+  //
+  cboMonth:null,
+  cboYear:null,
+  tbody:null,
+  title:null,
+  today:null,
+  //
+  ONE_DAY:86400000,
+  START_YEAR:1900,
+  /*
+   * Show calendar pop
+   * @arg '23-Nov-2011' text: optional
+   * @callback(DateValue) on calendar save
+   */
+  pop:function(text, callback) {
+    this.load(text, callback);
+    //Pop.show('pop-cal', Pop.POS_MOUSE);
+    showOverlayPop('pop-cal', null, true);
+  },
+  pClose:function() {
+    //Pop.close();
+    closeOverlayPop();
+    this.callback(null);
+  },
+  pClear:function() {
+    closeOverlayPop();
+    this.callback('');
+  },
+  load:function(text, callback) {
+    this.callback = callback;
+    this.tbody = $('cal-tbody');
+    this.title = $('cal-title');
+    this.today = $('cal-today');
+    this.set(text);
+  },
+  set:function(text) {
+    this.now = new Date();
+    this.todayVal = (new Date(this.now.getFullYear(), this.now.getMonth(), this.now.getDate())).valueOf();
+    var dv = new DateValue(text);
+    this.date = dv.getDate();
+    var d = (this.date) ? this.date : this.now;
+    this.year = d.getFullYear();
+    this.month = d.getMonth();
+    this._loadCombos();
+    this._drawCalendar();
+  },
+  setByCombos:function() {
+    this.month = this.cboMonth.selectedIndex;
+    this.year = val(this.cboYear.value);
+    this._drawCalendar();
+  },
+  setToday:function() {
+    this.month = this.now.getMonth();
+    this.year = this.now.getFullYear();
+    this._drawCalendar();
+  },
+  click:function() {
+    var dv = null;
+    if (window.event && window.event.srcElement) {
+      var day = window.event.srcElement.day;
+      if (day) 
+        dv = new DateValue([this.year, this.month, day]);
+    }
+    if (dv) { 
+      //Pop.close();
+      closeOverlayPop();
+      this.callback(dv);
+    }
+  },
+  nextMonth:function() {
+    if (this.month == 11) {
+      this.month = 0;
+      this.year++;
+    } else {
+      this.month++;
+    }
+    this._drawCalendar();
+  },
+  prevMonth:function() {
+    if (this.month == 0) {
+      this.month = 11;
+      this.year--;
+    } else {
+      this.month--;
+    }
+    this._drawCalendar();
+  },
+  //
+  _loadCombos:function() {
+    if (this.cboMonth == null) {
+      this.cboMonth = $('cal-month');
+      this.cboYear = $('cal-year');
+      for (var m = 0; m < 12; m++)
+        addOpt(this.cboMonth, m, DateUi.getMonthName(m));
+      for (var y = Calendar.START_YEAR, ly = this.now.getFullYear() + 10; y <= ly; y++) 
+        addOpt(this.cboYear, y, y);
+    }
+  },
+  _setCombos:function() {
+    this.cboMonth.selectedIndex = this.month;
+    this.cboYear.selectedIndex = this.year - Calendar.START_YEAR;
+  },
+  _drawCalendar:function() {
+    this.title.innerText = DateUi.getMonthName(this.month) + ' ' + this.year;
+    this._setCombos();
+    var dFirstOfMonth = new Date(this.year, this.month, 1);  // first Sunday to display
+    var dCounter = new Date(dFirstOfMonth.valueOf() - dFirstOfMonth.getDay() * Calendar.ONE_DAY);
+    var todayShown = false;
+    var tr, td;
+    for (var row = 0; row < 6; row++) {
+      tr = this.tbody.rows[row];
+      for (var cell = 0; cell < 7; cell++) {
+        td = tr.cells[cell];
+        if (dCounter.getMonth() == this.month) {
+          td.day = dCounter.getDate();
+          td.innerText = td.day;
+          if (this._equalsSetDate(dCounter)) 
+            td.className = 'setting';
+          else 
+            if (dCounter.valueOf() == this.todayVal) { 
+              td.className = 'today';
+              todayShown = true;
+            } else {
+              td.className = (cell == 0 || cell == 6) ? 'weekend' : 'day';
+            }
+        } else {
+          td.innerHTML = '&nbsp;';
+          td.className = 'offDay';
+        }
+        dCounter.setDate(dCounter.getDate() + 1);
+      }
+    }
+    this.today.style.visibility = (todayShown) ? 'hidden' : '';
+  },
+  _equalsSetDate:function(d) {
+    return this.date && d.getMonth() == this.date.getMonth() && d.getFullYear() == this.date.getFullYear() && d.getDate() == this.date.getDate();
+  }
+};
+/**
+ * Clock Pop Controller
+ */
+var Clock = {
+  callback:null,    
+  cboHour:null,
+  cboMin:null,
+  /*
+   * Show clock pop
+   * @arg '04:30PM' text: optional
+   * @callback(TimeValue) on calendar save
+   */
+  pop:function(text, callback) {
+    this.load(text, callback);
+    //Pop.show('pop-clock', Pop.POS_MOUSE);
+    showOverlayPop('pop-clock', null, true);
+  },
+  load:function(text, callback) {
+    this.callback = callback;
+    this.cboHour = $('clkHour');
+    this.cboMin = $('clkMin');
+    this.set(text);
+  },
+  set:function(text) {
+    var tv = new TimeValue(text);
+    var h = tv.toString(TimeValue.FMT_HHAMPM);
+    var m = tv.toString(TimeValue.FMT_MM);
+    setValue_(this.cboHour, h);
+    setValue_(this.cboMin, m);
+  },
+  pClose:function() {
+    //Pop.close();
+    closeOverlayPop();
+    this.callback(null);
+  },
+  pClear:function() {
+    closeOverlayPop();
+    this.callback('');
+  },
+  pOk:function() {
+    var h = val(this.cboHour.value);
+    var m = this.cboMin.value;
+    var ampm = this.cboHour.value.substr(2);
+    var tv = new TimeValue(h + ':' + m + ampm);
+    //Pop.close();
+    closeOverlayPop();
+    this.callback(tv);
+  }
+}

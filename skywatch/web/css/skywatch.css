@@ -1,0 +1,20 @@
+BODY {
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background-color:#5F8FDB;
+}
+DIV#head {
+  height:43px;
+  background-color:#5F8FDB;
+}
+DIV#body { 
+  background-color:white;
+  padding:5px 10px;
+  height:300px;
+  overflow-y:scroll;
+  -webkit-overflow-scrolling:touch;
+}
+DIV.tile {
+  font-size:4em;
+}

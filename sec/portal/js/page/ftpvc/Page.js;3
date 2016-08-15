@@ -1,0 +1,29 @@
+/**
+ * Page PortalPage
+ */
+PortalPage = Html.Page.extend(function(self) {
+  return {
+    init:function() {
+      self.content = _$('page');
+    },
+    goHome:function() {
+      self.go('welcome.php');
+    },
+    goMessaging:function() {
+      self.go('messaging.php');
+    }
+  }  
+})
+/**
+ * Anchor ReturnAnchor
+ */
+ReturnAnchor = {
+  create:function(container, text) {
+    var a = Html.Anchor.create('return', text || 'Back to Home').into(container);
+    if (text) 
+      a.bubble('onclick', container, 'onreturn');
+    else
+      a.onclick = window.goHome;
+    return a;
+  }
+}

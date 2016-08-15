@@ -1,0 +1,496 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/data/Version.php";
+/**
+ * Chart definitions 
+ */
+class ChartIndex {
+  //
+  private static $AXES = array(
+    'hcfa' => 'Head circumference-for-age',
+    'lfa' => 'Length-for-age',
+    'lhcfa' => 'Length/Head circum',
+  	'sfa' => 'Stature-for-age',
+    'hfa' => 'Height-for-age',
+  	'wfa' => 'Weight-for-age',
+    'wfl' => 'Weight-for-length',
+    'wfa' => 'Weight-for-age',
+    'wfs' => 'Weight-for-stature',
+    'bmi' => 'Body mass index-for-age');
+  private static $SEXES = array(
+    'girls' => 'Girls', 
+    'boys' => 'Boys',
+    'preterm' => 'Infants');
+  private static $AGES = array(
+    '0t36m' => 'birth to 36 months',
+    '0t2y' => 'birth to 2 years',
+    '0t4y' => 'birth to 4 years',
+    '3t18y' => '3 to 18 years',
+    '0t18y' => 'birth to 18 years',
+  	'2t20y' => '2 to 20 years',
+    '22t50gw' => 'birth to 50 gest weeks');
+  static $AXIS_VITALS = array(
+    'Age (mos)' => 'cagem',
+    'Age (yrs)' => 'cagey',
+    'Gestational age (wks)' => 'gw', 
+    'Head (in)' => 'hc',
+    'Head (cm)' => 'hccm',
+    'Head/length (cm)' => 'lhc',
+  	'Length (in)' => 'htin',
+    'Length (cm)' => 'htcm',
+    'Height (cm)' => 'htcm',
+  	'Stature (in)' => 'htin',
+    'Weight (lbs)' => 'wtlb',
+    'Weight (kgs)' => 'wtkg',
+    'BMI (kg/m2)' => 'bmi',
+    'Pulse (bpm)' => 'pulse',
+    'RR (bpm)' => 'resp',
+    'Temp (f)' => 'temp',
+    'BP' => 'bp',
+    'Date' => 'date');
+  static $CHARTS = array(  
+    /* 
+     * WHO growth charts with image background 
+     */
+    'lfa-boys-0t2y-who' => array(
+      'dim' => array(89, 67, 747, 478),
+      'y' => array(45, 95, 'Length (cm)'),
+      'x' => array(0, 24, 'Age (mos)')),
+    'lfa-girls-0t2y-who' => array(
+      'dim' => array(88, 67, 748, 479),
+      'y' => array(45, 95, 'Length (cm)'),
+      'x' => array(0, 24, 'Age (mos)')),
+    'wfa-boys-0t2y-who' => array(
+      'dim' => array(88, 67, 748, 479),
+      'y' => array(1.4, 16.6, 'Weight (kgs)'),
+      'x' => array(0, 24, 'Age (mos)')),
+    'wfa-girls-0t2y-who' => array(
+      'dim' => array(88, 67, 748, 479),
+      'y' => array(1.4, 15.6, 'Weight (kgs)'),
+      'x' => array(0, 24, 'Age (mos)')),
+    'wfl-boys-0t2y-who' => array(
+      'dim' => array(89, 67, 748, 479),
+      'y' => array(1, 23, 'Weight (kgs)'),
+      'x' => array(45, 110, 'Length (cm)')),
+    'wfl-girls-0t2y-who' => array(
+      'dim' => array(87, 67, 748, 479),
+      'y' => array(1, 23, 'Weight (kgs)'),
+      'x' => array(45, 110, 'Length (cm)')),
+    /*
+     * CDC Growth charts with image background
+     */
+    'hcfa-boys-0t36m' => array(  
+      'dim' => array(0, 67, 557, 786),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(11.5, 23, 'Head (in)')),
+    'hcfa-girls-0t36m' => array(
+      'dim' => array(0, 76, 550, 790),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(11.5, 23, 'Head (in)')),
+    'lfa-boys-0t36m' => array(
+      'dim' => array(0, 69, 551, 791),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(16, 43, 'Length (in)')),
+    'lfa-girls-0t36m' => array(
+      'dim' => array(0, 71, 551, 790),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(16, 43, 'Length (in)')),
+    'wfa-boys-0t36m' => array(
+      'dim' => array(0, 58, 566, 792),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(3, 42, 'Weight (lbs)')),
+    'wfa-girls-0t36m' => array(
+      'dim' => array(0, 59, 565, 787),
+      'x' => array(0, 38, 'Age (mos)'),
+      'y' => array(3, 42, 'Weight (lbs)')),
+    'wfl-boys-0t36m' => array(
+      'dim' => array(0, 43, 568, 760),
+      'x' => array(17, 43, 'Length (in)'),
+      'y' => array(0, 53, 'Weight (lbs)')),
+    'wfl-girls-0t36m' => array(
+      'dim' => array(0, 44, 566, 759),
+      'x' => array(17, 43, 'Length (in)'),
+      'y' => array(0, 53, 'Weight (lbs)')),
+    'bmi-boys-2t20y' => array(
+      'dim' => array(0, 47, 568, 788),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(10, 37, 'BMI (kg/m2)')),
+    'bmi-girls-2t20y' => array(
+      'dim' => array(0, 48, 569, 789),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(10, 37, 'BMI (kg/m2)')),
+    'sfa-boys-2t20y' => array(
+      'dim' => array(0, 80, 542, 788),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(28, 80, 'Stature (in)')),
+    'sfa-girls-2t20y' => array(
+      'dim' => array(0, 73, 546, 787),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(28, 80, 'Stature (in)')),
+    'wfa-boys-2t20y' => array(
+      'dim' => array(0, 70, 559, 783),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(10, 240, 'Weight (lbs)')),
+    'wfa-girls-2t20y' => array(
+      'dim' => array(0, 70, 550, 791),
+      'x' => array(2, 21, 'Age (yrs)'),
+      'y' => array(10, 240, 'Weight (lbs)')),
+    'wfs-boys-2t20y' => array(
+      'dim' => array(0, 54, 569, 752),
+      'x' => array(30, 49, 'Stature (in)'),
+      'y' => array(15, 78, 'Weight (lbs)')),
+    'wfs-girls-2t20y' => array(
+      'dim' => array(0, 54, 569, 750),
+      'x' => array(30, 49, 'Stature (in)'),
+      'y' => array(15, 78, 'Weight (lbs)')),
+    /* 
+     * Downs charts
+     */
+    'hfa-boys-0t4y-downs' => array(
+      'dim' => array(31, 77, 497, 725),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(30, 120, 'Height (cm)')),
+    'hfa-boys-3t18y-downs' => array(
+      'dim' => array(31, 81, 497, 725),
+      'x' => array(3, 18, 'Age (yrs)'),
+      'y' => array(70, 180, 'Height (cm)')),
+    'hfa-girls-0t4y-downs' => array(
+      'dim' => array(30, 81, 500, 729),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(30, 120, 'Height (cm)')),
+    'hfa-girls-3t18y-downs' => array(
+      'dim' => array(30, 85, 499, 729),
+      'x' => array(3, 18, 'Age (yrs)'),
+      'y' => array(70, 180, 'Height (cm)')),
+  	'wfa-boys-0t4y-downs' => array(
+      'dim' => array(29, 81, 500, 729),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(0, 24, 'Weight (kgs)')),
+    'wfa-boys-3t18y-downs' => array(
+      'dim' => array(29, 85, 500, 729),
+      'x' => array(3, 18, 'Age (yrs)'),
+      'y' => array(0, 95, 'Weight (kgs)')),
+    'wfa-girls-0t4y-downs' => array(
+      'dim' => array(29, 81, 502, 729),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(0, 24, 'Weight (kgs)')),
+    'wfa-girls-3t18y-downs' => array(
+      'dim' => array(29, 85, 500, 729),
+      'x' => array(3, 18, 'Age (yrs)'),
+      'y' => array(0, 95, 'Weight (kgs)')),
+    'bmi-boys-0t18y-downs' => array(
+      'dim' => array(46, 82, 500, 732),
+      'x' => array(0, 18, 'Age (yrs)'),
+      'y' => array(8, 40, 'BMI (kg/m2)')),
+    'bmi-girls-0t18y-downs' => array(
+      'dim' => array(46, 82, 500, 732),
+      'x' => array(0, 18, 'Age (yrs)'),
+      'y' => array(8, 40, 'BMI (kg/m2)')),
+    'hcfa-boys-0t4y-downs' => array(  
+      'dim' => array(31, 98, 499, 730),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(25, 55, 'Head (cm)')),
+    'hcfa-girls-0t4y-downs' => array(  
+      'dim' => array(31, 98, 499, 730),
+      'x' => array(0, 4, 'Age (yrs)'),
+      'y' => array(25, 55, 'Head (cm)')),
+  	/*
+     * Preterm charts 
+     */
+    'wfa-preterm-22t50gw' => array(
+      'dim' => array(25, 59, 595, 622),
+      'x' => array(22, 50, 'Gestational age (wks)'),
+      'y' => array(0, 6.5, 'Weight (kgs)')),
+    'lhcfa-preterm-22t50gw' => array(
+      'dim' => array(24, 59, 595, 481),
+      'x' => array(22, 50, 'Gestational age (wks)'),
+      'y' => array(15, 65, 'Head/length (cm)')),
+  	/*
+     * Vitals charts for date range (no image)
+     */
+    'vitals-bp' => array(
+      'title' => 'BLOOD PRESSURE-BY-DATE',
+      'y' => array(null, null, 'BP')),
+    'vitals-bmi' => array(
+      'title' => 'BODY MASS INDEX-BY-DATE',
+      'y' => array(15, 65, 'BMI (kg/m2)')),
+    'vitals-pulse' => array(
+      'title' => 'PULSE-BY-DATE',
+      'y' => array(null, null, 'Pulse (bpm)')),
+    'vitals-rr' => array(
+      'title' => 'RESPIRATORY RATE-BY-DATE',
+      'y' => array(null, null, 'RR (bpm)')),
+    'vitals-temp' => array(
+      'title' => 'TEMPERATURE-BY-DATE',
+      'y' => array(90, 108, 'Temp (f)')),
+    'vitals-weight' => array(
+      'title' => 'WEIGHT-BY-DATE',
+      'y' => array(null, null, 'Weight (lbs)'))
+  );
+  // Chart types
+  const TYPE_VITALS_BY_DATE = 1;
+  const TYPE_GROWTH_CDC = 2;
+  const TYPE_GROWTH_WHO = 3;
+  const TYPE_GROWTH_DOWNS = 4;
+  const TYPE_GROWTH_PRETERM = 5;
+  //
+  /**
+   * Get charts appropriate for client in JSON
+   * @param string $sex 'M' or 'F'
+   * @param int $age in years
+   * @return [{'id':$,'title':$},..]
+   */
+  static function getChartsJson($sex, $age) {
+    $filters = self::getFilters($sex, $age); 
+    $charts = array();
+    foreach ($filters as &$filter) {
+      foreach (self::$CHARTS as $id => &$specs) {
+        if (strpos($id, $filter) !== false) {
+          $charts[] = array(
+            'id' => $id,
+            'title' => self::getTitle($id)
+            );
+        }
+      }
+    }
+    usort($charts, function($a, $b) {
+      return ($a['title'] > $b['title']);
+    });
+    return jsonencode($charts);
+  }
+  /**
+   * Get chart by ID in JSON
+   * @param string $id
+   * @param JDataVital[] $vitals
+   * @return {
+   *   'id':$,
+   *   'title':$,
+   *   'graph':{
+   *     'x':{'values':[#,#],'label':$},
+   *     'y':{'values':[#,#],'label':$}
+   *     'dim':{'top':#,'left':#,'width':#,'height':#},
+   *     },
+   *   'pts':[(x,y),..]
+   *   }
+   */
+  static function getChartJson($id, $vitals) {
+    $specs = self::getSpecs($id);
+    $title = self::getTitle($id, $specs);
+    $img = self::getImg($id, $specs);
+    switch ($specs['type']) {
+      case self::TYPE_VITALS_BY_DATE:
+        $dim = array(0, 70, 550, 790);
+        $xr = array(0, 24854, 'Date');
+        $yr = $specs['y'];
+        $pts = self::getPoints($vitals, $xr, $yr);
+        $spread = self::getSpread($pts);
+        if ($spread) {
+          $xr[0] = $spread['x0'] - 30;
+          $xr[1] = $spread['x1'] + 30;
+          if ($yr[0] === null) {
+            $yr[0] = ($spread['yr'] < 80) ? $spread['y0'] - (40 - $spread['yr'] / 2) : $spread['y0'];
+            $yr[0] = ($yr[0] < 0) ? -5 : $yr[0] - $yr[0] % 10 - 5;
+            $yr[1] = $yr[0] + 100;
+            $yr[1] = ($yr[1] > $spread['y1']) ? $yr[1] : $spread['y1'] + 5;
+          }
+        } else {
+          if ($yr[0] == null) 
+            $yr = array(0, 100, $yr[2]);
+        }
+        break;
+      default:
+        $dim = $specs['dim'];
+        $xr = $specs['x'];
+        $yr = $specs['y'];
+        $pts = self::getPoints($vitals, $xr, $yr);
+        break;
+    }
+    $chart = self::buildChart($id, $title, $img, $xr, $yr, $dim, $pts);
+    $chart['type'] = $specs['type'];
+    $chart['girls'] = (strpos($id, '-girls') !== null);
+    return jsonencode($chart);
+  }
+  //
+  private static function getSpread($pts) {
+    $spread = null;
+    if (count($pts) > 0) {
+      $spread = array('x0' => $pts[0][0], 'x1' => $pts[0][0], 'y0' => $pts[0][1], 'y1' => $pts[0][1]);
+      for ($i = 1; $i < count($pts); $i++) {
+        $pt = $pts[$i];
+        if ($pt[0] < $spread['x0']) {
+          $spread['x0'] = $pt[0];
+        }
+        if ($pt[0] > $spread['x1']) {
+          $spread['x1'] = $pt[0];
+        }
+        if ($pt[1] < $spread['y0']) {
+          $spread['y0'] = $pt[1];
+        }
+        if ($pt[1] > $spread['y1']) {
+          $spread['y1'] = $pt[1];
+        }
+      }
+      $spread['xr'] = $spread['x1'] - $spread['x0'];
+      $spread['yr'] = $spread['y1'] - $spread['y0'];
+    }
+    return $spread;
+  }
+  private static function getSpecs($id) {
+    $specs = self::$CHARTS[$id];
+    $specs['type'] = self::getChartType($id);
+    return $specs;
+  }
+  private static function getChartType($id) {
+    if (strpos($id, 'vitals-') !== false) 
+      return self::TYPE_VITALS_BY_DATE;    
+    if (substr($id, -4) == '-who') 
+      return self::TYPE_GROWTH_WHO;  
+    if (substr($id, -6) == '-downs') 
+      return self::TYPE_GROWTH_DOWNS;
+    if (strpos($id, 'preterm-') !== false)
+      return self::TYPE_GROWTH_PRETERM;  
+    return self::TYPE_GROWTH_CDC;
+  }
+  private static function buildChart($id, $title, $img, $xr, $yr, $dim, $pts) {
+    return array(
+      'id' => $id,
+      'title' => $title,
+      'graph' => array( 
+        'x' => array(
+          'label' => array_pop($xr),
+          'values' => $xr
+          ),
+        'y' => array(
+          'label' => array_pop($yr),
+          'values' => $yr
+          ),
+        'dim' => array(
+          'top' => $dim[0],
+          'left' => $dim[1],
+          'width' => $dim[2],
+          'height' => $dim[3],
+          'img' => $img,
+          )
+        ),
+      'pts' => $pts
+      );
+  }
+  private static function getPoints($vitals, $xr, $yr) {
+    $pts = array();
+    $xfid = self::getAxisVital($xr);
+    $yfid = self::getAxisVital($yr);
+    foreach ($vitals as &$vital) {
+      $x = self::getVitalValue($vital, $xfid, $xr);
+      $y = self::getVitalValue($vital, $yfid, $yr);
+      if ($x !== null && $y !== null) {
+        if (is_array($y)) {
+          foreach ($y as $yi) {
+            $pts[] = array($x, $yi);
+          }
+        } else {
+          $pts[] = array($x, $y);
+        }
+      }
+    }
+    return $pts;
+  }
+  private static function getVitalValue($vital, $fid, $r) {
+    switch ($fid) {
+      case 'date':
+        return self::toJulian($vital->date);
+      case 'bp':
+        $s = $vital->bpSystolic;
+        $d = $vital->bpDiastolic;
+        if ($s == null || $d == null) 
+          return null;
+        return array(floatval($s), floatval($d));
+      case 'lhc':
+        $l = self::getVitalValue($vital, 'htcm', $r);
+        $hc = self::getVitalValue($vital, 'hccm', $r);
+        if ($l == null && $hc == null)
+          return null;
+        return array($l, $hc);
+      default:
+        $value = get($vital, $fid);
+        if ($value === null) {
+          return null;
+        }
+        $val = floatval($value);
+        return (self::inRange($val, $r)) ? $val : null;
+    }
+  }
+  private static function inRange($v, $r) {
+    if ($r[0] === null && $r[1] === null) {
+      return true;
+    }
+    if ($r[0] < $r[1]) {
+      return ($v >= $r[0] && $v <= $r[1]);
+    } else {
+      return ($v >= $r[1] && $v <= $r[0]);
+    }
+  }
+  private static function toJulian($date) {
+    return unixtojd(strtotime($date)) - 2440588;
+  }
+  private static function getAxisVital($axis) {
+    $label = $axis[2];
+    return self::$AXIS_VITALS[$label];
+  }
+  private static function getTitle($id, $specs = null) {
+    if ($specs == null) {
+      $specs = self::getSpecs($id);
+    }
+    if (isset($specs['title'])) {
+      $title = $specs['title'];
+    } else {
+      $a = explode('-', $id);
+      $axes = self::$AXES[$a[0]];
+      $sex = self::$SEXES[$a[1]];
+      $age = self::$AGES[$a[2]];
+      $pub = self::getPub($specs); 
+      $title = "[$pub] $axes: $sex $age";
+    }
+    return $title;
+  }
+  private static function getPub($specs) {
+    switch ($specs['type']) {
+      case self::TYPE_GROWTH_WHO:
+        return 'WHO';
+      case self::TYPE_GROWTH_DOWNS:
+        return 'Downs';
+      case self::TYPE_GROWTH_PRETERM:
+        return 'Preterm';
+      default:
+        return 'CDC';
+    }
+  }
+  private static function getImg($id, $specs) {
+    switch ($specs['type']) {
+      case self::TYPE_GROWTH_CDC:
+      case self::TYPE_GROWTH_WHO:
+      case self::TYPE_GROWTH_DOWNS:
+      case self::TYPE_GROWTH_PRETERM:
+        return "img/charts/$id.png?" . Version::getUrlSuffix();
+      case self::TYPE_VITALS_BY_DATE:
+        return null;
+    }
+  }
+  private static function getFilters($sex, $age) {
+    $filters = array();
+    $sex = ($sex == Client0::MALE) ? '-boys' : '-girls';
+    $filters[] = 'vitals-';
+    if ($age >= 2) {
+      $filters[] = "$sex-2t20y";
+    }
+    if ($age >= 3) {
+      $filters[] = "$sex-3t18y";
+      $filters[] = "$sex-3t18y";
+    }
+    $filters[] = "$sex-0t4y";
+    $filters[] = "$sex-0t2y";
+    $filters[] = "$sex-0t36m";
+    $filters[] = "preterm-22t50gw";
+    return $filters;
+  }
+}
+?>

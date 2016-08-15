@@ -1,0 +1,20 @@
+<?php 
+require_once "php/data/json/JUser.php";
+require_once "php/data/json/JUserGroup.php";
+require_once "php/data/json/JAddress.php";
+require_once "php/data/Version.php";
+require_once "php/dao/LoginDao.php";
+//
+if (isset($_GET['sess'])) {
+  session_id($_GET['sess']);
+}
+if (LoginDao::authenticateSession() < 0) {
+  header("Location: index.php?timeout=1");
+  exit;
+}
+if ($myLogin->pwExpired) {
+  header("Location: index.php?cp=1");
+  exit;
+}
+header('P3P:CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"');
+$myLogin->setPermissions();

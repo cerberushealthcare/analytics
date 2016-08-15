@@ -1,0 +1,30 @@
+<?php
+function BOX($class = '') {
+  echo <<<END
+<table class='box $class' cellpadding='0' cellspacing='0'>
+  <tr class='box-tb'>
+    <td class='tl'></td>
+    <td class='t'></td>
+    <td class='tr'></td>
+  </tr>
+  <tr>
+    <td class='l' nowrap></td>
+    <td class='content'>
+      <div class='box-content'>
+END;
+}
+function _BOX() {
+  echo <<<END
+      </div>
+    </td>
+    <td class='r' nowrap></td>
+  </tr>
+  <tr class='box-tb'>
+    <td class='bl'></td>
+    <td class='b'></td>
+    <td class='br'></td>
+  </tr>
+</table>
+END;
+}
+  

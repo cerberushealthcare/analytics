@@ -1,0 +1,811 @@
+SPAN#h1-name {
+  color:#004B52;
+}
+H2 {
+  font-family:Calibri,Tahoma,Arial;
+  font-weight:bold;
+  font-size:11pt;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+  color:#004B52;
+  margin:0 0 3px 0;
+}
+H2.push {
+  margin-top:5px;
+}
+UL.push {
+  margin-top:5px;
+}
+.hand {
+  cursor:hand;
+}
+H3 {
+  font-family:Calibri,Tahoma,Arial;
+  font-weight:bold;
+  font-size:10pt;
+  color:#0B4B43;
+}
+H4 {
+  font-family:Calibri,Tahoma,Arial;
+  font-weight:bold;
+  font-size:11pt;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+  color:black;
+  color:#004B52;
+  text-transform:uppercase;
+  margin:0;
+  padding:0;
+}
+UL.entry LI {
+  padding:0;
+}
+UL.q LABEL {
+  padding:4px 0 0 10px;
+  margin:0;
+}
+UL.ro SPAN.ro {
+  background-color:transparent;
+  font-weight:bold;
+  border:1px solid transparent;
+}
+A.pencil {
+  margin-right:2px;
+  font-size:9pt;
+}
+A.pencilvital {
+  padding-left:18px;
+  overflow:hidden;
+  margin:0;
+}
+A.na {
+  color:purple;
+}
+DIV#portrait {
+  border:1px solid #C7C0B1;
+  background:url(../img/icons/no-portrait.png) white no-repeat bottom left;
+  height:115px;
+  margin:0;
+}
+DIV#portrait TABLE {
+  width:100%;
+}
+A#show-demo {
+  position:relative;
+  top:3px;
+  left:-3px;
+}
+DIV#notepad {
+  border:1px solid #C7C0B1;
+  padding:5px;
+  font-size:9pt;
+  font-family:Arial;
+  height:105px;
+  color:black;
+  overflow-y:scroll;
+}
+DIV#notepad-empty {
+  text-align:center;
+  padding-top:44px;
+}
+DIV#notepad.full {
+  background-color:#FCFAEE;
+}
+A#notepad-text {
+  color:purple;
+}
+DIV.qpanel {
+  font-size:9pt;
+}
+TD.w5 {
+  width:5px;
+}
+TD.label {
+  width:110px;
+  text-align:right;
+  font-family:Calibri,Tahoma,Arial;
+  font-size:10pt;
+  line-height:10pt;
+  color:#494949;
+  font-weight:normal;
+  vertical-align:top;
+  padding:6px 5px 0 0;
+  font-family:Calibri,Tahoma,Arial;
+  font-weight:bold;
+  font-size:10pt;
+  color:#0B4B43;
+}
+A.qcmd {
+  border:1px solid #003366;
+  border-right:2px solid #003366;
+  border-bottom:2px solid #003366;
+  background-color:#E3E1DD;
+  font-size:9pt;
+  font-family:Calibri,Tahoma,Arial;
+  vertical-align:top;
+  display:inline-block;
+  height:16px;
+  padding:4px 4px 1px 24px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+A.qcmd:hover {
+  text-decoration:none;
+  background-color:white;
+  border-color:#f42941;
+  color:#f42941;
+}
+A.qcmd SPAN {
+  padding:0;
+  color:#494949;
+}
+A.qnote {
+  background:url(../img/icons/edit-yellow.gif) #FAFAFA no-repeat 5px 4px;
+  height:32px;
+  margin-right:3px;
+  width:90px;
+}
+A.qnote SPAN {
+  font-size:8pt;
+}
+A.qmore {
+  display:inline-block;
+  margin:5px 0 0 2px;
+}
+A.qvital {
+  background:url(../img/icons/spreadsheet.png) #F4F0FE no-repeat 4px 3px;  
+}
+A.qappt {
+  background:url(../img/icons/clock-edit.gif) #DAECF8 no-repeat 3px 3px;
+}
+A.qicon {
+  font-size:9pt;
+  font-family:Calibri,Tahoma,Arial;
+  vertical-align:top;
+  display:inline-block;
+  height:14px;
+  padding:4px 4px 1px 24px;
+  border:1px solid transparent;
+}
+A.cdc {
+  background:url(../img/cdc.png) no-repeat 5px 5px;
+}
+A.qnew-note {
+  background:url(../img/icons/edit-yellow.gif) no-repeat 5px 4px;
+}
+A.qnew-msg {
+  background:url(../img/icons/email.png) no-repeat 3px 3px;
+}
+A.qnew-vital {
+  background:url(../img/icons/spreadsheet.png) no-repeat 4px 3px;  
+}
+A.qnew-appt {
+  background:url(../img/icons/clock-edit.gif) no-repeat 3px 3px;
+}
+A.qicon:hover {
+  text-decoration:underline;
+}
+DIV.qpanel UL {
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+UL.entry SPAN.bb {
+  font-size:10.5pt;
+  font-weight:bold;
+}
+UL.entry LABEL.spad {
+  padding-left:8px;
+}
+DIV.fstab {
+  height:200px;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  border:1px solid #C7C0B1;
+  background:url(../img/table-back.png);
+  scrollbar-face-color:#e0e0e0;
+  padding-right:17px;
+}
+DIV.noscroll {
+  overflow-y:visible;
+  padding-right:0;
+  height:auto;
+}
+DIV.nbb {
+  border-bottom:none;
+}
+DIV.fstab TABLE {
+  width:100%;
+  border-collapse:collapse;
+}
+DIV.fstab TR.head {
+  background-color:#C7C0B1;
+}
+DIV.fstab TR.fixed {
+  position:relative;
+  top:expression(this.parentElement.parentElement.parentElement.scrollTop);
+}
+DIV.fstab TR.bottom TH {
+  vertical-align:bottom;
+}
+DIV.fstab TR.white {
+  background-color:white;
+}
+DIV.fstab TR.nbp TH {
+  padding-bottom:0;
+}
+TABLE.fsb TR {
+  background-color:#EEF6FC;
+}
+TABLE.fsb TR.off {
+  background-color:#DAECF8;
+}
+TABLE.fsr TR {
+  background-color:#FCF3EE;
+}
+TABLE.fsr TR.off {
+  background-color:#F8E4DA;
+}
+TABLE.fsy TR {
+  background-color:#FCFAEE;
+}
+TABLE.fsy TR.off {
+  background-color:#F8F3DA;
+}
+TABLE.fsgr TR {
+  background-color:#fafafa;
+}
+TABLE.fsgr TR.off {
+  background-color:#eeeeee;
+}
+TABLE.fsg TR {
+  background-color:#F4F0FE;
+}
+TABLE.fsg TR.off {
+  background-color:#E6E1F7;
+}
+TABLE.fsp TR {
+  background-color:#F2FAF0;
+}
+TABLE.fsp TR.off {
+  background-color:#E1F2DC;
+}
+TABLE.fsp TR.hide {
+  display:none;
+  background:yellow;
+  color:red;
+}
+DIV.fstab TR.gray {
+  background-color:#E9E9E9;
+}
+DIV.fstab TR.white {
+  background-color:white;
+}
+DIV.fstab TR.head TH {
+  border-bottom:1px solid #C7C0B1;
+  white-space:nowrap;
+  background-color:#E4E2DC;
+  color:black;
+  padding:2px 5px;
+  font-size:10pt;
+  text-align:left;
+}
+DIV.fstab TD {
+  padding:3px 5px;
+  font-size:9pt;
+  vertical-align:top;
+  border-bottom:1px solid #E4E2DC;
+}
+DIV.fstab TABLE.fsgr TD {
+  padding:2px 5px;
+}
+DIV.fstab TD.main {
+  white-space:nowrap;
+}
+DIV.fstab TD.immname {
+  white-space:nowrap;
+  text-align:right;
+}
+DIV.fstab TD.immcat {
+  white-space:nowrap;
+  font-weight:bold;
+}
+DIV.fstab TD.nowrap {
+  white-space:nowrap;
+}
+DIV.fstab TD.ell {
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+DIV.fstab TD.middle {
+  vertical-align:middle;
+}
+DIV.fstab TABLE.single TD {
+}
+DIV.fstab TD.histbreak {
+  font-size:10.5pt;
+  font-weight:bold;
+  white-space:nowrap;
+}
+DIV.fstab TD.bold {
+  font-size:10pt;
+  font-weight:bold;
+}
+DIV.fstab TD.active {
+}
+DIV.fstab TD.active SPAN {
+  font-size:10pt;
+  color:#00C000;
+}
+DIV.fstab TD.inactive {
+  color:#696969;
+}
+DIV.fstab TD.check {
+  text-align:center;
+  border-right:1px solid #E4E2DC;
+  width:1px;
+}
+DIV.fstab TD.wcheck {
+  text-align:center;
+  border-right:1px solid #E4E2DC;
+  vertical-align:middle;
+}
+DIV.fstab TH.check {
+  width:20px;
+}
+DIV.fstab TD.vtop {
+  vertical-align:top;
+  padding-top:1px;
+  padding-bottom:0;
+}
+DIV.fstab TD.noborder {
+  border-right:none;
+}
+DIV.fstab TD.vitals {
+  width:100%;
+  padding-top:4px;
+}
+DIV.fstab DIV.vit-text {
+  font-size:9pt;
+}
+DIV.fstab TR.cont TD {
+}
+DIV.fstab TR.sub TD {
+  padding-top:20px;
+  font-size:11pt;
+  font-weight:bold;
+  color:#0B4B43;
+  background-color:white;
+}
+DIV.fstab TABLE.single TD {
+  vertical-align:middle;
+  padding:2px 5px;
+}
+DIV.fstab TABLE.smallpad TD {
+  padding:0 5px;
+}
+DIV.fstab TABLE.bigpad TD {
+  padding:4px 5px;
+}
+DIV.fstab TABLE.grid {
+  border-bottom:1px solid #C7C0B1;
+}
+DIV.fstab TABLE.grid TD {
+  border-right:1px solid #C7C0B1;
+  border-bottom:1px solid #C7C0B1;
+}
+DIV.fstab TABLE.vmid TD {
+  vertical-align:middle;
+}
+DIV.fstab INPUT.w1 {
+  width:24px;
+  text-align:right;
+}
+DIV.fstab TABLE.grid TD.pname {
+  padding-top:0;
+  padding-bottom:0;
+}
+DIV.fstab TABLE.grid TD.pname SPAN {
+  font-size:10.5pt;
+  text-transform:uppercase;
+}
+DIV.fstab TABLE.grid TD.norb {
+  border-right:none;
+}
+DIV.fstab TABLE.single TD.comments {
+  padding:0 1em 1px 1em;
+  font-style:italic;
+}
+DIV.fstab TD.center {
+  text-align:center;
+}
+DIV.fstab TD.nbb {
+  border-bottom:none;
+}
+DIV.fstab TABLE.grid TD.nbb {
+  border-bottom:none;
+}
+DIV.fstab TABLE.grid TD.nrb {
+  border-right:none;
+}
+DIV.fstab TABLE.grid TD.nrbc {
+  border-right:none;
+  padding-top:3px;
+  text-align:right;
+  vertical-align:top;
+  color:#494949;
+}
+DIV.fstab TABLE.grid TD.right {
+  text-align:right;
+}
+DIV.fstab TABLE.grid TD.top {
+  vertical-align:top;
+}
+DIV.fstab TD.right {
+  text-align:right;
+}
+DIV.fstab EM {
+  font-size:10.5pt;
+  font-style:normal;
+  font-weight:bold;
+  text-transform:uppercase;
+}
+DIV.fstab TR.offgr EM {
+  font-weight:normal;
+}
+A.fsnone {
+  font-size:10pt;
+  font-style:normal;
+  font-weight:bold;  
+}
+DIV.fstab TD.fs {
+  font-size:10.5pt;
+  font-style:normal;
+  font-weight:bold;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+DIV.fstab TD.legacy {
+  color:red;
+  font-style:italic;
+}
+A.fs {
+  font-size:10.5pt;
+  font-style:normal;
+  font-weight:bold;
+  text-transform:uppercase;
+}
+A.fs0 {
+  font-size:10pt;
+  font-style:normal;
+}
+DIV.hxsum {
+  line-height:10pt;
+  padding:3px;
+  font-size:10pt;
+  font-style:normal;
+}
+DIV.fstab A.hxa {
+  display:block;
+  border-bottom:1px solid transparent;
+}
+DIV.fstab A.hxa:hover {
+  text-decoration:none;
+  border-bottom:1px solid #f42941;
+}
+A.fsl {
+  font-size:10.5pt;
+  font-style:normal;
+  font-weight:bold;
+  text-transform:uppercase;
+  display:block;
+}
+A.fs SPAN {
+  font-size:9pt;
+  color:red;
+}
+A.aller {
+  padding-left:19px;
+  background:url(../img/icons/warning.png) no-repeat 0 -1px;
+}
+A.legacy {
+  color:red;
+  font-style:italic;
+}
+A.vital {
+  font-size:10pt;
+  text-transform:none;
+}
+A.fs:hover {
+  color:#f42941;
+}
+TABLE.drop {
+  margin-top:5px;
+}
+DIV.expires {
+  font-weight:bold;
+  padding-bottom:2px;
+}
+DIV.fstab TABLE.single A.icon {
+  padding-left:20px;
+  padding-right:6px;
+  color:blue;
+  text-decoration:none;
+  height:auto;
+  line-height:16px;
+}
+DIV.fstab TABLE.single A.note {
+  background:url(../img/icons/no-edit.gif) 0 0 no-repeat;
+  padding-left:16px;
+  padding-top:1px;
+}
+DIV.fstab TABLE.single A.rx {
+  background:url(../img/icons/rx-view.gif) 0 0 no-repeat;
+  padding-left:14px;
+  height:16px;
+  display:inline-block;
+}
+DIV.fstab A:hover {
+  color:#d11d35;
+  text-decoration:underline;  
+}
+SPAN.perfs {
+  display:block;
+  padding:2px 0;
+}
+A.fsview {
+  margin-right:2px;
+  font-size:9pt;
+  background:url(../img/icons/window-restore.gif) no-repeat left -2px;
+  padding-left:17px;
+}
+A.fsview:hover {
+  background:url(../img/icons/window-restore-red.gif) no-repeat left -2px;
+}
+A.fscap {
+  display:block;
+  background:url(../img/icons/window-restore.gif) no-repeat right center;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:10pt;
+  color:#004B52;
+  margin:0 0 2px 0;
+}
+A.fscap:hover {
+  color:#F42941;
+  text-decoration:none;
+  background-image:url(../img/icons/window-restore-red.gif);
+}
+UL.entry SPAN.q {
+  background:white;
+  margin:0 0 2px 0;
+  display:inline-block;
+}
+UL.entry SPAN.q A {
+  border:1px solid #c0c0c0;
+  padding:1px 4px 3px 4px;
+  font-family:Arial;
+  font-size:10pt;
+  display:block;
+  color:purple;
+  text-decoration:none;
+  margin-right:2px;
+}
+UL.entry SPAN.qr A {
+  width:500px;
+  white-space:normal;
+}
+UL.entry SPAN.qt A {
+  width:500px;
+  white-space:normal;
+}
+UL.entry SPAN.qc A {
+  width:350px;
+  white-space:normal;
+}
+UL.entry SPAN.qc2 A {
+  width:500px;
+  white-space:normal;
+}
+UL.entry SPAN.qd A {
+  width:120px;
+  white-space:normal;
+}
+UL.entry SPAN.qd2 A {
+  width:300px;
+  white-space:normal;
+}
+UL.entry SPAN.q A.df {
+  color:blue;
+  background-color:#E8F2FE;
+}
+UL.entry SPAN.q A:hover {
+  color:#f42941;
+  border-color:#f42941;
+}
+TD.w60 {
+  width:60%;
+}
+DIV#pop-cn DIV.pop-content {
+  width:350px;
+}
+DIV#pop-cn TEXTAREA {
+  font-family:Arial;
+  font-size:9pt;
+  width:100%;
+}
+DIV.push {
+  margin-top:20px;
+}
+TABLE.push {
+  margin-top:10px;
+}
+LI.push2 {
+  margin-top:20px;
+}
+UL.entry SPAN.info {
+  background:url(../img/icons/info.png) no-repeat left center;
+  padding-left:18px;
+  margin-top:4px;
+}
+UL.entry SPAN.warn {
+  background:url(../img/icons/warning.png) no-repeat left center;
+  padding-left:18px;
+  margin-top:4px;
+  color:red;
+}
+DIV.hm-results {
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  width:300px;
+}
+INPUT.color-check {
+  background-color:#8DD3CA;
+  border:1px solid #008E80;
+}
+SPAN.lpad {
+  padding-left:0.3em;
+}
+TD#td-all {
+  width:300px;
+  vertical-align:top;
+}
+DIV.doc-vit {
+  height:230px;
+}
+DIV#fs-refresh {
+  padding:5px 0 10px 0;
+}
+DIV#fs-refresh A {
+  display:block;
+  border:1px solid #B8BA36;
+  background:#FFFF80;
+  text-align:center;
+  font-family:Calibri;
+  font-size:11pt;
+  padding:2px 0;
+}
+DIV#fs-refresh A:hover {
+  text-decoration:none;
+  border-color:#f42941;  
+}
+A.fprt {
+  background:url(../img/icons/print.gif) no-repeat 0 1px;
+  padding-left:19px;
+  padding-top:0;
+  height:18px;
+  display:inline-block;
+}
+A.fview {
+  background:url(../img/icons/mGlass.gif) no-repeat 1px 2px;
+  padding-left:20px;
+  padding-top:0;
+  height:18px;
+  display:inline-block;
+}
+A.lbl {
+  width:100px;
+  text-align:right;
+  display:inline-block;
+}
+TABLE.w100 {
+  width:100%;
+  border-collapse:collapse;
+}
+TD.w80 {
+  width:90%;
+}
+DIV.tagline {
+  font-size:9pt;
+  color:#707070;
+  padding-left:20px;
+}
+DIV.pghead {
+  display:none;
+  text-align:right;
+  font-family:Arial;
+  font-weight:bold;
+  font-size:10pt;
+}
+DIV.pghead1 {
+  display:none;
+  text-align:right;
+  font-family:Arial;
+  font-weight:bold;
+  font-size:10pt;
+}
+TR.disable INPUT.text {
+  background-color:#e8e8e8;
+}
+TR.disable SELECT {
+  background-color:#e8e8e8;
+}
+TR.disable TD {
+  color:#707070;
+}
+@media screen {
+  DIV.print {
+    visibility:hidden;
+    position:absolute;
+    top:-1000px;
+    left:-1000px;
+  }
+  LI.print {
+    display:none;
+  }
+}
+@media print {
+  BODY {
+    zoom:90%;
+  }
+  DIV.screen {
+    display:none;
+  }
+  DIV.pghead {
+    display:block;
+    page-break-before:always;
+  }
+  DIV.pghead1 {
+    display:block;
+  }
+  DIV.pop-cmd, TD#imm-box, TD#td-wf-1, TD#td-wf-2, A.fsview, A.big {
+    display:none;
+  }
+  A.aller, A.fscap {
+    background:none;
+    padding-left:0;
+  }
+  TD#td-all, TD#td-vit {
+    width:100%;
+  }
+  DIV#notepad {
+    overflow-y:visible;
+  }
+  DIV.fstab {
+    height:auto;
+    overflow-y:visible;
+    padding-right:0;
+  }
+  TBODY#hm-tbody TD {
+    border-bottom:1px solid #E4E2DC;
+  }
+  A.vital {
+    display:inline-block;
+    width:100px;
+  }
+  DIV.vit-text {
+    display:inline;
+  }
+  DIV.doc-vit {
+    height:20px;
+  }
+  DIV#fs-refresh {
+    visibility:hidden;
+  }
+  DIV#notepad-empty A {
+    display:none;
+  }
+}

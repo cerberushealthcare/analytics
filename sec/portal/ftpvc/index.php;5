@@ -1,0 +1,44 @@
+<?php
+require_once "inc/tags.php";
+set_include_path('../');
+require_once 'php/data/rec/sql/PortalUsers_Session.php'; 
+?>
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <? HEAD('Patient Portal', 'LoginPage') ?>
+    <? HEAD_DATA('PortalSession') ?>
+    <link rel="stylesheet" type="text/css" href="css/login.css" />
+  </head>
+  <body onload='start()'>
+    <div id='loginc'>
+      <div id='login'>
+        <h1>Patient Portal</h1>
+        <? BOX(null, 'tile') ?>
+          <div>
+            <label>User ID</label>
+            <input type='text' size='20' id='id' name='id' />
+          </div>
+          <div>
+            <label>Password</label>
+            <input type='password' size='20' id='pw' name='pw' />
+          </div>
+          <div>
+            <a id='login' href="javascript:page.login()">Login ></a>
+          </div>
+        <? _BOX() ?>
+        <div id='links'>
+          <div>
+            Forgot your <a href='.'>login ID</a> or <a href='.'>password</a>?
+           </div>
+        </div>
+      </div>
+    </div>
+  </body>
+<script>
+<? JsonConstants::writeGlobals('PortalUser') ?>
+function start() {
+  LoginPage.load();
+}
+</script>
+</html>

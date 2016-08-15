@@ -1,0 +1,49 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+//
+class Facesheet extends Rec {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  //
+  public function loadClient() {
+    $this->Client = Clients::get($this->cid);
+  }
+  public function loadImmuns() {
+    $this->Immuns = Immuns::getActive($this->cid); 
+  }
+  public function loadUserGroup() {
+    $this->UserGroup = UserGroups::getMine();
+  }
+  //
+  static function from($cid) {
+    $me = new static();
+    $me->cid = $cid;
+    $me->loadClient();
+    return $me;
+  }
+}
+class Facesheet_Immun extends Facesheet {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  public /*UserGroup*/ $UserGroup;
+  public /*Immun[]*/ $Immuns;
+  public /*Immun_HL7Codes*/ $Immun_HL7;
+  //
+  public function loadImmuns() {
+    parent::loadImmuns();
+    $this->Immun_HL7 = Immuns::getHL7Codes();
+  }
+  //
+  static function from($cid) {
+    $me = parent::from($cid);
+    $me->loadImmuns();
+    $me->loadUserGroup();
+    return $me;
+  }
+}
+//
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Immuns.php';
+require_once 'php/data/rec/sql/UserGroups.php';

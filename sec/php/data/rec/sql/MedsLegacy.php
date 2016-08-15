@@ -1,0 +1,667 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once 'php/data/rec/sql/_HdataRec.php';
+//
+/**
+ * Medications DAO (Legacy)
+ * @author Warren Hornsby
+ */
+class MedsLegacy {
+  /**
+   * Build face recs from unprocessed session history
+   * @param int cid
+   */
+  static function rebuild($cid) {
+    $sessions = SessionMed::fetchAllUnbuilt($cid);
+    $last = end($sessions);
+    if ($last) { 
+      Rec::sort($sessions, new RecSort($last->getKey(), '-date', '-dateUpdated', 'quid'));
+      $faces = FaceMed::fetchMap($cid);
+      foreach ($sessions as $sess) {
+        $key = $sess->getKeyValue();
+        $face = geta($faces, $key);
+        if ($face) {
+          if ($sess->isNewerThan($face)) {
+            if ($sess->isDiscontinued()) {
+              $face->deactivate();
+            } else {
+              $face->setFromSession($sess);
+              $face->save();
+            }
+            $faces[$key] = $face;
+          }
+        } else {
+          $face = FaceMed::fromSession($sess);
+          $face->active = ! $sess->isDiscontinued();
+          $face->save();
+          $faces[$key] = $face;
+        }
+      }
+      self::checkExpiration($faces);
+      SessionMed::markAsBuilt($last);
+    }
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceMed,..)
+   */
+  static function getActive($cid) {
+    self::rebuild($cid);
+    $recs = FaceMed::fetchAllActive($cid);
+    logit_r($recs, 'facemed::fetchallactive');
+    Rec::sort($recs, new RecSort('expires', 'name'));
+    return $recs; 
+  }
+  /**
+   * Get active and inactive facesheet records
+   * @param int $cid
+   * @return array(FaceMedNc,..)
+   */
+  static function getAll($cid, $actives = null) {
+    $recs = FaceMed::fetchAll($cid, $actives);
+    Rec::sort($recs, new RecSort('name'));
+    return $recs; 
+  }
+  /**
+   * Get facesheet records by name
+   * @param int $cid
+   * @return array(name=>FaceMed,..)
+   */
+  static function getByName($cid) {
+    return FaceMed::fetchMap($cid);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional)
+   * @return array(SessionMed,..)
+   */
+  static function getHistoryByDate($cid, $actives = null) {
+    $recs = SessionMed::fetchAll($cid);
+    SessionMed::addSortFields($recs);
+    Rec::sort($recs, new RecSort('-_dateOnly', 'name', '-date'));
+    return $recs;
+  }
+  /**
+   * Get history by name
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional)
+   * @return array(SessionMed,..)
+   */
+  static function getHistoryByName($cid, $actives = null) {
+    $recs = SessionMed::fetchAll($cid);
+    Rec::sort($recs, new RecSort('name', '-date'));
+    return $recs;
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Med
+   */
+  static function save($o) {
+    global $login;
+    $rec = FaceMed::fromUi($o, $login->userGroupId);
+    $facePk = FaceMed::fetch($rec->getPkValue());
+    $faceKey = FaceMed::fetchActiveKeyMatch($rec);
+    if ($faceKey) 
+      $faceKey->deactivate();
+    if ($facePk) {     
+      switch ($facePk->compareName($rec)) {
+        case FaceMed::CMP_NAMES_DIFFERENT:
+          $facePk = null;
+          break;
+        case FaceMed::CMP_NAME_SAME_DOSAGE_DIFF:
+          $facePk->deactivate();
+          $facePk = null;
+          break;
+      }
+    }
+    if ($facePk) {
+      AuditMed::copyUpdate($facePk);
+    } else {
+      $rec->setPkValue(null);
+      AuditMed::copyAdd($rec);
+    }
+    $rec->rx = null;
+    $rec->active = true;
+    $rec->setExpires();
+    $rec->save();
+    NoneActiveMed::remove($rec->clientId);
+    return $rec;
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Med
+   */
+  static function deactivate($id) { 
+    $med = FaceMed::fetch($id);
+    if ($med) {
+      $med->deactivate();
+      AuditMed::copyDeactivate($med);
+      return $med;
+    }
+  }
+  /**
+   * Save audit records for printing RX
+   * @param [Med,..] $meds
+   * @return Med last one updated
+   */
+  static function auditRxPrint($meds) {
+    foreach ($meds as $m) {
+      $med = FaceMed::fetch($m->dataMedId);
+      $med->date = nowShortNoQuotes();
+      $med->active = true;
+      $med->rx = $m->rx;
+      $med->save();
+      if ($med->rx) { 
+        $id = AuditMed::copyRx($med);
+        Auditing::logPrintRx($med);
+      }
+    }
+    return $med;
+  }
+  /**
+   * @return string static JSON of Med data object 
+   */
+  static function getStaticJson() {
+    return Med::getStaticJson();
+  }
+  //
+  private static function checkExpiration($meds) {
+    foreach ($meds as $med) 
+      if ($med->isExpired())
+        $med->deactivate();
+  }
+}
+//
+/**
+ * Medication
+ */
+class Med extends FsDataRec implements AutoEncrypt {
+  //
+  public $dataMedId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+	public $quid;
+	public $index;
+	public $name;
+	public $amt;
+	public $freq;
+	public $asNeeded;
+	public $meals;
+	public $route;
+	public $length;
+	public $disp;
+	public $text;
+	public $rx;
+	public $active;   
+	public $expires;
+	public $dateUpdated;
+	public $source;
+	//
+	const SOURCE_FACESHEET = 0;
+  //
+  const CMP_NAMES_DIFFERENT = 0;
+  const CMP_NAME_SAME_DOSAGE_DIFF = 1;
+  const CMP_NAMES_IDENTICAL = 2;
+	//
+	public function getSqlTable() {
+    return 'data_meds';
+  }
+  public function getEncryptedFids() {
+    return array('date');
+  }
+  public function getKey() {
+    return 'name';
+  }
+  public function getFaceClass() {
+    return 'FaceMed';
+  }
+  public function save() {
+    parent::save();
+    Hdata_MedDate::from($this)->save();
+  }
+  public function toJsonObject(&$o) {
+    if ($this->isAuditSnapshot()) {
+      if ($this->source == self::SOURCE_FACESHEET) {
+        $o->_source = 'Facesheet';
+      } else {
+        $o->_source = 'NewCrop'; 
+        $o->_index = 'RxNorm';
+      }
+    }    
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::informalDate(),
+      'dateUpdated' => JsonFilter::informalDateTime(),
+      'active' => JsonFilter::boolean());
+  }
+  public function getAuditRecName() {
+    return 'Med';
+  }
+  //
+	/**
+	 * @param Med $med
+	 * @return int CMP_
+	 */
+	public function compareName($med) {
+	  if ($this->name == $med->name)
+      return self::CMP_NAMES_IDENTICAL;
+    $a1 = explode('(', $this->name);
+    $a2 = explode('(', $med->name);
+    if ($a1[0] == $a2[0])
+      return self::CMP_NAME_SAME_DOSAGE_DIFF;
+    else
+      return self::CMP_NAMES_DIFFERENT;
+  }
+  public function isLongTerm() { 
+    return (trim($this->length) == '' || $this->length == 'long-term');
+  }
+	public function isExpired() {
+	  if ($this->expires) 
+	    return isPast($this->expires);
+	}
+  public function formatSig() {
+    $sig = array();
+    if (! isBlank($this->amt))
+      $sig[] = $this->amt; 
+    if (! isBlank($this->freq))
+      $sig[] = $this->freq;
+    if (! isBlank($this->route)) 
+      $sig[] = $this->route;
+    if ($this->asNeeded) 
+      $sig[] = 'as needed';
+    if ($this->meals) 
+      $sig[] = 'with meals';
+    if (! isBlank($this->length))
+      $sig[] = " for $this->length";
+    return implode(' ', $sig);
+  }
+  public function formatActive() {
+    return ($this->active) ? 'Active' : 'Discontinued';
+  }
+  public function getFreqInHours() {
+    switch ($this->freq) {
+      case 'every hour':
+        return 1;
+      case 'every 2 hours':
+        return 2; 
+      case 'every 3 hours':
+        return 3; 
+      case 'every 4 hours':
+        return 4; 
+      case 'every 6 hours':
+        return 6; 
+      case 'every 8 hours':
+        return 8; 
+      case 'every 12 hours':
+        return 12; 
+      case 'daily':
+        return 24; 
+      case 'BID':
+        return 12; 
+      case 'TID':
+        return 8; 
+      case 'QID':
+        return 6; 
+      case 'five times daily':
+        return 4.8; 
+      case 'QAM':
+        return 24; 
+      case 'QHS':
+        return 24; 
+      case 'every 2 days':
+        return 48; 
+      case 'every 3 days':
+        return 72; 
+      case 'Mon/Thur':
+        return 84; 
+      case 'MWF':
+        return 56; 
+      case 'once weekly':
+        return 168; 
+      case 'once monthly':
+        return 720; 
+      case 'every 2 weeks':
+        return 336; 
+      case 'every 10 days':
+        return 240; 
+    }
+  }
+  /**
+   * @param string $date (optional)
+   */
+	public function setExpires($date = null) {
+	  if ($date == null)
+	    $date = $this->date;
+	  if ($this->isLongTerm()) {
+	    $this->expires = null;
+	    $this->length = null;
+	  } else {
+	    if (strpos($this->length, 'day') > 0) {
+        $days = intval($this->length); 
+        $dt = strtotime($date);
+	      $dt = mktime(0, 0, 0, date('n', $dt), date('j', $dt) + $days, date('Y', $dt));  // add days
+	      $this->expires = date('Y-m-d', $dt);
+	    }
+	  }
+	}
+	//
+	static function friendlySig($sig) {
+    $sig = str_replace("BID", "twice daily", $sig);
+    $sig = str_replace("TID", "three times daily", $sig);
+    $sig = str_replace("QID", "four times daily", $sig);
+    $sig = str_replace("QAM", "in the morning", $sig);
+    $sig = str_replace("QHS", "at bedtime", $sig);
+    $sig = str_replace("Q1h WA", "every one hour while awake", $sig);
+    $sig = str_replace("Q2h WA", "every two hours while awake", $sig);
+    $sig = str_replace("Q4h", "every 4 hours", $sig);
+    $sig = str_replace("Q4-6h", "every 4 to 6 hours", $sig);
+    $sig = str_replace("Q6h", "every 6 hours", $sig);
+    $sig = str_replace("Q8h", "every 8 hours", $sig);
+    $sig = str_replace("Q12h", "every 12 hours", $sig);
+    $sig = str_replace("Q1wk", "every week", $sig);
+    $sig = str_replace("Q2wks", "every two weeks", $sig);
+    $sig = str_replace("Q3wks", "every three weeks", $sig);
+    $sig = str_replace("DAILY", "daily", $sig);
+    $sig = str_replace("NIGHTLY", "nightly", $sig);
+    $sig = str_replace("EVERY OTHER DAY", "every other day", $sig);
+    $sig = str_replace("3 TIMES WEEKLY", "3 times weekly", $sig);
+    $sig = str_replace("AT BEDTIME", "BEDTIME", $sig);
+    $sig = str_replace("BEDTIME", "at bedtime", $sig);
+    return $sig;
+  }
+}
+/**
+ * Medication Face Record
+ */
+class FaceMed extends Med {
+  //
+  public function setFromSession($sess) {
+    $rec = clone $sess;
+    self::copyNonNullValues($this, $rec);
+    if ($sess->isPlanAdded()) 
+      $this->setExpires($this->date);
+  }
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+  //
+  /**
+   * @param object $o JSON
+   * @param int ugid
+   * @return FaceMed
+   */
+  static function fromUi($o, $ugid) {
+    $med = new FaceMed();
+    $med->dataMedId = $o->id;
+    $med->userGroupId = $ugid;
+    $med->clientId = $o->clientId;
+    $med->name = $o->name;
+    $med->amt = $o->amt;
+    $med->freq = $o->freq;
+    $med->asNeeded = $o->asNeeded;
+    $med->meals = $o->meals;
+    $med->route = $o->route;
+    $med->length = $o->length;
+    $med->disp = $o->disp;
+    $med->text = $o->text;
+    $med->date = nowNoQuotes();
+    return $med;
+  }
+  /**
+   * @param SessionMed $sess
+   * @return FaceMed
+   */
+  static function fromSession($sess) {
+    $face = new FaceMed();
+    $face->setFromSession($sess);
+    $face->date = nowNoQuotes();
+    $face->active = true;
+    return $face;
+  } 
+	/**
+   * @param int $id
+   * @return FaceMed
+   */
+  static function fetch($id) {
+    return parent::_fetchFace($id, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(name=>FaceMed,..) 
+   */
+  static function fetchMap($cid) {
+    return parent::_fetchFacesMap($cid, __CLASS__);
+  }
+  static function fetchAll($cid, $actives = null) {
+    $c = static::asInactiveCriteria($cid);
+    $map = parent::fetchMapBy($c, 'name');
+    $recs = array_values($map);
+    if ($actives == null)
+      $actives = static::fetchAllActive($cid);
+    return array_merge($recs, $actives);
+//    $c = static::asCriteria($cid);
+//    $map = parent::fetchMapBy($c, 'name');
+//    $recs = array_values($map); 
+//    if (empty($recs)) 
+//      $recs = NoneActiveMed::fetchAll($cid);
+//    return $recs; 
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceMed,..)
+   */
+  static function fetchAllActive($cid) {
+    $recs = parent::_fetchActiveFaces($cid, __CLASS__);
+    if (empty($recs)) 
+      $recs = NoneActiveMed::fetchAll($cid);
+    return $recs; 
+  }
+  static function fetchAllActive_forPortal($cid, $class) {
+    $recs = parent::_fetchActiveFaces($cid, $class);
+    return $recs;
+  }
+  /**
+   * @param int $cid
+   * @return FaceMed
+   */
+  static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  }
+  static function asActiveCriteria($cid) {
+    $c = parent::_asFaceCriteria($cid, __CLASS__);
+    $c->active = true;
+    $c->text = CriteriaValues::_or(
+      CriteriaValue::isNull(),
+      CriteriaValue::notEquals(NoneActiveMed::NONE_ACTIVE));
+    return $c;
+  }  
+  static function asInactiveCriteria($cid) {
+    $c = parent::_asFaceCriteria($cid, __CLASS__);
+    $c->active = false;
+    return $c;
+  }
+  //
+  private static function copyNonNullValues($to, $from) {
+    foreach ($from as $fid => $value) 
+      if ($value !== null) 
+        $to->$fid = $value;
+  }
+}
+//
+/**
+ * Medication Session Record
+ */
+class SessionMed extends Med implements NoAudit {
+	//
+  const QUID_CURRENT       = 'meds.meds.@addMed';
+  const QUID_ADD           = 'med mgr.medMgr.@addMed';
+  const QUID_DISCONTINUE   = 'med mgr.medMgr.@dcMed';
+  const QUID_REFILL        = 'med mgr.medMgr.@rfMed'; 
+  const QUID_FS_ADD        = 'fs.add'; 
+  const QUID_FS_CHANGE     = 'fs.change'; 
+  const QUID_FS_DEACTIVATE = 'fs.deactivate'; 
+  const QUID_FS_RX         = 'fs.rx';
+  const QUID_MSG_REFILL    = 'response.callInRx.@rfMed';
+  //
+  public function __clone() {
+    parent::__clone();
+    $this->sessionId = null;
+    $this->active = null;
+    $this->dateUpdated = null;
+    $this->quid = null;
+    $this->index = null;
+    $this->rx = null;
+    $this->amt = nullify($this->amt);
+    $this->freq = nullify($this->freq);
+    $this->asNeeded = nullify($this->asNeeded);
+    $this->meals = nullify($this->meals);
+    $this->route = nullify($this->route);
+    $this->length = nullify($this->length);
+    $this->disp = nullify($this->disp);
+    $this->text = nullify($this->text);
+  }
+  public function toJsonObject(&$o) {
+    $o->quid = $this->getQuidText();
+  }
+  //
+  public function isPlanAdded() {
+    return ($this->quid == self::QUID_ADD);
+  }
+  public function isDiscontinued() {
+    switch ($this->quid) {
+      case self::QUID_DISCONTINUE:
+      case 'plan.meds.@dcMed':
+      case 'plan.plan.@dcMed':
+        return true;
+      default:
+        return false;
+    }
+  }
+  protected function getQuidText() {
+    return self::formatQuidText($this->quid);
+  }
+  //
+  static function formatQuidText($quid) {
+    switch ($quid) {
+      case self::QUID_ADD:
+      case self::QUID_FS_ADD:
+      case 'plan.plan.@addMed':
+      case 'plan.meds.@addMed':
+        return 'Added';
+      case self::QUID_CURRENT:
+        return 'Listed';
+      case self::QUID_DISCONTINUE:
+      case 'plan.meds.@dcMed':
+      case 'plan.plan.@dcMed':
+        return 'Discontinued';
+      case self::QUID_FS_CHANGE:
+        return 'Changed';
+      case self::QUID_FS_DEACTIVATE:
+        return 'Deactivated';
+      case self::QUID_REFILL:
+      case self::QUID_MSG_REFILL:
+      case 'plan.plan.@rfMed':
+        return 'Refilled';
+      case self::QUID_FS_RX:
+        return 'Printed';
+    }
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionMed,..)
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionMed,..)
+   */
+  static function fetchAllUnbuilt($cid) {
+    $c = self::asUnbuiltCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+	/**
+   * @param SessionMed $sess last session record (e.g. highest PK) @see fetchAllUnbuilt()
+   */
+  static function markAsBuilt($sess) {
+    parent::_markAsBuilt($sess);
+  }
+  /**
+   * Add sorting fields to meds in array
+   * @param [SessionMed,..] $meds
+   * @return array(SessionMed,..)
+   */
+  static function addSortFields(&$meds) {
+    foreach ($meds as &$med) { 
+      $med->_dateOnly = dateToString($med->date);
+    }
+    return $meds;
+  }
+  /**
+   * Sync active flags of history with current actives  
+   * @param [SessionMed,..] $meds
+   * @param [FaceMed,..] $actives
+   */
+  static function syncActiveFlags(&$meds, $actives) {
+    foreach ($meds as &$med) 
+      $med->active = geta($actives, $med->getKey() != null);
+  }
+  /**
+   * @param int $cid
+   * @return SessionMed
+   */
+  static function asCriteria($cid) {
+    $c = parent::_asSessCriteria($cid, __CLASS__);
+    $c->quid = CriteriaValue::notEquals(self::QUID_CURRENT);
+    $c->name = CriteriaValue::isNotNull();
+    return $c;
+  }
+  /**
+   * @param int $cid
+   * @return SessionMed
+   */
+  static function asUnbuiltCriteria($cid) {
+    $c = parent::_asUnbuiltSessCriteria($cid, __CLASS__);
+    return $c;
+  }
+}
+/**
+ * Medication Face Audit Record (SID=0)
+ */
+class AuditMed extends Med implements NoAudit {
+  /**
+   * @param string $quid Med:QUID_
+   * @return int pk of new audit
+   */
+  static function copy($face, $quid) {
+    $rec = new AuditMed($face);
+    $rec->setPkValue(null);
+    $rec->sessionId = '0';
+    $rec->active = false;
+    $rec->date = nowShortNoQuotes();
+    $rec->quid = $quid;
+    $rec->save();
+    return $rec->dataMedId;
+  }
+  static function copyUpdate($face) {
+    self::copy($face, SessionMed::QUID_FS_CHANGE);
+  }
+  static function copyAdd($face) {
+    self::copy($face, SessionMed::QUID_FS_ADD);
+  }
+  static function copyDeactivate($face) {
+    self::copy($face, SessionMed::QUID_FS_DEACTIVATE);
+  }
+  static function copyRx($face) {
+    return self::copy($face, SessionMed::QUID_FS_RX);
+  }
+}

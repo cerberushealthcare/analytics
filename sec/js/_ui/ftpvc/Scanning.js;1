@@ -1,0 +1,478 @@
+/**
+ * ScanEntryFolder
+ *   EntryForm form
+ *   FileList list
+ */
+ScanEntryFolder = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'EntryFolder').extend(function(self) {
+      return {
+        onopen:function() {},
+        onclose:function() {},
+        onupdate:function() {},
+        oncancel:function() {},
+        oncheck_file:function(scanFile, checked) {},
+        ondelete_file:function(scanFile, checked) {},
+        //
+        init:function() {
+          self.tbar = My.Title.create(self).bubble('onclick_create', self.open);
+          self.content = Html.Div.create().into(self).hide();
+          self.form = My.EntryForm.create(self.content);
+          self.list = My.FileList.create(self.content, self).bubble('oncheck_file', self).bubble('ondelete_file', self);
+          self.cmd = My.CmdBar.create(self.content, self);
+          self.rec = null;
+        },
+        open:function(rec) {
+          self.rec = rec;
+          self.addClassIf('update', rec);
+          self.tbar.hide();
+          self.cmd.showDelIf(rec);
+          self.content.show();
+          self.form.load(rec);
+          self.list.load(rec);
+          self.closed = null;
+          self.onopen();
+        },
+        close:function(updated) {
+          self.rec = null;
+          self.removeClass('update');
+          self.tbar.show();
+          self.content.hide();
+          self.closed = self;
+          self.onclose();
+          if (updated)
+            self.onupdate();
+          return self;
+        },
+        add:function(scanFile) {
+          if (self.closed)
+            self.open();
+          self.list.add(scanFile);
+        },
+        isDirty:function() {
+          return self.form.isRecordChanged() || self.list.isDirty();
+        },
+        //
+        save_onclick:function() {
+          self.working(true);
+          var rec = self.form.getRecord();
+          Ajax.Scanning.saveIndex(self.form.getRecord(), self.list.getScanFileIds(),  
+            function(rec) {
+              self.working(false);
+              self.close(true);
+            });
+        },
+        del_onclick:function() {
+          Pop.Confirm.showYesNo('Are you sure you want to remove this index?<br><br>Note: Only the index will be deleted. Any scanned files in this index will be returned to Unindexed Files.', function() {
+            self.working(true);
+            Ajax.Scanning.removeIndex(self.rec.scanIndexId, 
+              function(id) {
+                self.working(false);
+                self.close(true);
+              });
+          });
+        },
+        cancel_onclick:function() {
+          if (self.isDirty()) {
+            Pop.Confirm.show('This index record has unsaved changes. Save now?', 'Save Now', 'save', "Don't Save", null, true, null,
+              function(confirmed) {
+                if (confirmed) {
+                  self.save_onclick();
+                } else {
+                  if (self.list.isDirty())
+                    self.oncancel();
+                  self.close();
+                }
+              });
+          } else {
+            self.close();
+          }
+        }
+      }
+    })
+  },
+  Title:{
+    create:function(container) {
+      var self = Html.Tile.create(container, 'new-index');
+      return self.aug({
+        onclick_create:function() {},
+        //
+        init:function() {
+          Html.Anchor.create(null, 'Create New...').into(self).bubble('onclick', self, 'onclick_create');
+        }
+      });
+    }
+  },
+  EntryForm:{
+    create:function(container) {
+      var ef = Html.EntryForm.create(container, 'first50', {
+        load:function(rec) {
+          if (rec) {
+            ef.setRecord(rec);
+            ef.focus('scanType');
+          } else {
+            ef.reset();
+            ef.popClient();
+          }
+        },
+        popClient:function() {
+          ef._popClientPicker('clientId');
+        },
+        type_onchange:function() {
+          ef.showScanType();
+        },
+        type_onpop:function() {
+          ef.spanipc.hide();
+        },
+        provider_onset:function(rec) {
+          if (rec) {
+            if (rec.Address_addrFacility) 
+              ef.setValue('addrFacility', rec.Address_addrFacility);
+            if (rec.area) {
+              if (Array.isEmpty(ef.getValue('areas')))
+                ef.setValue('areas', [rec.area]); 
+            }
+          }
+        },
+        showScanType:function() {
+          if (ef.getValue('scanType') == C_ScanIndex.TYPE_RESULT) {
+            ef.spanipc.show();
+            ef.focus('ipc');
+          } else {
+            ef.spanipc.hide();
+          }
+        }
+      });
+      ef.li('To', 'fr').select('recipient', C_Docs).check('reviewed', 'Reviewed');
+      ef.li().client('clientId', '(Select Patient)', 'Client');
+      ef.li('Type', 'mt5').atradio('scanType', C_ScanIndex.TYPES, ef.type_onchange, ef.type_onpop).startSpan('ef-ipc').lbl('for', 'nopad').picker(IpcPicker, 'ipc', 'Ipc_ipc').endSpan();
+      ef.li('Provider', 'mt10').picker(ProviderPicker, 'providerId', 'Provider', ef.provider_onset).lbl('at', 'nopad').picker(FacilityPicker, 'addrFacility', 'Address_addrFacility');
+      ef.li('Date', 'nopad').date('datePerformed');
+      ef.li('Area', 'mt5').atab('areas', MultiAreaAtab);
+      ef.spanipc = _$('ef-ipc');
+      ef.showScanType();
+      return ef;
+    }
+  },
+  FileList:{
+    create:function(container, context) {
+      var self = Html.Div.create('EntryFolderList').into(container);
+      return self.aug({
+        oncheck_file:function(scanFile, checked) {},
+        ondelete_file:function(scanFile, checked) {},
+        //
+        load:function(rec) {
+          this.clean();
+          if (rec)
+            Array.forEach(rec.ScanFiles, function(rec) {
+              ScanFileCheck.create(self, rec, true).aug({
+                oncheck:function(scanFile, checked) {
+                  self.oncheck_file(scanFile, checked);
+                },
+                ondelete:function(scanFile, checked) {
+                  self.ondelete_file(scanFile, checked);
+                }
+              });
+            });
+          this._recOrig = Json.encode(self.getScanFileIds());
+        },
+        add:function(scanFile) {
+          self.append(scanFile);
+        },
+        isDirty:function() {
+          var _recNow = Json.encode(self.getScanFileIds());
+          return (_recNow != self._recOrig);
+        },
+        getScanFileIds:function() {
+          var recs = [];
+          if (self.children.length)
+            Array.forEach(self.children, function(scanFile) {
+              recs.push(scanFile.rec.scanFileId);
+            });
+          return recs;
+        }
+      });
+    }
+  },
+  CmdBar:{
+    create:function(container, context) {
+      return Html.CmdBar.create(container).save(context.save_onclick).del(context.del_onclick).cancel(context.cancel_onclick);
+    }
+  }
+}
+/**
+ * Div ScanFileCheck
+ *   ScanFile rec
+ *   ImageScanThumb thumb
+ *   InputCheck check
+ *   Label label
+ *   Anchor remove
+ */
+ScanFileCheck = {
+  create:function(container, rec, checked) {
+    var self = Html.Div.create('ScanFile').into(container);
+    return self.aug({
+      oncheck:function(scanFile, checked) {},
+      ondelete:function(scanFile, checked) {},
+      //
+      init:function() {
+        self.remove = Html.Anchor.create('remove').tooltip('Delete this file').into(self).aug({
+          onclick:function() {
+            self.ondelete(self, self.check.checked);
+          }
+        });
+        self.rec = rec;
+        self.thumb = ImageScanThumb.create(self, rec, 70);
+        self.check = Html.InputCheck.create().into(self).hide().aug({
+          onclick:function() {
+            self.toggle();
+            self.oncheck(self, self.check.checked);
+          }});
+        self.label = Html.Label.create(null, rec.origFilename).into(self);
+        var span = Html.Span.create('wrapper').into(self).aug({
+          onclick:function() {
+            self.check.checked = ! self.check.checked;
+            self.toggle();
+            self.oncheck(self, self.check.checked);
+          }
+        })
+        Html.Table.create(span).tbody().tr().td(self.thumb).td(self.check).td(self.label, 'p5');
+        self.check.checked = checked;
+        self.toggle();
+      },
+      isChecked:function() {
+        return self.check.checked;
+      },
+      resetZoom:function() {
+        if (self.thumb.zoom)
+          self.thumb.zoom.hide();
+      },
+      //
+      toggle:function() {
+        self.addClassIf('check', self.check.checked);
+        self.thumb.shrink(self.check.checked);
+        self.remove.showIf(! self.check.checked && ! checked);
+      }
+    })
+  }
+}
+/**
+ * Image ImageScanThumb
+ *   Image zoom
+ */
+ImageScanThumb = {
+  create:function(parent, rec, maxh, maxw) {
+    var My = this;
+    var h = String.toInt(rec.height || maxh);
+    var w = String.toInt(rec.width || maxw);
+    var size = ImageScanThumb.resize(h, maxh || 100, w, maxw || 50);
+    var self = Html.Image.create(null, rec.src, size.h, size.w).into(parent);
+    return self.aug({
+      init:function() {
+        self.parent = parent;
+        self.h = size.h;
+        self.w = size.w;
+        self.rec = rec;
+        if (rec._pdf) 
+          self.zoom = My.PdfZoom.create(self);
+        else 
+          self.zoom = My.ImageZoom.create(self, ImageScanThumb.resize(h, 500, w, 400));
+        self.aug({
+          onmouseover:function() {
+            self.preview(true);
+            //self.onmousemove = self._onmousemove;
+          },
+          _onmousemove:function() {
+            if (self.zoom.previewing) {
+              self.zoom.preview(false);
+              self.onmousemove = null;
+            } else {
+              self.zoom.preview(true);
+            }
+          },
+          onmouseout:function(e) {
+            var to = Html.Window.getEventTo(e);
+            if (to == null || ! to.previewing)
+              self.preview(false);
+          }
+        });
+      },
+      preview:function(on) {
+        if (self.zoom)
+          self.zoom.preview(on);
+      },
+      shrink:function(on) {
+        if (on) 
+          return self.setHeight(25).setWidth(25);
+        else
+          return self.setHeight(self.h).setWidth(self.w);
+      }
+    });
+  },
+  resize:function(h, maxh, w, maxw) {
+    var r = h / w;
+    if (h > maxh || w > maxw) {
+      if (r > 1 && h > maxh) {
+        r = maxh / h;
+        h = maxh;
+        w = w * r;
+      } else {
+        r = maxw / w;
+        w = maxw;
+        h = h * r;
+      }
+    }
+    return {'h':h, 'w':w};
+  },
+  ImageZoom:{
+    create:function(thumb, size) {
+      var My = this;
+      return Html.Div.create('Zoom').into(thumb.parent).hide().extend(function(self) {
+        return {
+          init:function() {
+            self.setPosition('absolute').invisible();  
+            self.cap = My.Cap.create(self, thumb.rec.origFilename, size.w);
+            self.img = Html.Image.create(null, thumb.src, size.h, size.w).into(self);
+          },
+          onmouseout:function(e) {
+            var to = Html.Window.getEventTo(e);
+            if (to && (to == thumb) || (to.isChildOf && to.isChildOf(self))) 
+              return;
+            if (self.previewing) 
+              self.preview(false);
+          },
+          preview:function(b) {
+            if (self.previewing != b) {
+              self.set('previewing', b).invisible();
+              if (b) {
+                pause(0.5, function() {
+                  if (self.previewing) {
+                    var pos = thumb.getPosDim();
+                    pos.left += pos.width;
+                    self.show().repos(pos);
+                    self.visible().show();
+                  }
+                })
+              }
+            }
+          }
+        }
+      })
+    },
+    Cap:{
+      create:function(container, text, width) {
+        return Html.Tile.create(container, 'cap').setWidth(width).extend(function(self) {
+          return {
+            init:function() {
+              Html.Table2Col.create(self, Html.Anchor.create(null, 'left').hide(), Html.Label.create(null, text));
+            }
+          }
+        })
+        var self = Html.Div.create('cap').into(container).setText(text).setWidth(width);
+        return self;
+      }
+    }
+  },
+  PdfZoom:{
+    create:function(thumb) {
+      var size = {'h':450, 'w':350};
+      return ImageScanThumb.ImageZoom.create(thumb, size).extend(function(self) {
+        return {
+          //
+          init:function() {
+            self.img.hide();
+            self.iframe = Html.IFrame.create(null, thumb.rec.pdfsrc, size.h, size.w).into(self);
+          }
+        }
+      })
+    }    
+  }
+}
+/**
+ * AnchorTab MultiAreaAtab
+ */
+MultiAreaAtab = {
+  create:function() {
+    return Html.AnchorTab.create().checks(C_Lookups.AREAS, 3).okCancel();
+  }
+}
+/**
+ * UploadPop ScanUploadPop
+ */
+ScanUploadPop = {
+  pop:function() {
+    return Html.Pop.singleton_pop.apply(this, arguments);
+  },
+  create:function() {
+    return Html.UploadPop.create('Upload Scanned Files', 'uploadScans', 5).extend(function(self) {
+      return {
+        init:function() {
+          self.donebox = Html.Div.create('information mb10 pt10').before(self.form).html('Your file(s) were uploaded successfully.<br>You may now select more files to upload, or click Cancel to begin indexing.');
+        },
+        oncomplete:function() {
+          page.reload();
+        },
+        reset:self.reset.append(function() {
+          self.donebox.hide();
+        }),
+        form_oncomplete_ok:function() {
+          self.form.reset();
+          self.donebox.show();
+        }
+      }
+    })
+  }
+}
+/**
+ * UploadPop BatchUploadPop
+ */
+BatchUploadPop = {
+  pop:function() {
+    return Html.Pop.singleton_pop.apply(this, arguments);
+  },
+  create:function() {
+    return Html.UploadPop.create('Upload Batch PDF', 'uploadBatch').extend(function(self) {
+      return {
+        oncomplete:function(filename) {
+          Pop.Working.show('Batch upload successfully.<br>Splitting individual pages from batch PDF...');
+          Ajax.Scanning.splitBatch(filename, function() {
+            Pop.Working.close();
+            page.reload();
+          })
+        }
+      }
+    })
+  }
+}
+/**
+ * Rec ScanFile
+ */
+ScanFile = Object.Rec.extend({
+  isPdf:function() {
+    return this._pdf;
+  },
+  //
+  ajax:function() {
+    var worker = Html.Window;
+    var self = this;
+    return {
+      remove:function() {
+        Ajax.Scanning.deleteFile(self.scanFileId, callback);
+      }
+    }
+  }
+})
+ScanFiles = Object.RecArray.of(ScanFile, {
+  ajax:function() {
+    var worker = Html.Window;
+    return {
+      fetchUnindexed:function(callback) {
+        Ajax.Scanning.getUnindexed(worker, callback);
+      },
+      fetchIndexedToday:function(callback) {
+        Ajax.Scanning.getIndexedToday(worker, callback);
+      }
+    }
+  }
+})

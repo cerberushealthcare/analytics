@@ -1,0 +1,41 @@
+DIV.tabbar {
+  border-bottom:1px solid #606060;
+  padding:5px 18px 3px 18px;
+  background-color:white;
+  cursor:default;
+}
+DIV.tabbar TABLE {
+  width:100%;
+  border-collapse:collapse;
+}
+DIV.tabbar H2 {
+  padding:0;
+  margin:0;
+  display:none;
+}
+DIV.tabbar H2.checked {
+  display:block;
+}
+DIV.tabbar TH {
+  vertical-align:middle;
+  text-align:left;
+}
+DIV.tabbar TD {
+  vertical-align:middle;
+  text-align:right;
+}
+DIV.tabbar A {
+  font-weight:bold;
+  display:inline-block;
+  height:16px;
+  line-height:16px;
+}
+DIV.tabbar A.checked {
+  background:url(../img/icons/ok.png) no-repeat top left;
+  padding-left:18px;
+  color:black;
+  cursor:default;
+}
+DIV.tabpanels {
+  padding:17px;
+}

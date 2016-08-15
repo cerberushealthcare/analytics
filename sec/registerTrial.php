@@ -1,0 +1,468 @@
+<?php 
+require_once "inc/uiFunctions.php";
+require_once "php/dao/RegistrationDao.php";
+require_once "php/forms/RegistrationForm.php";
+require_once "inc/captchaValue.php";
+require_once "php/data/ui/LoginResult.php";
+
+import_request_variables("p", "p_");
+$trial_text = "FREE 30 Day Trial";
+$regul_text = "Regular Subscription";
+
+$form = new RegistrationForm();
+
+if (! isset($p_name)) {
+  $p_name = "";
+  $image_value = genImageValue();
+  session_start();
+  clearSessionVars();
+  $_SESSION["image_text"] = $image_value;
+} else {
+
+	try {
+      session_start();
+      $form->setFromPost();
+      $form->validate();
+      // Create registration
+      $registration = $form->buildRegistration();
+      $regId = RegistrationDao::addRegistration($registration);
+      // Create user group
+      $userGroup = $form->buildUserGroup();
+      $grpId = RegistrationDao::addUserGroup($userGroup);
+      // Create user
+      $user = $form->buildUser($trial_text);
+      $newUser = RegistrationDao::addUser($user, $regId, $grpId);
+      // Create address
+      $address = $form->buildAddress($newUser);
+      $addressId = RegistrationDao::addAddress($address);
+      // Create test patient
+      RegistrationDao::createTestPatient($grpId);
+
+      $form->sendMail();
+      $form->practice = "2";
+
+      $r = LoginDao::login($form->id, $form->pw, session_id(), $p_);
+      $_SESSION["login"] = $r;            
+      session_write_close();
+
+      // user created and e-mail sent - redirect
+      //if ($form->action == $trial_text) {
+         //$form = new RegForm();  
+         header("Location: welcome.php?qh=1");
+      //} else {
+         //$form = new RegForm();  
+         //header("Location: billinfo.php");
+      //}
+
+   } catch (ValidationException $e) {
+      $errors = $e->getErrors();
+      $image_value = genImageValue();
+      $_SESSION["image_text"] = $image_value;
+      session_write_close();
+   } catch (AddUserException $e) {
+      $errors["DupUser"] = $e->getMessage();
+      $image_value = genImageValue();
+      $_SESSION["image_text"] = $image_value;
+      session_write_close();
+   }
+}
+
+$focus="name";
+$prac1 = "form.practice_name.disabled = true; form.practice_id.disabled = false;";
+$prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;" .
+         "alert('Please see (what\'s this?) for information on using Practice Name vs Practice ID');";
+
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2006 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>clicktate : trial signup</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/clicktate.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/home.css" media="screen" />
+    <script language="JavaScript1.2" src="js/ui.js"></script>
+  </head>
+  <body>
+    <div id="head">
+      <div class="content">
+        <div id="nav">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <a href="http://www.clicktate.com">Home</a>
+                <span>|</span>
+                <a href="http://www.clicktate.com/tour.php">Take a Tour</a>
+                <span>|</span>
+                <a href="http://www.clicktate.com/pricing.php">Pricing</a>
+                <span>|</span>
+                <a href="https://www.clicktate.com/sec/registerTrial.php">Free Trial Signup</a>
+              </td>
+              <td style="text-align:right">
+                <a href="index.php" class="login">Secure Login for Clicktate Users ></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="bodyContainer" style="border:1px solid white;width:820px; padding-right:0; margin-top:0; margin-bottom:0; padding-top:0; padding-bottom:20px">
+      <div class="content">
+        <h1 style="text-align:center;">Let's get started!</h1>
+        <div id="columns">
+          <div id="col1">
+            <ul class="list">
+              <li>
+                <div class="q">Am I under any obligation when my trial is up?</div>
+                No.
+              </li>
+              <li>
+                <div class="q">Any browser requirements?</div>
+                Clicktate supports IE 6+, Safari and Chrome.</b>.               
+              </li>
+              <li>
+                <div class="q">Any hardware requirements?</div>
+                Any PC with Internet Explorer 6/7/8 connected to the Internet will do.
+                We have had great success operating Clicktate on Tablet PCs.  
+              </li>
+              <li>
+                <div class="q">Is there a user guide?</div>
+                Yes, and we recommend you download it now to help you along:<br/><br/>
+                <a id="ug" target="_blank" href="/ClicktateUserGuide.pdf">Clicktate User Guide</a> 
+              </li>
+              <li>
+                <div class="q">Will my popup blocker interfere?</div>
+                Yes, because Clicktate builds its console editor by creating a new browser window.
+                If you don't know how to turn off your popup blocker for www.clicktate.com, our
+                user guide (available above) explains how. 
+              </li>
+            </ul>
+          </div>
+          <div id="col2">
+            <?php require_once "inc/errors.php" ?>
+            <form id="frm" name="trial" method="post" action="registerTrial.php" onSubmit="return CheckTrial(this)">
+            <input name="tablet" id="tablet" type="hidden" value="" />
+            <table class="box" cellpadding=0 cellspacing=0 width="100%">
+              <tr>
+                <td class="tl"></td>
+                <td class="t"></td>
+                <td class="tr"></td>
+              </tr>
+              <tr>
+                <td class="l" nowrap></td>
+                <td class="content">
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      Name<br>
+                      <input id="name" name="name" type="text" size="35" maxlength="35" value="<?=$form->name ?>"/>
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Enter your name as you wish it to appear on medical documents (e.g., "John Smith, MD").
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      Practice Name<br>
+                      <input id="practice_name" name="practice_name" type="text" size="45" maxlength="45" value="<?=$form->practice_name ?>"/>
+                      <input type="hidden" name="practice" value="2">
+                      <input type="hidden" name="practice_id" value="">
+                      <input type="hidden" id="practice_pw" name="practice_pw" size="18" maxlength="18" value="init1"/>
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Enter name of your practice as you wish it to appear on medical documents.
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      State<br>
+                      <? renderCombo("state", $form->states, $form->state) ?>
+                    </td>
+                    <td width=5></td>
+                    <td>
+                      Medical License No.<br>
+                      <input id="license" name="license" type="text" size="20" maxlength="20" value="<?=$form->license ?>"/>
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Valid medical license number is required.
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      Email Address<br>
+                      <input id="email" type="text" size="45" name="email" maxlength="45" value="<?=$form->email ?>" />
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Valid email address is required.
+                    </td>
+                  </tr>
+            	</table>
+
+                <table border=0 cellpadding=0 cellspacing=0>
+                   <tr>
+                      <td>
+                        Contact Phone Number<br>
+                         ( <input id="ph_ac" name="ph_ac" type="text" size="1" maxlength="3" value="<?=$form->ph_ac ?>"/> )
+                           <input id="ph_pf" name="ph_pf" type="text" size="1" maxlength="3" value="<?=$form->ph_pf ?>"/>
+                           - <input id="ph_nm" name="ph_nm" type="text" size="2" maxlength="4" value="<?=$form->ph_nm ?>"/>
+                      </td>
+                      <td width=15></td>
+                        <td>
+                           Ext.<br>
+                           <input id="phone_ext" name="phone_ext" type="text" size="2" maxlength="4" value="<?=$form->phone_ext ?>"/>
+                        </td>
+                      <td width=5></td>
+                        <td class="help">
+                          This can be any phone where we can reach you.
+                        </td>
+                    </tr>
+                 </table>
+
+                <br>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      User ID<br>
+                      <input id="id" type="text" size="18" maxlength="18" name="id" value="<?=$form->id ?>" />
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Create a new user ID for yourself.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Password<br>
+                      <input name="pw" type="password" size="18" maxlength="18" value="<?=$form->pw ?>" />
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Create a password for this ID. Must be at least six characters long, containing at least one numeric digit.
+                      Be careful, this is <div style="display:inline; color:black; font-weight:bold">case-sensitive</div>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <input name="rpw" type="password" size="18" maxlength="18" value="" />
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      Type in your password again.
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr style="padding-top:15px">
+                    <td>
+                      How did you hear about us?<br>
+                      <? renderCombo("found", $form->foundMethods, $form->found) ?>
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      We're interested!
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr style="padding-top:15px">
+                    <td>
+                      <input id="refname" name="refname" type="text" size="35" maxlength="35" value="<?=$form->refname ?>"/>
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      If referred, please tell us the referring user.
+                    </td>
+                  </tr>
+                </table>
+                <br>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      <img src="inc/captchaGen.php?<? echo time() ?>">
+                    </td>
+                  </tr>
+                </table>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td>
+                      <input id="imgval" name="imgval" type"text" size="6" maxlength="6">
+                    </td>
+                    <td width=5></td>
+                    <td class="help">
+                      For increased security, please type the verification code from the image above 
+                      <div style="display:inline; color:black; font-weight:bold">exactly as it appears</div>. 
+                    </td>
+                  </tr>
+                </table>
+                <br>
+                <table border=0 cellpadding=0 cellspacing=0>
+                  <tr>
+                    <td style="vertical-align:top">
+                      <input type="checkbox" name="cbAgree" id="cbAgree" value="X" />
+                    </td>
+                    <td width=2></td>
+                    <td>
+                      By checking this box, I agree and consent to LCD Solutions Inc. 
+                      <a target="_blank" href="http://www.clicktate.com/terms.php">Terms of Service</a>, 
+                      <a target="_blank" href="http://www.clicktate.com/Clicktate-BAA-1.0.pdf">Business Associate Agreement</a>, 
+                      and <a target="_blank" href="http://www.clicktate.com/privacy.php">Privacy Policy</a>.
+                      I understand that in order to meet HIPAA and HITECH compliance 
+                      actual patient data should not be entered into the system
+                      until an executed written Business Associate Agreement has been provided to LCD Solutions, Inc.
+                    </td>
+                  </tr>
+                </table>
+                <br><a class="tour video" style="padding-top:10px;padding-bottom:10px" href="javascript:submit()">Create my free trial account ></a>
+                </td>
+                <td class="r" nowrap></td>
+              </tr>
+              <tr>
+                <td class="bl"></td>
+                <td class="b"></td>
+                <td class="br"></td>
+              </tr>
+            </table>
+            </form>
+            <br><br>
+          </div> 
+        </div> 
+      </div> 
+    </div>
+    <div style="margin-top:0" id="foot">
+      <div class="content">
+        <div class="foot-text">
+          &copy; 2007-2010 LCD Solutions, Inc.<br/>
+          All rights reserved.
+        </div>
+        <div>
+          <a href="http://www.clicktate.com/privacy.php">Privacy Policy</a>
+          <span>|</span>
+          <a href="http://www.clicktate.com/terms.php">Terms of Service</a>
+          <span>|</span>
+          <a style="background:url(img/pdf.gif) no-repeat; padding-left:20px" href="http://www.clicktate.com/Clicktate-BAA-1.0.pdf">Business Associate Agreement</a>
+          <span>|</span>
+          <a href="http://www.clicktate.com/contact-us.php">Contact Us</a>
+        </div>
+      </div>
+    </div>
+<script type="text/javascript">
+var capterra_vkey = "22cd5473e244a97176451f74a5cd7775";
+var capterra_vid = "2049522";
+var capterra_prefix  = (("https:" == document.location.protocol) ? "https://ct.capterra.com" : "http://ct.capterra.com"); document.write(unescape("%3Cscript src='" + capterra_prefix + "/capterra_tracker.js?vid=" + capterra_vid + "&vkey=" + capterra_vkey + "' type='text/javascript'%3E%3C/script%3E"));
+</script>
+  </body>
+</html>
+
+<script>
+setValue('tablet', bool(document.ontouchstart === null));
+
+function submit() {
+  frm.submit();
+}
+
+function CheckTrial(theform) {
+
+ return true;
+
+// Check that all fields on form are filled
+for (i=0; i<theform.elements.length; i++){
+  if (theform.elements[i].type=="text" || theform.elements[i].type=="textarea" ||
+      theform.elements[i].type=="password" ) {
+    if (theform.elements[i].name=="practice_id" ||
+        theform.elements[i].name=="practice_name") {
+      for (j=0;j<theform.practice.length;j++) {
+        if (theform.practice[j].checked==true) { 
+          if (j==0 && theform.practice_id.value=="") {
+            alert("Please enter a Practice ID.");
+            theform.practice_id.focus();
+            return false;
+          }
+          if (j==1 && theform.practice_name.value=="") {
+            alert("Please enter a Practice Name.");
+            theform.practice_name.focus();
+            return false;
+          }
+        }
+      } 
+    } else {
+      if (theform.elements[i].value==""){ 
+        alert("Please complete all fields.");
+        theform.elements[i].focus();
+        return false;
+      }
+    }
+  }
+}
+
+// Validate length of practice password and alpha-numeric content
+if (theform.practice_pw.value.length < 6) {
+   alert('Practice password must be at least 6 characters long.');
+   theform.practice_pw.focus();
+   return false;
+   } 
+if (theform.practice_pw.value.match(/[a-z]/i) == null) {
+   alert('Practice password must contain at least 1 alpha character.');
+   theform.practice_pw.focus();
+   return false;
+   }
+if (theform.practice_pw.value.match(/[0-9]/) == null) {
+   alert('Practice password must contain at least 1 numeric character.');
+   theform.practice_pw.focus();
+   return false;
+   }
+// Validate the e-mail address
+if (theform.email.value.match(/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i) == null) {
+   alert('Please enter a valid email address.');
+   theform.email.focus();
+   return false;
+   }
+// Validate length of password and alpha-numeric content
+if (theform.pw.value.length < 6) {
+   alert('Password must be at least 6 characters long.');
+   theform.pw.focus();
+   return false;
+   } 
+if (theform.pw.value.match(/[a-z]/i) == null) {
+   alert('Password must contain at least 1 alpha character.');
+   theform.pw.focus();
+   return false;
+   }
+if (theform.pw.value.match(/[0-9]/) == null) {
+   alert('Password must contain at least 1 numeric character.');
+   theform.pw.focus();
+   return false;
+   }
+// Check that passwords are the same
+if (theform.pw.value != theform.rpw.value) {
+   alert('Entered passwords do not match.');
+   theform.pw.focus();
+   return false;
+   }
+// Make sure user agrees to ToS & privacy policy
+if (! theform.cbAgree.checked) {
+   alert('You must agree to the Terms of Service and Privacy Policy.');
+   return false;
+   }
+
+return true;
+}
+
+</script>
+
+<?php require_once "inc/focus.php" ?>

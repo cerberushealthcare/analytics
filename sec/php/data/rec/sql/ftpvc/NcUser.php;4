@@ -1,0 +1,104 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * NewCrop User Record
+ * Includes: UserErx
+ */
+class NcUser extends SqlRec {
+  //
+  public $userId;
+  public /*NCScript.UserType*/ $userType;
+  public /*NCScript.RoleType*/ $roleType;
+  public /*UserErx*/ $UserErx;
+  //
+  public static $USER_TYPES = array(
+    UserType::LP => 'Licensed Prescriber',
+    UserType::MIDLEVEL => 'Midlevel Prescriber',
+    UserType::STAFF => 'Staff');
+  public static $ROLE_TYPES = array(
+    RoleType::DOCTOR => 'Doctor',
+    RoleType::NURSE => 'Nurse',
+    RoleType::NURSE_NO_RX => 'Nurse (No RX)',
+    RoleType::MANAGER => 'Midlevel Prescriber');
+  //
+  public function getSqlTable() {
+    return 'nc_users';
+  }
+  //
+  /**
+   * @param int $userId
+   * @return NcUser
+   */
+  public static function fetch($userId) {
+    $rec = new NcUser($userId);
+    $rec->UserErx = new UserErx();
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * @return NcUser
+   */
+  public static function fetchMe() {
+    global $myUserId;
+    return NcUser::fetch($myUserId);
+  }
+  /**
+   * @param int $ugid
+   * @return array(
+   *    userType=>[UserErx,..],..
+   *  )
+   */
+  public static function fetchUsersInTypes($ugid) {
+    $usersInTypes = array(
+      UserType::LP => array(),
+      UserType::MIDLEVEL => array(),
+      UserType::STAFF => array());
+    $users = UserErx::fetchAllByUgid($ugid);
+    foreach ($users as &$user) {
+      $ncUser = NcUser::fetch($user->userId);
+      if ($ncUser) 
+        $usersInTypes[$ncUser->userType][] = $user;
+    }
+    return $usersInTypes;
+  }
+}
+/**
+ * User ERX 
+ */
+class UserErx extends SqlRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  /**
+   * @param string $uid
+   * @return NcUser
+   */
+  public static function fetchByUid($uid) {
+    $rec = new UserErx();
+    $rec->uid = $uid;
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * @param int $ugid
+   * @return array(NcUser,..)
+   */
+  public static function fetchAllByUgid($ugid) {
+    $rec = new UserErx();
+    $rec->userGroupId = $ugid;
+    return SqlRec::fetchAllBy($rec);
+  }
+}
+
+?>

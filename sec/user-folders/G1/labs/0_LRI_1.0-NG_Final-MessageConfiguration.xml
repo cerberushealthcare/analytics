@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MessageConfiguration xmlns="http://www.nist.gov/healthcare/mu/message/configuration">
+    <MessageElementGroup ShortName="PID" FormalName="Patient Identifier Segment">
+        <MessageElement ShortName="PID.3" FormalName="Patient Identifier List">
+            <Component Location="PID[1].3[1].1" Name="ID Number" Value="PATID1234" Include="true"/>
+            <Component Location="PID[1].3[1].4" Name="Assigning Authority" Include="false">
+                <Component Location="PID[1].3[1].4.1" Name="Namespace ID" Value="NIST MPI" Include="true"/>
+                <Component Location="PID[1].3[1].4.2" Name="Universal ID" Value="" Include="false"/>
+                <Component Location="PID[1].3[1].4.3" Name="Universal ID Type" Value="" Include="false"/>
+            </Component>
+            <Component Location="PID[1].3[1].5" Name="Identifier Type Code" Value="MR" Include="true"/>
+        </MessageElement>
+    </MessageElementGroup>
+    <MessageElementGroup ShortName="ORC[1]" FormalName="Order Common[1]">
+        <MessageElement ShortName="ORC[1].4" FormalName="Placer Group Number">
+            <Component Location="ORC[1].4[1].1" Name="Entity Identifier" Value="GORD874211" Include="true"/>
+            <Component Location="ORC[1].4[1].2" Name="Namespace ID" Value="NIST EHR" Include="true"/>
+            <Component Location="ORC[1].4[1].3" Name="Universal ID" Value="" Include="false"/>
+            <Component Location="ORC[1].4[1].4" Name="Universal ID Type" Value="" Include="false"/>
+        </MessageElement>
+    </MessageElementGroup>
+    <MessageElementGroup ShortName="OBR[1]" FormalName="Observation Results Segment[1]">
+        <MessageElement ShortName="OBR[1].2" FormalName="Placer Order Number">
+            <Component Location="OBR[1].2[1].1" Name="Entity Identifier" Value="ORD723222" RelationshipLocations="ORC[1].2[1].1" Include="true"/>
+            <Component Location="OBR[1].2[1].2" Name="Namespace ID" Value="NIST EHR" RelationshipLocations="ORC[1].2[1].2" Include="true"/>
+            <Component Location="OBR[1].2[1].3" Name="Universal ID" Value="" RelationshipLocations="ORC[1].2[1].3" Include="false"/>
+            <Component Location="OBR[1].2[1].4" Name="Universal ID Type" Value="" RelationshipLocations="ORC[1].2[1].4" Include="false"/>
+        </MessageElement>
+        <MessageElement ShortName="OBR[1].3" FormalName="Filler Order Number">
+            <Component Location="OBR[1].3[1].1" Name="Entity Identifier" Value="R-783274" RelationshipLocations="ORC[1].3[1].1" Include="true"/>
+            <Component Location="OBR[1].3[1].2" Name="Namespace ID" Value="NIST Lab Filler" RelationshipLocations="ORC[1].3[1].2" Include="true"/>
+            <Component Location="OBR[1].3[1].3" Name="Universal ID" Value="" RelationshipLocations="ORC[1].3[1].3" Include="false"/>
+            <Component Location="OBR[1].3[1].4" Name="Universal ID Type" Value="" RelationshipLocations="ORC[1].3[1].4" Include="false"/>
+        </MessageElement>
+        <MessageElement ShortName="OBR[1].4" FormalName="Universal Service Identifier">
+            <Component Location="OBR[1].4[1].1" Name="Identifier" Value="30341-2" Include="true"/>
+            <Component Location="OBR[1].4[1].2" Name="Text" Value="Erythrocyte sedimentation rate" Include="true"/>
+            <Component Location="OBR[1].4[1].3" Name="Name of Coding System" Value="LN" Include="true"/>
+            <Component Location="OBR[1].4[1].4" Name="Alternate Identifier" Value="815115" Include="true"/>
+            <Component Location="OBR[1].4[1].5" Name="Alternate Text" Value="Erythrocyte sedimentation rate" Include="true"/>
+            <Component Location="OBR[1].4[1].6" Name="Name of Alternate Coding System" Value="99USI" Include="true"/>
+            <Component Location="OBR[1].4[1].9" Name="Original Text" Value="Erythrocyte sedimentation rate" Include="true"/>
+        </MessageElement>
+        <MessageElement ShortName="OBR[1].16" FormalName="Ordering Provider">
+            <Component Location="OBR[1].16[1].1" Name="ID Number" Value="57422" RelationshipLocations="ORC[1].12[1].1" Include="true"/>
+            <Component Location="OBR[1].16[1].2" Name="Family Name" RelationshipLocations="ORC[1].12[1].2" Include="false">
+                <Component Location="OBR[1].16[1].2.1" Name="Surname" Value="Radon" RelationshipLocations="ORC[1].12[1].2.1" Include="true"/>
+            </Component>
+            <Component Location="OBR[1].16[1].3" Name="Given Name" Value="Nicholas" RelationshipLocations="ORC[1].12[1].3" Include="true"/>
+            <Component Location="OBR[1].16[1].4" Name="Second and Further Given Names or Initials Thereof" Value="M" RelationshipLocations="ORC[1].12[1].4" Include="true"/>
+            <Component Location="OBR[1].16[1].5" Name="Suffix (e.g., JR or III)" Value="JR" RelationshipLocations="ORC[1].12[1].5" Include="true"/>
+            <Component Location="OBR[1].16[1].6" Name="Prefix (e.g., DR)" Value="DR" RelationshipLocations="ORC[1].12[1].6" Include="true"/>
+            <Component Location="OBR[1].16[1].9" Name="Assigning Authority" RelationshipLocations="ORC[1].12[1].9" Include="false">
+                <Component Location="OBR[1].16[1].9.1" Name="Entity Identifier" Value="NIST-AA-1" RelationshipLocations="ORC[1].12[1].9.1" Include="true"/>
+                <Component Location="OBR[1].16[1].9.2" Name="Namespace ID" Value="" RelationshipLocations="ORC[1].12[1].9.2" Include="false"/>
+            </Component>
+            <Component Location="OBR[1].16[1].10" Name="Name Type Code" Value="L" RelationshipLocations="ORC[1].12[1].10" Include="true"/>
+            <Component Location="OBR[1].16[1].13" Name="Identifier Type Code" Value="NPI" RelationshipLocations="ORC[1].12[1].13" Include="true"/>
+        </MessageElement>
+    </MessageElementGroup>
+</MessageConfiguration>

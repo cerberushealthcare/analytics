@@ -1,0 +1,280 @@
+var C_TrackItem;
+/**
+ * Tracking Table
+ * Requires: TableLoader, ClientUi, DocUi
+ * 
+ *   <div id='track-filter' class='topfilter'>
+ *     <ul id='track-filter-ul' class='topfilter'></ul>
+ *   </div>
+ *   <div id='track-div' class='fstab'>  
+ *     <table id='track-table' class='fsb'>
+ *       <thead>
+ *         <tr id='track-head' class='fixed head'>
+ *           <th style=''></th>
+ *           <th style=''>Patient</th>
+ *           <th style=''>Source</th>
+ *           <th style='width:12%'>Ordered</th>
+ *           <th style='width:12%'>Scheduled</th>
+ *           <th style='width:12%'>Closed</th>
+ *         <tr>
+ *       </thead>
+ *       <tbody id='track-tbody'>
+ *       </tbody>
+ *     </table>
+ *   </div>
+ */
+var TrackingTable = {
+  criteria:null,
+  cid:null,
+  parent:null,
+  tab:null,
+  panel:null, // <div 'index':#, 'loaded:!, 'table':tableLoader 'recs':{id:TrackItem,..}>
+  _loadCallback:null,
+  _changeCallback:null,
+  //
+  _OPEN_BY_CAT:0,
+  _UNSCHED_BY_DATE:1,
+  _CLOSED:2,
+  //
+  /*
+   * @arg string divId parent <div> id
+   * @arg int clientId to restrict table to one client (optional)
+   * @arg string height of table '450px' (optional)
+   * @callback() when loaded
+   */
+  load:function(divId, clientId, height, callback) {
+    this.parent = $(divId);
+    this._loadCallback = callback;
+    if (clientId) {
+      this.cid = clientId;
+      this.criteria = {'cid':clientId};
+    }
+    if (this.tab == null) {
+      this._loadHtml(height);
+      this.parent.style.height = 'auto';
+      this.tab = new TabBar(this.parent, 
+        ['Open Items By Category', 'Unscheduled Items By Date', 'Closed Items'], 
+        ['Open By Category', 'Unsched By Date', 'Closed']);
+      var self = this;
+      this.tab.onSelect(
+        function(index, panel) {
+          self.panel = panel;
+          self.panel.index = index;
+          if (! panel.loaded)
+            self._loadResults();
+        });
+    } else {
+      for (var i = 0; i < this.tab.panels.length; i++) 
+        this.tab.panels[i].loaded = false;
+      this.tab.select(0);
+      this._loadResults();
+    }
+  },
+  /*
+   * @callback() on item add/change (the first one only) 
+   */
+  onChange:function(callback) {
+    this._changeCallback = callback;
+  },
+  _callOnChange:function() {
+    this._changeCallback();
+    this._changeCallback = null;
+  },
+  /*
+   * @arg Facesheet fs
+   */
+  popTrackingAdd:function(fs) {
+    var self = this;
+    Includer.getTrackingAdd_pop(fs,
+      function() {
+        self._loadResults();
+        if (self._changeCallback) 
+          self._callOnChange();
+      });
+  },
+  pEdit:function(trackItemId) {
+    var rec = this.panel.recs[trackItemId];
+    var filter = this.panel.table.buildFilterFromTopbar();
+    var self = this;
+    Includer.getTrackingEntry_pop(rec, 
+      function(id) {
+        self._loadResults(filter, id);
+        if (self._changeCallback) 
+          self._callOnChange();
+      });
+  },
+  //
+  _loadResults:function(filter, updatedId) {
+    if (this._loadCallback == null) 
+      overlayWorking(true, this.parent);
+    var t = this.panel.table;
+    t.reset();
+    t.defineFilter(filter ? filter : this._getFilter());
+    var requestType = this.panel.index;
+    var self = this;
+    Ajax.Tracking.getTrackItems(requestType, self.criteria, 
+      function(recs) {
+        self.panel.recs = {};
+        var lastCat = null;
+        var scrollTo = null;
+        for (var i = 0, j = recs.length; i < j; i++) {
+          var rec = recs[i];
+          self.panel.recs[rec.trackItemId] = rec;
+          self._addTableRow(t, rec);
+          if (rec.trackItemId == updatedId) 
+            scrollTo = t.tr;
+        }
+        t.loadFilterTopbar(self.panel.filter, filter);
+        if (scrollTo) 
+          fade(scrollToTr_(scrollTo));
+        self.panel.loaded = true;
+        if (self._loadCallback) {
+          self._loadCallback();
+          self._loadCallback = null;
+        } else {
+          overlayWorking(false);
+        }
+      }
+    );
+  },
+  _getThCells:function(index) {
+    switch (index) {
+      case TrackingTable._OPEN_BY_CAT:
+        return [
+          {'text':'Category'},
+          {'text':'Item'},
+          {'text':'Patient'},
+          {'text':'Source'},
+          {'text':'Ordered','style':'width:10%'},
+          {'text':'Sched/Obtained','style':'width:10%'}];
+      case TrackingTable._UNSCHED_BY_DATE:
+        return [
+          {'text':'Ordered','style':'width:10%'},
+          {'text':'Item'},
+          {'text':'Category'},
+          {'text':'Patient'},
+          {'text':'Source'}];
+      case TrackingTable._CLOSED:
+        return [
+          {'text':'Closed','style':'width:10%'},
+          {'text':'Item'},
+          {'text':'Category'},
+          {'text':'Patient'},
+          {'text':'Source'},
+          {'text':'Ordered','style':'width:10%'},
+          {'text':'Sched/Obtained','style':'width:10%'}];
+    }
+  },
+  _addTableRow:function(t, rec) {
+    var client = rec.ClientStub;
+    var session = rec.SessionStub;
+    var cat = C_TrackItem.TCATS[rec.trackCat];
+    var filter = this._getFilter(cat, rec.UserStub_OrderBy.name, rec.status, ClientUi.formatName(client));
+    var trackAnchor = this._createTrackingAnchor(rec, rec.trackDesc);
+    var docAnchor = DocUi.createPreviewAnchor(client.clientId, session);
+    var clientAnchor = (this.cid == null) ? ClientUi.createClientAnchor(client) : null;
+    switch (this.panel.index) {
+      case TrackingTable._OPEN_BY_CAT:
+        t.createTr(cat, [cat], filter);
+        t.createTd('histbreak', cat);
+        t.createTdAppend(null, trackAnchor);
+        if (clientAnchor)
+          t.createTdAppend('nowrap', clientAnchor);
+        t.createTdAppend('nowrap', docAnchor);
+        t.createTd('nowrap', rec.orderDate);
+        t.createTd('nowrap', rec._schedDate);
+        break;
+      case TrackingTable._UNSCHED_BY_DATE:
+        t.createTr(rec.orderDate, [rec.orderDate], filter);
+        t.createTd('histbreak', rec.orderDate);
+        t.createTdAppend(null, trackAnchor);
+        t.createTd('nowrap', cat);
+        if (clientAnchor)
+          t.createTdAppend('nowrap', clientAnchor);
+        t.createTdAppend('nowrap', docAnchor);
+        break;
+      case TrackingTable._CLOSED:
+        t.createTr(rec.closedDate, [rec.closedDate], filter);
+        t.createTd('histbreak', rec._closedDate);
+        t.createTdAppend(null, trackAnchor);
+        t.createTd('nowrap', cat);
+        if (clientAnchor)
+          t.createTdAppend('nowrap', clientAnchor);
+        t.createTdAppend('nowrap', docAnchor);
+        t.createTd('nowrap', rec.orderDate);
+        t.createTd('nowrap', rec._schedDate);
+        break;
+    }
+  },
+  _getFilter:function(cat, orderedBy, status, patient) {
+    var filter;
+    switch (this.panel.index) {
+      case TrackingTable._OPEN_BY_CAT:
+        filter = {
+          'Category':cat,
+          'Ordered By':orderedBy,
+          'Status':this._formatStatus(status)};
+        break;
+      case TrackingTable._UNSCHED_BY_DATE:
+        filter = {
+          'Category':cat,
+          'Ordered By':orderedBy};
+        break;
+      case TrackingTable._CLOSED:
+        filter = {
+          'Category':cat,
+          'Ordered By':orderedBy};
+        break;
+    }
+    if (this.cid == null)
+      filter['Patient'] = patient;
+    return filter;
+  },
+  _formatStatus:function(status) {
+    switch (status) {
+      case C_TrackItem.STATUS_ORDERED:
+        return 'Ordered Only'
+      case C_TrackItem.STATUS_SCHED:
+        return 'Scheduled/Obtained';
+      case C_TrackItem.STATUS_CLOSED:
+        return 'Closed';
+      default:
+        return null;
+    }
+  },
+  _createTrackingAnchor:function(rec, text) {
+    var href = 'javascript:TrackingTable.pEdit(' + rec.trackItemId + ')';
+    var a = createAnchor(null, href, 'action track', text);
+    if (rec.priority == C_TrackItem.PRIORITY_STAT)
+      a.style.color = 'red';
+    return a;
+  },
+  _loadHtml:function(height) {
+    clearChildren(this.parent);
+    var panels = TabBar.construct(this.parent, 3)
+    for (var i = 0; i < panels.length; i++) {
+      var panel = panels[i];
+      panel.filter = this._appendFilter(panel);
+      panel.table = this._appendTable(panel, height, i);
+    }
+  },
+  _appendFilter:function(parent) {
+    var div = createDiv(null, 'topfilter');
+    var ul = createList(div, null, 'topfilter');
+    parent.appendChild(div);
+    return ul;
+  },
+  _appendTable:function(parent, height, index) {
+    var div = createDiv(null, 'fstab');
+    var table = createTable(null, 'fsb', null, true);
+    var cells = this._getThCells(index);
+    if (this.cid) 
+      cells.splice(2, 1);
+    var tr = appendHeaderRow(table, null, 'fixed head', cells);
+    div.appendChild(table);
+    parent.appendChild(div);
+    if (height)
+      div.style.height = height;
+    return new TableLoader(table.body, 'off', table, tr);
+  }
+}

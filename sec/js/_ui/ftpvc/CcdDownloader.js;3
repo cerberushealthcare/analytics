@@ -1,0 +1,96 @@
+/**
+ * Pop Downloader
+ */
+CcdDownloader = {
+  pop:function(cid) {
+    return Downloader = this.create().pop(cid);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('File Download').extend(function(self) {
+      return {
+        init:function() {
+          self.frame = My.Frame.create(self.content);
+          self.cb = Html.CmdBar.create(self.content).button('Download', self.download_onclick, 'download2').button('Encrypted Download', self.encrypt_onclick.curry(true), 'lock').cancel(self.close)
+        },
+        onshow:function(cid) {
+          self.working(true);
+          self.cid = cid;
+          Ajax.Ccd.get(cid, function(file) {
+            self.working(false);
+            self.load(file);
+          })
+        },
+        load:function(file) {
+          self.file = file;
+          self.frame.load(file);
+        },
+        download_onclick:function() {
+          self.close();
+          Page.Nav.goDownloadCcd(self.file);            
+        },
+        encrypt_onclick:function() {
+          CcdPasswordPop.pop(function(password) {
+            if (! String.isBlank(password)) {
+              self.working(true);
+              Ajax.Ccd.encrypt(self.cid, password, function(file) {
+                self.working(false);
+                self.load(file);
+                self.download_onclick();
+              })
+            }
+          })
+        },
+        //
+        working:function(value) {
+          self.frame.visibleIf(! value);
+          self.cb.wrapper.visibleIf(! value);
+          self.content.working(value);
+        }
+      }
+    })
+  },
+  Frame:{
+    create:function(container) {
+      return Html.Pop.Frame.create(container).extend(function(self) {
+        return {
+          init:function() {
+            self.form = Html.UlEntry.create(self, function(ef) {
+              ef.line().lbl('Filename').ro('filename', 'filename');
+              ef.line().lbl('SHA-1 Hash').ro('hash', 'hash');
+            })
+          },
+          load:function(file) {
+            self.form.load(file);
+          }
+        }
+      })
+    }
+  }
+}
+CcdPasswordPop = {
+  pop:function(callback) {
+    return CcdPasswordPop = this.create().pop(callback);
+  },
+  create:function(container) {
+    return Html.Pop.create('Encrypt File').extend(function(self) {
+      return {
+        //
+        init:function() {
+          self.form = Html.UlEntry.create(self.content, function(ef) {
+            ef.li('Password').password('password');
+            Html.CmdBar.create(self.content).ok(self.ok_onclick).cancel(self.close)
+          })
+        },
+        onshow:function(callback) {
+          self.callback = callback;
+          self.form.focus();
+        },
+        ok_onclick:function() {
+          self.callback(self.form.getValue('password'));
+          self.close();
+        }
+      }
+    })
+  }
+}

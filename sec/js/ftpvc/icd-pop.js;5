@@ -1,0 +1,396 @@
+// ICD pop
+// To call: showIcd(searchFor)  // searchFor optional
+// Callback: icdCallback(code, desc)  // selected code, or null if user cleared
+var icdsByCode = {};  // cache
+var icdSel;
+var icdCallbackFn;
+function showIcd(code, desc, callback) {  // override callback or false for no callback
+  if (callback) {
+    icdCallbackFn = callback;
+  } else {
+    icdCallbackFn = (callback === false) ? null : icdCallback; 
+  }
+  icdReset();
+  icdSel.codeToSet = code;
+  if (callback || callback === false) {
+    Pop.show("pop-icd", "icd-search", true);
+  } else {
+    Pop.show("pop-icd", "icd-search", true, pqNoCurtain, pqUseLastPos);    
+  }
+  focus('icd-search');
+  if (nullify(code) != null) {
+    sendRequest(2, "action=getIcdCodes&id=" + icdSel.codeToSet);
+    overlayWorking(true, $("icd-tree"));
+  } else if (nullify(desc) != null) {
+    setValue("icd-search", desc);
+    doIcdSearch();
+  }
+}
+function icdReset() {
+  setValue("icd-search", "");
+  icdSel = {
+      "codeToSet":0,
+      "codeSet":0,
+      "desc":"",
+      "history":{
+        "codes":[],
+        "ix":-1
+        }
+      }
+  icdEnableNavs();
+  clearChildren($("icd-tree-ul"));
+  setText("icd-info-code", "");
+  setText("icd-info-desc", "");
+  hide("icd-info-syn");
+  hide("icd-info-exc");
+  hide("icd-info-inc");
+  hide("icd-info-note");
+  setDisabled("icd-ok", true);
+}
+function getIcdCodesCallback(jIcdCodes) {
+  icdBuildList(jIcdCodes);
+  overlayWorking(false);
+}
+function icdBuildList(result) {
+  var icds = result.icdCodes;
+  var searchFor = result.expr;
+  var maxAll = (result.icd3Ct < 2);
+  var rootUl = $("icd-tree-ul");
+//  if (searchFor == null) {
+    clearChildren(rootUl);
+    rootUl.scrollTop = 0;
+//  } else {
+//    for (var i = 0; i < rootUl.childNodes.length; i++) {
+//      var e = ul.childNodes[i];
+//      e.old = true;
+//    }
+//  }
+  if (icds == null) {
+    var li = addListItem(rootUl, null, "No matching records found.");
+    li.className = "max";
+    return;
+  }
+  icds = icdAddToCache(icds);
+  var iter = {
+    "level":3,
+    "ul":rootUl,
+    "insertBefore":null,
+    "searchSelReset":false
+    };
+  for (var i = 0; i < icds.length; i++) {
+    var icd = icds[i];
+    if (icd.level == 3) {
+      //iter.insertBefore = icdGetInsertBefore(rootUl, icd.code);
+      iter.insertBefore = null;
+    }
+    if (icd.level > iter.level) {  // start a sub-list
+      icdStartSubList(iter, icd);
+      iter.insertBefore = null;
+    } else {
+      while (icd.level < iter.level) {  // close sub-lists
+        icdCloseSubList(iter, icd);
+      }
+    }
+    var li = addListItem(iter.ul, iter.insertBefore, icdBuildAnchorHtml(icds[i], searchFor));
+    if (searchFor != null) {
+      if (icdShowOrHide(li, icd.level, maxAll) && ! iter.searchSelReset) {
+        icdSel.codeToSet = icds[i].code;
+        iter.searchSelReset = true;
+      }
+    }
+    if (icd.level == 3) {
+      li.icd = icd.code;
+      li.className = "i3";
+    } else if (icd.level == 4) {
+      li.className = "i4";
+    }
+  }
+  while (iter.level > 3) {  
+    icdCloseSubList(iter, icd);
+  }
+  if (result.more) {
+    var li = addListItem(rootUl, null, "Maximum matches returned.");
+    li.className = "max";
+  }
+  //selectIcd(icdSel.codeToSet);
+  selectIcd(result.bestFit);
+}
+function icdStartSubList(iter, icd) {
+  iter.level++;
+  iter.ul = addChildList(iter.ul, iter.insertBefore);
+  iter.ul.desc = icdLevelDesc(icd);
+  if (iter.ul.previousSibling) {
+    iter.ul.style.display = iter.ul.previousSibling.style.display;
+  }
+}
+function icdCloseSubList(iter, icd) {
+  if (iter.ul.hid) {
+    var li = addListItem(iter.ul, null, "<a class=icd-more href='javascript:return false' onclick='icdShowAll(this.parentElement);return false'>[show all " + iter.ul.desc + "]</a>");
+    if (icd.level == 4) {
+      li.className = "i5";
+    } else {
+      li.className = "i4";
+    }
+  }
+  iter.level--;
+  iter.ul = iter.ul.parentElement;
+}
+function icdIsInList(icd) {
+  return (icdsByCode[icd.code] != null);
+}
+function icdGetInsertBefore(ul, code) {
+  for (var i = 0; i < ul.childNodes.length; i++) {
+    var e = ul.childNodes[i];
+    if (e.icd != null && e.icd > code) {
+      return e;
+    }
+  }
+  return null;  // indicates add to bottom
+}
+function icdShowOrHide(li, level, maxAll) {  // returns true if search text hilited
+  var h = li.innerHTML;
+  var isHilited = h.indexOf("<U>") >= 0;
+  var isSelected = h.indexOf("class=sel") >= 0;
+  if (level > 3 && ! isHilited && ! isSelected && ! maxAll) {
+    li.style.display = "none";
+    li.parentElement.hid = true;  // <ul> of this item
+  } else {
+    while (level > 3) {
+      var ul = li.parentElement;
+      if (ul) {
+        ul.style.display = "";
+        li = ul.previousSibling;  // <li> of parent ICD 
+        if (li) li.style.display = "";
+      }
+      level--;
+    }
+  }
+  return isHilited;
+}
+function icdShowAll(li) {
+  li.style.display = "none";  // hide the show all tag
+  var ul = li.parentElement;
+  for (var i = 0; i < ul.childNodes.length - 1; i++) {  // length-1 to skip the show all tag
+    var e = ul.childNodes[i];
+    e.style.display = "";
+  }
+}
+function icdLevel(icd) {
+  switch (icd.code.length) {
+  case 3:
+    return 3;
+  case 4:
+    return 3;
+  case 5:
+    return 4;
+  case 6:
+    if (icd.code.substring(0, 1) == "E") {
+      return 4;
+    } else {
+      return 5;
+    }
+  }
+}
+function icdLevelDesc(icd) {
+  return icd.code.substring(0, icd.code.length - 1) + "x";
+}
+function icdBuildAnchorHtml(icd, searchFor) {
+  var code = icdHilite(icd.code, searchFor);
+  var desc = icd.desc;
+  if (icd.syn != null) {
+    desc += " &nbsp;<i>e.g.<i> " + icd.syn;
+  }
+  desc = icdHilite(desc, searchFor);
+  var html = "<a id=aicd" + icd.code + " href='javascript:selectIcd(\"" + icd.code + "\")'";
+  if (icd.code == icdSel.codeSet) {
+    html += " class=sel"
+  }
+  html += ">" + code + " <span";
+  if (icd.level == 3) {
+    html += " class=i3";
+  }
+  html += ">" + desc + "</span></a>";
+  return html;
+}
+function icdHilite(text, searchFor) {
+  if (searchFor == null) {
+    return text;
+  }
+  // text = text.replace(/<U>|<\/U>/g, "");  // clear out prior search
+  var r = new RegExp("(" + searchFor + ")", "gi");
+  return text.replace(r, "<u>$1</u>");
+}
+function icdClass(len) {
+  if (len == 5) {
+    return "i4";
+  } else if (len == 6) {
+    return "i5";
+  } else {
+    return "i3";
+  }
+}
+function doIcdSearch() {
+  var icdSearchText = nullify(value("icd-search"));
+  overlayWorking(true, $("icd-tree"));
+//  Ajax.get(Ajax.SVR_JSON, 'searchIcdCodes', icdSearchText, 
+//    function(jIcdCodes) {
+//      overlayWorking(false);
+//      icdBuildList(jIcdCodes);
+//    });
+  Ajax.get(Ajax.SVR_ICD, 'search', {text:icdSearchText}, 
+    function(result) {
+      overlayWorking(false);
+      icdBuildList(result);
+    });
+}
+function icdFullDesc(icd) {
+  var concat = false;
+  var desc = denull(icd.desc);
+  if (icd.parent) {
+    switch (icd.level) {
+    case 4:
+      if (icdShouldConcat(icd.parent.desc, icd.desc)) {
+        desc = icd.parent.desc + ": " + desc;
+      }
+      break;
+    case 5:
+      if (icdShouldConcat(icd.parent.desc, icd.desc)) {
+        desc = icd.parent.desc + ": " + desc;
+      }
+      if (icdShouldConcat(icd.parent.parent.desc, icd.desc)) {
+        desc = icd.parent.parent.desc + ": " + desc;
+      }
+    }
+  }
+  return desc;
+}
+function icdShouldConcat(pdesc, cdesc) {
+  if (! icdBeginsWithOther(pdesc)) {
+    if (icdDescIncomplete(cdesc)) {
+      return true;
+    } else {
+      return ! icdFirstWordIn(pdesc, cdesc); 
+    }
+  }
+}
+function icdDescIncomplete(s) {
+  var w = s.split(" ", 2)[0];
+  if (/^(due|cause|from|by|of|in|with|without|unspecified)$/i.test(w)) {
+    return true;
+  }
+  if (s == "Other") {
+    return true;
+  }
+}
+function icdBeginsWithOther(s) {
+  return (s.split(" ", 2)[0] == "Other");
+}
+function icdFirstWordIn(s1, s2) {  // true if first word of s1 is in s2
+  var r = new RegExp("(" + s1.split(" ", 2)[0] + ")", "i");
+  return r.test(s2);
+}
+function selectIcd(code, noHistory) {
+  if (code == null)
+    return;
+  if (code == icdSel.codeSet) 
+    return;
+  if (! noHistory) {
+    icdAddHistory(code);
+  }
+  var icd = icdsByCode[code];
+  icdSelectAnchor(icdSel.codeSet, false);
+  icdSelectAnchor(code, true);
+  icdSel.codeSet = code;
+  icdSel.desc = icdFullDesc(icd);
+  setText("icd-info-code", icdSel.codeSet);
+  setText("icd-info-desc", icdSel.desc);
+  if (icd.syn != null) {
+    show("icd-info-syn");
+    setHtml("icd-info-syn", icd.syn);
+  } else {
+    hide("icd-info-syn");
+  }
+  if (icd.exc != null) {
+    show("icd-info-exc");
+    setHtml("icd-info-exc-text", icd.exc);
+  } else {
+    hide("icd-info-exc");
+  }
+  if (icd.inc != null) {
+    show("icd-info-inc");
+    setHtml("icd-info-inc-text", icd.inc);
+  } else {
+    hide("icd-info-inc");
+  }
+  if (icd.notes != null) {
+    show("icd-info-note");
+    var d = icd.notes;
+    setHtml("icd-info-note-text", icd.notes);
+  } else {
+    hide("icd-info-note");
+  }
+  setDisabled("icd-ok", false);
+}
+function icdAddHistory(code) {
+  var h = icdSel.history;
+  if (h.ix == h.codes.length - 1) {
+    h.codes.push(code);
+  } else {
+    h.codes.splice(h.ix + 1, h.codes.length - 1, code);
+  }
+  h.ix++;
+  icdEnableNavs();
+}
+function icdEnableNavs() {
+  $("icd-nav-prev").className = (icdSel.history.ix > 0) ? "enabled" : "";
+  $("icd-nav-next").className = (icdSel.history.ix < icdSel.history.codes.length - 1) ? "enabled" : "";
+}
+function icdPrev() {
+  if (icdSel.history.ix > 0) {
+    icdSel.history.ix--;
+    icdNavHistory();
+  }
+}
+function icdNext() {
+  if (icdSel.history.ix < icdSel.history.codes.length - 1) {
+    icdSel.history.ix++;
+    icdNavHistory();
+  }
+}
+function icdNavHistory() {
+  selectIcd(icdSel.history.codes[icdSel.history.ix], true);
+  icdEnableNavs();
+}
+function icdSelectAnchor(id, isOn) {
+  if (id != null) {
+    var a = $("aicd" + id);
+    if (a != null) {
+      a.className = (isOn) ? "sel" : "";
+    }
+  }
+}
+function icdAddToCache(icds) {
+  var icd;
+  for (var i = 0; i < icds.length; i++) {
+    icd = icds[i];
+    if (icd.syn != null) {
+      icd.syn = "<i>" + icd.syn.replace(/<br\/>/g, "; ") + "</i>";
+    }
+    icd.level = icdLevel(icd);
+    if (icd.level == 4) {
+      icd.parent = icdsByCode[icd.code.substring(0, 3)]; 
+    } else if (icd.level == 5) {
+      icd.parent = icdsByCode[icd.code.substring(0, 5)]; 
+    }
+    icdsByCode[icd.code] = icd;
+  }
+  return icds;
+}
+function icdClear() {
+  Pop.close();
+  if (icdCallbackFn) icdCallbackFn();  
+}
+function icdOk() {
+  Pop.close();
+  if (icdCallbackFn) icdCallbackFn(icdSel.codeSet, icdSel.desc);
+}

@@ -1,0 +1,293 @@
+<?php
+//
+/**
+ * Role
+ */
+abstract class Role extends Rec {
+  //
+  /* Perms */
+  public /*Perms_Profile*/ $Profile;
+  public /*Perms_Account*/ $Account;
+  public /*Perms_Patient*/ $Patient;
+  public /*Perms_Artifact*/ $Artifact;
+  public /*Perms_Report*/ $Report;
+  public /*Perms_Message*/ $Message;
+  //
+  protected static function byName($name) {
+    $me = new static();
+    foreach ($me->getPermFids() as $fid) {
+      $class = "Perms_$fid";
+      $me->$fid = $class::byRoleName($name);
+    }
+    return $me;
+  }
+  //
+  protected function getPermFids() {
+    return array_keys($this->getPerms());
+  }
+  protected function getPerms() {
+    return get_object_vars($this);
+  }
+}
+/**
+ * User Role 
+ */
+class UserRole {
+  //
+  static function byUserType($type) {
+  }
+}
+/**
+ * Primary Roles
+ */
+class PrimaryRole extends Role {
+  //
+  const NAME_PROVIDER = 'Provider';
+  const NAME_CLINICAL = 'Clinical';
+  const NAME_CLERICAL = 'Clerical';
+  //
+  static function asPrimaryProvider() {
+    return static::asProvider('Admin', 'Payer', 'Auditor', 'ReportBuilder');
+  }
+  static function asProvider() {
+    $mixins = func_get_args();
+    return static::byName(static::NAME_PROVIDER, $mixins);
+  }
+  static function asClinical() {
+    return static::byName(static::NAME_CLINICAL, $mixins);
+  }
+  static function asClerical() {
+    return static::byName(static::NAME_CLERICAL, $mixins);
+  }
+  //
+  protected static function byName($name, $mixins) {
+    $me = parent::byName($name);
+    $me->blend($mixins);
+    return $me;
+  }
+  /**
+   * @param string[] $names
+   * @return PrimaryRole
+   */
+  protected function blend($names) {
+    foreach ($names as $name) {
+      $role = MixinRole::byName($name);
+      foreach ($role->getPerms() as $fid => $perm)
+        if ($perm) 
+          $this->$fid = $this->$fid->blend($perm);
+    }
+    return $this;
+  }
+}
+/**
+ * Additional (Mixin) Roles
+ */
+class MixinRole extends Role {
+  //
+  const NAME_ADMIN = 'Admin';
+  const NAME_PAYER = 'Payer';
+  const NAME_AUDITOR = 'Auditor';
+  const NAME_BUILDER = 'ReportBuilder';
+}
+/** 
+ * Permissions
+ */
+class Perms {
+  //
+  /* Flags */
+  /**
+   * @param (Perm,..)
+   * @return static set by augmenting supplied perms  
+   */
+  public function blend() {
+    $perms = func_get_args();
+    foreach ($perms as $perm)
+      foreach ($perm->getFlags() as $flag => $set)
+        if ($set)
+          $this->$flag = true;
+    return $this;
+  }
+  //
+  /**
+   * @param string $name 'Provider'
+   * @return static
+   */
+  static function byRoleName($name) {
+    $method = "as$name";
+    if (method_exists(get_called_class(), $method))
+      return static::$method();
+  }
+  //
+  private function getFlags() {
+    return get_object_vars($this);
+  }
+}
+class Perms_Profile extends Perms {
+  public $license;   // can update
+  public $practice;  // can update
+  public $billing;   // can update
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->license = true;
+    return $me;
+  }
+  static function asClinical() {
+    return null;
+  }
+  static function asClerical() {
+    return null;
+  }
+  //
+  static function asAdmin() {
+    $me = new static();
+    $me->practice = true;
+    return $me;
+  }
+  static function asPayer() {
+    $me = new static();
+    $me->billing = true;
+    return $me;
+  }
+}
+class Perms_Account extends Perms {
+  public $provider;  // manage
+  public $support;   // manage
+  public $portal;    // manage
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    return static::asClerical();
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->portal = true;
+    return $me;
+  }
+  //
+  static function asAdmin() {
+    $me = new static();
+    $me->provider = true;
+    $me->support = true;
+    return $me;
+  }
+}
+class Perms_Patient extends Perms {
+  public $create;     // create
+  public $facesheet;  // open
+  public $demo;       // record
+  public $vitals;     // record
+  public $diagnoses;  // record
+  public $immuns;     // record
+  public $track;      // record
+  public $cds;        // customize
+  public $sched;      // record
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->vitals = true;
+    $me->diagnoses = true;
+    $me->immuns = true;
+    $me->cds = true;
+    return $me->blend(static::asClerical());
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->create = true;
+    $me->facesheet = true;
+    $me->demo = true;
+    $me->track = true;
+    $me->sched = true;
+    return $me;
+  }
+}
+class Perms_Artifact extends Perms {
+  public $markReview;    // for all artifacts
+  public $markPortal;    // for all artifacts 
+  public $notesCreate;    
+  public $noteSign;      
+  public $noteAddendum;  
+  public $templates;     // manage
+  public $scan;           
+  public $labs;          // reconcile  
+  public $hl7;           // create and download
+  //
+  static function asProvider() {
+    $me = new static();
+    $me->markReview = true;
+    $me->noteSign = true;
+    $me->noteAddendum = true;
+    return $me->blend(static::asClinical(), static::asClerical());
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->markPortal = true;
+    $me->notesCreate = true; 
+    return $me->blend(static::asClerical());
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->templates = true;
+    $me->scan = true; 
+    $me->labs = true; 
+    $me->hl7 = true;
+    return $me;
+  }
+} 
+class Perms_Report extends Perms {
+  public $patient;  // can
+  public $cds;      // can
+  public $audit;    // can
+  public $builder;  // can
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    return static::asClerical();
+  }
+  static function asClerical() {
+    $me = new static();
+    $me->patient = true;
+    $me->cds = true;
+    return $me;
+  }
+  //
+  static function asReportBuilder() {
+    $me = new static();
+    $me->custom = true;
+    return $me;
+  }
+  static function asAuditor() {
+    $me = new static();
+    $me->patient = true;
+    $me->cds = true;
+    $me->audit = true;
+    return $me;
+  } 
+}
+class Perms_Message extends Perms { 
+  public $general;  // general messages
+  public $patient;  // patient messages
+  public $portal;   // portal messages
+  //
+  static function asProvider() {
+    return static::asClinical();
+  }
+  static function asClinical() {
+    $me = new static();
+    $me->portal = true;
+    return $me->blend(static::asClerical());
+  } 
+  static function asClerical() {
+    $me = new static();
+    $me->general = true;
+    $me->patient = true;
+    return $me;
+  }
+}

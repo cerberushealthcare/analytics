@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<buildpath>
+	<buildpathentry excluding="_facebook_example/|_xml-testing/|bat-files/|flight/|bin/|css/|email/|home/|icd-codes/|img/|inc/|phpAES/|sec-temp/|service/|SFTP/|sql-scripts/|test/|tiny_mce/|sec/_prod/|sec/_unused/|sec/baa/|sec/css/|sec/img/big/|sec/img/icons/|sec/img/new/|sec/img/user/|sec/img/welcome/|sec/img/working/|sec/js/|sec/logs/|sec/svc/|sec/testing/|sec/tos/|sec/user-folders/|sec/web/|sec/web-services/|sec/xml/|sec/php/old-csv-import/" kind="src" path=""/>
+	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
+</buildpath>

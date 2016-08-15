@@ -1,0 +1,217 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/sql/Scanning.php';
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+require_once 'php/data/rec/ExceptionRec.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header('Location: welcome.php');
+}
+$uploaded = false;
+if (isset($_FILES['scanfile'])) {
+  $uploaded = true;
+  $upException = null;
+  try {
+    Scanning::upload($_FILES['scanfile']);
+  } catch (Exception $e) {
+    $upException = ExceptionRec::from($e);
+  }
+}
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('Scanning') ?>
+    <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/xb/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TabBar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/AnchorTab.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TableLoader.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TemplateUi.css?<?=Version::getUrlSuffix() ?>' />
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/ScanningPage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/AnchorTab.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/event-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TabBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/CmdBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/DateInput.js?<?=Version::getUrlSuffix() ?>'></script>
+    <style>
+TABLE.c2 TD {
+  vertical-align:top;
+}
+TD.pr {
+  padding-left:10px;
+}
+DIV.Folders {
+  padding-left:10px;
+}
+DIV.SavedFolders {
+  text-align:center;
+}
+DIV.SavedFolders H2 {
+  margin:20px 0 0 0;
+}
+DIV.SavedFolders H3 {
+  margin:20px 0 0 0;
+  padding:0;
+  font-size:0.9em;
+  font-weight:bold;
+}
+DIV.pop-cmd {
+  margin-top:5px;
+}
+DIV.Folder {
+  padding:5px;
+  background-color:#FAEE9A;
+  border:1px solid #C8B560;
+  margin:5px 0;
+  text-align:left;
+}
+DIV.Folder A B {
+  font-size:11pt;
+}
+DIV.ScanIndex {
+  overflow-y:scroll;
+  padding:5px;
+  border:1px solid #e0e0e0;
+  background-color:white;
+}
+DIV.ScanFile {
+  border:1px dashed #c0c0c0;
+  background-color:#F8F8F8;
+  padding:5px;
+  margin-bottom:0.2em;
+  cursor:hand;
+}    
+DIV.ScanFile IMG {
+  border:1px solid #c0c0c0;
+}
+DIV.check {
+  border:1px solid #c0c0c0;
+  background-color:#C3FDB8;
+}
+DIV.EntryFolder {
+  padding:5px;
+  background-color:#FFF8C6;
+  border:1px solid #C8B560;
+}
+DIV.update {
+  background-color:#FAEE9A;
+  border:1px solid #C8B560;
+}
+DIV.EntryFolderList {
+  border:1px solid #c0c0c0;
+  height:200px;
+  background-color:white;
+  overflow-y:scroll;
+  padding:4px;
+  margin-top:10px;
+}
+A.scan {
+  font-size:11pt;
+  padding-right:20px;
+  padding-left:18px;
+}
+A.client {
+  font-size:12pt;
+  font-weight:bold;
+  background-position:1px left;
+  background-repeat:no-repeat;
+  padding-left:18px;
+  margin-bottom:10px;
+}
+DIV.new-index {
+}
+DIV.new-index A {
+  font-size:12pt;
+  font-weight:bold;
+  background-position:1px left;
+  background-repeat:no-repeat;
+  margin-bottom:10px;
+}
+INPUT.file {
+  width:500px;
+  font-size:8pt;
+  font-family:Tahoma;
+}
+    </style>
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <table class='h'>
+          <tr>
+            <th><h1>Scanning Center</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+          <div id='scan-indexing'>
+            <div class='spacer'>&nbsp;</div>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <div id="pop-upload" class="pop">
+      <div class="pop-cap">
+        <div>
+          Clicktate - Upload Files
+        </div>
+        <a href="javascript:Pop.close()" class="pop-close"></a>
+      </div>
+      <div class="pop-content">
+        <div id="pop-upload-info" class="information mb10" style="padding-top:10px">
+          Your file(s) were uploaded successfully.<br>
+          You may now select more files to upload, or click Cancel to begin indexing.  
+        </div>
+        <form id="frm-upload" enctype="multipart/form-data" action="scanning.php" method="post">
+          <input type="hidden" name="MAX_FILE_SIZE" value="1000000" />
+          <input class='file' name="scanfile[]" type="file" /><br>
+          <input class='file' name="scanfile[]" type="file" /><br>
+          <input class='file' name="scanfile[]" type="file" /><br>
+          <input class='file' name="scanfile[]" type="file" /><br>
+          <input class='file' name="scanfile[]" type="file" /><br>
+        </form>
+        <div class="pop-cmd">
+          <a href="javascript:upload()" onclick="" class="cmd save">Upload Now</a>
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <? include 'inc/footer.php' ?>
+  </body>
+<script type='text/javascript'>
+C_Ipc = <?=Ipc::getStaticJson() ?>;
+C_ScanIndex = <?=ScanIndex::getStaticJson() ?>;
+C_Address = <?=AddressRec::getStaticJson() ?>;
+C_Lookups = {<?=LookupAreas::getJsonList() ?>};
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  ScanningPage.init(query);
+  <? if ($uploaded) { ?>
+    Pop.show('pop-upload');
+    <? if ($upException) { ?>
+      _$('pop-upload-info').hide();
+      Page.showAjaxError(<?=$upException->toJson()?>); 
+    <? } ?>
+  <? } ?>
+}
+function upload() {
+  $('frm-upload').submit();
+}
+</script>      
+</html>

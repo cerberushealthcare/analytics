@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:voc="urn:hl7-org:v3/voc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040" />
+  <templateId root="2.16.840.1.113883.10.20.1" />
+  <id root="db734647-fc99-424c-a864-7e3cda82e703" />
+  <code codeSystem="2.16.840.1.113883.6.1" code="34133-9" displayName="Summarization of Episode Note" />
+  <title>Continuity of Care Document</title>
+  <effectiveTime value="19691231190000" />
+  <confidentialityCode codeSystem="2.16.840.1.113883.5.25" code="N" />
+  <languageCode code="en-US" />
+  <recordTarget>
+    <patientRole>
+      <id root="2.16.840.1.113883.19.5" extension="0234" />
+      <addr>
+        <state>KY</state>
+        <city>Louisville</city>
+        <postalCode>40402</postalCode>
+        <streetAddressLine>234 Main St</streetAddressLine>
+      </addr>
+      <patient>
+        <name>
+          <given>Bill</given>
+          <family>Buffalo</family>
+        </name>
+        <administrativeGenderCode codeSystem="2.16.840.1.113883.5.1" code="M" />
+        <birthTime value="19650413" />
+      </patient>
+      <providerOrganization>
+        <id root="2.16.840.1.113883.19.5" />
+        <name>LCD Solutions, LLC</name>
+      </providerOrganization>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="19691231190000" />
+    <assignedAuthor>
+      <id root="2.16.840.1.113883.19.5" extension="1" />
+      <representedOrganization>
+        <id root="2.16.840.1.113883.19.5" />
+        <name>LCD Solutions, LLC</name>
+      </representedOrganization>
+      <assignedPerson>
+        <name>
+          <prefix>Dr</prefix>
+          <given>LCD</given>
+          <family>Admin</family>
+        </name>
+      </assignedPerson>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="2.16.840.1.113883.19.5" />
+        <name>LCD Solutions, LLC</name>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <participant typeCode="IND">
+    <associatedEntity classCode="GUA">
+      <id root="2.16.840.1.113883.19.5" extension="0234" />
+      <addr>
+        <state>KY</state>
+        <city>Louisville</city>
+        <postalCode>40402</postalCode>
+        <streetAddressLine>234 Main St</streetAddressLine>
+      </addr>
+      <associatedPerson>
+        <name>
+          <given>Bill</given>
+          <family>Buffalo</family>
+        </name>
+      </associatedPerson>
+    </associatedEntity>
+  </participant>
+  <participant typeCode="IND">
+    <associatedEntity classCode="NOK">
+      <id root="2.16.840.1.113883.19.5" extension="0234" />
+      <code codeSystem="2.16.840.1.113883.6.96" code="65656005" displayName="Biological Mother" />
+      <addr>
+        <state>KY</state>
+        <city>Louisville</city>
+        <postalCode>40402</postalCode>
+        <streetAddressLine>234 Main St</streetAddressLine>
+      </addr>
+      <associatedPerson>
+        <name>
+          <given>Bill</given>
+          <family>Buffalo</family>
+        </name>
+      </associatedPerson>
+    </associatedEntity>
+  </participant>
+  <documentationOf>
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low value="19650413" />
+        <high value="20110423" />
+      </effectiveTime>
+      <performer typeCode="PRF">
+        <functionCode codeSystem="2.16.840.1.113883.5.88" code="PCP" />
+        <time>
+          <low value="2010" />
+          <high value="20110423" />
+        </time>
+        <assignedEntity>
+          <id root="2.16.840.1.113883.19.5" extension="1" />
+          <assignedPerson>
+            <name>
+              <prefix>Dr</prefix>
+              <given>LCD</given>
+              <family>Admin</family>
+            </name>
+          </assignedPerson>
+          <representedOrganization>
+            <id root="2.16.840.1.113883.19.5" />
+            <name>LCD Solutions, LLC</name>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.8" />
+          <code codeSystem="2.16.840.1.113883.6.1" code="10160-0" displayName="History of Medication Use" />
+          <title>Medication</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Instructions</th>
+                  <th>Date(s)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Acarbose (25 mg)</td>
+                  <td>1 tablet Q2h WA by mouth</td>
+                  <td>N/A</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>Singulair (10 mg)</td>
+                  <td>1 tablet DAILY by mouth</td>
+                  <td>N/A</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" />
+              <statusCode code="active" />
+              <effectiveTime xsi:type="PIVL">
+                <period value="2" unit="h" />
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" code="C38288" displayName="Oral" />
+              <doseQuantity value="1" />
+              <administrationUnitCode codeSystem="2.16.840.1.113883.3.26.1.1" code="NOTFOUND-DosageForm" displayName="1 tablet" />
+              <consumable>
+                <manufacturedProduct>
+                  <templateId root="2.16.840.1.113883.10.20.1.53" />
+                  <manufacturedMaterial>
+                    <code codeSystem="2.16.840.1.113883.6.88" code="297665" displayName="Acarbose (25 mg)">
+                      <originalText>Acarbose (25 mg)</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.24" />
+              <statusCode code="active" />
+              <effectiveTime xsi:type="PIVL">
+                <period value="24" unit="h" />
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" code="C38288" displayName="Oral" />
+              <doseQuantity value="1" />
+              <administrationUnitCode codeSystem="2.16.840.1.113883.3.26.1.1" code="NOTFOUND-DosageForm" displayName="1 tablet" />
+              <consumable>
+                <manufacturedProduct>
+                  <templateId root="2.16.840.1.113883.10.20.1.53" />
+                  <manufacturedMaterial>
+                    <code codeSystem="2.16.840.1.113883.6.88" code="150390" displayName="Singulair (10 mg)">
+                      <originalText>Singulair (10 mg)</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.2" />
+          <code codeSystem="2.16.840.1.113883.6.1" code="48765-2" displayName="Allergies, Adverse Reactions, Alerts" />
+          <title>Allergies and Adverse Reactions</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Substance</th>
+                  <th>Reactions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="3">None Known</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" />
+              <code nullFlavor="NA" />
+              <entryRelationship typeCode="SUBJ" inversionInd="true">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                  <statusCode code="completed" />
+                  <value codeSystem="2.16.840.1.113883.6.96" code="282100009" displayName="Adverse reaction to substance" xsi:type="CD" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" code="NOTFOUND-AllergyAgent" displayName="Amoxicillin" />
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="MFST" inversionInd="true">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="NOTFOUND-Reaction" displayName="Chest Pain" xsi:type="CD" />
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.6.1" code="33999-4" displayName="Status" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="55561003" displayName="Active" xsi:type="CE" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" />
+              <code nullFlavor="NA" />
+              <entryRelationship typeCode="SUBJ" inversionInd="true">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                  <statusCode code="completed" />
+                  <value codeSystem="2.16.840.1.113883.6.96" code="282100009" displayName="Adverse reaction to substance" xsi:type="CD" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" code="NOTFOUND-AllergyAgent" displayName="Amoxicillin" />
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.6.1" code="33999-4" displayName="Status" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="55561003" displayName="Active" xsi:type="CE" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" />
+              <code nullFlavor="NA" />
+              <entryRelationship typeCode="SUBJ" inversionInd="true">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                  <statusCode code="completed" />
+                  <value codeSystem="2.16.840.1.113883.6.96" code="282100009" displayName="Adverse reaction to substance" xsi:type="CD" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" code="NOTFOUND-AllergyAgent" displayName="Erythromycin" />
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="MFST" inversionInd="true">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="NOTFOUND-Reaction" displayName="Itching" xsi:type="CD" />
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="MFST" inversionInd="true">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="NOTFOUND-Reaction" displayName="Abdominal Pain" xsi:type="CD" />
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.6.1" code="33999-4" displayName="Status" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="55561003" displayName="Active" xsi:type="CE" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27" />
+              <code nullFlavor="NA" />
+              <entryRelationship typeCode="SUBJ" inversionInd="true">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.18" />
+                  <code codeSystem="2.16.840.1.113883.5.4" code="ASSERTION" />
+                  <statusCode code="completed" />
+                  <value codeSystem="2.16.840.1.113883.6.96" code="282100009" displayName="Adverse reaction to substance" xsi:type="CD" />
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" code="NOTFOUND-AllergyAgent" displayName="Erythromycin Base" />
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39" />
+                      <code codeSystem="2.16.840.1.113883.6.1" code="33999-4" displayName="Status" />
+                      <statusCode code="completed" />
+                      <value codeSystem="2.16.840.1.113883.6.96" code="55561003" displayName="Active" xsi:type="CE" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.16" />
+          <code codeSystem="2.16.840.1.113883.6.1" code="8716-3" displayName="Vital Signs" />
+          <title>Vital Signs</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Date/Time</th>
+                  <th>Pulse (BPM)</th>
+                  <th>Resp (BPM)</th>
+                  <th>Blood Pressure (mmHg)</th>
+                  <th>Temp (F)</th>
+                  <th>Weight (kg)</th>
+                  <th>Height (cm)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>14-Dec-2010, 2:08PM</td>
+                  <td>56</td>
+                  <td>14</td>
+                  <td>102/66 RUE</td>
+                  <td>98.6</td>
+                  <td>92.99</td>
+                  <td>185.42</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.35" />
+              <statusCode code="completed" />
+              <effectiveTime value="20101214150801" />
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="8867-4" displayName="Heart Beat" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="56" unit="/min" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="9279-1" displayName="Respiration Rate" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="14" unit="/min" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="8480-6" displayName="Intravascular Systolic" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="102" unit="mm[Hg]" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="8462-4" displayName="Intravascular Diastolic" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="66" unit="mm[Hg]" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="8310-5" displayName="Body Temperature" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="98.6" unit="[degF]" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="3141-9" displayName="Body Weight" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="92.99" unit="kg" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="8302-2" displayName="Body Height" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="185.42" unit="cm" xsi:type="PQ" />
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31" />
+                  <code codeSystem="2.16.840.1.113883.6.1" code="2710-2" displayName="Oxygen Saturation" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20101214150801" />
+                  <value value="88" unit="%" xsi:type="PQ" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>
+

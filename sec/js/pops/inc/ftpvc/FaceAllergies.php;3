@@ -1,0 +1,81 @@
+<?
+/**
+ * Facesheet Allergies
+ * Controller: FaceAllergies.js
+ */
+?>
+<div id="fsp-all" class="pop" onmousedown="event.cancelBubble = true" style="width:720px">
+  <div id="fsp-all-cap" class="pop-cap">
+    <div id="fsp-all-cap-text">
+      Allergies
+    </div>
+    <a href="javascript:FaceAllergies.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style='padding:0'>
+    <div class='tabbar'></div>
+    <div class='tabpanels'>
+      <div class='tabpanel'>
+        <div id="fsp-all-div" class="fstab" style="height:350px">
+          <table id="fsp-all-tbl" class="fsr single">
+            <tbody id="fsp-all-tbody">
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="all-cmd-erx" class="pop-cmd cmd-right" style="display:none">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td nowrap="nowrap">
+                <a id='all-dleg' style='display:none' href='javascript:FaceAllergies.fpDeleteLegacy()' class='cmd delete-red'>Remove <i style='color:red;'>[Legacy]</i></a>
+              </td>
+              <td style="width:100%">
+                <a href='javascript:page.pNewCrop()' class="cmd erx">Update Allergies...</a>
+                <span>&nbsp;</span>
+                <a href="javascript:FaceAllergies.fpClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <table id="all-cmd" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td nowrap="nowrap">
+              <div class="pop-cmd">
+                <label>
+                  With checked:
+                </label>
+                <a id="all-cmd-toggle" href="javascript:" onclick="FaceAllergies.fpDeleteChecked()" class="cmd delete-red">Remove from List</a>
+              </div>
+            </td>
+            <td style="width:100%">
+              <div class="pop-cmd cmd-right">
+                <a id="all-cmd-add" href="javascript:" onclick="FaceAllergies.fpEdit()" class="cmd new">Add an Allergy...</a>
+                <span>&nbsp;</span>
+                <a href="javascript:FaceAllergies.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class='tabpanel'>
+        <div id="fsp-allh-div" class="fstab" style="height:350px">
+          <table id="fsp-allh-tbl" class="fsr single">
+            <thead>
+              <tr id="allh-head" class="fixed head">
+                <th>Date</th>
+                <th>Document</th>
+                <th>Agent: Reactions</th>
+              </tr>
+            </thead>
+            <tbody id="fsp-allh-tbody">
+            </tbody>
+          </table>
+        </div>
+        <div class="pop-cmd cmd-right">
+          <a href="javascript:FaceAllergies.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

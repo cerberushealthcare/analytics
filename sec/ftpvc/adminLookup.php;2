@@ -1,0 +1,470 @@
+<?php
+require_once "inc/requireLogin.php";
+require_once "inc/uiFunctions.php";
+require_once "php/dao/LookupAdminDao.php";
+
+if (! $myLogin->admin) {
+  header("Location: welcome.php");
+}
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <? renderHead("Lookup Configuration") ?>
+    <link rel="stylesheet" type="text/css" href="css/clicktate.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/schedule.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
+      <link rel="stylesheet" type="text/css" href="css/clicktate-font.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css" href="css/schedule-font.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css" href="css/pop-font.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css" href="css/data-tables-font.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css" href="css/facesheet-font.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css"  href="css/template-pops-font.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+    <!--[if lte IE 6]>    
+      <link rel="stylesheet" type="text/css" href="css/pop-ie6.css?<?=Version::getUrlSuffix() ?>" />
+    <![endif]-->
+    <script language="JavaScript1.2" src="js/pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/connection-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
+    <style>
+DIV.ell {
+  width: 350px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+TEXTAREA {
+  width:400px;
+  height:120px;
+  font-family:Consolas;
+  font-size:8pt;
+}
+A.k2 {
+  font-size: 10pt;
+  font-weight: bold;
+}
+A.edit {
+  background: url(img/icons/edit-yellow.gif) no-repeat;
+  padding-left: 15px;
+}
+TD.chk {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+}
+TD.chk INPUT {
+  margin-top: -2px;
+}
+INPUT.ml {
+  margin-left: -4px;
+  margin-top: 1px;
+}
+H4 {
+  font-family: Calibri, Tahoma, Arial;
+  font-weight: bold;
+  font-size: 11pt;
+  font-family: 'Lucida Grande', 'Trebuchet MS';
+  font-size: 10pt;
+  color: black;
+  color: #004B52;
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+UL.entry SPAN {
+  margin-top: 3px;
+}
+UL.entry LABEL {
+  margin-right: 2px;
+  color: black;
+}
+    </style>
+  </head>
+  <body>
+    <div id="curtain"></div>
+    <form id="frm" method="post" action="facesheet.php">
+    <div id="bodyContainer">
+      <? include "inc/header.php" ?>
+      <div class="content">
+        <h1 id="h1">Lookup Configuration</h1>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding-right:5px; vertical-align:top">
+              <div id="data-panel">
+                <div id="data-div" class="fstab" style="height:450px">
+                  <table id="data-tbl" class="fsgr single grid">
+                    <thead>
+                      <tr id="data-head" class="fixed head">
+                        <th>Table</th>
+                        <th>ID</th>
+                        <th>Data</th>
+                      </tr>
+                    </thead>
+                    <tbody id="data-tbody">
+                    </tbody>
+                  </table>
+                </div>
+                <div class="pop-cmd">
+                  <a class="cmd new">New Lookup Table...</a>
+                </div>
+              </div>
+              <div id="sdata-panel" style="display:none">
+                <div id="sdata-div" class="fstab" style="height:450px;">
+                  <table id="sdata-tbl" class="fsy grid">
+                    <thead>
+                      <tr id="sdata-head" class="fixed head">
+                        <th style="width:30px">Level</th>
+                        <th style="width:30px">ID</th>
+                        <th>Data</th>
+                      </tr>
+                    </thead>
+                    <tbody id="sdata-tbody">
+                    </tbody>
+                  </table>
+                </div>
+                <div class="pop-cmd">
+                  <a id="cmd-new" href="javascript:editData()" class="cmd new">New Record...</a>
+                </div>
+              </div>
+            </td>
+            <td style="width:150px; vertical-align:top">
+              <ul id="data-filter-ul" class="filter"></ul>
+              <ul id="level-filter-ul" class="filter" style="margin-top:0.5em"></ul>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div id="pop-lde" class="pop" onmousedown="event.cancelBubble = true">
+        <div id="pop-lde-cap" class="pop-cap">
+          <div id="pop-lde-cap-text">
+            Clicktate - Lookup Data Entry
+          </div>
+          <a href="javascript:closeOverlayPop()" class="pop-close"></a>
+        </div>
+        <div class="pop-content" style="width:550px">
+          <ul class="entry">
+            <li>
+              <h4 id="lde-table">Table</h4>
+            </li>
+            <li>
+              <label class="first2">Level</label><? renderCombo("lde-level123", LookupAdminDao::getLevels()) ?>
+              <input type="text" id="lde-level-id" size="2" />
+              <span id="lde-level-name">APPLICATION</span>
+            </li>
+            <li style="margin-bottom:1em">
+              <label class="first2">ID</label><input type="text" id="lde-instance" size="2" /><span id="new-info" class="info">Note: Defaulted to next available ID.</span>
+              <span id="lde-id-name"></span>
+            </li>
+          </ul>
+          <ul id="ul-fields" class="entry">
+          </ul>
+          <div class="pop-cmd push">
+            <a href="javascript:ldeSave()" class="cmd save">Save Changes</a>
+            <span id="he-delete-span">
+              <span>&nbsp;</span>
+              <a href="javascript:ldeDelete()" class="cmd delete-red">Delete</a>
+            </span>
+            <span>&nbsp;</span>
+            <a href="javascript:closeOverlayPop()" class="cmd none">Cancel</a>
+          </div>
+          <div id="pop-lde-errors" class="pop-error" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+    </form>
+    <? include "inc/footer.php" ?>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+  </body>
+</html>
+<script>
+var appRows = <?=jsonencode(LookupAdminDao::getAppLookupData()) ?>;
+var tableName;    // current selected table name
+var tables = {};  // cached table info by ltid
+var ltid;         // curent expanded table ID
+var table;        // current edited table
+var ldid;         // curent edited record
+var VTYPE = {     // value types
+    UNDEF:0,
+    TEXT:1,
+    BOOL:2,
+    OBJ:3};
+var hmProcs = <?=LookupDao::getDataHmProcsMapAsJson() ?>;
+registerBodyFocus(bodyFocus); 
+loadDataTable(appRows);
+function loadDataTable(appRows) {
+  var t = new TableLoader("data-tbody", "off", "data-div", "data-head");
+  var filter = dataFilter();
+  t.defineFilter(filter, null, sidebarClick);
+  for (var i = 0; i < appRows.length; i++) {
+    var row = appRows[i];
+    filter = dataFilter(row.TABLE_NAME, row.LOOKUP_TABLE_ID);
+    t.createTr(row.LOOKUP_TABLE_ID, [row.LOOKUP_TABLE_ID], filter);
+    var href = buildHrefFn("TableLoader.applyFilterById", ["data-tbody", "Table", row.TABLE_NAME, row.LOOKUP_TABLE_ID]);
+    var a = createAnchor(null, href, "k2", null, row.TABLE_NAME);
+    t.createTdAppend(null, a);
+    t.createTd(null, row.INSTANCE);
+    t.createTd();
+    t.append(createDiv(null, "ell", row.DATA)); 
+  }
+  t.loadFilterSidebar("data-filter-ul", TableLoader.NO_FILTER_COUNT);
+  flicker("data-head");
+}
+function sidebarClick(value, key) {
+  ltid = key;
+  if (tables[ltid] == null) {
+    tables[ltid] = {
+        "name":value};
+  }
+  if (value == null) {
+    setText("h1", "Lookup Configuration");
+    showHide("data-panel", "sdata-panel");
+    return true;
+  }
+  showColumnIf("sdata-tbl", 0, true);
+  tableName = value;
+  setText("h1", "Table " + tableName);
+  showHide("sdata-panel", "data-panel");
+  hide("sdata-tbl");
+  sendRequest2("serverAdm.php?action=getLookupDataForTable&id=" + key);
+}
+function getLookupDataForTableCallback(rows) {
+  renderLookupData(rows);
+}
+function renderLookupData(rows) {
+  showColumnIf("sdata-tbl", 0, true);
+  var fields = buildFields(rows);
+  var table = tables[ltid];
+  table.fields = fields;
+  table.rows = rows;
+  var t = new TableLoader("sdata-tbody", "off", "sdata-div", "sdata-head");
+  var filter = levelFilter();
+  t.defineFilter(filter, levelFilterCallback);
+  for (var ldid in rows) {
+    var row = rows[ldid];
+    table.lastRow = row;
+    filter = levelFilter(row.LEVEL_NAME, row.LEVEL + row.LEVEL_ID);
+    t.createTr(row.LEVEL_NAME, [row.LEVEL_NAME], filter);
+    var href = buildHrefFn("TableLoader.applyFilterById", ["sdata-tbody", "Level", row.LEVEL_NAME, row.LEVEL + row.LEVEL_NAME]);
+    var a = createAnchor(null, href, "k2", null, row.LEVEL + ": " + row.LEVEL_NAME);
+    t.createTdAppend(null, a);
+    // var cb = createCheckbox("sel", row.LOOKUP_DATA_ID);
+    // t.createTdAppend("chk", cb);
+    var href = buildHrefFn("editData", [row.LOOKUP_DATA_ID]);
+    var a = createAnchor(null, href, "edit", null, row.INSTANCE);
+    t.createTdAppend(null, a);
+    var data = buildData(fields, row);
+    t.createTd(null, null, data);
+  }
+  show("sdata-tbl");
+  t.loadFilterSidebar("level-filter-ul", TableLoader.NO_FILTER_COUNT);
+  var as = $("level-filter-ul").getElementsByTagName("A");
+  if (as.length == 2) {
+    as[1].click();
+  } else {
+    hide("cmd-new");
+  }
+}
+function levelFilterCallback(t) {
+  var lvl = t.getTopFilterValue(); 
+  setHtml("h1", "Table " + tableName + ((lvl) ? " &bull; " + lvl : "")); 
+  showColumnIf("sdata-tbl", 0, lvl == null);
+  showIf(lvl, "cmd-new");
+}
+function dataFilter(table, ltid) {
+  return {"Data Table":[table, ltid]};
+}
+function levelFilter(name, key) {
+  return {"Level":[name, key]};
+}
+function buildData(fields, row) {
+  var values = [];
+  for (var field in fields) {
+    var value = row.DATA[field];
+    if (value != null) {
+      var a = "<a href=\"javascript:editData(" + row.LOOKUP_DATA_ID + ",'" + field + "')\">" + field + "</a>";
+      if (isArray(value)) {
+        buildDataArray(a, value, values);
+      } else if (isObject(value)) {
+        values.push(a + ":");
+        buildDataObject(value, values, 1);
+      } else {
+        values.push(a + ": " + value);
+      }
+    }
+  }
+  return values.join("<br>");
+}
+function buildDataObject(value, values, indent) {
+  var ind = buildIndent(indent);
+  for (var f in value) {
+    var lf = "<b>" + f + "</b>";
+    var v = value[f];
+    if (isArray(v)) {
+      buildDataArray(ind + lf, v, values);
+    } else if (isObject(v)) {
+      values.push(ind + lf + ":");
+      buildDataObject(v, values, indent + 1);
+    } else {
+      values.push(ind + lf + ":" + v);
+    }
+  }
+}
+function buildDataArray(a, value, values) {
+  values.push(a + ":" + "[" + value.join(", ") + "]");
+}
+function buildIndent(indent) {
+  var ind = "";
+  for (var i = 0; i < indent; i++) {
+    ind += "&nbsp;&nbsp;&nbsp;";
+  }  
+  return ind;
+}
+function buildFields(rows) {
+  var fields = {};
+  for (var ldid in rows) {
+    var row = rows[ldid];
+    for (var field in row.DATA) {
+      if (fields[field] == null) {
+        fields[field] = VTYPE.UNDEF;
+      }
+      var type = fields[field];
+      if (type == VTYPE.UNDEF || type == VTYPE.BOOL) {
+        var value = row.DATA[field];
+        if (value != null) {
+          if (isObject(value)) {
+            fields[field] = VTYPE.OBJ;
+          } else if (value !== true && value !== false && value != 0 && value != 1) {
+            fields[field] = VTYPE.TEXT;
+          } else {
+            fields[field] = VTYPE.BOOL;
+          }
+        }
+      }
+    }
+  }
+  for (var field in fields) {
+    if (fields[field] == 0) {
+      fields[field] = 1;
+    }
+  }
+  return fields; 
+}
+function renderFields(fields) {
+  var ul = $("ul-fields");
+  clearChildren(ul);
+  var firstField;
+  for (var field in fields) {
+    if (firstField == null) {
+      firstField = field;
+    }
+    var type = fields[field];
+    var html = "<label class='first2'>" + field + "</label>";
+    var li = addListItem(ul, null, html);
+    var value = table.row.DATA[field];
+    var id = "lde-" + field;
+    if (type == VTYPE.OBJ) {
+      var v = (value == null) ? "" : toJSONString(value);
+      var ta = createTextArea(id, v);
+      li.appendChild(ta);
+    } else if (type == VTYPE.BOOL) {
+      var cb = createCheckbox(id, true, "ml")
+      li.appendChild(cb);
+      cb.checked = value;
+    } else {
+      var i = createTextbox(id, value, "50");
+      li.appendChild(i);
+    }
+  }
+  return firstField;
+}
+function buildObject(fields) {
+  var data = {};
+  for (var field in fields) {
+    var type = fields[field];
+    var id = "lde-" + field;
+    if (type == VTYPE.OBJ) {
+      data[field] = value(id);
+    } else if (type == VTYPE.BOOL) {
+      data[field] = isChecked(id) ? 1 : 0;      
+    } else {
+      data[field] = value(id);
+    }
+  }
+  var o = {};
+  o["LOOKUP_DATA_ID"] = ldid;
+  o["LOOKUP_TABLE_ID"] = ltid;
+  o["LEVEL"] = value("lde-level123");
+  o["LEVEL_ID"] = value("lde-level-id");
+  o["INSTANCE"] = value("lde-instance");
+  o["DATA"] = data;
+  return o;
+}
+function editData(id, focusId) {  
+  var firstField;
+  table = tables[ltid];
+  if (id) {  // existing record
+    table.row = table.rows[id];
+    setText("lde-table", table.name);
+    setValue("lde-instance", table.row.INSTANCE);
+    hide("new-info"); 
+    setDisabled("lde-level123", true);
+    setDisabled("lde-level-id", true);
+    setDisabled("lde-instance", true);
+    if (id != ldid) {
+      firstField = renderFields(table.fields);
+    }
+  } else {  // new record
+    table.row = table.lastRow;
+    setText("lde-table", table.name + " (New Record)");
+    setValue("lde-instance", val(table.row.INSTANCE) + 1);
+    show("new-info"); 
+    setDisabled("lde-level123", false);
+    setDisabled("lde-level-id", false);
+    setDisabled("lde-instance", false);
+    renderFields(table.fields);
+    focusId = "instance";
+  }
+  ldid = id;
+  setValue("lde-level-id", table.row.LEVEL_ID);
+  if (id && table.name == "DATA_HM_PROC_QUIDS") {
+    setText("lde-id-name", hmProcs[table.row.INSTANCE]);
+  } else {
+    setText("lde-id-name", "");
+  }
+  setValue("lde-level123", table.row.LEVEL);
+  setText("lde-level-name", table.row.LEVEL_NAME);
+  showOverlayPop("pop-lde");
+  flicker("sdata-head");
+  if (focusId == null) focusId = firstField;
+  if (focusId) focus("lde-" + focusId);
+}
+function ldeSave() {
+  overlayWorking(true);
+  postRequest2("serverAdm.php", "action=saveLookupData&obj=" + jsonUrl(buildObject(table.fields)));  
+}
+function ldeDelete() {
+  showConfirmDelete(ldeDeleteConfirmed, "delete");
+}
+function ldeDeleteConfirmed(confirmed) {
+  if (confirmed) {
+    sendRequest2("serverAdm.php?action=deleteLookupData&id=" + ldid + "&ltid=" + ltid);
+  }
+}
+function saveLookupDataCallback(rows) {
+  renderLookupData(rows);
+  overlayWorking(false);
+  closeOverlayPop();
+}
+function bodyFocus() {
+  flicker("sdata-head");
+}
+</script>

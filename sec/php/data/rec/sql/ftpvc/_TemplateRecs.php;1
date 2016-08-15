@@ -1,0 +1,118 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Template Base Classes
+ * @author Warren Hornsby 
+ */
+abstract class TemplateRec extends SqlRec {
+  /*
+  public $templateId;
+	public $userId;
+	public $uid;
+	public $name;
+	public $public;
+	public $dateCreated;
+	public $dateUpdated;
+	public $desc;
+	public $title;
+	public $userGroupId;
+	*/
+  const TID_MED_NOTE = 1;
+  const TID_ORDER_ENTRY = 30;
+  //
+  public function getSqlTable() {
+    return 'templates';
+  }
+}
+abstract class SectionRec extends SqlRec {
+  /*
+	public $sectionId;
+	public $templateId;
+	public $uid;
+	public $name;
+	public $desc;
+	public $sortOrder;
+	public $title;
+  */
+  //
+  public function getSqlTable() {
+    return 'template_sections';
+  }
+}
+abstract class ParRec extends SqlRec {
+  /*
+  public $parId;
+	public $sectionId;
+	public $uid;
+	public $major;
+	public $sortOrder;
+	public $desc;
+	public $noBreak;
+	public $injectOnly;
+	public $dateEffective;
+	public $current;
+  public $inDataTable;
+  public $inDataType;
+  public $inDataCond;
+  */
+  //
+  public function getSqlTable() {
+    return 'template_pars';
+  }
+}
+abstract class QuestionRec extends SqlRec {
+  /*
+  public $questionId;
+  public $parId;
+  public $uid;
+  public $desc;
+  public $bt;
+  public $at;
+  public $btms;
+  public $atms;
+  public $btmu;
+  public $atmu;
+  public $listType;
+  public $noBreak;
+  public $test;
+  public $defix;
+  public $mix;
+  public $mcap;
+  public $mix2;
+  public $mcap2;
+  public $img;
+  public $sortOrder;
+  public $actions;
+  public $syncId;
+  public $outDate;
+  public $inDataActions;
+  public $dsyncId;
+  */
+  //
+  public function getSqlTable() {
+    return 'template_questions';
+  }
+}
+abstract class OptionRec extends SqlRec {
+  /*  
+  public $optionId;
+  public $questionId;
+  public $uid;
+  public $desc;
+  public $text;
+  public $shape;
+  public $coords;
+  public $sync;
+  public $cptCode;
+  public $trackCat;
+  public $icd;
+  public $icdDesc;
+  */  
+  //
+  public function getSqlTable() {
+    return 'template_options';
+  }
+  public function getText() {
+    return ($this->text == null) ? $this->uid : $this->text;
+  }
+}

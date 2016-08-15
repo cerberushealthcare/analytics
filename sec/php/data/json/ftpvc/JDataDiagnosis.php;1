@@ -1,0 +1,72 @@
+<?php
+require_once "php/data/json/_util.php";
+
+/**
+ * Diagnosis 
+ * Facesheet Data Record
+ * 
+ * Organization:
+ *   ugid, cid,..
+ *     sid>0, date=DOS, par_uidx=puid  // built from closed note
+ *     sid=NULL, text                  // facesheet summary record
+ */
+class JDataDiagnosis {
+
+  public $id;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  // dos
+  public $parUid;
+  public $text;
+  public $parDesc;
+  public $icd;
+  public $active;
+  public $updated;
+
+  const SQL_FIELDS = "data_diagnoses_id, user_group_id, client_id, session_id, date, par_uid, text, par_desc, icd, active, date_updated";
+  
+  public function __construct($id, $userGroupId, $clientId, $sessionId, $date, $parUid, $text, $parDesc, $icd, $active, $updated) {
+    $this->id = $id;
+    $this->userGroupId = $userGroupId;
+    $this->clientId = $clientId;
+    $this->sessionId = $sessionId;
+    $this->date = $date;
+    $this->parUid = $parUid;
+    $this->text = $text;
+    $this->parDesc = $parDesc;
+    $this->icd = $icd;
+    $this->active = $active;
+    $this->updated = $updated;
+	}
+	public function out() {
+    $out = "";
+    $out = nqq($out, "id", $this->id);
+    $out = nqq($out, "clientId", $this->clientId);
+    $out = nqq($out, "sessionId", $this->sessionId);
+    $out = nqq($out, "date", formatDate($this->date));
+    $out = nqq($out, "parUid", $this->parUid);
+    $out = nqq($out, "text", $this->text);
+    $out = nqq($out, "parDesc", $this->parDesc);
+    $out = nqq($out, "icd", $this->icd);
+    $out = nqqo($out, "active", $this->active);
+    return cb($out);
+	}
+	
+	// Static functions
+	public static function copy($dto) {
+	  return new JDataDiagnosis(
+	      null,
+        $dto->userGroupId,
+        $dto->clientId,
+        $dto->sessionId,
+        $dto->date,
+        $dto->parUid,
+        $dto->text,
+        $dto->parDesc,
+        $dto->icd,
+        $dto->active,
+        $dto->updated);
+	}
+}
+?>

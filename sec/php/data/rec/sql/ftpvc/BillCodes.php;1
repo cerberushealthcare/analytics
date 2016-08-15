@@ -1,0 +1,47 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+/**
+ * Billing Codes
+ * DAO for BillCode
+ * @author Warren Hornsby
+ */
+class BillCodes {
+  //
+  /*
+   * Get bill codes valid for new signups
+   * @return array(BillCode,..)
+   */
+  public static function getForSignUp() {
+    $c = new BillCode();
+    $c->newSignups = 1;
+    return SqlRec::fetchAllBy($c);
+  }
+}
+//
+/**
+ * Billing Code
+ */
+class BillCode extends SqlRec implements ReadOnly, NoUserGroup {
+  //
+  public $billCode;
+  public $newSignups;
+  public $upfrontCharge;
+  public $monthlyCharge;
+  public $minCharge;
+  public $maxCharge;
+  public $registerText;
+  public $createDate;
+  public $discountCode;
+  public $firstBill;
+  public $noteCharge;
+  //
+  public function getSqlTable() {
+    return 'bill_codes';
+  }
+  //
+  public static function fetch($code) {
+    return SqlRec::fetch($code, 'BillCode');
+  }
+}
+?>

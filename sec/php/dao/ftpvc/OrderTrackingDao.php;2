@@ -1,0 +1,74 @@
+<?php
+require_once 'php/dao/_util.php';
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/TrackItem.php';
+//
+/**
+ * Order Tracking Data Access Object
+ */
+class OrderTrackingDao {
+  /*
+   * Get control lists
+   */
+  public static function getLists() {
+    $lists = array(
+      'cats' => TrackItem::$TCATS,
+      'priorities' => TrackItem::$PRIORITIES
+      );
+    return $lists;
+  }
+  /**
+   * Order entry
+   * @param array $orderItems [{'cid':#,'sid':#,'key':$,'tcat':$,'tdesc':$,'cpt':$},..]
+   * @return array(
+   *   'priorities'=>array(priority=>desc,..),
+   *   'catItems'=>array(
+   *     tcat=>array(
+   *       'title'=>$, 
+   *       'items'=>array(TrackItem,..),..)))
+   */
+  public static function order($orderItems) {
+    global $myLogin;
+    $trackCatItems = array();
+    $sid = null;
+    foreach ($orderItems as &$orderItem) {
+      LoginDao::authenticateSessionId($orderItem->sid, $sid);
+      $item = TrackItem::fetchByOrderKey($orderItem->sid, $orderItem->key);
+      if ($item == null) 
+        $item = TrackItem::fromOrderItem(
+          $myLogin->userGroupId, $myLogin->userId, $orderItem);
+      $title = TrackItem::$TCATS[$item->trackCat]; 
+      $trackCatItems[$title][] = $item;
+    }
+    return array(
+      'priorities' => TrackItem::$PRIORITIES,
+      'catItems' => $trackCatItems
+      );
+  }
+  /**
+   * Save track items
+   * @param [TrackItem,..] $trackItems
+   */
+  public static function saveTrackItems($trackItems) {
+    global $myLogin;
+    $sid = null;
+    foreach ($trackItems as &$trackItem) {
+      LoginDao::authenticateSessionId($trackItem->sessionId, $sid);
+      $trackItem->userGroupId = $myLogin->userGroupId;
+      $trackItem->userId = $myLogin->userId;
+      $trackItem->save();
+    }
+  }
+  /**
+   * Retrieve track items by criteria
+   * @param object $criteria {'cat':$,'cid':$} 
+   * @return array(TrackItem,..) 
+   */
+  public static function getTrackItems($criteria) {
+    global $myLogin;
+    $trackItem = TrackItem::fromCriteria($myLogin->userGroupId, $criteria);
+    $sql = $trackItem->getSqlSelect() . " ORDER BY track_cat, ";
+    
+  }
+}
+?>

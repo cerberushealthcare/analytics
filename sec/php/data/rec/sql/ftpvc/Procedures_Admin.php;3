@@ -1,0 +1,32 @@
+<?php
+//
+require_once 'php/data/rec/sql/Procedures.php';
+/**
+ * Procedures (Administrative Category) 
+ * @author Warren Hornsby
+ */
+class Proc_Admin extends Proc implements NoAudit {
+  static $IPC;
+  //
+  static function record($cid, $ipc = null) {
+    global $myLogin;
+    $me = new static();
+    $me->userGroupId = $myLogin->userGroupId;
+    $me->clientId = $cid;
+    $me->date = nowNoQuotes();
+    $me->ipc = ($ipc) ? $ipc : static::$IPC;
+    $me->save();
+  }
+}
+class Proc_SmokingHxRecorded extends Proc_Admin {
+  static $IPC = 600084;
+} 
+class Proc_ReviewedGrowthChart extends Proc_Admin {
+  static $IPC = 600175;
+} 
+class Proc_ImmunInfoProvided extends Proc_Admin {
+  static $IPC = 600179;
+}
+class Proc_MedsReconciled extends Proc_Admin {
+  static $IPC = 600174;
+}

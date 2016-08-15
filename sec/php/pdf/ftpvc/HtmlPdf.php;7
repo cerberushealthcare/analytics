@@ -1,0 +1,101 @@
+<?php
+require_once 'php/pdf/tcpdf/config/lang/eng.php';
+require_once 'php/pdf/tcpdf/tcpdf.php';
+//
+/**
+ * HTMLPDF
+ */
+class HTMLPDF extends TCPDF {
+  //
+  protected $headHtml;
+  protected $headJust;
+  /**
+   * Overridden TCPDF constuctor
+   */
+  public function __construct($font = 'times') {
+    parent::__construct(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $this->setPageFormat('USLETTER');
+    $this->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+    $this->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT, true);
+    $this->SetHeaderMargin(PDF_MARGIN_HEADER);
+    $this->SetFooterMargin(PDF_MARGIN_FOOTER);
+    $this->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+    $this->setImageScale(PDF_IMAGE_SCALE_RATIO);
+    $this->SetFont($font, '', 10);
+    $this->setHeaderFont(array($font, '', 10));
+    $this->setFooterFont(array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+    $this->setHtmlVSpace(array('div' => array( array('h' => 0, 'n' => 0), array('h' => 0, 'n' => 0)), 'p' => array( array('h' => 0.0001, 'n' => 1), array('h' => 0, 'n' => 0)), 'span' => array( array('h' => 0, 'n' => 0), array('h' => 0, 'n' => 0)))); 
+  }
+  /**
+   * Set document information
+   * @param string $author
+   * @param string $title
+   * @param string $subject
+   * @param string $keywords
+   */
+  public function setDocInfo($author, $title, $subject = null, $keywords = null) {
+    $this->SetCreator(PDF_CREATOR);
+    $this->SetAuthor($author);
+    $this->SetTitle($title);
+    $this->SetSubject($subject);
+    $this->SetKeywords($keywords);
+  }
+  /**
+   * Set body/head HTML and write to document
+   * @param string $htmlBody
+   * @param string $htmlHead optional
+   * @param string $justifyHead optional 'L'eft or 'R'ight
+   */
+  public function setHTML($htmlBody, $htmlHead = '', $justifyHead = 'R') {
+    $this->setHeaderHtml($htmlHead, $justifyHead);
+    $html = tidy_parse_string($htmlBody);
+    $html->cleanRepair();
+    $this->AddPage();
+    $this->writeHTML($html, true, false, true, false, '');
+  }
+  /**
+   * Output PDF as forced browser download
+   * @param string $filename
+   */
+  public function outputAsDownload($filename) {
+    $this->Output($filename, 'D');
+  }
+  /**
+   * Output PDF as string
+   * @return string 'blob'
+   */
+  public function outputAsString() {
+    return $this->Output(null, 'S');
+  }
+  //
+  /**
+   * @see TCPDF::Header()
+   */
+  public function Header() {
+    $this->writeHTML($this->headHtml, true, false, true, false, $this->headJust);
+  }
+  /**
+   * @see TCPDF::Footer()
+   */
+  public function Footer() {
+    
+    // TODO: to add signature to every page; get the sig as separate html and assign to $this->footerHtml:
+    //    $this->writeHTML($this->footerHtml, true, false, true, false, 'L');
+    //    $this->SetY(-15);   
+    //    $this->SetFont('helvetica', 'I', 8);
+    //    $this->Cell(0, 10, $this->getAliasNumPage().' of '.$this->getAliasNbPages(), 0, false, 'R', 0, '', 0, false, 'T', 'M');
+
+    // "Page 1 of X", centered
+    $this->SetY(-15);   
+    $this->SetFont('helvetica', 'I', 8);
+    $this->Cell(0, 10, 'Page '.$this->getAliasNumPage().' of '.$this->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+  }
+  //
+  private function setHeaderHtml($html, $justify = 'R') {
+	  $html = tidy_parse_string($html);
+	  $html->cleanRepair();
+    $this->headHtml = $html;
+    $this->headJust = $justify;
+  }
+}
+?>

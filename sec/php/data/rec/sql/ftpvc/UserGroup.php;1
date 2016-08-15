@@ -1,0 +1,28 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Group Record
+ */
+class UserGroup extends SqlRec {
+  //
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  //
+  const USAGE_LEVEL_BASIC = '0';
+  const USAGE_LEVEL_PREMIUM = '1';
+  const USAGE_LEVEL_ERX = '2';
+  //
+  public function getSqlTable() {
+    return 'user_groups';
+  }
+  //
+  /**
+   * Static fetchers
+   */
+  public static function fetch($ugid) {
+    return SqlRec::fetch($ugid, 'UserGroup');
+  }
+}
+?>

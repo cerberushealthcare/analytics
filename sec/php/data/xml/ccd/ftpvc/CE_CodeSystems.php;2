@@ -1,0 +1,232 @@
+<?php
+require_once 'php/data/xml/ccd/datatypes_base.php';
+//
+class CE_CodeSystem extends CE {
+  //
+  public function __construct($code, $displayName = null) {
+    $this->_code = $code;
+    $this->_displayName = $displayName;
+  }
+}
+/**
+ * SNOMED 
+ */
+class CE_SNOMED extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.6.96';
+}
+class CE_SNOMED_Relationship extends CE_SNOMED {
+  //
+  static function asBiologicalMother() {
+    return new self('65656005', 'Biological Mother');
+  }
+} 
+class CE_SNOMED_Status extends CE_SNOMED {
+  //
+  static function asActive() {
+    return new self('55561003', 'Active');    
+  }
+}
+class CE_SNOMED_Reaction extends CE_SNOMED {
+  //
+  static function asAdverseReactionToSubstance() {
+    return new self('282100009', 'Adverse reaction to substance');
+  }
+  static function asHives() {
+    return new self('247472004', 'Hives');
+  }
+  static function fromReaction($reaction) {
+    switch ($reaction) {
+      case 'Hives':
+        return self::asHives();
+      case 'Rash':
+      case 'Itching':
+      case 'Anaphylaxis':
+      case 'Generalized Swelling':
+      case 'Swollen Mouth':
+      case 'Swollen Tongue':
+      case 'Abdominal Pain':
+      case 'Abdominal Upset':
+      case 'Nausea':
+      case 'Vomiting':
+      case 'Diarrhea':
+      case 'Constipation':
+      case 'Shortness of Breath':
+      case 'Cough':
+      case 'Headache':
+      case 'Dizziness':
+      case 'Chest Pain':
+      case 'Syncope':
+      case 'Bleeding':
+      case 'Bruising':
+      case 'Epistaxis':
+      case 'Sore Throat':
+      case 'Dysphagia':
+      case 'Breast Pain':
+      case 'Breast Swelling':
+      case 'Urinary Frequency':
+      case 'Urinary Retention':
+      case 'Dry Mouth':
+      case 'Vaginal Dryness':
+      case 'Excessive Sedation':
+      case 'Myalgias':
+      case 'Fatigue':
+      case 'Liver Dysfunction':
+      case 'Renal Failure':
+      // TODO see http://bioportal.bioontology.org/visualize/44777/?conceptid=288526004
+      default:
+        return new self('NOTFOUND-Reaction', $reaction);
+    }
+  }
+}
+/**
+ * HL7
+ */
+class CE_HL7_AdministrativeGender extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.5.1';
+  //
+  static function fromClient($client) {
+    return new self($client->sex);
+  }
+}
+class CE_HL7_ActCode extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.5.4';
+  //
+  static function asAssertion() {
+    return new self('ASSERTION');
+  }
+}
+class CE_HL7_Confidentiality extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.5.25';
+}
+class CE_HL7_ParticipationFunction extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.5.88';
+}
+/**
+ * LOINC
+ */
+class CE_LOINC extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.6.1';
+  // 
+  static function asProblemList() {
+    return new self('11450-4', 'Problem List');
+  }
+  static function asResolved() {
+    return new self('11348-0', 'Resolved');
+  }
+  static function asReasonForVisit() {
+    return new self('29299-5', 'Reason for Visit');
+  }
+  static function asChiefComplaint() {
+    return new self('10154-3', 'Chief Complaint');
+  }
+  static function asStatus() {
+    return new self('33999-4', 'Status');
+  }
+  static function asPulseRate() {
+    return new self('8867-4', 'Heart Beat');
+  }
+  static function asRespRate() {
+    return new self('9279-1', 'Respiration Rate');
+  }
+  static function asO2Saturation() {
+    return new self('2710-2', 'Oxygen Saturation');
+  }
+  static function asBpDiastolic() {
+    return new self('8462-4', 'Intravascular Diastolic');
+  }
+  static function asBpSystolic() {
+    return new self('8480-6', 'Intravascular Systolic');
+  }
+  static function asBodyTemp() {
+    return new self('8310-5', 'Body Temperature');
+  }
+  static function asBodyHeight() {
+    return new self('8302-2', 'Body Height');
+  }
+  static function asBodyWeight() {
+    return new self('3141-9', 'Body Weight');
+  }
+}
+/**
+ * NCI 
+ */
+class CE_NCI extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.3.26.1.1';
+}
+class CE_NCI_Route extends CE_NCI {
+  //
+  static function fromMed($med) {
+    switch ($med->route) {
+      case 'orally':
+      case 'by mouth':
+        return new self('C38288', 'Oral');
+      case 'rectally':
+      case 'rectum, in the':
+        return new self('C38295', 'Rectal');
+      case 'intravaginally':
+      case 'vagina, in the':
+        return new self('C38313', 'Vaginal');
+      case 'IV':
+        return new self('C38276', 'Intravenous');
+      // TODO (also add remaining NewCrop values)
+      case 'inhaled':
+      case 'subcutaneously':
+      case 'transdermally':
+      case 'on the nails':
+      case 'on the skin':
+      case 'in the left eye':
+      case 'in the right eye':
+      case 'in both eyes':
+      case 'in the left ear':
+      case 'in the right ear':
+      case 'in both ears':
+      case 'in the left nostril':
+      case 'in the right nostril':
+      case 'in both nostrils':
+      case 'in alternating nostrils':
+      case 'IM':
+      default:
+        return new self('NOTFOUND-Route', $med->route);
+    }
+  }
+}
+class CE_NCI_DosageForm extends CE_NCI {
+  //
+  static function fromMed($med) {
+    // TODO see http://www.fda.gov/ForIndustry/DataStandards/StructuredProductLabeling/ucm162038.htm
+    //return new self('C42998', 'Tablet');
+    return new self('NOTFOUND-DosageForm', $med->amt);
+  }
+}
+class CE_RxNorm extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.6.88';
+  //
+  public function __construct($code, $displayName, $originalText = null) {
+    parent::__construct($code, $displayName);
+    if ($originalText)
+      $this->originalText = ED::asText($originalText);
+  }
+  //
+  static function fromMed($med) {
+    $drugId = $med->getDrugId();
+    if ($drugId)  
+      return new self($med->index, $med->name, $med->name);
+  }
+  static function fromAller($aller) {
+    // TODO
+    return new self('NOTFOUND-AllergyAgent', $aller->agent);
+  }
+}
+/**
+ * ICD9
+ */
+class CE_ICD9 extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.6.42';
+}
+/**
+ * CPT
+ */
+class CE_CPT extends CE_CodeSystem {
+  public /*uid*/ $_codeSystem = '2.16.840.1.113883.6.12';
+}
+?>

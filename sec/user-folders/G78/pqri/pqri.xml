@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF8"?>
+<submission type="PQRI-REGISTRY" option="PAYMENT" version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Registry_Payment.xsd">
+  <file-audit-data>
+    <create-date>09-05-2013</create-date>
+    <create-time>21:08</create-time>
+    <create-by>Select Health</create-by>
+    <version>1.0</version>
+    <file-number>1</file-number>
+    <number-of-files>1</number-of-files>
+  </file-audit-data>
+  <registry>
+    <registry-name>Clicktate</registry-name>
+    <registry-id>123456</registry-id>
+    <submission-method>C</submission-method>
+  </registry>
+  <measure-group ID="D">
+    <provider>
+      <tin>123456</tin>
+      <waiver-signed>true</waiver-signed>
+      <encounter-from-date>01-01-2011</encounter-from-date>
+      <encounter-to-date>01-01-2012</encounter-to-date>
+      <pqri-measure>
+        <pqri-measure-number>NQF 0034</pqri-measure-number>
+        <eligible-instances>0</eligible-instances>
+        <meets-performance-instances>0</meets-performance-instances>
+        <performance-exclusion-instances>0</performance-exclusion-instances>
+        <performance-not-met-instances>0</performance-not-met-instances>
+        <reporting-rate>100</reporting-rate>
+        <performance-rate>0</performance-rate>
+      </pqri-measure>
+    </provider>
+  </measure-group>
+</submission>

@@ -1,0 +1,49 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php';
+require_once 'php/data/rec/sql/Messaging.php';
+require_once 'php/data/rec/ErxStatusCount.php'; 
+require_once 'php/newcrop/NewCrop.php';
+require_once 'php/dao/AuditDao.php';
+//
+if (LoginDao::authenticateSession_forPolling() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+}
+try { 
+  switch ($action) {
+    case 'getMyInboxCt':
+      $ct = Messaging::getMyUnreadCt();
+      $m = new JAjaxMsg($action, $ct);
+      break;
+    case 'pollCuTimestamp':
+      $cid = $_GET['id']; 
+      $timestamp = AuditDao::getClientUpdateTimestamp($cid);
+      $m = new JAjaxMsg($action, jsonencode($timestamp));
+      break;
+    case 'getStatusCount':
+      $newcrop = new NewCrop();
+      try {
+        $ncStatuses = $newcrop->pullAcctStatusDetails();
+        $ncPharmReqs = $newcrop->pullAllRenewalRequests();
+        $status = ErxStatusCount::fromNewCrop($ncStatuses, $ncPharmReqs);
+        $m = new JAjaxMsg($action, jsonencode($status));
+      } catch (SoapResultException $e) {
+        // will throw 'acct not found' prior to first time entering
+        $m = new JAjaxMsg($action, null);
+      }
+    break;
+  }
+} catch (Exception $e) {
+} 
+if ($m != null) 
+  echo $m->out();
+?>

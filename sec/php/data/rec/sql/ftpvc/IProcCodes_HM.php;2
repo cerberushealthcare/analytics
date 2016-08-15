@@ -1,0 +1,247 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+require_once 'php/data/rec/sql/Reporting.php';
+//
+/**
+ * IPC Health Maintenance Codes
+ * @author Warren Hornsby
+ */
+class IProcCodes_Hm {
+  //
+  /**
+   * @return array(IpcHm,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = IpcHm::fetchAll($myLogin->userGroupId);
+    return Rec::sort($recs, new RecSort('Ipc.cat', 'Ipc.name'));
+  }
+  /**
+   * @param stdClass $obj
+   * @return IpcHm
+   */
+  static function save($obj) {
+    global $myLogin;
+    $rec = IpcHm::fromUi($obj, $myLogin->userGroupId);
+    $rec->save();
+    return IpcHm::fetch($rec->userGroupId, $rec->ipc);
+  }
+  /**
+   * @param stdClass $obj
+   */
+  static function del($obj) {
+    global $myLogin;
+    $rec = IpcHm::fromUi($obj, $myLogin->userGroupId);
+    IpcHm::delete($rec);
+  }
+  //
+  private static function mapByName($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName($ugid);
+    return $map;
+  }
+  private static function mapSurgByDesc($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap($ugid);
+    return $map;
+  } 
+}
+//
+class IpcHm extends SqlLevelRec implements CompositePk {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $auto;
+  public $every;
+  public $interval;
+  public $criteria;  // serialized RepCrit_Hm
+  public /*Ipc*/ $Ipc;
+  //
+  const INT_DAY = 1;
+  const INT_WEEK = 2;
+  const INT_MONTH = 3;
+  const INT_YEAR = 4;
+  static $INTERVALS = array(
+    self::INT_DAY => 'day(s)',
+    self::INT_WEEK => 'week(s)',
+    self::INT_MONTH => 'month(s)', 
+    self::INT_YEAR => 'year(s)');
+  //
+  static $EMPTY_CRITERIA;
+  //
+  public function getSqlTable() {
+    return 'ipc_hm';
+  }
+  public function getAuditRecId() {
+    return "$this->userGroupId,$this->ipc";
+  }
+  public function fetchForAudit() {
+    return self::fetch($this->userGroupId, $this->ipc);
+  }
+  public function toJsonObject(&$o) {
+    if ($this->criteria)
+      $o->criteria = jsondecode($this->criteria);
+    else
+      $o->criteria = new RepCrit_Hm();
+  }
+  public function getJsonFilters() {
+    return array(
+    	'auto' => JsonFilter::boolean());
+  }
+  public function getSqlDelete() {
+    $table = $this->getSqlTable();
+    $ugid = $this->userGroupId;
+    $ipc = $this->ipc;
+    if ($ugid == null || $ipc == null) 
+      throw new SqlRecException($this, 'Cannot delete record without PK');
+    $sql = "DELETE FROM $table WHERE user_group_id=$ugid AND ipc=$ipc";
+    return $sql;
+  }
+  public function isApplicable($ugid, $cid) {
+    $crit = $this->getRepCrit(true, $cid);
+    return $crit->count($ugid) == 1;
+  }
+  /**
+   * @param bool $asNumerator (if true, includes 'not having' join to exclude those having the procedure within the HM's specified interval timeframe)
+   * @param int $cid (optional, to query for specific patient)
+   * @return RepCrit_Hm
+   */
+  public function getRepCrit($asNumerator = true, $cid = null) {
+    $crit = new RepCrit_Hm($this->getCriteriaObject());
+    if ($asNumerator)
+      $crit->addNotHavingProcJoin($this);
+    if ($cid) 
+      $crit->addCid($cid);
+    return $crit;    
+  }
+  private function getCriteriaObject() {
+    static $crit;
+    if ($crit == null)
+      $crit = jsondecode($this->criteria);
+    return $crit;
+  }
+  //
+  static function fetch($ugid, $ipc) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->ipc = $ipc;
+    $c->Ipc = Ipc::asRequiredJoin();
+    return self::fetchOneBy($c);
+  }
+  static function fetchAll($ugid) {
+    $c = new self();
+    $c->userGroupId = self::getAllLevelsCriteria($ugid);
+    $c->Ipc = Ipc::asRequiredJoin();
+    return self::fetchAllBy($c);
+  }
+  static function fromUi($o, $ugid) {
+    $o->criteria = jsonencode($o->criteria);
+    $rec = new self($o);
+    if (! isset($rec->userGroupId))
+      $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  static function getStaticJson() {
+    self::$EMPTY_CRITERIA = new RepCrit_Hm();
+    return parent::getStaticJson(__CLASS__);
+  }
+}  
+class RepCrit_Hm extends RepCritRec {
+  //
+  public $sex;
+  public $age;
+  public $race;
+  public $ethnicity;
+  //
+  static $JOINS_TO = array(
+    self::T_ADDRESS, 
+    self::T_DIAGNOSES,
+    self::T_MEDS,
+    self::T_ALLERGIES,
+    self::T_PROCS,
+    self::T_RESULTS,
+    self::T_IMMUNS,
+    self::T_VITALS,
+    self::T_SESSIONS);
+  //
+  public function getSqlClass() {
+    return 'Client_Rep';
+  }
+  public function getTable() {
+    return self::T_CLIENTS;
+  }
+  public function count($ugid) {
+    $criteria = self::asSqlCriteria($this, $ugid);
+    return Client_Rep::count($criteria);
+  } 
+  public function addNotHavingProcJoin($ipchm) {
+    $this->Joins[] = RepCritJoin_Hm::asNotHaving($ipchm); 
+  }
+  public function addCid($cid) {
+    $this->clientId = RepCritValue_Hm::asCid($cid);
+  }
+  //
+  protected function assignSqlCriteriaValue(&$criteria, $fid, $value) {
+    if ($fid == 'age') 
+      $fid = 'birth';
+    parent::assignSqlCriteriaValue($criteria, $fid, $value);
+  }
+  //
+  static function getStaticJson() {
+    return Rec::getStaticJson(__CLASS__);
+  }
+}
+class RepCritJoin_Hm extends RepCritJoin {
+  //
+  static function asNotHaving($ipchm) {
+    $rec = new self();
+    $rec->jt = self::JT_NOT_HAVE;
+    $rec->table = RepCritRec::T_PROCS;
+    $rec->Recs[] = RepCrit_HmProc::from($ipchm);
+    return $rec;
+  }
+}
+class RepCrit_HmProc extends RepCrit_Proc {
+  //
+  static function from($ipchm) {
+    $rec = new self();
+    $rec->ipc = RepCritValue_Hm::asIpc($ipchm);
+    $rec->date = RepCritValue_Hm::asDate($ipchm);
+    return $rec;
+  }
+}
+class RepCritValue_Hm extends RepCritValue {
+  static $INTERVALS = array(
+    IpcHm::INT_DAY => 'd',
+    IpcHm::INT_WEEK => 'w',
+    IpcHm::INT_MONTH => 'm', 
+    IpcHm::INT_YEAR => 'y');
+  //
+  static function asIpc($ipchm) {
+    $rec = new self();
+    $rec->op = self::OP_IS;
+    $rec->value = $ipchm->ipc;
+    $rec->text_ = $ipchm->Ipc->name;
+    return $rec;
+  }
+  static function asDate($ipchm) {
+    if ($ipchm->every) {
+      $rec = new self();
+      $rec->op = self::OP_WITHIN;
+      $rec->value = $ipchm->every . ',' . self::$INTERVALS[$ipchm->interval];
+      $rec->text_ = $ipchm->every . ' ' . IpcHm::$INTERVALS[$ipchm->interval];
+      return $rec;
+    } else {
+      return null;
+    }
+  }
+  static function asCid($cid) {
+    $rec = new self();
+    $rec->op = self::OP_IS;
+    $rec->value = $cid;
+    return $rec;
+  }
+}
+?> 

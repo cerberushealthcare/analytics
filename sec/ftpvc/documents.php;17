@@ -1,0 +1,186 @@
+<?
+require_once "php/data/LoginSession.php";
+require_once "inc/uiFunctions.php";
+require_once "php/forms/DocumentsForm.php";
+require_once "php/data/db/User.php";
+//
+LoginSession::verify_forUser()->requires($login->Role->Artifact->noteRead);
+$form = new DocumentsForm("documents.php");
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <? renderHead("Document Manager") ?>
+    <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/schedule.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" />
+    <? if ($login->isPapyrus()) { ?>
+    <link rel="stylesheet" type="text/css" href="css/papyrus.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+    <script type='text/javascript' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/connection-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/new-open.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/documents.js?<?=Version::getUrlSuffix() ?>"></script>
+  </head>
+  <body onfocus="pageFocus()">
+    <div id="curtain"></div>
+    <form id="frm" method="post" action="documents.php">
+      <div id="bodyContainer">
+        <? include "inc/header.php" ?>
+        <div id='bodyContent' class="content">
+          <table border="0" cellpadding="0" cellspacing="0" style="width:100%">
+            <tr>
+              <td>
+                <table border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td><h1>Document Manager</h1></td>
+                  </tr>
+                </table>
+                <div id="searching">
+                  Showing:
+                  <? if ($form->isNotesView()) { ?>
+                    <? if (! $form->isUnsignedView()) { ?>
+                      <em>All notes for</em>
+                    <? } else { ?>
+                      <em>Unsigned notes for</em>
+                    <? } ?>
+                    <? renderCombo("users", $form->users, $form->userId, "onchange='userChange()'") ?>
+                    &nbsp;
+                    <? if (! $form->isUnsignedView()) { ?>
+                      <a href="documents.php?pf1=closed&pfv1=0&pfe1=2&u=<?=$form->userId ?>" class="icon big view">Show <b>unsigned notes only</b></a>
+                    <? } else { ?>
+                      <a href="documents.php?u=<?=$form->userId ?>" class="icon big view">Show <b>all notes</b></a>
+                    <? } ?>
+                  <? } else { ?>
+                    <em>Customized templates</em>
+                  <? } ?>
+                </div>
+              </td>
+              <td style="text-align:right; vertical-align:bottom; padding-bottom:2px">
+                <? if ($form->isNotesView()) { ?>
+                  <? if ($login->Role->Artifact->templates) { ?>
+                    <a class="icon big go" href="documents.php?v=1">Manage <b>custom templates</b></a>
+                  <? } ?>
+                <? } else { ?>
+                  <a class="icon big go" href="documents.php?v=0">Manage <b>notes</b></a>
+                <? } ?>
+              </td>
+            </tr>
+          </table>
+          <? renderBoxStart("wide small-pad") ?>
+            <div class="nav">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="prev">
+                    <?=$form->prevAnchorHtml() ?>
+                  </td>
+                  <td class="nav">
+                    <?=$form->recordNumbers("") ?>
+                  </td>
+                  <td class="next">
+                    <?=$form->nextAnchorHtml() ?>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div class="gridsheet">
+              <? if ($form->isNotesView()) { ?>
+                <table>
+                  <tr>
+                    <?=$form->sortableHeader("title", "Document") ?>
+                    <?=$form->sortableHeader("date_service date_updated", "DOS") ?>
+                    <?=$form->sortableHeader("last_name", "Patient") ?>
+                    <?=$form->sortableHeader("date_created", "Created") ?>
+                    <?=$form->sortableHeader("date_updated", "Last Updated") ?>
+                    <?=$form->sortableHeader("send_to_name", "Send To") ?>
+                  </tr>
+                  <? foreach ($form->rows as $row) { ?>
+                    <tr class="<?=$row->trClass ?>">
+                      <td width="20%" class="last">
+                        <?=$row->noteAnchorHtml ?>
+                      </td>
+                      <td width="10%" class="last"><?=$row->dos ?></td>
+                      <td width="20%" class="last">
+                        <? if ($login->Role->Patient->facesheet) { ?>
+                          <a href="javascript:showClient(<?=$row->stub->cid ?>)" class="icon <?=echoIf($row->stub->clientSex == Client0::MALE, "umale", "ufemale") ?>">
+                            <?=$row->stub->clientName ?>
+                          </a>
+                        <? } else { ?>
+                          <?=$row->stub->clientName ?>
+                        <? } ?>
+                      </td>
+                      <td width="25%" class="last">
+                        <?=$row->createdText ?>
+                      </td>
+                      <td width="25%" class="last">
+                        <?=$row->updatedText ?>
+                      </td>
+                      <td width="25$" class="last">
+                        <?=User0::getInits($row->stub->sendTo) ?>
+                      </td>
+                    </tr>
+                  <? } ?>
+                </table>
+              <? } else { ?>
+                <table>
+                  <tr>
+                    <?=$form->sortableHeader("name", "Custom Template") ?>
+                    <?=$form->sortableHeader("template_name", "Based On") ?>
+                    <?=$form->sortableHeader("date_created", "Created") ?>
+                    <?=$form->sortableHeader("date_updated", "Last Updated") ?>
+                  </tr>
+                  <? foreach ($form->rows as $row) { ?>
+                    <tr class="<?=$row->trClass ?>">
+                      <td width="30%" class="last">
+                        <a href="javascript:goPreset(<?=$row->preset->id ?>)" class="icon edit-red">
+                          <?=$row->preset->name ?>
+                        </a>
+                      </td>
+                      <td width="20%" class="last"><?=$row->preset->templateName ?></td>
+                      <td width="25%" class="last">
+                        <?=$row->createdText ?>
+                      </td>
+                      <td width="25%" class="last">
+                        <?=$row->updatedText ?>
+                      </td>
+                    </tr>
+                  <? } ?>
+                </table>
+              <? } ?>
+            </div>
+            <div style="padding:10px 0 0 5px; text-align:center">
+              <? if ($form->isNotesView()) { ?>
+                <? if ($login->Role->Artifact->noteCreate) { ?>
+                  <a href="javascript:showPatientSelector(0)" class="cmd new">Create New Document...</a>
+                <? } ?>
+              <? } else { ?>
+                <? if ($login->Role->Artifact->templates) { ?>
+                  <a href="javascript:newTemplate()" class="cmd new">Create New Custom Template</a>
+                <? } ?>
+              <? } ?>
+            </div>
+          <? renderBoxEnd() ?>
+        </div>
+        <div id='bottom'><img src='img/brb.png' /></div>
+      </div>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <? include "inc/ajax-pops/calendar.php" ?>
+    <? include "inc/ajax-pops/new-open.php" ?>
+    <? include "inc/footer.php" ?>
+    </form>
+  </body>
+<script>
+Page.setEvents();
+<? timeoutCallbackJs() ?>
+var refreshOnFocus = false;
+var curl = "<?=$form->getCurrentUrl() ?>";
+<? if ($form->pop != null) { ?>
+showPatientSelector(<?=$form->pop ?>);
+<? } ?>
+</script>
+</html>

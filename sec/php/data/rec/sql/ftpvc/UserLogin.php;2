@@ -1,0 +1,81 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Login 
+ */
+class UserLogin extends SqlRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  //
+  const SUBSCRIPTION_TRIAL = 0;
+  const SUBSCRIPTION_PAYING = 1;
+  const SUBSCRIPTION_FREE = 2;
+  const SUBSCRIPTION_INVOICE = 3;
+  //
+  const TYPE_DOCTOR = 1;
+  const TYPE_OFFICE_EDITOR = 2;
+  const TYPE_OFFICE_READER = 3;
+  const TYPE_RECIPIENT_EDITOR = 4;
+  const TYPE_RECIPIENT_READER = 5;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  public function isActive() {
+    return $this->active == '1';
+  }
+  public function isOnTrial() {
+    return $this->subscription == UserLogin::SUBSCRIPTION_TRIAL;
+  }
+  public function isPaying() {
+    return ! $this->isOnTrial();
+  }
+  public function isDoc() {
+    return $this->userType == UserLogin::TYPE_DOCTOR;
+  }
+  public function isPrimaryDoc() {
+    static $doc;
+    if ($doc == null)
+      $doc = UserLogin::fetchPrimaryDoc($this->userGroupId);
+    return ($this->userId == $doc->userId);
+  }
+  //
+  /**
+   * @param int $userId
+   * @return UserLogin
+   */
+  public static function fetch($userId) {
+    $c->_authenticated = true;  // this call made prior to $myLogin set to session 
+    return SqlRec::fetch($userId, 'UserLogin');
+  }
+  /**
+   * @param int $ugid
+   * @return UserLogin
+   */
+  public static function fetchPrimaryDoc($ugid) {
+    $c = new UserLogin();
+    $c->userGroupId = $ugid;
+    $c->userType = UserLogin::TYPE_DOCTOR;
+    $c->active = true;
+    $c->_authenticated = true;  // this call made prior to $myLogin set to session 
+    return current(SqlRec::fetchAllBy($c, new RecSort('userId')));
+  }
+}
+?>

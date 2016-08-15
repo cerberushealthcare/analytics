@@ -1,0 +1,543 @@
+<?php
+require_once 'php/data/rec/sql/IProcCodes.php';
+require_once 'php/dao/DataDao.php';
+//
+/**
+ * Procedures DAO
+ * @author Warren Hornsby
+ */
+class Procedures {
+  //
+  /**
+   * @param int $cid
+   * @return array(Proc+ProcResults,..)
+   */
+  static function getAll($cid) {
+    self::migrate($cid);
+    $recs = Proc::fetchAll($cid);
+    $recs = Proc::summarizeResults($recs);
+    Rec::sort($recs, new RecSort('-date', 'Ipc.name'));
+    return $recs;
+  }
+  /**
+   * Fetch IN DATA in the form expected for DATA_HM
+   */
+  static function getInData($cid) {
+    $recs = Proc::fetchMostRecentMap($cid);
+    $rows = array();
+    foreach ($recs as $ipc => $proc) {
+      $row = array();
+      $row['date_text'] = formatLongApproxDate($rec->date);
+      if ($rec->ProcResults) 
+        $row['results'] = ProcResult::summarizeResults($rec, $rec->ProcResults);
+      $rows[ipc] = $row;
+    }
+    return $rows;
+  }
+  /**
+   * @param int $procId
+   * @return Proc+ProcResults
+   */
+  static function get($procId) {
+    $rec = Proc::fetch($procId);
+    $rec->_results = ProcResult::summarizeResults($rec, $rec->ProcResults);
+    return $rec;
+  }
+  /**
+   * @param stdClass $obj 
+   * @return Proc updated rec
+   */
+  static function save($obj) {
+    global $myLogin;
+    $rec = Proc::fromUi($obj);
+    logit_r($rec, 'proc fromui');
+    $rec->save($myLogin->userGroupId);
+    return self::get($rec->procId); 
+  }
+  /**
+   * @param int $procId
+   * @return int ID  
+   */
+  static function delete($procId) {
+    $rec = Proc::fetch($procId);
+    if ($rec) {
+      self::deleteResults($rec);
+      Proc::delete($rec);
+      return $procId;
+    }
+  }
+  /**
+   * @param int $procId
+   * @param stdClass $obj 
+   * @return Proc updated rec
+   */
+  static function saveResult($procId, $obj) {
+    $proc = self::get($procId);
+    $rec = ProcResult::fromUi($obj, $proc);
+    $rec->save();
+    return $rec; 
+  }
+  /**
+   * @param Proc $proc
+   */
+  static function deleteResults($proc) {
+    $recs = ProcResult::fetchAll($proc);
+    foreach ($recs as $rec) 
+      ProcResult::delete($rec);
+  }
+  /**
+   * @param int $resultId
+   * @return int ID
+   */
+  static function deleteResult($resultId) {
+    $rec = ProcResult::fetch($resultId);
+    if ($rec) {
+      ProcResult::delete($rec);
+      return $resultId;
+    }
+  }
+  /**
+   * Migrate from HM and Surgical HX 
+   * @param int $cid
+   */
+  static function migrate($cid) {
+    self::migrateHms($cid);
+    self::migrateSurgHx($cid);
+  }
+  //
+  private static function migrateHms($cid) {
+    // TODO .. needs to add IPCs on fly
+    //return;
+    $hms = Hm::fetchUnbuiltHistory($cid);
+    //logit_r($hms, 'unbuilt history for ' . $cid);
+    if (! empty($hms)) {
+      $procs = Proc::fromHms($hms);
+      Hm::markAsBuilt($cid);
+      SqlRec::saveAll($procs);
+    }
+  }
+  private static function migrateSurgHx($cid) {
+    global $myLogin;
+    $surgs = SurgHx::from($cid);
+    if (! empty($surgs)) {
+      $procs = Proc::fromSurgHxs($surgs, $myLogin->userGroupId, $cid);
+      SqlRec::saveAll($procs);
+      SurgHx::markAsBuilt($cid);
+    }
+  }
+}
+//
+/**
+ * Procedure
+ */
+class Proc extends SqlRec {
+  //
+  public $procId;
+  public $userGroupId;
+  public $clientId;
+  public $date;  
+  public $ipc;
+  public $priority;
+  public $location;
+  public $providerId;
+  public $addrFacility;
+  public $comments;
+  public /*Ipc*/ $Ipc;
+  public /*ProcResult[]*/ $ProcResults;
+  public /*Provider*/ $Provider;
+  public /*FacilityAddress*/ $Facility;
+  //
+  public function getSqlTable() {
+    return 'procedures';
+  }
+  public function getAuditLabel() {
+    return $this->Ipc->name;
+  }
+  public function validate(&$rv) {
+    $rv->requires('ipc', 'date');
+  }
+  public function save($ugid = null) {
+    parent::save($ugid);
+    if ($this->ProcResults) {
+      self::setParentage($this->ProcResults);
+      self::saveAll($this->ProcResults);
+    }
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::editableDateApprox()
+    );
+  }
+  public function formatSummarizeResults() {
+    $results = ProcResult::summarizeResults($this, $this->ProcResults);
+    return implode(' - ', $results);
+  }
+  //
+  /*
+   * @param int $id
+   * @return Proc+ProcResults
+   */
+  static function fetch($id) {
+    $rec = parent::fetch($id);
+    $rec->ProcResults = ProcResult::fetchAll($rec);
+    return $rec;
+  }
+  /**
+   * @param int $cid
+   * @return array(Proc+ProcResults,..)
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria();
+    $c->clientId = $cid;
+    $recs = self::fetchAllBy($c);
+    return self::loadResults($recs);
+  }
+  /**
+   * @param int $cid
+   * @return array(ipc=>Proc,..)
+   */
+  static function fetchMostRecentMap($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $recs = self::fetchAllBy($c, new RecSort('ipc', '-date'));
+    $map = array();
+    foreach ($recs as $rec) {
+      if (! isset($map[$rec->ipc])) {
+        $rec->ProcResults = ProcResult::fetchAll($rec);      
+        $map[$rec->ipc] = $rec;
+      }
+    }
+    return $map;
+  } 
+  //
+  private static function loadResults(&$recs) {
+    foreach ($recs as &$rec) 
+      $rec->ProcResults = ProcResult::fetchAll($rec);
+     return $recs;
+  }
+  static function asCriteria() {
+    $c = new static();
+    $c->Ipc = Ipc::asOptionalJoin(); 
+    $c->Provider = Provider::asOptionalJoin();
+    $c->Facility = FacilityAddress::asOptionalJoin();
+    return $c;
+  }
+  static function fromUi($obj) {
+    $rec = new Proc($obj);
+    $rec->Ipc = Ipc::fetch($rec->ipc);
+    return $rec;
+  }
+	/**
+   * @param Proc[] $recs
+   * @return Proc[]  
+   */
+  static function summarizeResults(&$recs) {
+    foreach ($recs as &$rec)  
+      $rec->_results = ProcResult::summarizeResults($rec, $rec->ProcResults);
+    return $recs;
+  }
+  /**
+   * @param Hm[] $hms
+   * @return array(Proc+ProcResults,..)
+   */
+  static function fromHms($hms) {
+    $recs = array();
+    foreach ($hms as $hm)
+      $recs[] = self::fromHm($hm);
+    return $recs;
+  }
+  private static function fromHm($hm) {
+    $rec = new self();
+    $rec->userGroupId = $hm->userGroupId;
+    $rec->clientId = $hm->clientId;
+    $rec->date = $hm->getApproxDate();
+    $rec->cat = $hm->getCat();
+    //$rec->name = $hm->proc; 
+    $rec->ipc = $hm->procId;
+    $rec->Ipc = Ipc::fetch($rec->ipc);
+    $rec->ProcResults = array(ProcResult::fromHm($hm, $rec->Ipc));
+    //logit_r($rec, 'rec fromHm');
+    return $rec;
+  }
+  /**
+   * @param SurgHx[] $surgs
+   * @return array(Proc,..)
+   */
+  static function fromSurgHxs($surgs, $ugid, $cid) {
+    $recs = array();
+    foreach ($surgs as $surg) {
+      $rec = self::fromSurgHx($surg, $ugid, $cid);
+      if ($rec)
+        $recs[] = $rec;
+    }
+    return $recs;
+  }
+  private static function fromSurgHx($surg, $ugid, $cid) {
+    if (self::hasData($surg)) { 
+      $rec = new self();
+      $rec->userGroupId = $ugid;
+      $rec->clientId = $cid;
+      $rec->date = $surg->getApproxDate();
+      $rec->location = $surg->type;
+      $rec->comments = $surg->comment;
+      $ipc = IProcCodes::getBySurgProc($surg->proc);
+      // TODO... what if not there
+      return $rec;
+    }
+  }
+  private static function hasData($surg) {
+    return $surg->date || $surg->type || $surg->comment;
+  }
+}
+/**
+ * Result
+ */
+class ProcResult extends SqlRec {
+  //
+  public $procResultId;
+  public $clientId;
+  public $procId;
+  public $seq;
+  public $date;
+  public $ipc;
+  public $value;
+  public $valueUnit;
+  public $range;
+  public $interpretCode;
+  public $comments;
+  public /*Ipc*/ $Ipc;
+  //
+  public /*Proc*/ $Proc;  // parent supplied by UI
+  //
+  const IC_BETTER = 'B';
+  const IC_DECREASED = 'D';
+  const IC_INCREASED = 'U';
+  const IC_WORSE = 'W';
+  const IC_NORMAL = 'N';
+  const IC_INTERMEDIATE = 'I';
+  const IC_RESISTANT = 'R';
+  const IC_SUSCEPTIBLE = 'S';
+  const IC_VERY_SUSCEPTIBLE = 'VS';
+  const IC_ABNORMAL = 'A';
+  const IC_ABNORMAL_ALERT = 'AA';
+  const IC_HIGH_ALERT = 'HH';
+  const IC_LOW_ALERT = 'LL';
+  const IC_HIGH = 'H';
+  public static $INTERPRET_CODES = array(
+    self::IC_BETTER => 'Better',
+    self::IC_DECREASED => 'Decreased',
+    self::IC_INCREASED => 'Increased',
+    self::IC_WORSE => 'Worse',
+    self::IC_NORMAL => 'Normal',
+    self::IC_INTERMEDIATE => 'Intermediate',
+    self::IC_RESISTANT => 'Resistant',
+    self::IC_SUSCEPTIBLE => 'Susceptible',
+    self::IC_VERY_SUSCEPTIBLE => 'Very Susceptible',
+    self::IC_ABNORMAL => 'Abnormal',
+    self::IC_ABNORMAL_ALERT => 'Abnormal Alert',
+    self::IC_HIGH_ALERT => 'High Alert',
+    self::IC_LOW_ALERT => 'Low Alert',
+    self::IC_HIGH => 'High');
+  //
+  public function getSqlTable() {
+    return 'proc_results';
+  }
+  public function getAuditLabel() {
+    return $this->Ipc->name;
+  }
+  public function toJsonObject(&$o) {
+    $o->lookup('interpretCode', self::$INTERPRET_CODES);
+  }
+  public function save() {
+    if ($this->procId == null) 
+      $this->procId = $this->getFromProc('procId');
+    if ($this->procResultId == null)
+      $this->seq = count($this->getFromProc('ProcResults')); 
+    if ($this->ipc == null)
+      $this->ipc = $this->getFromProc('ipc'); 
+    parent::save();
+  }
+  public function getResult() {
+    $s = array();
+    if ($this->value) 
+      $s[] = $this->value;
+    if ($this->valueUnit) 
+      $s[] = $this->valueUnit;
+    return implode(' ', $s);
+  }
+  public function getDate() {
+    return ($this->date) ? $this->date : $this->proc->date;
+  }
+  protected function getFromProc($fid) {
+    if ($this->Proc)
+      return $this->Proc->$fid;
+    else
+      throw new SqlRecException($this, 'Parent proc not set');
+  }
+  //
+  /**
+   * @param Proc $proc
+   * @return array(ProcResult,..)
+   */
+  static function fetchAll($proc) {
+    $c = self::asCriteria($proc->procId);
+    return self::fetchAllBy($c, new RecSort('seq'));
+  }
+  static function fetch($id) {
+    $c = self::asCriteria(null);
+    $c->procResultId = $id;
+    return self::fetchOneBy($c);
+  }
+  static function asCriteria($procId) {
+    $c = new static();
+    $c->procId = $procId;
+    $c->Ipc = Ipc::asRequiredJoin();
+    return $c;
+  }
+  static function fromUi($obj, $proc) {
+    $rec = new ProcResult($obj);
+    $rec->Proc = $proc;
+    $rec->Ipc = Ipc::fetch($rec->ipc);
+    return $rec;
+  }
+  /**
+   * @param Proc $proc
+   * @param ProcResult[] $recs
+   * @return array(string,..)
+   */
+  static function summarizeResults($proc, $recs) {
+    $s = array();
+    foreach ($recs as $rec) 
+      $s[] = self::summarizeResult($proc, $rec);
+    return $s;
+  }
+  /**
+   * @param Proc $proc
+   * @param ProcResult $rec
+   * @return string
+   */
+  static function summarizeResult($proc, $rec) {
+    $s = array();
+    if ($rec->Ipc) 
+     if ($proc == null || $rec->ipc != $proc->ipc)
+        $s[] = $rec->Ipc->name . ": ";
+    if ($rec->value)
+      $s[] = $rec->getResult();
+    if (count($s) == 0)
+      $s[] = strlen($rec->comments) > 100 ? substr($rec->comments, 0, 100) . '...' : $rec->comments; 
+    return implode(' ', $s);
+  }
+  /**
+   * @param Hm $hm
+   * @return ProcResult
+   */
+  static function fromHm($hm, $ipc) {
+    $results = $hm->getResults();
+    if ($results != '') {
+      $rec = new self();
+      $rec->seq = 0;
+      $rec->comments = $results;
+      $rec->clientId = $hm->clientId;
+      $rec->date = $hm->getApproxDate();
+      $rec->ipc = $ipc->ipc;
+      $rec->Ipc = $ipc;
+      return $rec;
+    }
+  }
+}
+
+class Hm extends SqlRec {
+  //
+  public $dataHmId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $type;           
+  public $procId;        
+  public $proc;          
+  public $dateText;      
+  public $dateSort;      
+  public $results;       
+  public $nextTimestamp; 
+  public $active;
+  public $dateUpdated;
+  public $nextText;      
+  public $cint;      
+  public $cevery;         
+  //
+  public function getSqlTable() {
+    return 'data_hm';
+  }
+  public function getApproxDate() {
+    return formatFromLongApproxDate($this->dateText);
+  }
+  public function getCat() {
+    return Ipc::CAT_PROC;  // TODO?
+  }
+  public function getResults() {
+    return implode(' - ', jsondecode($this->results));
+  }
+  //
+  static function fetchUnbuiltHistory($cid) {
+    $c = self::asUnbuiltHistCriteria($cid);
+    return self::fetchAllBy($c, new RecSort('proc', 'date_sort'));
+  }
+  static function markAsBuilt($cid) {
+    Dao::query("UPDATE data_hm SET active=2 WHERE client_id=$cid AND session_id=0 AND active=1");
+  }
+  static function asUnbuiltHistCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->sessionId = '0';
+    $c->procId = CriteriaValue::isNotNull();
+    $c->active = true;
+    return $c;
+  }
+}
+class SurgHx extends Rec {
+  //
+  public $proc;
+  public $date;
+  public $type;
+  public $comment;
+  //
+  public function getApproxDate() {
+    return formatFromLongApproxDate($this->date);
+  }
+  /**
+   * @param int $cid
+   * @return array(SurgHx,..)
+   */
+  static function from($cid) {
+    $group = DataDao::fetchDataSyncProcGroup('pshx', $cid);
+    return self::fromDataSyncProcGroup($group);
+  }
+  static function markAsBuilt($cid) {
+    Dao::query("UPDATE data_syncs SET active=0 WHERE client_id=$cid AND dsync_id like 'pshx.%'");
+  }
+  private static function fromDataSyncProcGroup($group) {
+    $recs = array();
+    if ($group->procs) { 
+      foreach ($group->procs as $proc) {
+        $procRec = geta($group->records, $proc);
+        $recs[] = self::fromDataSyncProc($proc, $procRec);
+      }      
+    }
+    return $recs;
+  }
+  private static function fromDataSyncProc($proc, $procRec) {
+    $rec = new self();
+    $rec->proc = $proc;
+    if ($procRec) {
+      $rec->date = self::getProcRecValue($procRec, 'date');
+      $rec->type = self::getProcRecValue($procRec, 'type');
+      $rec->comment = self::getProcRecValue($procRec, 'comment');
+    }
+    return $rec;
+  }
+  private static function getProcRecValue($procRec, $fid) {
+    $value = $procRec->fieldValues[$fid];
+    return substr($value, 2, -2);  // extract [""]
+  }
+}
+?>

@@ -1,0 +1,730 @@
+    <div id="pop" class="pop" unselectable="on" onmousedown="event.cancelBubble = true">
+      <div id="pop-cap" class="pop-cap" unselectable="on">
+        <div id="popQ" unselectable="on"> 
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popO" class="options">
+        </div>
+        <div id="popX" class="options">
+        </div>
+        <div id="popOFree" class="free">
+          <input type="text" id="optFree" value="other" onkeyup="testOFreeKey()" onclick="this.select()">
+          <div class="options">
+            <a id="optFreeA" href="javascript:null" onclick="return false">Insert Free Text</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="popFree" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popFree-cap" class="pop-cap" unselectable="on">  
+        <div id="freeCap" unselectable="on">
+          Clictate - Free Text
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popF" class="free">
+          <textarea rows="5" id="freeText" onkeyup="testFreeKey()"></textarea>
+          <div class="pop-cmd cmd-fixed">
+            <a id="freeOk" class="cmd none" href="javascript:null" onclick='freeDoOk(); return false'>OK</a>
+            <a id="freeDelete" class="cmd none" href="javascript:null" onclick='freeDoDelete(); return false'>Delete</a>
+            <a id="freeCancel" class="cmd none" href="javascript:null" onclick='freeDoCancel(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="popRx" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popRx-cap" class="pop-cap" unselectable="on">  
+        <div id="rxCap" unselectable="on">
+          Clicktate - Rx Writer
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popM" class="med">
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Date</th>
+              <td style="width:110px"></td>
+              <th>Print Margins (inches):</th>
+              <th>Top</th>
+              <td style="width:5px"></td>
+              <th>Left</th>
+            </tr>
+            <tr>
+              <td><input id="rxDate" type="text" size="10" value=""/></td>
+              <td></td>
+              <td></td>
+              <td><input id="rxTmar" type="text" size="2" value=""/></td>
+              <td></td>
+              <td><input id="rxLmar" type="text" size="2" value=""/></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr style="padding-top:10px">
+              <th>Prescriber</th>
+            </tr>
+            <tr>
+              <td><input id="rxDoc" type="text" size="65" value=""/></td>
+            </tr>
+            <tr>
+              <td><input id="rxPractice1" type="text" size="65" value=""/></td>
+            </tr>
+            <tr>
+              <td><input id="rxPractice2" type="text" size="65" value=""/></td>
+            </tr>
+            <tr>
+              <td><input id="rxPractice3" type="text" size="65" value=""/></td>
+            </tr>
+            <tr>
+              <td><input id="rxPractice4" type="text" size="65" value=""/></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr style="padding-top:10px">
+              <th>Patient</th>
+              <td style="width:5px"></td>
+              <th>DOB</th>
+            </tr>
+            <tr>
+              <td><input id="rxPatient" type="text" size="48" value=""/></td>
+              <td></td>
+              <td><input id="rxDob" type="text" size="10" value=""/></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr style="padding-top:10px">
+              <th>Medication</th>
+            </tr>
+            <tr>
+              <td><input id="rxMed" type="text" size="65" value=""/></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th colspan="3">Disp</th>
+            </tr>
+            <tr>
+              <td>
+                <input id="rxDisp" type="text" size="20" value=""/>
+              </td>
+              <td style="width:5px"></td>
+              <td>
+                <a href="." style="display:none">Recalculate for 90-day</a>
+              </td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Sig</th>
+            </tr>
+            <tr>
+              <td><input id="rxSig" type="text" size="65" value=""/></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Refills</th>
+            </tr>
+            <tr>
+              <td>
+                <a href="javascript:refill('None')" class="refill" style="display:inline">None</a>
+                <a href="javascript:refill('1')" class="refill" style="display:inline">One</a>
+                <a href="javascript:refill('2')" class="refill" style="display:inline">Two</a>
+                <a href="javascript:refill('3')" class="refill" style="display:inline">Three</a>
+                <a href="javascript:refill('4')" class="refill" style="display:inline">Four</a>
+                <a href="javascript:refill('5')" class="refill" style="display:inline">Five</a>
+                <a href="javascript:refill('6')" class="refill" style="display:inline">Six</a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <input id="rxRefills" type="text" size="30" value="None"/>
+              </td>
+            </tr> 
+            <tr>
+              <td style="height:20px"></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <td><input type="checkbox" id="rxDns">Do Not Substitute</td>
+              <td style="padding-left:5px"><input type="checkbox" id="rxDaw">Dispense As Written</td>
+            </tr>
+            <tr>
+              <td style="height:10px"></td>
+            </tr>
+          </table>
+          <div class="pop-cmd cmd-fixed">
+            <a id="medOK" class="cmd none" href="javascript:null" onclick='rxDoOk(); return false'>OK</a>
+            <a id="medCancel" class="cmd none" href="javascript:null" onclick='rxDoCancel(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="popMed" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popMed-cap" class="pop-cap" unselectable="on">  
+        <div id="medCap" unselectable="on">
+          Clicktate - Med Selector
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popM" class="med">
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Name / Strength</th>
+              <th></th>
+            </tr>
+            <tr>
+              <td><input id="medName" type="text" size="55" onkeyup="testMedKey()" onfocus="medShow(0)"></td>
+              <td><input class="medSearch" type="button" value="Search..." onclick="setMedFocus(medName); doMedSearch()" /></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr style="padding-top:4px">
+              <th>Amount</th>
+              <th></th>
+              <th>Freq</th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+            </tr>
+            <tr>
+              <td><input id="medAmt" type="text" size="12" onfocus="medShow(1)"></td>
+              <td></td>
+              <td><input id="medFreq" type="text" size="15" onfocus="medShow(2)"></td>
+              <td></td>
+              <td><input id="medAsNeed"  type="checkbox">As needed</td>
+              <td></td>
+              <td><input id="medMeals"  type="checkbox">With meals</td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr style="padding-top:4px">
+              <th>Route</th>
+              <th></th>
+              <th>Length</th>
+              <th></th>
+              <th>Disp</th>
+              <th></th>
+            </tr>
+            <tr>
+              <td><input id="medRoute" type="text" size="18" onfocus="medShow(3)"></td>
+              <td></td>
+              <td><input id="medLength" type="text" size="15" onkeydown="if(event.keyCode==9){setMedFocus(medDisp);return false}" onfocus="medShow(4)"></td>
+              <td></td>
+              <td><input id="medDisp" type="text" size="15" onkeydown="if(event.keyCode==9){setMedFocus(medName);return false}" onfocus="calcMedDisp()"></td>
+            </tr>
+          </table>
+          <div id="m0" style="display:block">
+            <div id="medOptTitle">Name Search Results</div>
+            <div id="medList">
+              <div id="medListTitle"></div>
+              <div id="medListNone"></div>
+              <ul id="medListUl"></ul>
+              <div id="medListFoot"></div>
+            </div>
+          </div>
+          <div id="m1" style="display:none">
+            <div id="medOptTitle">Amount Options</div>
+            <div class="medOptions">
+              <ul>
+                <li><a href="." onclick="upMedAmt(this); return false">1/4</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1/3</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1/2</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1/2 - 1</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">4</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">5</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">1/4 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1/3 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1/2 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3/4 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 1/4 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 1/3 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 1/2 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 3/4 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2 tsp</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3 tsp</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">0.4 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">0.8 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1.2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 1/2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1.6 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2 1/2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3 1/2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">4 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">4 1/2 ml</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">5 ml</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">1 drop</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2 drops</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">3 drops</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">4 drops</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">5 drops</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">10 drops</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">1 puff</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">2 puffs</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">4 puffs</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">8 puffs</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">16 puffs</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">1/2 capful</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">1 capful</a></li>
+                <li><a href="." onclick="upMedAmt(this); return false">17 gms</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedAmt(this); return false">as directed</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="m2" style="display:none">
+            <div id="medOptTitle">Frequency Options</div>
+            <div class="medOptions">
+              <ul>
+                <li><a href="." onclick="upMedFreq(this); return false">every hour</a><div style="clear:both"></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 2 hours</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 3 hours</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 4 hours</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 6 hours</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 8 hours</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 12 hours</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedFreq(this); return false">daily</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">BID</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">TID</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">QID</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">five times daily</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">QAM</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">QHS</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedFreq(this); return false">every 2 days</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 3 days</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">once weekly</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">once monthly</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 2 weeks</a></li>
+                <li><a href="." onclick="upMedFreq(this); return false">every 10 days</a></li>
+              </ul>
+              <ul style="clear:both">
+                <li><a href="." onclick="upMedFreq(this); return false">as directed</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="m3" style="display:none">
+            <div id="medOptTitle">Route Options</div>
+            <div class="medOptions">
+              <ul>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">orally</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">rectally</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">intravaginally</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">inhaled</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">subcutaneously</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">transdermally</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">IV</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">on the nails</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">on the skin</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the left eye</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the right eye</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in both eyes</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the left ear</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the right ear</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in both ears</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the left nostril</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in the right nostril</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in both nostrils</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">in alternating nostrils</a></li>
+                <li><a class="big" href="." onclick="upMedRoute(this); return false">IM</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="m4" style="display:none">
+            <div id="medOptTitle">Length Options</div>
+            <div class="medOptions">
+              <ul>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">1 day</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">2 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">3 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">4 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">5 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">6 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">7 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">10 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">12 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">14 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">21 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">28 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">30 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">60 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">90 days</a></li>
+                <li><a class="big" href="." onclick="upMedLength(this); return false">long-term</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="pop-cmd cmd-fixed">
+            <a id="medOK" class="cmd none" href="javascript:null" onclick='medDoOk(); return false'>OK</a>
+            <a id="medDelete" class="cmd none" href="javascript:null" onclick='medDoDelete(); return false'>Delete</a>
+            <a id="medCancel" class="cmd none" href="javascript:null" onclick='medDoCancel(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="popAllergy" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popAllergy-cap" class="pop-cap" unselectable="on">  
+        <div id="allergyCap" unselectable="on">
+          Clicktate - Allergy Selector
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popAllergyp1" style="margin-bottom:50px">
+          <div id="popAllergyOpts" class="options">
+          </div>
+          <div class="opthead">Medication</div>
+          <div style="clear:both" id="popAllergyMeds" class="options">
+          </div>
+          <div id="popAllergyFree" class="free" style="clear:both">
+            <input type="text" id="optAllergyFree" style="margin-left:2px;width:220px" value="other" onkeyup="testAllergyFreeKey()" onclick="this.select()">
+            <div class="options">
+              <a id="optAllergyFreeA" style="width:220px; height:14px" href="javascript:null" onclick="return false">Select</a>
+            </div>
+          </div>
+        </div>
+        <div id="popAllergyp2">
+          <div id="popAllergyEffects" class="options">
+          </div>
+        </div>
+        <div class="pop-cmd cmd-fixed" style="margin-top:10px">
+          <a class="cmd none" id="allerOK" href="javascript:null" onclick='allerDoOk(); return false'>OK</a>
+          <a class="cmd none" id="allerDelete" href="javascript:null" onclick='allerDoDelete(); return false'>Delete</a>
+          <a class="cmd none" id="allerCancel" href="javascript:null" onclick='allerDoCancel(); return false'>Cancel</a>
+        </div>
+      </div>
+    </div>
+    
+    <div id="popIcd" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popIcd-cap" class="pop-cap" unselectable="on">
+        <div id="rxCap" unselectable="on">
+          Clicktate - ICD Codes
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popM" class="med">
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Search For</th>
+            </tr>
+            <tr>
+              <td><input id="icdSearch" type="text" size="50" value="" onkeyup="ifCrClick('icdSearchButton')" /></td>
+              <td><input id="icdSearchButton" class="medSearch" type="button" value="Search..." onclick="doIcdSearch()" /></td>
+            </tr>
+          </table>
+          <div id="icd-tree" onfocus="unselectText();">
+            <ul id="icd-tree-ul">
+            </ul>
+          </div>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <th>Selected Code</th>
+              <th id="icdNav">
+                <a id="icdNavPrev" href="javascript:return false" onclick="icdPrev();return false" ondblclick="icdPrev();return false">< Prev</a>
+                |
+                <a id="icdNavNext" href="javascript:return false" onclick="icdNext();return false" ondblclick="icdNext();return false">Next ></a>
+              </th>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <div id="icd-info">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td class="top">
+                        <div id="icd-info-code"></div>
+                      </td>
+                      <td>
+                        <span id="icd-info-desc">
+                        </span>
+                        <div id="icd-info-syn">
+                        </div>
+                      </td>
+                    </tr>
+                    <tr id="icd-info-exc">
+                      <th class="sub">
+                        Excludes
+                      </th>
+                      <td id="icd-info-exc-text" class="sub">
+                      </td>
+                    </tr>
+                    <tr id="icd-info-inc">
+                      <th class="sub">
+                        Includes
+                      </th>
+                      <td id="icd-info-inc-text" class="sub">
+                      </td>
+                    </tr>
+                    <tr id="icd-info-note">
+                      <th class="sub">
+                        Notes
+                      </th>
+                      <td id="icd-info-note-text" class="sub">
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </table>
+          <div class="pop-cmd cmd-fixed" style="margin-top:0;">
+            <a class="cmd none" id="icdOk" href="javascript:null" onclick='icdDoOk(); return false'>OK</a>
+            <!-- <a class="cmd none" id="icdDelete" href="javascript:null" onclick='icdDoDelete(); return false'>Delete</a> -->
+            <a class="cmd none" id="icdCancel" href="javascript:null" onclick='icdDoCancel(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="popCalc" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popCalc-cap" class="pop-cap" unselectable="on">  
+        <div id="popCalcT" unselectable="on">
+          Clicktate - Numeric Entry
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id=popC>
+          <div id="calcEntry">
+            <div id="calcDisplay">0</div>
+            <table border=0 cellpadding=0 cellspacing=0 width=100%>
+              <tr>
+                <td width=22%>
+                  <a class="key" ondblclick="calcPush('7')" href="javascript:calcPush('7')">7</a>
+                </td>
+                <td width=2 nowrap></td>
+                <td width=22%>
+                  <a class="key" ondblclick="calcPush('8')" href="javascript:calcPush('8')">8</a>
+                </td>
+                <td width=2 nowrap></td>
+                <td width=22%>
+                  <a class="key" ondblclick="calcPush('9')" href="javascript:calcPush('9')">9</a>
+                </td>
+                <td width=12 nowrap></td>
+                <td width=30%>
+                  <a class="key back" ondblclick="calcPush('b')" href="javascript:calcPush('b')">&#217;</a>
+                </td>
+                <td width=2 nowrap></td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="key" ondblclick="calcPush('4')" href="javascript:calcPush('4')">4</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('5')" href="javascript:calcPush('5')">5</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('6')" href="javascript:calcPush('6')">6</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('c')" href="javascript:calcPush('c')">C</a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a class="key" ondblclick="calcPush('1')" href="javascript:calcPush('1')">1</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('2')" href="javascript:calcPush('2')">2</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('3')" href="javascript:calcPush('3')">3</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('n')" href="javascript:calcPush('n')">N/A</a>
+                </td>
+              </tr>
+              <tr>
+                <td colspan=3>
+                  <a class="key" ondblclick="calcPush('0')" href="javascript:calcPush('0')">0</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('.')" href="javascript:calcPush('.')">.</a>
+                </td>
+                <td></td>
+                <td>
+                  <a class="key" ondblclick="calcPush('-')" href="javascript:calcPush('-')">+/-</a>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="pop-cmd cmd-fixed">
+            <a class="cmd none" id="calcOK" href="javascript:null" onclick='calcDoOk(); return false'>OK</a>
+            <a class="cmd none" id="calcCancel" href="javascript:null" onclick='calcDoCancel(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="popCalendar" class="pop" onmousedown="event.cancelBubble = true">
+      <div id="popCalendar-cap" class="pop-cap" unselectable="on">  
+        <div id="popCalT" unselectable="on">
+          Clicktate - Calendar
+        </div>
+        <a href="javascript:closePop()" class="pop-close"></a>
+      </div>
+      <div id="pop-content" class="pop-content">
+        <div id="popCal">
+          <table class="styleBody" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td><div align="center"><center><table border="0" cellpadding="3" cellspacing="1" class="styleBody" id="tblCal" onmouseover="monMouseOver()" onmouseout="monMouseOut()" onclick="calOnClick()">
+                <tr>
+                  <td colspan="7"></td>
+                </tr>
+                <tr>
+                  <td align="center" colspan="7">
+                    <table class="styleBody" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#e0ecf5">
+                      <tr>
+                        <td width="3"></td>
+                        <td><img alt="Previous Month" class="styleLink" src="img/prevMonth3.gif" ondblclick="mprevMonth()" onclick="mprevMonth()" WIDTH="12" HEIGHT="12"></td>
+                        <td nowrap align="center" class="styleTitle">
+                          <table border=0 cellpadding=0 cellspacing=0>
+                            <tr>
+                              <td><a href="javascript:calMonthOnly()" id="aMonth">January</a></td>
+                              <td width=8></td>
+                              <td><a href="javascript:calYearOnly()" id="aYear">2001</a></td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td align="right"><img alt="Next Month" class="styleLink" src="img/nextMonth3.gif" ondblclick="mnextMonth()" onclick="mnextMonth()" WIDTH="12" HEIGHT="12"></td>
+                        <td width="3"></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="styleDayTitle">S</td>
+                  <td class="styleDayTitle">M</td>
+                  <td class="styleDayTitle">T</td>
+                  <td class="styleDayTitle">W</td>
+                  <td class="styleDayTitle">T</td>
+                  <td class="styleDayTitle">F</td>
+                  <td class="styleDayTitle">S</td>
+                </tr>
+                <tr>
+                  <td class="styleOffDay">&nbsp;</td>
+                  <td class="styleOffDay">&nbsp;</td>
+                  <td class="styleDay">1</td>
+                  <td class="styleDay">2</td>
+                  <td class="styleDay">3</td>
+                  <td class="styleDay">4</td>
+                  <td class="styleDay">5</td>
+                </tr>
+                <tr>
+                  <td class="styleDay">6</td>
+                  <td class="styleDay">7</td>
+                  <td class="styleDay">8</td>
+                  <td class="styleDay">9</td>
+                  <td class="styleDay">10</td>
+                  <td class="styleDay">11</td>
+                  <td class="styleDay">12</td>
+                </tr>
+                <tr>
+                  <td class="styleDay">13</td>
+                  <td class="styleDay">14</td>
+                  <td class="styleDay">15</td>
+                  <td class="styleDay">16</td>
+                  <td class="styleDay">17</td>
+                  <td class="styleDay">18</td>
+                  <td class="styleDay">19</td>
+                </tr>
+                <tr>
+                  <td class="styleDay">20</td>
+                  <td class="styleDay">21</td>
+                  <td class="styleDay">22</td>
+                  <td class="styleDay">23</td>
+                  <td class="styleDay">24</td>
+                  <td class="styleDay">25</td>
+                  <td class="styleDay">26</td>
+                </tr>
+                <tr>
+                  <td class="styleDay">27</td>
+                  <td class="styleDay">28</td>
+                  <td class="styleDay">29</td>
+                  <td class="styleDay">30</td>
+                  <td class="styleDay">31</td>
+                  <td class="styleOffDay">&nbsp;</td>
+                  <td class="styleOffDay">&nbsp;</td>
+                </tr>
+                <tr id="mtrExtraRow">
+                  <td class="styleOffDay">&nbsp;</td>
+                  <td class="styleOffDay"></td>
+                  <td class="styleOffDay"></td>
+                  <td class="styleOffDay"></td>
+                  <td class="styleOffDay"></td>
+                  <td class="styleOffDay"></td>
+                  <td class="styleOffDay"></td>
+                </tr>
+              </table>
+              </center></div></td>
+            </tr>
+          </table>
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" height="8"></td>
+            </tr>
+            <tr>
+              <td align="center"><table border="0" cellspacing="0">
+                <tr>
+                  <td align="right">
+                    <select size="1" id="popcboMonth" onchange="msetDateByCombos()">
+                      <option value="January" selected>January</option>
+                    </select></td>
+                  <td width="5"></td>
+                  <td>
+                    <select size="1" id="popcboYear" onchange="msetDateByCombos()">
+                      <option value="January" selected>2001</option>
+                    </select></td>
+                </tr>
+              </table>
+              </td>
+            </tr>
+            <tr>
+              <td height="5"></td>
+            </tr>
+          </table>
+          <div id="chelp">
+            For a specific date, click the appropriate day on the calendar.<br><br> 
+            If specific date not known, you may also click just the <b>month name</b> or the <b>year</b> at the top. 
+          </div>
+          <div class="options cmdbar">
+            <a href="javascript:null" onclick='calUnk(); return false'>Date Unknown</a>
+          </div>
+          <div class="pop-cmd cmd-fixed">
+            <a class="cmd none" href="javascript:null" onclick='closePop(); return false'>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>

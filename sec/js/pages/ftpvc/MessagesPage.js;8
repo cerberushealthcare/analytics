@@ -1,0 +1,136 @@
+var C_MsgInbox;
+var C_MsgThread;
+/**
+ * Messages Page
+ * Global static
+ * Instance assigned to global variable: page
+ */
+var C_MSG;  // MsgDao constants
+var MessagesPage = {
+  threadsTile:null,
+  /*
+   * Loader
+   */
+  load:function(query, cInbox, cThread) {
+    Page.setEvents();
+    C_MsgInbox = cInbox;
+    C_MsgThread = cThread;
+    Header.setNewMsgCallback(page.newMsgCallback);
+    this.threadsTile = ThreadsTile.getInstance();
+    this.getThreads(query);
+  },
+  getThreads:function(query) {
+    if (query.get == 'sent') 
+      this.getSent();
+    else 
+      this.getInbox();
+  },
+  getSent:function() {
+    this.threadsTile.reset();
+    this._working(true);
+    Ajax.get(Ajax.SVR_MSG, 'getMySent');    
+  },
+  getMySentCallback:function(threads) {
+    this._working(false);
+    this.threadsTile.load(threads)
+  },
+  getInbox:function() {
+    this.threadsTile.reset();
+    this._working(true);
+    Ajax.get(Ajax.SVR_MSG, 'getMyInbox');
+  },
+  getMyInboxCallback:function(threads) {
+    this._working(false);
+    this.threadsTile.load(threads)
+  },
+  newMsgCallback:function() {
+    this.getInbox();
+  },
+  compose:function() {
+    Page.workingCmd(true);
+    Page.Nav.goMessage();
+  },
+  _working:function(on) {
+    if (on) {
+      overlayWorking(true, show('message-working'));
+    } else {
+      overlayWorking(false);
+      hide('message-working').innerText = '';
+    }
+  }
+}
+/**
+ * Threads Tile
+ * Singleton: getInstance()
+ */
+var ThreadsTile = {
+  div:null,
+  getInstance:function() {
+    this.div = $('msg-inbox');  
+    return this;
+  },
+  reset:function() {
+    clearChildren(this.div);
+  },
+  load:function(threads) {
+    clearChildren(this.div);
+    if (threads == null) {
+      show('message-working').innerText = 'Your inbox is empty.';
+    } else {
+      for (var i = 0; i < threads.length; i++) 
+        this.div.appendChild(this._createThread(threads[i]));
+    }
+  },
+  _getThreadClass:function(thread) {
+    var c = 'subj';
+    if (thread.status == C_MsgThread.STATUS_CLOSED) {
+      c += ' tlock';
+    } else if (thread.priority == C_MsgThread.PRIORITY_STAT) {
+      c += ' stat';
+    }
+    return c;
+  },
+  _createThread:function(thread) {
+    var post = thread.MsgInbox.MsgPost;
+    var t = [];
+    t.push("<table><tr><td class='topic'><div class='topic'><div class='");
+    t.push(this._getThreadClass(thread));
+    t.push("'><b>" + thread.subject + "</b>");
+    if (thread.Client) {
+      t.push(":<br>");
+      t.push(thread.Client.name);
+    } else {
+      t.push("<br>&nbsp;");
+    }
+    t.push("</div></div></td><td class='posts'><table><tr><th>");
+    t.push("<b>Last post:</b><br>");
+    t.push(post.dateCreated);
+    t.push(" by ");
+    t.push(post.author);
+    if (post.sendTo) {
+      t.push(" to ");
+      t.push(post.sendTo);
+    }
+    t.push("</th>");
+//    t.push("<th class='status'>");
+//    if (thread.unreadCt > 0) {
+//      t.push(plural(thread.unreadCt, "UNREAD POST").toUpperCase());
+//    }
+//    t.push("</th></tr><tr><td colspan='2'><div>");
+//    t.push(post.body);
+//    t.push("</div>");
+//    t.push(post.date);
+//    t.push("</td></tr></table></td>");
+    t.push("</tr></table>");
+    var div = createDiv(null, "layout", null, t.join(""));
+    var onclick = "window.location.href='message.php?id=" + thread.threadId + "'";
+    var cls = (thread.MsgInbox.isRead == C_MsgInbox.IS_UNREAD) ? null : 'read';
+    var a = createAnchor(null, null, cls, null, null, onclick);
+    a.appendChild(div);
+    return a;
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = MessagesPage;  

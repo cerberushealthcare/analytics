@@ -1,0 +1,149 @@
+/**
+ * Facesheet
+ */
+Facesheet = Object.Rec.extend({
+  //
+  onupdate:function() {},
+  onstale:function() {},
+  //
+  onload:function() {
+    this.cid = this.client && this.client.clientId;
+    this.procedures = Procedures.from(this);
+    this.docstubs = DocStubs.from(this);
+    this.diagnoses = Diagnoses.from(this);
+    this.hms = IpcHms.from(this);
+    this.polling().start();
+  },
+  //
+  polling:function() {
+    var self = this;
+    var p = Polling.StaleFacesheet;
+    return {
+      start:function() {
+        if (p.isLoaded())
+          p.resume();
+        else
+          p.load(self.onstale).start(self);
+      },
+      stop:function() {
+        p.stop();
+      }
+    }
+  },
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    var self = this;
+    return {
+      /*
+       * @arg int cid
+       * @arg fn(Facesheet) callback
+       */
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.get(cid, worker, callback);
+      },
+      /*
+       * @arg fn(Facesheet) callback only if facesheet updated
+       */
+      refetch:function(callback) {
+        Polling.StaleFacesheet.stop();
+        Ajax.Facesheet.getIfUpdated(self.cid, self.cuTimestamp, worker, function(fs) {
+          if (fs) 
+            callback(fs);
+          else 
+            Polling.StaleFacesheet.start(self);
+        })
+      }
+    }
+  }
+})
+/**
+ * DocStub
+ */
+DocStub = Object.Rec.extend({
+  resetPreview:function(callback) {
+    this._preview = null;
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      /*
+       * @arg fn(Rec) callback e.g. DocSession, DocMsg, etc.
+       */
+      fetchPreview:function(callback) {
+        if (self._preview) {
+          callback(self._preview);
+        } else {
+          Ajax.Facesheet.Documentation.preview(self, worker, function(rec) {
+            self._preview = rec;
+            callback(rec);
+          })
+        }
+      }
+    }
+  }
+})
+//
+DocStubs = Object.RecArray.of(DocStub, {
+  //
+  onupdate:function() {},
+  //
+  from:function(fs) {
+    return this.set('onupdate', fs.onupdate).revive(fs.docstubs);
+  },
+  ajax:function(worker) {
+    var self = this;
+    return {
+      /*
+       * @arg int cid
+       * @arg fn(DocStubs) callback
+       */
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.Documentation.getAll(cid, function(recs) {
+          self.onupdate();
+          callback(recs);
+        })
+      }
+    }
+  }
+})
+/**
+ * Diagnosis
+ */
+Diagnosis = Object.Rec.extend({
+  //
+  uiDateRange:function() {
+    var s = this.date;
+    if (this.dateClosed)
+      s += ' - ' + this.dateClosed;
+    return s;
+  },
+  cloneNewActive:function() {
+    var rec = Diagnosis.asNew(this.clientId);
+    rec.text = this.text;
+    rec.icd = this.icd;
+    return rec;
+  },
+  //
+  asNew:function(cid) {
+    return Diagnosis.revive({
+      clientId:cid,
+      date:DateUi.getToday(),
+      status:C_Diagnosis.STATUS_ACTIVE});
+  }
+})
+//
+Diagnoses = Object.RecArray.of(Diagnosis, {
+  //
+  from:function(fs) {
+    return this.revive(fs.diagnoses);
+  },
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    return {
+      setNone:function(cid, callback) {
+        Ajax.Facesheet.Diagnoses.setNone(cid, worker, callback);
+      }
+    }
+  }
+})

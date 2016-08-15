@@ -1,0 +1,107 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+//
+/**
+ * Providers/Facilities DAO
+ * @author Warren Hornsby
+ */
+class Providers {
+  //
+  /**
+   * @return array(Provider,..)
+   */
+  public function getAll() {
+    global $myLogin;
+    $recs = Provider::fetchAll($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @param stdClass $obj
+   * @return Provider+FacilityAddress updated rec
+   */
+  public function save($obj) {
+    global $myLogin;
+    $rec = new Provider($obj);
+    $rec->save($myLogin->userGroupId);
+    return Provider::fetch($rec->providerId);
+  }
+  /**
+   * @return array(FacilityAddress,..)
+   */
+  public function getFacilities() {
+    global $myLogin;
+    $recs = FacilityAddress::fetchAll($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @param stdClass $obj
+   * @return Facility updated rec
+   */
+  public function saveFacility($obj) {
+    global $myLogin;
+    $rec = new FacilityAddress($obj);
+    $rec->save($myLogin->userGroupId);
+    return $rec;
+  }
+}
+//
+/**
+ * Provider
+ */
+class Provider extends SqlRec {
+  //
+  public $providerId;
+  public $userGroupId;
+  public $last;
+  public $first;
+  public $middle;
+  public $suffix;
+  public $prefix;
+  public $area;
+  public $addrFacility;
+  public /*FacilityAddress*/ $Address_addrFacility;  
+  //
+  public function getSqlTable() {
+    return 'providers';
+  }
+  public function toJsonObject($o) {
+    $o->name = $this->formatName();
+    if ($this->Address_addrFacility)
+      $o->address = FacilityAddress::formatCsz($this->Address_addrFacility);
+    return $o;
+  }
+  public function formatName() {
+    $a = array();
+    if ($this->last) {
+      $b = array($this->last);
+      if ($this->suffix)
+        $b[] = $this->suffix;
+      if ($this->first)
+        $b[] = ',';
+      $a[] = implode('', $b);
+    } 
+    if ($this->first) 
+      $a[] = $this->first;
+    if ($this->middle)
+      $a[] = $this->middle;
+    return implode(' ', $a);
+  }
+  //
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return self::fetchAllBy($c);
+  }
+  static function fetch($id) {
+    $c = self::asCriteria();
+    $c->providerId = $id;
+    return self::fetchOneBy($c); 
+  }
+  static function asCriteria($ugid = null) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Address_addrFacility = new FacilityAddress();
+    return $c;
+  }
+}
+?>

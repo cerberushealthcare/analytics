@@ -1,0 +1,139 @@
+/**
+ * Admin IProc Page
+ * @author Warren Hornsby
+ */
+AdminIpcPage = {
+  //
+  init:function(query) {
+    Page.setEvents();
+    overlayWorking(true);
+    IpcAdmin.create(_$('ipc-list'), overlayWorking);
+  }
+}
+/** 
+ * Ipc Admin Tile
+ */
+IpcAdmin = {
+  create:function(parent, callback) {
+    parent.clean();
+    IpcEntryPop = IpcEntryPop.create();
+    var self = Html.Tile.create(parent);
+    return self.augment({
+      init:function() {
+        self.table = IpcAdmin.Table.create(self, callback, self.Table_onEdit);
+        self.table.setHeight(540);
+        IpcAdmin.CmdBar.create(self);
+      },
+      pAdd:function() {
+        IpcEntryPop.pop(null, self.refresh);
+      },
+      refresh:function() {
+        overlayWorking(true);
+        self.table.load(overlayWorking);
+      },
+      Table_onEdit:function(rec) {
+        IpcEntryPop.pop(rec, self.refresh);
+      }});
+  },
+  Table:{
+    create:function(parent, callback, editCallback) {
+      var filter = function(cat) {
+        return {
+          'Category':cat};
+      }
+      var self = Html.FilteredTableLoader.create(parent, filter);
+      return self.augment({
+        init:function() {
+          self.hide();
+          self.thead().tr('head').th('Name').w('20%').th('IPC').w('10%').th('Desc').w('50%').th('Category').w('20%');
+          self.load(callback);
+        },
+        load:function(callback) {
+          self.loader().reset();
+          Ajax.get('AdminIpc', 'getAll', null, function(recs) {
+            Array.forEach(recs, function(rec) {
+              var edit = Html.AnchorEdit.create(rec.name, function(){editCallback.call(parent, rec)});  // todo 
+              var cat = C_Ipc.CATS[rec.cat];
+              self.tbody().tr(null, null, filter(cat)).td(edit).td(rec.ipc).td(rec.desc).td(cat);
+            });
+            self.show();
+            self.setTopFilter(filter);
+            callback();
+          }); 
+        }});
+    }
+  },
+  CmdBar:{
+    create:function(parent) {
+      Html.CmdBar.create(parent).add('New IPC Code...', parent.pAdd);
+    }
+  }
+}
+/**
+ * Ipc Entry Pop
+ */
+IpcEntryPop = {
+  create:function() {
+    var self = Html.Pop.create('ipc-entry', 'IPC Entry', 600);
+    return self.augment({
+      init:function() {
+        self.form = IpcEntryPop.Form.create(self.content);
+        self.cmdBar = IpcEntryPop.CmdBar.create(self.content, self); 
+      },
+      pop:function(rec, onChangeCallback) {
+        self.form.setRecord(rec);
+        self.callback = onChangeCallback;
+        Pop.show(self);
+        self.form.focus((rec) ? 'name' : 'ipc');
+        //self.cmdBar.showDelIf(rec);  todo...doesn't work
+      },
+      pSave:function() {
+        var rec = self.form.getRecord();
+        overlayWorking(true);
+        Ajax.post('AdminIpc', 'save', rec, 
+          function(rec) {
+            overlayWorking(false);
+            self.close();
+            self.callback();
+          });
+      },
+      pDelete:function() {
+        var rec = self.form.getRecord();
+        Pop.Confirm.showYesNo('Are you sure you want to remove this record?', function() {
+          overlayWorking(true);
+          Ajax.get('AdminIpc', 'delete', rec.ipc, function() {
+            overlayWorking(false);
+            self.close();
+            self.callback();
+          });
+        });
+      },
+      pCancel:function() {
+        self.close();
+      },
+      close:function() {
+        Pop.close();
+      }
+    });
+  },
+  Form:{
+    create:function(parent) {
+      var ef = Html.EntryForm.create(parent);
+      ef.li('IPC').textbox('ipc', 5).lbl('Category').select('cat', C_Ipc.CATS, '');
+      ef.li('Name', 'mt10').textbox('name', 20);
+      ef.li('Desc').textbox('desc', 60);
+      return ef;
+    }
+  },
+  CmdBar:{
+    create:function(parent, context) {
+      var cb = Html.CmdBar.create(parent, context);
+      cb.saveDelCancel(context.pSave, context.pDelete, context.pCancel);
+      return cb;
+    }
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = AdminIpcPage;  

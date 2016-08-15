@@ -1,0 +1,27 @@
+BODY {
+  background-color:orange;
+  font-size:1.05em;
+}
+DIV.head {
+  height:43px;
+  background:orange;
+  border:none;
+  text-shadow:none;
+  -webkit-box-shadow:none;
+  -moz-box-shadow:none;
+  box-shadow:none;
+  font-weight:normal;
+}
+DIV.foot {
+  height:43px;
+  background:#202020;
+  border:none;
+}
+DIV.body {
+  padding:5px 10px;
+  background-color:white;
+}
+A.nav {
+  text-decoration:none;
+  color:white;
+}

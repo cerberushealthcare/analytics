@@ -1,0 +1,72 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  /**
+   * @return array(Ipc,..)
+   */
+  static function getAll() {
+    $recs = Rec::sort(Ipc::fetchAll(), new RecSort('name'));
+    return $recs;
+  }
+  /**
+   * @return Ipc
+   */
+  static function getByName($name) {
+    return geta(self::mapByName(), $name);
+  }
+  /**
+   * @return Ipc
+   */
+  static function getBySurgProc($proc) {
+    return geta(self::mapSurgByDesc(), $proc);
+  }
+  //
+  private static function mapByName() {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName();
+    return $map;
+  }
+  private static function mapSurgByDesc() {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap();
+    return $map;
+  } 
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends IpcRec implements ReadOnly {
+  //
+  public $ipc;
+  public $name;
+  public $desc;
+  public $cat;
+  public $code;  
+  public $codeSystem;
+  //
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  static function fetchAll() {
+    $c = new Ipc();
+    return parent::fetchAllBy($c, null, 2000);
+  }
+  static function fetchMapByName() {
+    return parent::fetchMapBy(new Ipc(), 'name');
+  }
+  static function fetchSurgMap() {
+    $c = new Ipc();
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+}
+?>

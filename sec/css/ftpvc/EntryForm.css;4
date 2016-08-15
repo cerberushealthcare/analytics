@@ -1,0 +1,78 @@
+UL.eform {
+  list-style:none;
+  margin:0;
+  font-size:10pt;
+}
+UL.eform LABEL {
+  display:inline-block;
+  color:black;
+  margin:0.3em 0.4em 0.3em 1em;
+  vertical-align:top;
+}
+UL.eform LABEL.first {
+  margin-left:0;
+  width:80px;
+  text-align:right;
+}
+UL.eform LABEL.first2 {
+  margin-left:0;
+  width:70px;
+  text-align:right;
+}
+UL.eform LABEL.nopad {
+  margin-left:0.4em;
+}
+UL.eform A {
+  display:inline-block;
+  margin-top:0.3em;
+  margin-left:0.2em;
+  vertical-align:top;
+}
+UL.eform A.client {
+  background-image:url(../img/icons/portrait.gif);
+  background-position:-1px left;
+  background-repeat:no-repeat;
+  padding-left:18px;
+}
+A.recips {
+  background-image:url(../img/icons/portrait.gif);
+  background-position:-1px left;
+  background-repeat:no-repeat;
+  padding-left:18px;
+}
+UL.entry INPUT {
+  font-size:9pt;
+  font-family:Arial;
+}
+UL.entry SELECT {
+  font-size:8pt;
+  font-family:Arial;
+}
+SPAN.rof {
+  display:inline-block;
+  margin-top:1px;
+  margin-left:0;
+  vertical-align:top;
+  font-size:9pt;
+  font-family:Arial;
+  border:1px solid #c0c0c0;
+  padding:2px 2px;
+  background-color:#fafafa;
+}
+SPAN.rota {
+  width:500px;
+}
+SPAN.fwidth {
+  display:inline-block;
+  border:0;
+  padding:0;
+  margin:0;
+  background:none;
+}
+UL.eform TEXTAREA {
+  font-family:Arial;
+  font-size:10pt;
+  overflow:visible;
+  height:auto;
+  width:500px;
+}

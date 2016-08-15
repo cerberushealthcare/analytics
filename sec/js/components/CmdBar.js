@@ -1,0 +1,146 @@
+/**
+ * Command Bar
+ * UI Component
+ */
+/*
+ * Command Bar
+ * @arg <e> parent
+ * @arg int type (optional)
+ * @arg context (optional, controller instance) 
+ */
+function CmdBar(parent, type, context) {
+  this.context = context;
+  this.div = Html.Div.create('pop-cmd').into(parent);
+  this.div.buttons = {};
+}
+//
+CmdBar.prototype = {
+  div:null,  // parent <div>
+  context:null,
+  /*
+   * Button builders
+   */
+  button:function(caption, className, fn, id) {
+    if (caption.length <= 3)
+      caption = '&nbsp;&nbsp;&nbsp;' + caption + '&nbsp;&nbsp;&nbsp;';
+    className = className || 'none';
+    return this._append(className, caption, fn, id || caption);
+  },
+  label:function(text, className, id) {
+    return Html.Label.create(className, text).set('id', id || '').into(this.div);
+  },
+  append:function(e) {
+    this.div.append(e);
+  },
+  save:function(fn, caption, id) {
+    return this._append('save', caption || 'Save Changes', fn, id || 'save');
+  },
+  cancel:function(fn) {
+    return this._append('none', 'Cancel', fn);
+  },
+  del:function(fn, caption, id) {
+    return this._append('delete', caption || 'Delete', fn, id || 'del');
+  },
+  delConfirm:function(fn, caption, id, noun) {
+    return this.del(function() {
+      Pop.Confirm.showDelete(noun, function(confirmed) {
+        if (confirmed) 
+          fn();
+      }, true);
+    }, caption, id);
+  },
+  copy:function(caption, fn, id) {
+    return this._append('copy-note', caption || 'Copy', fn, id || 'copy');
+  },
+  showDelIf:function(test) {
+    return this.showIf('del', test);
+  },
+  showIf:function(id, test) {
+    var a = this.div.buttons[id];
+    if (a) {
+      var s = (test) ? '' : 'none';
+      a.style.display = s;
+      if (a.spacer)
+        a.spacer.style.display = s;
+    }
+    return this;
+  },
+  changeCaption:function(id, caption) {
+    this.div.buttons[id].innerText = caption;
+  },
+  saveCancel:function(saveFn, cancelFn) {
+    return [this.save(saveFn), this.cancel(cancelFn)];
+  },
+  saveDelCancel:function(saveFn, delFn, cancelFn) {
+    return [this.save(saveFn), this.del(delFn), this.cancel(cancelFn)];
+  },
+  exit:function(fn) {
+    return this._append('none', '&nbsp;&nbsp;Exit&nbsp;&nbsp;', fn);
+  },
+  ok:function(fn) {
+    return this._append('ok', '&nbsp;&nbsp;&nbsp;OK&nbsp;&nbsp;&nbsp;', fn);
+  },
+  okCancel:function(okFn, cancelFn) {
+    return [this.ok(okFn), this.cancel(cancelFn)];
+  },
+  add:function(caption, fn) {
+    return this._append('new', caption, fn);
+  },
+  disable:function(id, test) {
+    var a = this.div.buttons[id];
+    if (test == null || test) 
+      a.addClass('disabled');
+    else
+      a.removeClass('disabled');
+  },
+  /*
+   * Appender
+   */
+  appender:function() {
+    var cb = this;
+    return {
+      outer:cb,
+      button:function(caption,fn,cls,id) {cb.button(caption,cls,fn,id);return this},
+      save:function(fn,caption,id) {cb.save(fn,caption,id);return this},
+      cancel:function(fn) {cb.cancel(fn);return this},
+      disable:function(id,test) {cb.disable(id,test);return this},
+      del:function(fn,caption,id) {cb.del(fn,caption,id);return this},
+      delc:function(fn,caption,id,noun) {cb.delConfirm(fn,caption,id,noun);return this},
+      spacer:function() {cb.label().html('&nbsp;&nbsp;');return this},
+      exit:function(fn) {cb.exit(fn);return this},
+      ok:function(fn) {cb.ok(fn);return this},
+      print:function(fn,cap) {cb.button(cap || 'Print','print-note',fn);return this},
+      cancel:function(fn) {cb.cancel(fn);return this},
+      add:function(caption,fn,id) {cb.add(caption,fn,id);return this},
+      copy:function(caption,fn,id) {cb.copy(caption,fn,id);return this},
+      lbl:function(text,cls,id) {cb.label(text,cls,id);return this},
+      showDelIf:function(test) {cb.showDelIf(test);return this},
+      showButtonIf:function(id,test) {cb.showIf(id,test);return this},
+      caption:function(id,caption) {cb.changeCaption(id,caption);return this},
+      append:function(e) {cb.append(e);return this},
+      get:function(id) {return _$(cb.div.buttons[id])},
+      height:function() {return this.container().getDim().height + 10},
+      getHeight:function() {return this.height()},
+      container:function() {return _$(cb.div)},
+      focus:function(id) {_$(cb.div.buttons[id].setFocus())}
+    }
+  },
+  //
+  _append:function(cls, cap, fn, id) {
+    var context = this.context;
+    fn = fn.bind(context);
+    var a = Html.Anchor.create('cmd ' + cls, null, function() {
+      if (! a.hasClass('disabled'))
+        fn();
+    })
+    a.noFocus().html(cap);
+    //var a = createAnchor(null, null, 'cmd ' + cls, null, cap, fn, context);
+    if (this.div.children && this.div.children.length) {
+      //a.spacer = createSpan(null, null, null, '&nbsp;&nbsp;');
+      a.spacer = Html.Span.create().html('&nbsp;&nbsp;').into(this.div);
+      this.div.appendChild(a.spacer);
+    }
+    this.div.buttons[id || cap] = a;
+    return this.div.append(a);
+  }
+}

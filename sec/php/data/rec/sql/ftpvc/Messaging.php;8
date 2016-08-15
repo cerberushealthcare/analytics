@@ -1,0 +1,595 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/UserLogin.php';
+//
+/**
+ * Messaging
+ * DAO for MsgThread, MsgPost, MsgInbox
+ * @author Warren Hornsby
+ */
+class Messaging {
+  //
+  /**
+   * @return int total unread
+   */
+  public static function getMyUnreadCt() {
+    global $myLogin;
+    return MsgInbox::countUnread($myLogin->userId);    
+  }
+  /**
+   * @return array(
+   *   'recips'=>array(UserRecip,..),
+   *   'sections'=>array(SectionMsg,..)) 
+   */
+  public static function getListsAsJson() {
+    $lists = array(
+      'sections' => SectionMsg::fetchAll(),
+      'recips' => Messaging::getMyRecipients());
+    return jsonencode($lists);
+  }
+  /**
+   * @return array(MsgThread(+MsgInbox),..)
+   */
+  public static function getMyInboxThreads() {
+    global $myLogin;
+    $inboxes = MsgInbox::fetchAllForInbox($myLogin->userId);
+    return MsgThread::fetchAllByInboxes($inboxes);
+  }
+  /**
+   * @return array(MsgThread(+MsgInbox),..)
+   */
+  public static function getMySentThreads() {
+    global $myLogin;
+    $inboxes = MsgInbox::fetchAllForSent($myLogin->userId);
+    return MsgThread::fetchAllByInboxes($inboxes);
+  }
+  /**
+   * @param int $clientId
+   * @return array(mtid=>MsgThread,..)
+   */
+  public static function getThreadsForClient($clientId) {
+    return MsgThread::fetchAllByClient($clientId);    
+  }
+  /**
+   * @param int $mtid
+   * @return MsgThread(+MsgInbox,MsgPosts)
+   */
+  public static function openThread($mtid) {
+    global $myLogin;
+    $thread = Messaging::getThread($mtid);
+    if ($thread) {
+      $thread->MsgPosts = MsgPost::fetchByThread($thread);
+      $thread->_unreadCt = MsgInbox::countUnread($myLogin->userId);
+      MsgInbox::saveAsRead($thread);
+      if ($thread->clientId)
+        Auditing::logReviewRec($thread);
+    }
+    return $thread;
+  }
+  /**
+   * Post reply to existing thread
+   * @param int $mtid
+   * @param [int,..] $sendTos 
+   * @param string $body
+   * @param string $data
+   */
+  public static function postReply($mtid, $sendTos, $body, $data) {
+    $sendTo = Messaging::buildSendToNames($sendTos);
+    $thread = Messaging::getThread($mtid);
+    if ($thread) {
+      $post = Messaging::addPost(MsgPost::ACTION_REPLY, $thread, $sendTo, $body, $data);
+      $thread->MsgInbox->saveAsSent($post);
+      MsgInbox::saveAsUnreadFor($sendTos, $post);
+    }
+  }
+  /**
+   * Add a post and complete thread
+   * @param int $mtid
+   * @param string $body
+   * @param string $data
+   */
+  public static function postComplete($mtid, $body, $data) {
+    $thread = Messaging::getThread($mtid);
+    if ($thread) {
+      $post = Messaging::addPost(MsgPost::ACTION_CLOSE, $thread, null, $body, $data);
+      $thread->MsgInbox->saveAsClose($post);
+    }
+  }
+  /**
+   * Create a new thread and send first post
+   * @param int $cid
+   * @param int $priority MsgThread::PRIORITY
+   * @param string $subject
+   * @param [int,..] $sendTos
+   * @param string $body
+   * @param string $data
+   */
+  public static function newThread($cid, $priority, $subject, $sendTos, $body, $data) {
+    global $myLogin;
+    $sendTo = Messaging::buildSendToNames($sendTos);
+    $thread = MsgThread::fromUi($myLogin->userId, $myLogin->name, $myLogin->userGroupId, $cid, $priority, $subject);
+    $thread->save();
+    $post = Messaging::addPost(MsgPost::ACTION_CREATE, $thread, $sendTo, $body, $data);
+    MsgInbox::createForThreadCreator($post);
+    MsgInbox::saveAsUnreadFor($sendTos, $post);
+  }
+  /**
+   * Complete a new thread without recipients (quick documentation for patient) 
+   * @param int $cid
+   * @param int $priority MsgThread::PRIORITY
+   * @param string $subject
+   * @param string $body
+   * @param string $data
+   */
+  public static function newThreadComplete($cid, $priority, $subject, $body, $data) {
+    global $myLogin;
+    $thread = MsgThread::fromUi($myLogin->userId, $myLogin->name, $myLogin->userGroupId, $cid, $priority, $subject);
+    $thread->save();
+    $post = Messaging::addPost(MsgPost::ACTION_CLOSE, $thread, null, $body, $data);
+    $inbox = MsgInbox::createForThreadCreator($post);
+    $inbox->saveAsClose($post);
+  }
+  //
+  /*
+   * Retrieves MsgThread+MsgInbox and authenticates access 
+   */
+  private static function getThread($mtid) {
+    global $myLogin;
+    $thread = MsgThread::fetch($mtid);
+    if ($thread) {
+      $inbox = MsgInbox::fetchByRecip($myLogin->userId, $thread);
+      if ($inbox == null) 
+        if ($thread->creatorId != $myLogin->userId)
+          if ($access > MsgInbox::ACCESS_READ || $thread->ClientStub == null)
+            LoginDao::throwSecurityError("accesss $access mtid", $thread->threadId);
+      $thread->MsgInbox = $inbox;
+    }
+    return $thread;
+  }
+  /*
+   * Get all recipients I can send messages to
+   */
+  private static function getMyRecipients($mapped = false) {
+    global $myLogin;
+    return UserRecip::fetchAllByUgid($myLogin->userGroupId, $mapped);
+  }
+  /*
+   * Given [id,..] return 'name;..'
+   */
+  private static function buildSendToNames($sendTos) {
+    if ($sendTos == null) 
+      return null;
+    global $myLogin;
+    $recipients = UserRecip::fetchAllByUgid($myLogin->userGroupId, true);
+    $s = array();
+    foreach ($sendTos as &$id) 
+      $s[$id] = Messaging::getRecipientName($recipients, $id);
+    return implode($s, ';');
+  }
+  /*
+   * Return recipient name if valid
+   */
+  private static function getRecipientName($recipients, $id) {
+    $r = geta($recipients, $id);
+    if ($r == null) 
+      throw new InvalidSendToException("Invalid sendto: $id");
+    return $r->name;
+  }
+  /*
+   * Add post from UI
+   */
+  private static function addPost($action, $thread, $sendTos, $body, $data) {
+    global $myLogin;
+    $post = MsgPost::fromUi($myLogin->userId, $myLogin->name, $action, $thread->threadId, $sendTos, $body, $data);
+    $post->save();
+    return $post;
+  }  
+}
+//
+/**
+ * Message Thread
+ */
+class MsgThread extends SqlRec {
+  //
+  public $threadId;
+  public $userGroupId;
+  public $clientId;
+  public $creatorId;
+  public $creator;
+  public $dateCreated;
+  public $dateToSend;
+  public $dateClosed;
+  public $type;
+  public $status;
+  public $priority;
+  public $subject;
+  public /*ClientStub*/ $ClientStub;
+  public /*MsgInbox*/ $MsgInbox;
+  public /*[MsgPost]*/ $MsgPosts;
+  public $_closed;
+  public $_unreadCt;
+  //
+  const TYPE_GENERAL = 0;
+  //
+  const STATUS_OPEN = 1;
+  const STATUS_CLOSED = 2;
+  //
+  const PRIORITY_NORMAL = 0;
+  const PRIORITY_STAT = 9;
+  public static $PRIORITIES = array(
+    MsgThread::PRIORITY_NORMAL => 'Normal',
+    MsgThread::PRIORITY_STAT => 'STAT');
+  //
+  const POST_ACTION_CLOSE = MsgPost::ACTION_CLOSE;
+  //  
+  public function getSqlTable() {
+    return 'msg_threads';
+  }
+  public function getJsonFilters() {
+    return array(
+      '_unreadCt' => JsonFilter::integer(),
+      'dateCreated' => JsonFilter::informalDateTime());
+  }
+  public function toJsonObject(&$o) {
+    $o->_closed = ($this->isClosed());
+  }
+  public function getAuditLabel() {
+    return $this->getLabel();
+  }
+  public function getLabel() {
+    $label = ($this->isStat()) ? MsgThread::PRIORITY_STAT . ': ' : '';
+    $label .= $this->subject;
+    return $label;
+  }
+  //
+  public function isClosed() {
+    return $this->status == MsgThread::STATUS_CLOSED;
+  }
+  public function isStat() {
+    return $this->priority == MsgThread::PRIORITY_STAT;
+  }
+  public function getLastPost() {
+    $post = null;
+    if ($this->MsgPosts) 
+      $post = $this->MsgPosts[0]; 
+    return $post;
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('MsgThread');
+  }
+  /**
+   * @param int $mtid
+   * @return MsgThread(+Client)
+   */
+  public static function fetch($mtid) {
+    $rec = new MsgThread($mtid);
+    $rec->ClientStub = new ClientStub();
+    return parent::fetchOneBy($rec);
+  }
+  public static function fetchWithPosts($mtid) {
+    $thread = parent::fetch($mtid, __CLASS__);
+    $thread->MsgPosts = MsgPost::fetchByThread($thread);
+    return $thread;
+  }
+  /**
+   * @param int $cid
+   * @return array(mtid=>MsgThread,..)
+   */
+  public static function fetchAllByClient($cid) {
+    $rec = new MsgThread();
+    $rec->clientId = $cid;
+    $recs = parent::fetchAllBy($rec, new RecSort('-dateCreated'), null, 'threadId');
+    return $recs;
+  }
+  /**
+   * @param [Inbox,..] $inboxes
+   * @return array(MsgThread(+MsgInbox),..)
+   */
+  public static function fetchAllByInboxes($inboxes) {
+    $threads = array();
+    foreach ($inboxes as &$inbox) {
+      $thread = MsgThread::fetch($inbox->threadId);
+      $thread->MsgInbox = $inbox;
+      if (! $thread->isClosed() || $thread->MsgInbox->isRead == MsgInbox::IS_UNREAD) 
+        $threads[] = $thread;
+    }
+    Rec::sort($threads, new RecSort('MsgInbox.isRead', '-priority', '-MsgInbox.postId'));
+    return $threads;
+  }
+  /**
+   * @return MsgThread 
+   */
+  public static function fromUi($creatorId, $creator, $ugid, $cid, $priority, $subject) {
+    $thread = new MsgThread();
+    $thread->userGroupId = $ugid;
+    $thread->clientId = $cid;
+    $thread->creatorId = $creatorId;
+    $thread->creator = $creator;
+    $thread->type = MsgThread::TYPE_GENERAL;
+    $thread->status = MsgThread::STATUS_OPEN;
+    $thread->priority = $priority;
+    $thread->subject = $subject;
+    return $thread;
+  }
+}
+/**
+ * Message Post 
+ */
+class MsgPost extends SqlRec implements NoAudit {
+  //
+  public $postId;
+  public $threadId;
+  public $action;
+  public $dateCreated;
+  public $authorId;
+  public $author;
+  public $body;
+  public $sendTo;
+  public $data;
+  //
+  const ACTION_CREATE = 0;
+  const ACTION_REPLY = 1;
+  const ACTION_CLOSE = 9;
+  //
+  public function getSqlTable() {
+    return 'msg_posts';
+  }
+  public function getJsonFilters() {
+    return array(
+      'dateCreated' => JsonFilter::informalDate());
+  }
+  //
+  /**
+   * @param int $mpid
+   * @return MsgPost
+   */
+  public static function fetch($mpid) {
+    return parent::fetch($mpid, 'MsgPost');
+  }
+  /**
+   * @param MsgThread $thread
+   * @return array(MsgPost,..)
+   */
+  public static function fetchByThread($thread) {
+    $rec = new MsgPost();
+    $rec->threadId = $thread->threadId;
+    return parent::fetchAllBy($rec, new RecSort('-postId'));
+  }
+  /**
+   * @return MsgPost
+   */
+  public static function fromUi($authorId, $author, $action, $mtid, $sendTos, $body, $data) {
+    $post = new MsgPost();
+    $post->threadId = $mtid;
+    $post->action = $action;
+    $post->authorId = $authorId;
+    $post->author = $author;
+    $post->body = $body;
+    $post->sendTo = $sendTos; 
+    $post->data = $data;
+    return $post;
+  }
+}
+/**
+ * Message Inbox
+ */
+class MsgInbox extends SqlRec implements NoAudit {
+  //
+  public $inboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  public /*MsgPost*/ $MsgPost;
+  //
+  const IS_UNREAD = '0';
+  const IS_READ = '1';
+  const IS_SENT = '2';
+  const IS_CLOSED = '9';
+  //
+  const ACCESS_READ = 0;
+  const ACCESS_POST = 1;
+  //
+  public function getSqlTable() {
+    return 'msg_inbox';
+  }
+  /**
+   * @param MsgPost $post just added
+   */
+  public function saveAsSent($post) {
+    if ($this->isRead == MsgInbox::IS_READ) {
+      $this->postId = $post->postId;
+      $this->isRead = MsgInbox::IS_SENT;
+      $this->save();
+    }
+  }
+  /**
+   * @param MsgPost $post just added
+   */
+  public function saveAsClose($post) {
+    $this->isRead = MsgInbox::IS_CLOSED;
+    $this->save();
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('MsgInbox');
+  }
+  /**
+   * @param int $userId
+   * @return int total unread
+   */
+  public static function countUnread($userId) {
+    $rec = new MsgInbox();
+    $rec->recipient = $userId;
+    $rec->isRead = MsgInbox::IS_UNREAD;
+    return parent::count($rec);
+  }
+  /**
+   * @param int $userId
+   * @return array(MsgInbox,..)
+   */
+  public static function fetchAllForInbox($userId) {
+    return MsgInbox::fetchAllByIsRead($userId, CriteriaValue::lessThan(MsgInbox::IS_SENT));
+  }
+  /**
+   * @param int $userId
+   * @return array(MsgInbox,..)
+   */
+  public static function fetchAllForSent($userId) {
+    return MsgInbox::fetchAllByIsRead($userId, MsgInbox::IS_SENT);
+  }
+  /**
+   * @param int $userId
+   * @param MsgThread $thread
+   * @return MsgInbox
+   */
+  public static function fetchByRecip($userId, $thread) {
+    $inbox = new MsgInbox();
+    $inbox->recipient = $userId;
+    $inbox->threadId = $thread->threadId;
+    return parent::fetchOneBy($inbox);
+  }
+  /**
+   * Create (or update) inboxes for recipients 
+   * @param [$id,..] $sendTos
+   * @param MsgPost $post 
+   * @return MsgInbox for self, if sent to self
+   */
+  public static function saveAsUnreadFor($sendTos, $post) {
+    global $myLogin;
+    $mtid = $post->threadId;
+    $mpid = $post->postId;
+    foreach ($sendTos as &$id) {
+      $inbox = MsgInbox::fetchOrCreate($mtid, $id);
+      $inbox->postId = $mpid;
+      $inbox->isRead = MsgInbox::IS_UNREAD;
+      $inbox->save();
+    }
+  }
+  /**
+   * Mark thread's inbox as read
+   * @param MsgThread $thread
+   */
+  public static function saveAsRead(&$thread) {
+    $inbox = &$thread->MsgInbox;
+    if ($inbox && $inbox->isRead == MsgInbox::IS_UNREAD) { 
+      $post = $thread->getLastPost();
+      if ($post) 
+        $inbox->postId = $post->postId;
+      $inbox->isRead = MsgInbox::IS_READ;
+      $inbox->save();
+    }
+  }
+  /**
+   * Create inbox for new thread creator
+   * @param MsgPost $post creation post
+   * @return MsgInbox
+   */
+  public static function createForThreadCreator($post) {
+    $inbox = MsgInbox::_create($post->threadId, $post->authorId);
+    $inbox->postId = $post->postId;
+    $inbox->isRead = MsgInbox::IS_SENT;
+    $inbox->save();
+    return $inbox;
+  }
+  //
+  private static function fetchAllByIsRead($userId, $isRead) {
+    $rec = new MsgInbox();
+    $rec->recipient = $userId;
+    $rec->isRead = $isRead;
+    $rec->MsgPost = new MsgPost();
+    return parent::fetchAllBy($rec);
+  }
+  private static function fetchOrCreate($mtid, $id) {
+    $inbox = parent::fetchOneBy(MsgInbox::_create($mtid, $id));
+    return ($inbox) ? $inbox : MsgInbox::_create($mtid, $id);
+  }
+  private static function _create($mtid, $id) {
+    return new MsgInbox(null, $id, $mtid);
+  }
+}
+/**
+ * User Recipient
+ */
+class UserRecip extends SqlRec implements ReadOnly {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $active;
+  public $userGroupId;
+  public $userType;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  /**
+   * @param int$ugid
+   * @param bool $mapped
+   */
+  public static function fetchAllByUgid($ugid, $mapped) {
+    $c = new UserRecip();
+    $c->userGroupId = $ugid;
+    $c->active = 1;
+    $fid = ($mapped) ? 'userId' : null;
+    return parent::fetchAllBy($c, new RecSort('userType', 'name'), null, $fid);
+  }
+}
+/** 
+ * Section for Messaging
+ */
+class SectionMsg extends SqlRec implements ReadOnly {
+  //
+  public $sectionId;
+  public $templateId;
+  public $name;
+  public /*[ParMsg]*/ $ParMsgs; 
+  //
+  public function getSqlTable() {
+    return 'template_sections';
+  }
+  //
+  /**
+   * @return array(
+   *   tsid=>array(SectionMsg,..))
+   */
+  public static function fetchAll() {
+    $c = new SectionMsg();
+    $c->templateId = 25;
+    $recs = parent::fetchAllBy($c, new RecSort('sectionId'), null, 'sectionId');
+    $sections = array();
+    foreach ($recs as &$rec) { 
+      $rec->ParMsgs = ParMsg::fetchAllFor($rec->sectionId);
+      if (count($rec->ParMsgs) == 0) 
+        unset($recs[$rec->sectionId]);
+    }
+    return $recs;
+  }
+}
+/** 
+ * Par for Messaging
+ */
+class ParMsg extends SqlRec implements ReadOnly {
+  //
+  public $parId;
+  public $sectionId;
+  public $desc;
+  public $current;
+  public $major;
+  //
+  public function getSqlTable() {
+    return 'template_pars';
+  }
+  // 
+  public static function fetchAllFor($sectionId) {
+    $c = new ParMsg();
+    $c->sectionId = $sectionId;
+    $c->current = 1;
+    $c->major = 1;
+    return parent::fetchAllBy($c, new RecSort('desc'), null, 'parId');
+  } 
+}
+?>

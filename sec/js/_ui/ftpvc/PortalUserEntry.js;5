@@ -1,0 +1,196 @@
+/**
+ * AnchorPicker PortalUserPicker
+ */
+PortalUserPicker = {
+  create:function() {
+    return Html.AnchorPicker.create('patient', 'Select Patient Recipient', 'Patient Login Selector').extend(function(self) {
+      return {
+        init:function() {
+          self.thead().tr('fixed head').th('Patient').w('60%').th('ID').w('20%').th('Birth').w('20%');
+        },
+        buttons:function(cmd) {
+          cmd.add('Add New Patient Login...', self.new_onclick).cancel(self.pop.close);
+        },
+        fetch:function(callback_recs) {
+          Ajax.UserGroup.getPortalUsers(callback_recs);
+        },
+        applies:function(rec, search) {
+          if (search)
+            return rec.Client.name.match(search);
+          return true;
+        },
+        add:function(rec, tr) {
+          tr.select(rec, AnchorClient.create(rec.Client)).td(rec.Client.uid).td(rec.Client.birth);
+        },
+        getValueFrom:function(rec) {
+          return rec.portalUserId;
+        },
+        getTextFrom:function(rec) {
+          return rec.Client.name;
+        },
+        //
+        new_onclick:function() {
+          NewPortalUserEntry.pop(null, function(rec) { 
+            self.pop.clean();
+            self.pop.select(rec);
+          })
+        }
+      }
+    })
+  }
+}
+/**
+ * RecordEntryPop PortalUser
+ * Entry
+ */
+NewPortalUserEntry = {
+  /*
+   * @arg Client client (optional)
+   * @arg fn(PortalUser) onsave (optional)
+   */
+  pop:function(client, callback_onsave) {
+    this.create().pop(client, callback_onsave);
+  },
+  create:function() {
+    var My = this;
+    return NewPortalUserEntry = Html.RecordEntryPop.create('New Portal User', 600).extend(My, function(self, parent) {
+      return {
+        pop:function(client, callback_onsave) {
+          self.client = client;
+          self.callback = callback_onsave;
+          self.frame.setCaption(client.name);
+          parent(Html.RecordEntryPop).pop(NewPortalUser.from(client));
+        },
+        buildCmd:self.buildCmd.append(function(cb) {
+          cb.get('save').setText('Create Login ID');
+        }),
+        buildForm:function(ef) {
+          ef.aug({
+            showCustom:function(i) {
+              var li = ef['licq' + i];
+              var fid = 'cq' + i;
+              if (ef.getValue('_scq' + i) == NewPortalUser.CUSTOM) {
+                li.show();
+                if (ef.getValue(fid) == '')
+                  ef.setValue(fid, NewPortalUser.CUSTOM_Q);
+                ef.focus(fid);
+              } else {
+                li.hide();
+              }
+            }
+          })
+          ef.li('Login ID').textbox('uid', 10).lbl('Password').textbox('pw', 20);
+          ef.li('Last Name').textbox('lastName', 20).lbl('Zip Code').textbox('zipCode', 5).lbl('Last 4 SSN').textbox('ssn4', 5);
+          ef.li('Security 1', 'mt5').select('_scq1', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(1));
+          ef.li(' ', null, null, 'licq1').textbox('cq1', 60);
+          ef.licq1 = ef._li.hide();
+          ef.li('Answer 1').textbox('ca1', 15);
+          ef.li('Security 2', 'mt5').select('_scq2', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(2));
+          ef.li(' ', null, null, 'licq2').textbox('cq2', 60);
+          ef.licq2 = ef._li.hide();
+          ef.li('Answer 2').textbox('ca2', 15);
+          ef.li('Security 3', 'mt5').select('_scq3', C_PortalUser.QUESTIONS, '', ef.showCustom.curry(3));
+          ef.li(' ', null, null, 'licq3').textbox('cq3', 60);
+          ef.licq3 = ef._li.hide();
+          ef.li('Answer 3').textbox('ca3', 15);
+        },
+        save:function(rec, onsuccess, onerror) {
+          rec = NewPortalUser.revive(rec);
+          rec.clientId = self.client.clientId;
+          Ajax.UserGroup.createPortalUser(rec, onsuccess);
+        },
+        onsave:function(rec) {
+          if (self.callback)
+            self.callback(rec);
+        }
+      }
+    })
+  }
+}
+/**
+ * Rec NewPortalUser
+ */
+NewPortalUser = Object.Rec.extend({
+  CUSTOM:'CUSTOM',
+  CUSTOM_Q:'Enter custom question',
+  onload:function(json) {
+    this.setCqs();
+  },
+  setCqs:function() {
+    for (var i = 1; i <= 3; i++)  
+      this.setCq(i);
+  },
+  setCq:function(i) {
+    var sel = this['_scq' + i];
+    var qkey = 'cq' + i;
+    if (sel != this.CUSTOM)
+      this[qkey] = C_PortalUser.QUESTIONS[sel];
+    else if (this[qkey] == this.CUSTOM_Q)
+      this[qkey] = null;
+  },
+  from:function(client) {
+    var id = AccountGenerator.makeId(client.clientId);
+    return this.revive({
+      'clientId':client.clientId,
+      'uid':id,
+      'pw':id,
+      'lastName':client.lastName.toUpperCase(),
+      'zipCode':client.shipAddress.zip,
+      '_scq1':'0',
+      '_scq2':'1',
+      '_scq3':'2'
+    });
+  }
+})
+/**
+ * RecArray PortalUsers
+ */
+PortalUsers = Object.RecArray.extend({
+  getItemProto:function() {
+    return PortalUser;
+  }
+})
+/**
+ * Rec PortalUser
+ */
+PortalUser = Object.Rec.extend({
+  isActive:function() {
+    return this.active;
+  },
+  formStatus:function() {
+    if (! this.isActive()) 
+      return 'Suspended';
+    switch (this.status) {
+      case C_PortalUser.STATUS_RESET:
+      case C_PortalUser.STATUS_CHALLENGED:
+        return 'Not yet activated';
+      case C_PortalUser.STATUS_PW_SET:
+        return 'Activated on ' + this.pwSet;
+    }
+  },
+  getLastLogin:function() {
+    return this.LastLogin && this.LastLogin.logDate;
+  },
+  asSelector:function(includeName) {
+    var text = (includeName) ? this.uid + ' (' + this.Client.name + ')' : this.uid;
+    return Html.AnchorAction.asKey(text);
+  }
+})
+//
+AccountGenerator = {
+  LETTERS:'CHJLMNRTWX',
+  DIGITS:'23479',
+  //
+  makeId:function(cid) {
+    return this.encode(String.toInt(cid) + 100000, this.LETTERS) + this.encode(String.toInt(String.rnd(2)), this.DIGITS, 2);
+  },
+  encode:function(n, cipher, len) {
+    var code = '';
+    var s = n.toString(cipher.length);
+    if (len)
+      s = String.zpad(s, len);
+    for (var i = s.length - 1; i >= 0; i--) 
+      code += cipher.charAt(String.toInt(s.charAt(i)));
+    return code;
+  }
+} 

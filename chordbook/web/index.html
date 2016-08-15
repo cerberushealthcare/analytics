@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chordbook</title>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='user-scalable=no,width=device-width,initial-scale=1.0,maximum-scale=1.0'>
+  <meta name='apple-mobile-web-app-capable' content='yes'>
+  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
+  <link rel='apple-touch-icon-precomposed' href='icons/icon_60x60.png'>
+  <link rel='apple-touch-startup-image' href='icons/splash_320x460.png'>
+  <link rel='stylesheet' href='css/jquery.mobile-1.3.2.min.css'>
+  <link rel='stylesheet' href='css/my-jquery-overrides.css?1.2.002'>
+  <link rel='stylesheet' href='css/my.css?1.2.002'>
+  <script type='text/javascript' src='js/jquery.js'></script>
+  <script type='text/javascript' src='js/lcd.js?1.2.002a'></script>
+  <script type='text/javascript' src='js/my-plugins.js?1.2.002'></script>
+  <script type='text/javascript' src='js/data/Inits.js?1.2.002'></script>
+  <script type='text/javascript' src='js/data/EditChord.js?1.2.002'></script>
+  <script type='text/javascript' src='js/data/ChordList.js?1.2.002'></script>
+  <script type='text/javascript' src='js/data/SongList.js?1.2.002'></script>
+  <script type='text/javascript' src='js/data/EditSong.js?1.2.002'></script>
+  <script type='text/javascript' src='js/ui/Pages.js?1.2.002'></script>
+  <script type='text/javascript' src='js/ui/Header.js?1.2.002'></script>
+  <script type='text/javascript' src='js/ui/Dialogs.js?1.2.002'></script>
+  <script type='text/javascript' src='js/ui/ChordIcon.js?1.2.002'></script>
+  <script type='text/javascript' src='js/jquery.mobile-1.3.2.min.js'></script>
+</head>
+<body>
+  <div id='Home' data-role='page'>
+    <div class='head'>
+      <table>
+        <tr>
+          <td class='l'><a class='chord' href='#'></a></td>
+          <th class='m'>Song List</th>
+          <td class='r'><a class='plus' href='#'></a></td>
+        </tr>
+      </table>
+    </div>
+    <div id='body-home' class='body'>
+    </div>
+  </div>
+  <div id='Song' data-role='page'>
+    <div class='head'>
+      <table>
+        <tr>
+          <td class='l'><a class='back' href='#'></a></td>
+          <th class='m'>Song</th>
+          <td class='r'><a href='#' class='edit'></a></td>
+        </tr>
+      </table>
+    </div>
+    <div id='body-song' class='body working'>
+    </div>
+  </div>
+  <div id='EditSong' data-role='page'>
+    <div class='head'>
+      <table>
+        <tr>
+          <td class='l'><a href='#'>Cancel</a></td>
+          <th class='m'></th>
+          <td class='r'><a href='#'>Save</a></td>
+        </tr>
+      </table>
+    </div>
+    <div id='body-edit-song' class='body'>
+      <form id='edit-song-form'>
+        <div id='edit-at-box'>
+          <label for='edit-artist'>Artist</label>
+          <input type='text' id='edit-artist' class='required' />
+          <label for='edit-title'>Title</label>
+          <input type='text' id='edit-title' class='required' />
+          <label for='edit-tempo'>Tempo</label>
+          <input type='text' id='edit-tempo' />
+        </div>
+        <div id='edit-body-box'>
+          <label for='edit-body'>Lyrics/Chords</label>
+          <textarea id='edit-body' data-mini='true'></textarea>
+        </div>
+        <a id='edit-delete' href='#' data-role='button' data-theme='r'>Delete Song</a>
+      </form>
+    </div>
+  </div>
+  <div id='EditChord' data-role='page'>
+    <div id='body-edit-chord' class='body-fixed'>
+      <div id='edit-chord'>
+        <div id='namer'>
+          <div class='lock'></div>
+          <div class='namer-boxes'>
+            <a id='root' href='#' class='on'>D</a><a id='mod1' href='#'></a><a id='mod2' href='#'></a><a id='slash' href='#'></a>
+          </div>
+          <div class='namer-pop-c'>
+            <div id='namer-pop' class=''>
+              <div id='oroot' class='panel'>
+                <table>
+                  <tr>
+                    <td>
+                      <table>
+                        <tr><td><a href='#'>B</a><a href='#'>Bm</a></td></tr>
+                        <tr><td><a href='#'>A</a><a href='#'>Am</a></td></tr>
+                        <tr><td><a href='#'>G</a><a href='#'>Gm</a></td></tr>
+                        <tr><td><a href='#'>F</a><a href='#'>Fm</a></td></tr>
+                        <tr><td><a href='#'>E</a><a href='#'>Em</a></td></tr>
+                        <tr><td><a href='#' class='on'>D</a><a href='#'>Dm</a></td></tr>
+                        <tr><td><a href='#'>C</a><a href='#'>Cm</a></td></tr>
+                      </table>
+                    </td>
+                    <td>
+                      <table class='flats'>
+                        <tr><td class='s1'></td></tr>
+                        <tr><td><a href='#'>A#</a><a value='A#m' href='#'>m</a></td><td><a href='#'>Bb</a><a value='Bbm' href='#'>m</a></td></tr>
+                        <tr><td><a href='#'>G#</a><a value='G#m' href='#'>m</a></td><td><a href='#'>Ab</a><a value='Abm' href='#'>m</a></td></tr>
+                        <tr><td><a href='#'>F#</a><a value='F#m' href='#'>m</a></td><td><a href='#'>Gb</a><a value='Gbm' href='#'>m</a></td></tr>
+                        <tr><td class='s2'></td></tr>
+                        <tr><td><a href='#'>D#</a><a value='D#m' href='#'>m</a></td><td><a href='#'>Eb</a><a value='Ebm' href='#'>m</a></td></tr>
+                        <tr><td><a href='#'>C#</a><a value='C#m' href='#'>m</a></td><td><a href='#'>Db</a><a value='Dbm' href='#'>m</a></td></tr>
+                        <tr><td class='s3'></td></tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <div id='omod1' class='panel'>
+                <table>
+                  <tr><td><a href='#' class='on null'>(none)</a></td></tr>
+                  <tr><td class='s4'></td></tr>
+                  <tr><td><a href='#'>aug</a><a href='#'>dim</a><a value='sus4' href='#'>sus(4)</a><a href='#'>sus2</a></td></tr>
+                  <tr><td><a href='#'>5</a><a href='#'>6</a><a href='#'>7</a><a href='#'>maj7</a></td></tr>
+                  <tr><td class='s4'></td></tr>
+                  <tr><td><a href='#'>9</a><a href='#'>maj9</a><a href='#'>add9</a></td></tr>
+                  <tr><td><a href='#'>11</a><a href='#'>13</a><a href='#'>maj13</a></td></tr>
+                </table>
+              </div>
+              <div id='omod2' class='panel'>
+                <table>
+                  <tr><td><a href='#' class='on null'>(none)</a></td></tr>
+                  <tr><td class='s4'></td></tr>
+                  <tr><td><a value='sus4' href='#'>sus(4)</a><a href='#'>sus2</a><a href='#'>b5</a><a href='#'>b9</a></td></tr>
+                  <tr><td class='s4'></td></tr>
+                  <tr><td><a href='#'>7</a><a href='#'>/9</a><a href='#'>9</a></td></tr>
+                  <tr><td><a href='#'>7#9</a><a href='#'>#9</a><a href='#'>#9sus4</a></td></tr>
+                  <tr><td class='s4'></td></tr>
+                  <tr><td><a href='#'>#11</a><a href='#'>#11#9</a></td></tr>
+                </table>
+              </div>
+              <div id='oslash' class='panel'>
+                <table>
+                  <tr>
+                    <td><a href='#' class='on null'>(none)</a></td>
+                    <td>
+                      <table>
+                        <tr><td><a href='#'>B</a></td></tr>
+                        <tr><td><a href='#'>A</a></td></tr>
+                        <tr><td><a href='#'>G</a></td></tr>
+                        <tr><td><a href='#'>F</a></td></tr>
+                        <tr><td><a href='#'>E</a></td></tr>
+                        <tr><td><a href='#'>D</a></td></tr>
+                        <tr><td><a href='#'>C</a></td></tr>
+                      </table>
+                    </td>
+                    <td>
+                      <table class='flats'>
+                        <tr><td class='s1'></td></tr>
+                        <tr><td><a href='#'>A#</a></td><td><a href='#'>Bb</a></td></tr>
+                        <tr><td><a href='#'>G#</a></td><td><a href='#'>Ab</a></td></tr>
+                        <tr><td><a href='#'>F#</a></td><td><a href='#'>Gb</a></td></tr>
+                        <tr><td class='s2'></td></tr>
+                        <tr><td><a href='#'>D#</a></td><td><a href='#'>Eb</a></td></tr>
+                        <tr><td><a href='#'>C#</a></td><td><a href='#'>Db</a></td></tr>
+                        <tr><td class='s3'></td></tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id='guitar'>
+          <div class='lock'></div>
+          <a class='navn left' href='#'></a>
+          <a class='navn right' href='#'></a>
+          <div class='pad'>
+            <div class='ocbar'>
+              <table>
+                <tr>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'>x</a></td>
+                </tr>
+              </table>
+            </div>
+            <div class='neck'>
+              <div class='top'></div>
+              <a id='chord-save' class='save' href='#'></a>
+              <a id='chord-unsave' class='unsave' href='#'></a>
+              <a id='chord-default' href='#'></a>
+              <a class='pos' href='#'>1</a>
+              <a class='nav up' href='#'></a>
+              <a class='nav down' href='#'></a>
+              <div class='fret f1'></div>
+              <div class='fret f2'></div>
+              <div class='fret f3'></div>
+              <div class='string s1'></div>
+              <div class='string s2'></div>
+              <div class='string s3'></div>
+              <div class='string s4'></div>
+              <div class='string s5'></div>
+              <div class='string s6'></div>
+              <table>
+                <tr fret='1'>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                </tr>
+                <tr fret='2'>
+                  <td><a class='on' href='#'></a></td>
+                  <td><a class='b' href='#'></a></td>
+                  <td><a class='b' href='#'></a></td>
+                  <td><a class='b' href='#'></a></td>
+                  <td><a class='on' href='#'></a></td>
+                  <td><a href='#'></a></td>
+                </tr>
+                <tr fret='3'>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a class='on' href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                </tr>
+                <tr fret='4'>
+                  <td><a href='#'></a></td>
+                  <td><a class='on' href='#'></a></td>
+                  <td><a class='on' href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                  <td><a href='#'></a></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id='ec-cmdbar'>
+          <a href='#' data-role='button' class='yes' data-theme='r'>Select</a>
+          <a href='#' data-role='button' class='no' data-theme='w'>Cancel</a>
+        </div>
+        <div id='ec-cmdbar-ro'>
+          <a href='#' data-role='button' class='exit' data-theme='w'>Exit</a>
+        </div>
+        <div id='selector'>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id='pop-confirm' data-role='dialog'>
+    <div data-role='content' data-theme='c'>
+      <div class='text'>Are you sure?</div>
+      <a href='#' data-role='button' class='yes' data-theme='r'>Yes</a>
+      <a href='#' data-role='button' class='no' data-rel="back" data-theme='w'>Cancel</a>
+    </div>
+  </div>
+</body>
+<script>
+$(document).on('pageinit', function(event) {
+  Pages.pageinit(event.target.id);
+})
+function test() {
+  console.clear();
+  //
+  log('Applying debug mods to Me');
+  Me.save = function() {return this.resetDirty()};
+  Me.set('songlist', SongList_Init, SongList);
+  log(Me.songlist, 'songlist');
+  console.assert(Me.songlist.length == 4);
+  console.assert(Me.songlist[3].title == 'Solitary Man');
+  //
+  Pages.Home_onnew();
+  pause(0.1, test_EditSong_new);
+}
+function test_EditSong_new() {
+  log('EditSong new');
+  Pages.EditSong.Head_onsave();
+  var errs = Pages.EditSong.Form.getInvalidFors();
+  console.assert(js(errs) == '["edit-artist","edit-title"]');
+  $('#edit-artist').val('Fred Flintstone');
+  Pages.EditSong.Head_onsave();
+  errs = Pages.EditSong.Form.getInvalidFors();
+  console.assert(js(errs) == '["edit-title"]');
+  $('#edit-title').val('Ballad of the Flintstones');
+  Pages.EditSong.Head_onsave();
+  errs = Pages.EditSong.Form.getInvalidFors();
+  console.assert(js(errs) == '[]');
+  pause(0.2, test_EditSong);
+}
+function test_EditSong() {
+  log('EditSong');
+  var song = Me.songlist[2];
+  log(song, 'song');
+}
+</script>
+</html>

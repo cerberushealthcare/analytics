@@ -1,0 +1,198 @@
+<?
+/**
+ * Facesheet History 
+ * Controller: FaceHx.js
+ */
+?>
+<div id="fsp-hx" class="pop" onmousedown="event.cancelBubble = true" style='width:745px'>
+  <div id="fsp-hx-cap" class="pop-cap">
+    <div id="fsp-hx-cap-text">
+      History
+    </div>
+    <a href="javascript:FaceHx.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="padding:0">
+    <div class="tabbar"></div>
+    <div class="tabpanels">
+      <div class="tabpanel">
+        <div id="fsp-medhx-div" class="fstab" style="margin-top:0;height:400px;">
+          <table class="fsp single grid">
+            <thead>
+              <tr class="head">
+                <th style="width:35%">Diagnosis</th>
+                <th>Date</th>
+                <th style="width:25%">Type</th>
+                <th style="width:25%">Treatment</th>
+              </tr>
+            </thead>
+            <tbody id="fsp-medhx-tbody">
+            </tbody>
+          </table>
+        </div>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <div class="pop-cmd cmd-right">
+                <span id='medhx-act'>
+              <a href="javascript:" onclick="javascript:FaceHx.fpAddMedHx()" class="cmd new">Add By Quick List...</a>
+                <span>&nbsp;</span>
+                </span>
+                <a href="javascript:FaceHx.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="tabpanel">
+        <div id="fsp-surghx-div" class="fstab" style="margin-top:0;height:400px;">
+          <table class="fsb single grid">
+            <thead>
+              <tr class="fixed head">
+                <th style="width:35%">Procedure</th>
+                <th>Date</th>
+                <th style="width:50%">Type</th>
+              </tr>
+            </thead>
+            <tbody id="fsp-surghx-tbody">
+            </tbody>
+          </table>
+        </div>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <div class="pop-cmd cmd-right">
+                <span id='surghx-act'>
+                <a href="javascript:" onclick="javascript:FaceHx.fpAddSurgHx()" class="cmd new">Add By Quick List...</a>
+                <span>&nbsp;</span>
+                <a href="javascript:" onclick="javascript:FaceHx.fpLookupSurgHx()" class="cmd new">Add By Lookup...</a>
+                <span>&nbsp;</span>
+                </span>
+                <a href="javascript:FaceHx.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="tabpanel">
+        <div id="fsp-famhx-div" class="fstab" style="margin-top:0;height:400px;">
+          <table id="fsp-famhx-tbl" class="fsgr grid">
+            <thead>
+              <tr id="fsp-famhx-head" class="fixed head">
+                <th>Relative</th>
+                <th style="text-align:right">&nbsp;</th>
+                <th style="width:70%">&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody id="fsp-famhx-tbody">
+            </tbody>
+          </table>
+        </div>
+        <div class="pop-cmd cmd-right">
+          <span id='famhx-act'>
+          <a href="javascript:" onclick="javascript:FaceHx.fpAddFamHx()" class="cmd new">Add Relative...</a>
+          <span>&nbsp;</span>
+          </span>
+          <a href="javascript:FaceHx.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+        </div>
+      </div>
+      <div class="tabpanel">
+        <div id="fsp-sochx-div" class="fstab" style="margin-top:0;height:400px;">
+          <table id="fsp-sochx-tbl" class="fsy grid">
+            <thead>
+              <tr id="fsp-sochx-head" class="fixed head">
+                <th>Topic</th>
+                <th style="text-align:right">&nbsp;</th>
+                <th style="width:70%">&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody id="fsp-sochx-tbody">
+            </tbody>
+          </table>
+        </div>
+        <div class="pop-cmd cmd-right">
+          <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Med/Surg History Entry
+ */
+?>
+<div id="pop-hxe" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-hxe-cap" class="pop-cap">
+    <div id="pop-hxe-cap-text">
+      Clicktate - History Entry
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:640px">
+    <h4 id="hxe-proc"></h4>
+    <ul id="ul-hxe-fields" class="entry">
+    </ul>
+    <div class="pop-cmd push">
+      <a href="javascript:" onclick="FaceMedSurgHxEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span id="hxe-delete-span">
+        <span>&nbsp;</span>
+        <a href="javascript:" onclick="FaceMedSurgHxEntry.fpDelete()" class="cmd delete-red">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-hxe-errors" class="pop-error" style="display:none"></div>
+  </div>
+</div>      
+<?
+/**
+ * Family History Entry
+ */
+?>
+<div id="pop-fhxe" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-fhxe-cap" class="pop-cap">
+    <div id="pop-fhxe-cap-text">
+      Clicktate - Family History Entry
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:640px">
+    <h4 id="fhxe-rel"></h4>
+    <ul id="ul-fhxe-fields" class="entry">
+    </ul>
+    <div class="pop-cmd push">
+      <a href="javascript:" onclick="FaceFamHxEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span id="fhxe-delete-span">
+        <span>&nbsp;</span>
+        <a href="javascript:" onclick="FaceFamHxEntry.fpDelete()" class="cmd delete-red">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-fhxe-errors" class="pop-error" style="display:none"></div>
+  </div>
+</div>      
+<?
+/**
+ * Social History Entry
+ */
+?>
+<div id="pop-she" class="pop">
+  <div id="pop-she-cap" class="pop-cap">
+    <div id="pop-she-cap-text">
+      Clicktate - Social History Entry
+    </div>
+    <a href="javascript:FaceSocHxEntry.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:550px">
+    <h4 id="she-topic">Topic</h4>
+    <ul id="ul-she-fields" class="entry">
+    </ul>
+    <div class="pop-cmd push">
+      <a href="javascript:" onclick="FaceSocHxEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:FaceSocHxEntry.fpClose()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-she-errors" class="pop-error" style="display:none"></div>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+<?
+require_once "php/data/LoginSession.php";
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/sql/Scanning.php';
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+require_once 'php/data/rec/ExceptionRec.php';
+//
+LoginSession::verify_forUser()->requires($login->Role->Artifact->scan);
+//
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? HEAD('Scanning', 'ScanningPage') ?>
+    <? HEAD_Scanning() ?>
+    <link rel='stylesheet' type='text/css' href='css/scanning.css?<?=Version::getUrlSuffix() ?>' />
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <table class='h'>
+          <tr>
+            <th><h1 id='h1'>Scanning Center</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+          <div id='scan-indexing'>
+            <div class='spacer'>&nbsp;</div>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <div id="pop-upload-old" class="pop">
+      <div class="pop-cap">
+        <div>
+          Clicktate - Upload Scanned Files
+        </div>
+        <a href="javascript:Pop.close()" class="pop-close"></a>
+      </div>
+      <div class="pop-content">
+        <div id="pop-upload-info" class="information mb10" style="padding-top:10px">
+          Your file(s) were uploaded successfully.<br>
+          You may now select more files to upload, or click Cancel to begin indexing.  
+        </div>
+        <div id="pc">
+        </div>
+        <div class="pop-cmd">
+          <a href="javascript:upload()" onclick="" class="cmd save">Upload Now</a>&nbsp;
+          <a href="javascript:upload2()" onclick="" class="cmd save">Test</a>&nbsp;
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <div id="pop-upload-xml" class="pop">
+      <div class="pop-cap">
+        <div>
+          Clicktate - Upload Electronic Clinical Document
+        </div>
+        <a href="javascript:Pop.close()" class="pop-close"></a>
+      </div>
+      <div class="pop-content">
+        <div class="pop-frame">
+          <div class="pop-frame-content">
+            <form id="frm-upload-xml" enctype="multipart/form-data" action="scanning.php" method="post">
+              <input type="hidden" name="MAX_FILE_SIZE" value="1000000" />
+              <input type="hidden" name="XML" value="1" />
+              <input class='file' name="scanfile[]" type="file" /><br>
+              <div style='padding-top:4px;padding-left:1em'>
+                <? renderLabelCheck('lc_enc', 'Encrypted?', false, null, 'showDecrypt()') ?>
+                <span id='dec' style='visibility:hidden;margin-left:1em'>
+                  <label style='color:black'>Password</label>&nbsp;<input id='pw' name='pw' type='password' size='30' style='vertical-align:bottom'/>
+                </span>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="pop-cmd">
+          <a href="javascript:uploadXml()" onclick="" class="cmd save">Upload Now</a>&nbsp;
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <? include 'inc/footer.php' ?>
+  </body>
+  <? CONSTANTS('Scanning') ?>
+<script type='text/javascript'>
+function start() {
+  var query = <?=jsonencode($_GET)?>;
+  ScanningPage.init();
+}
+function uploadXml() {
+  $('frm-upload-xml').submit();
+}
+function showDecrypt() {
+  var checked = _$('lc_enc').checked;
+  _$('dec').visibleIf(checked); 
+  if (checked)
+    _$('pw').setFocus();
+}
+</script>      
+</html>

@@ -1,0 +1,176 @@
+/**
+ * Page Header 
+ * Requires: Ajax.js, ui.js, icd-pop.js
+ */
+Header = {
+  _pageName:null,
+  /*
+   * Loader
+   * - inboxCt: current inbox count per MsgDao
+   */
+  load:function(pageName, inboxCt) {
+    this._pageName = pageName;
+    this._elimImageFlicker();
+    Header.Mail.load(inboxCt);
+    if (me.perm.er) {
+      this._er = true;
+      Header.Erx.load();
+    }
+  },
+  logout:function() {
+    if (this._er && Header.Erx.loaded) {
+      Pop.Working.show('Logging out...', true);
+      Ajax.Polling.getStatusCount(function(s) {
+        Pop.Working.close();
+        if (s && s.statusCount || s.pharmComCount) 
+          Header.showLogoutWarning(s);
+        else
+          Page.Nav.goLogout();
+      })
+    } else {
+      Page.Nav.goLogout();
+    }
+  },
+  showLogoutWarning:function(s) {
+    var a = [];
+    if (s.pharmComCount)
+      a.push(plural(s.pharmComCount, "pharmacy request"));
+    if (s.statusCount) 
+      a.push(plural(s.statusCount, "unfinished prescription"));
+    var msg = "You have " + a.join(' and ') + ". Do you still want to logout?";
+    Pop.Confirm.showImportant(msg, 'Yes, Logout', null, 'No, Review ERX', null, true, function(confirmed) {
+      if (confirmed)
+        Page.Nav.goLogout();
+      else
+        if (s.pharmComCount)
+          Page.go(Page.PAGE_ERX_PHARM);
+        else
+          Page.go(Page.PAGE_ERX_STATUS);
+    });
+  },
+  /*
+   * @arg string code (optional)
+   * @arg string desc (optional)
+   * @arg fn(code, desc) callback (optional)
+   */
+  icdLook:function(code, desc, callback) {
+    if (callback == null)
+      callback = false;
+    Includer.getWorking([Includer.AP_ICD_POP, Includer.JS_ICD_POP], function() {
+      showIcd(code, desc, callback);
+    });
+  },
+  closeSticky:function(id, remember) {
+    hide(id);
+    if (remember)
+      Ajax.get(Ajax.SVR_POP, 'hideSticky', id, Ajax.NO_CALLBACK);
+  },
+  _elimImageFlicker:function() {
+    try {
+      document.execCommand('BackgroundImageCache', false, true);
+    } catch(e) {}
+  }
+}
+Header.Labs = {
+  // ?
+}
+/*
+ * Mail
+ */
+Header.Mail = {
+  _newMsgCallback:null,
+  //
+  load:function(unreadCt) {
+    this.setUnread(unreadCt);
+    var self = this;
+    Polling.Inbox.start(unreadCt, 
+      function(ct) {
+        self.setUnread(ct);
+        if (self._newMsgCallback) 
+          self._newMsgCallback.call(page);
+        swell($('img-mail'), true);
+      });
+  },
+  /*
+   * Assign a callback when new message received
+   */
+  setNewMsgCallback:function(callback) {
+    this._newMsgCallback = callback
+  },
+  /*
+   * Set unread count
+   */
+  setUnread:function(ct) {
+    if (ct == 0) 
+      _$('a-mail').setText('Messages (0)').setClass('mail');
+    else 
+      _$('a-mail').setText('Messages (' + ct + ' unread)').setClass('mail newmail');
+  }
+}
+/*
+ * ERX
+ */
+Header.Erx = {
+  //
+  load:function() {
+    var status = CookieErx.get();
+    if (status) 
+      this.setAnchors(status);
+    else
+      Polling.ErxStatus.start(this.refresh.bind(this));
+  },
+  refresh:function() {
+    if (this.getting)
+      return;
+    CookieErx.expire();
+    var self = this;
+    self.getting = true;
+    Ajax.Polling.getStatusCount(function(status) {
+      if (status) {
+        self.loaded = true;
+        self.getting = false;
+        CookieErx.set(status);
+        self.setAnchors(status);
+      }
+    });
+  },
+  status_onclick:function() {
+    Page.go(Page.PAGE_ERX_STATUS);
+  },
+  pharm_onclick:function() {
+    Page.go(Page.PAGE_ERX_PHARM);
+  },
+  setAnchors:function(status) {
+    this.setAnchorPharm(status);
+    this.setAnchorStatus(status);
+  },
+  setAnchorPharm:function(status) {
+    this._setAnchor(_$('nc-pharm'), _$('a-ncp'), status._pharmText, status._pharmColor);
+  },
+  setAnchorStatus:function(status) {
+    this._setAnchor(_$('nc-status'), _$('a-ncs'), status._statusText, status._statusColor);
+  },
+  _setAnchor:function(div, a, text, color) {
+    if (text) {
+      a.setText(text).style.color = (color) ? color : ''
+      div.show();
+    } else {
+      div.hide();
+    }
+  }
+}
+//
+CookieErx = {
+  name:'NC_STATUS',
+  duration:10,  // minutes
+  //
+  set:function(status) {
+    Cookies.set(this.name, status, this.duration);
+  },
+  get:function() {
+    return Cookies.get(this.name); 
+  },
+  expire:function() {
+    Cookies.expire(this.name);
+  }
+}

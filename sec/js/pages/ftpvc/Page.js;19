@@ -1,0 +1,357 @@
+/**
+ * Page Library
+ */
+var Page = {
+  //
+  PAGE_CONSOLE:'new-console.php',
+  PAGE_ERX_PHARM:'erxpharm.php',
+  PAGE_ERX_STATUS:'erxstatus.php',
+  PAGE_FACESHEET:'face.php',
+  PAGE_MESSAGE:'message.php',
+  PAGE_MESSAGES:'messages.php',
+  PAGE_NEWCROP:'newcrop.php',
+  PAGE_PATIENTS:'patients.php',
+  PAGE_SCHEDULE:'schedule.php',
+  PAGE_TRACKING:'tracking.php',
+  PAGE_VCHART:'vchart.php',
+  PAGE_PRINT_POP:'print-pop.php',
+  //
+  HIDE_MENU:true,
+  //
+  sessid:null,  // PHP session ID for API navigation
+  //
+  _wc:null,     // active working cmd
+  _wfb:null,    // window focus/blur
+  _pops:{},   // pop window refs
+  /*
+   * Navigate to url
+   * - args: optional query strings {name:value,..} or single string value to supply to 'id'
+   */
+  go:function(page, args) {
+    setTimeout(function(){window.location.href = Page.url(page, args)},1);
+  },
+  goFace:function(cid) {
+    Page.go(Page.PAGE_FACESHEET, cid);
+  },
+  goSchedPop:function(skid) {
+    Page.go(Page.PAGE_SCHEDULE, {'pop':skid});
+  },
+  goSchedEdit:function(skid) {
+    Page.go(Page.PAGE_SCHEDULE, {'pe':1,'pop':skid});
+  },
+  goSchedNew:function(cid) {
+    Page.go(Page.PAGE_SCHEDULE, {'v':1,'sid':cid});
+  },
+  goMsgNew:function(cid) {
+    Page.go(Page.PAGE_MESSAGE, {'cid':cid});
+  },
+  /*
+   * Navigate to url as popup
+   * - args: optional query strings {name:value,..} or single string value to supply to 'id'
+   * - hideMenu: default false
+   * - name: optional window name
+   * - callback: optional, to call when parent window receives focus after pop closed
+   * - callbackStillOpen(p): optional, to call when parent window recieves focus but pop is still open
+   *                         can do a p.focus() in callback
+   */
+  pop:function(page, args, hideMenu, name, callback, callbackStillOpen) {
+    if (name == null) 
+      name = (Math.random() + '').substr(2);      
+    var height = (hideMenu) ? screen.availHeight - 100 : screen.availHeight - 150;
+    var menu = (hideMenu) ? 'toolbar=0,menubar=0' : 'toolbar=1,menubar=1';
+    Page._pops[name] = window.open(Page.url(page, args), name, 'height=' + height + ',width=' + (screen.availWidth - 100) + ',top=50,left=50,resizable=1,location=0,scrollbars=1,' + menu);
+    if (callback) {
+      Page.attachEvent('onfocus', function() {
+        var p = Page._pops[name];
+        if (p == null || p.closed) {
+          delete Page._pops[name];
+          callback();
+          Page.detachEvent('onfocus', arguments.callee);
+        } else {
+          if (callbackStillOpen) 
+            callbackStillOpen(p);
+        }
+      });
+    }
+  },
+  focus:function(e) {
+    setTimeout(
+      function() {
+        try {
+          e.focus();
+          e.select();
+        } catch(ex) {
+        }
+      }, 10);
+  },
+  /*
+   * - fn: If provided, start overlay working and make async call
+   *       If null, overlay working off
+   */
+  work:function(fn) {
+    if (fn) {
+      overlayWorking(true);
+      setTimeout(fn, 1);
+    } else {
+      overlayWorking(false);
+    }
+  },
+  /*
+   * Returns page?name=value&.. 
+   * - args: optional query strings {name:value,..} or single string value to supply to 'id'
+   */
+  url:function(page, args) {
+    var u = page;
+    if (page.indexOf('?') == -1) 
+      u += "?";
+    var a = [];
+    if (args)
+      if (isObjectOrArray(args)) 
+        for (var name in args) 
+          a.push(name + '=' + encodeURIComponent(args[name]));
+      else 
+        a.push('id=' + args);
+    if (Page.sessid)
+      a.push('sess=' + Page.sessid);
+    if (page != Page.PAGE_FACESHEET) 
+      a.push(Math.random());
+    return u + a.join('&');
+  },
+  /*
+   * Builds error with Clicktate number plus optional originating error (e)
+   */
+  error:function(number, description, e) {
+    var err = new Error(number, description);
+    err.e = e;
+    return err; 
+  },
+  show:function(e, on) {
+    e.style.display = (on) ? 'block' : 'none';
+  },
+  visible:function(e, on) {
+    e.style.visibility = (on) ? 'visible' : 'hidden';
+  },
+  showError:function(e) {
+    showErrorMsg(e.message, null, true);
+  },
+  showErrorDetails:function(text, errorMsg) {
+    showErrorMsg(text + '<br><br><b>Details</b><br>' + errorMsg, null, true);
+  },
+  showAjaxError:function(e) {
+    showErrorMsg(e.type + "<br>" + e.message, null, true);
+  },
+  workingCmd:function(on) {
+    var a;
+    if (on) {
+      if (Page._wc == null && event && event.srcElement) {
+        a = event.srcElement;
+        a.style.borderColor = '#c0c0c0';
+        a.style.color = '#f8f8f8';
+        a.style.backgroundColor = '#f8f8f8';
+        a.style.backgroundImage = 'url(img/icons/working6.gif)';
+        a.style.backgroundPositionX = 'center';
+        a.style.backgroundPositionY = 'center';
+        a.style.backgroundRepeat = 'no-repeat';
+        Page._wc = a;
+      }
+    } else {
+      if (Page._wc) {
+        a = Page._wc;
+        a.style.borderColor = '';
+        a.style.color = '';
+        a.style.backgroundColor = '';
+        a.style.backgroundImage = '';
+        a.style.backgroundPositionX = '';
+        a.style.backgroundPositionY = '';
+        a.style.backgroundRepeat = '';
+        Page._wc = null;
+      }
+    }
+  },
+  sessionTimeout:function() {
+    window.location.href = 'index.php?timeout=1';
+  },
+  /*
+   * Set page handlers to:
+   * Disallow select (except for input/textarea and those with 'selectable=1' prop)
+   * Close pops on ESC keypress
+   * Delegate window focus/blur to page.onFocus() and page.onBlur() if they exist 
+   */
+  setEvents:function() {
+    Page.setPageWidth();
+    Page.attachEvent('onresize', Page.setPageWidth);
+    document.onselectstart = function() {
+      var e = event.srcElement;
+      return (e && (e.tagName == "INPUT" || e.tagName == "TEXTAREA" || e.selectable == "1"));
+    };
+    if (window.Pop) {
+      document.onmousedown = Pop._closeByControlBox;
+      document.onkeyup = Pop._closeByEventKey;
+    } else {
+      document.onmousedown = closePopByControlBox;
+      document.onkeyup = function() {
+        if (event && event.keycode == 27) {
+          closeOverlayPop();
+        }
+      };
+    }
+    if (window.page && page.onFocus && page.onBlur) {
+      var active = document.activeElement;
+      var blurred = false;
+      document.onfocusin = function() {
+        if (blurred) {
+          blurred = false;
+          page.onFocus.call(page);
+        }
+      };
+      document.onfocusout = function() {
+        if (active != document.activeElement) {
+          active = document.activeElement;
+        } else {
+          blurred = true;
+          page.onBlur.call(page);
+        }
+      };
+    }
+  },
+  setPageWidth:function(toDefault) {
+    var bc = $('bodyContainer');
+    var c = $('bodyContent');
+    bc.style.width = '95%';
+    c.style.padding = '0 20px 30px 20px';
+    if (toDefault != 1) {
+      if (bc.clientWidth < 800) {
+        bc.style.width = '800px';
+        c.style.padding = '0 10px 30px 10px';
+      } else if (bc.clientWidth > 1100) {
+        bc.style.width = '1100px';
+      }
+    }
+  },
+  defaultPageWidth:function() {
+    Page.setPageWidth(1);
+  },
+  /*
+   * Flicker fixed header <tr> on window resize (IE render bug) 
+   * - id: of fixed header <tr>  
+   */
+  addFlickerEvent:function(id) {
+    var tr = $(id);
+    Page.attachEvent('onresize', function() {
+      tr.style.display = 'none';
+      tr.style.display = '';
+    });
+  },
+  /*
+   * Attach an event handler to window
+   */
+  attachEvent:function(event, fn) {
+    window.attachEvent(event, fn);
+  },
+  /*
+   * Detach an event handler from window
+   */
+  detachEvent:function(event, fn) {
+    window.detachEvent(event, fn);
+  },
+  /*
+   * Attach a run-once event handler to window
+   */
+  attachRunOnceEvent:function(event, fn) {
+    window.attachEvent(event, function() {
+      fn();
+      window.detachEvent(event, arguments.callee);
+    });    
+  }
+};
+/**
+ * Tile
+ */
+function Tile(id) {
+  if (id) {
+    this.div = $(id);
+  }
+}
+Tile.prototype = {
+  load:function(e) {
+    this.reset();
+    this.append(e);
+  },
+  reset:function() {
+    Tile.clear(this.div);
+  },
+  append:function(e) {
+    this.div.appendChild(e);
+  },
+  setText:function(text) {
+    this.div.innerText = text;
+  },
+  setHtml:function(html) {
+    this.div.innerHTML = html;
+  },
+  show:function(on) {
+    Page.show(this.div, on);
+  },
+  working:function(on) {
+    for (var i = 0; i < this.div.children.length; i++) {
+      Page.visible(this.div.children[i], ! on);
+    }
+    if (on) {
+      addClass(this.div, 'working-circle');
+    } else {
+      removeClass(this.div, 'working-circle');
+    }
+  }
+}
+Tile.clear = function(e) {
+  clearChildren(e);
+}
+/**
+ * Cookies  
+ */
+var Cookies = {
+  //
+  /*
+   * @arg string name 'cookieName'
+   * @arg mixed value 
+   * @arg int _expires minutes; omit to last for session  
+   */
+  set:function(name, value, _expires, _path, _domain, _secure) {
+    var args = [name + '=' + escape(Json.encode(value))];
+    if (_expires) {
+      if (_expires == -1) {
+        args.push('expires=Thu, 01-Jan-1970 00:00:01 GMT');
+      } else {
+        var d = new Date();
+        d.setTime(d.getTime() + _expires * 60000);
+        args.push('expires=' + d.toUTCString());
+      }
+    }
+    if (_path) 
+      args.push('path=' + _path);
+    if (_domain)
+      args.push('domain=' + _domain);
+    if (_secure) 
+      args.push('secure');
+    document.cookie = args.join(';');
+  },
+  /*
+   * @arg string name 'cookieName'
+   * @return mixed value
+   */
+  get:function(name) {
+    var nameValues = document.cookie.split(';');
+    for (i = 0, j = nameValues.length; i < j; i++) {
+      var nameValue = nameValues[i].split('=');
+      if (name == nameValue[0].replace(/^\s+|\s+$/g, ""))
+        return Json.decode(unescape(nameValue[1]));
+    }
+  },
+  /*
+   * @arg string name 'cookieName' 
+   */
+  expire:function(name, _path, _domain) {
+    if (Cookies.get(name)) 
+      Cookies.set(name, null, -1, _path, _domain);
+  }
+}

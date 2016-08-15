@@ -1,0 +1,264 @@
+BODY {
+	margin:0;
+	background:#FDFBF4;
+}
+DIV#doc {
+  width:100%;
+  background:#FDFBF4;
+  padding:20px;
+  font-family:Georgia;
+  font-size:10pt;
+  line-height:1.8em;
+}
+DIV#docx P {
+  padding:0 4px;
+  border:1px solid #CBDDDA;
+  border-left:10px solid #CBDDDA;
+}
+DIV#doc P#title {
+  font-weight:bold;
+  text-decoration:underline;
+  text-align:center;
+}
+DIV#doc P.pTitle {
+  font-weight:bold;
+  text-decoration:underline;
+}
+DIV.old {
+  margin-top:0;
+  margin-bottom:12px;
+  padding:0 4px;
+  border:1px solid white;
+  border-left:10px solid white;
+}
+DIV.new {
+  margin-top:0;
+  margin-bottom:12px;
+  padding:0 4px;
+  border:1px solid #CBDDDA;
+  border-left:10px solid #3B6085;
+}
+DIV#docx P {
+  margin-bottom:0;
+  margin-top:12px;
+}
+DIV#docx P.sel {
+  background:#F6FAF9;
+  border:1px solid #3B6085;
+  border-left:10px solid #3B6085;
+  padding-left:4px;
+}
+DIV#doc A {
+  color:purple;
+  text-decoration:none;
+  cursor:hand;
+}
+DIV#doc A:hover {
+  text-decoration:underline;
+}
+DIV#doc A.df {
+  color:blue;
+  background-color:#E8F2FE;
+  padding-left:2px;
+  padding-right:2px;
+}
+DIV#doc P.title {
+  text-align:center;
+}
+DIV.pop {
+  position:absolute;
+  top:0;
+  left:0;
+  width:0;
+  border:1px solid #c0c0c0;
+  border-right:3px solid #a0a0a0;
+  border-bottom:3px solid #a0a0a0;
+  background:#f8f8f8;
+  padding:5px;
+  color:black;
+  font-family:Tahoma;
+  font-size:9pt;
+  visibility:hidden;
+}
+DIV.pop A {
+  display:block;
+}
+DIV.pop IMG {
+  border:1px solid #c0c0c0;
+  margin-top:5px;
+  text-align:center;
+  display:block;
+}
+DIV.question {
+  font-family:Tahoma;
+  font-size:9pt;
+  color:black;
+  padding-left:5px;
+  padding-top:0px;
+  padding-right:0px;
+  padding-bottom:2px;
+  cursor:default;
+  border:1px solid #c0c0c0;
+  background-color:#e0e0e0;
+}
+DIV.question A {
+  background:url(../img/cbLite.bmp) no-repeat;
+  width:16px;
+  height:16px;
+  float:right;
+}
+DIV.question A:hover {
+  background:url(../img/cbDark.bmp) no-repeat;
+}
+DIV.optionsList {
+  height:200px;
+  overflow-y:scroll;
+  scrollbar-face-color:#e0e0e0;
+}
+DIV.optionsList UL {
+  list-style-type:none;
+  margin:3px 0 0 0;
+}
+DIV.optionsList A {
+  background-color:#264a6f;
+  height:12px;
+  color:white;
+  font-size:9pt;
+  margin-bottom:1px;
+  padding:3px;
+  border:1px solid #c0c0c0;
+  text-decoration:none;
+  text-align:left;
+}
+DIV.optionsList A:hover {
+  background-color:#9FBFDF;
+  border:1px outset;
+  color:black;
+}
+DIV.optionsList A.sel {
+  background-color:#9FBFDF;
+  border:1px solid #a0a0a0;
+  color:black;
+}
+DIV.options UL {
+  list-style-type:none;
+  margin:5px 0 0 0;
+}
+DIV.options LI {
+  float:left;
+}
+DIV.options A {
+  background-color:#264a6f;
+  width:73px;
+  height:32px;
+  color:white;
+  font-size:9pt;
+  margin:2px;
+  padding:3px;
+  border:1px solid #c0c0c0;
+  text-decoration:none;
+  text-align:center;
+}
+DIV.options A.sel {
+  background-color:#9FBFDF;
+  border:1px solid #a0a0a0;
+  color:black;
+}
+DIV.options A:hover {
+  background-color:#9FBFDF;
+  border:1px outset;
+  color:black;
+}
+DIV.options FIELDSET {
+  padding:5px;
+  padding-bottom:5px;
+  margin-right:0;
+  border:1px solid #696969;
+  clear:both;
+  color:gray;
+  display:inline;
+  vertical-align:top;
+}
+A#ckSel {
+  display:block;
+  width:130px;
+  height:15px;
+  white-space:nowrap;
+}
+DIV#apply A.disabled {
+  color:#d5d5d5;
+  background-color:gray;
+  border:1px solid #d5d5d5;
+}
+DIV#apply A.disabled:hover {
+  color:#d5d5d5;
+  background-color:gray;
+  border:1px solid #d5d5d5;
+}
+FIELDSET UL {
+  float:left;
+}
+FIELDSET LI {
+  float:none;
+  clear:both;
+  padding:0;
+  width:240px;
+  white-space:nowrap;
+  font-size:10pt;
+}
+DIV.options LEGEND {
+  font-size:7pt;
+  color:black;
+}
+FIELDSET INPUT {
+  cursor:hand;
+  margin-top:-5px;
+}
+SPAN.multi {
+  cursor:hand;
+  padding-right:10px;
+  white-space:nowrap;
+}
+DIV.entry {
+  width:100%;
+  background-color:#D6E1EA;
+  padding:10px;
+}
+SPAN.comment {
+  font-size:8pt;
+  font-family:Tahoma;
+  color:red;
+}
+DIV.h, SPAN.h, P.h {
+  display:none;
+}
+DIV.v, P.v {
+  display:block;
+}
+SPAN.v {
+  display:inline;
+}
+SPAN#ft {
+  display:none;
+}
+SPAN#ft A {
+  background-color:#FDFEA0;
+}
+DIV#doc A.ftd {
+  font-size:7pt;
+  font-family:Arial;
+  background-color:#FDFEA0;
+  color:blue;
+  border:1px solid #c0c0c0;
+  padding:2px;
+}
+DIV.other {
+  float:left;
+  width:100%;
+  padding-top:5px;
+  margin-top:5px;
+}
+INPUT#otb {
+  width:85%;
+  cursor:default;
+}

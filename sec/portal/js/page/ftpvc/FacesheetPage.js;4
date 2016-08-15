@@ -1,0 +1,235 @@
+/**
+ * PortalPage FacesheetPage
+ */
+FacesheetPage = PortalPage.extend(function(self) {
+  return {
+    onbodyload:function() {
+      self.facesheet = FacesheetTile.create(self.content).bubble('onselectmed', self.med_onselect).bubble('onselectproc', self.proc_onselect).bubble('onreturn', self.facesheet_onreturn);
+      self.detail = DetailTile.create(self.content).hide().bubble('onreturn', self.detail_onreturn);
+    },
+    med_onselect:function(rec) {
+      self.showDetail(rec, self.detail.loadMed);
+    },
+    proc_onselect:function(rec) {
+      self.showDetail(rec, self.detail.loadProc);
+    },
+    showDetail:function(rec, loadfn) {
+      self._scroll = self.getScrollTop();
+      self.facesheet.hide();
+      self.detail.show();
+      self.vscroll(0);
+      loadfn(rec);
+    },
+    detail_onreturn:function() {
+      self.detail.hide();
+      self.facesheet.show();
+      self.vscroll(self._scroll);
+    },
+    facesheet_onreturn:function() {
+      self.goHome(); 
+    }
+  }
+})
+DetailTile = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'DetailTile').extend(function(self) {
+      return {
+        onreturn:function() {},
+        //
+        init:function() {
+          self.type = Html.H2.create().into(self);
+          self.head = Html.H3.create().into(self);
+          self.detail = Html.Div.create('Detail').into(self).aug({
+            lbl:function(label, value) {
+              this.append(Html.Div.create().add(Html.Label.create(null, label)).add(Html.Span.create(null, value)));
+            }
+          })
+          ReturnAnchor.create(self, 'Back to Health Profile');
+        },
+        loadMed:function(rec) {
+          self.type.setText('Medication');
+          self.head.setText(rec.name);
+          self.detail.clean();
+          self.detail.lbl('Directions:', rec.text);
+          self.detail.add(Html.Div.create('mt10'));
+          self.detail.add(Html.AnchorAction.asNote('View information sheet'));
+          self.detail.add(Html.AnchorAction.asMsg('Request refill'));
+        },
+        loadProc:function(rec) {
+          self.type.setText('Procedure/Result');
+          self.head.setText(rec.Ipc.name);
+          self.detail.clean();
+          self.detail.lbl('Date Performed:', rec.date);
+          if (rec._results) 
+            self.detail.lbl('Results:', rec._results);
+          self.detail.add(Html.Div.create('mt10'));
+          self.detail.add(Html.AnchorAction.asMsg('Request a call back'));
+        }
+      }
+    })
+  }
+}
+FacesheetTile = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        onselectmed:function(rec) {},
+        onselectproc:function(rec) {},
+        onreturn:function() {},
+        //
+        init:function() {
+          Html.H1.create('Health Profile').into(self);
+          self.datatiles = Html.Tile.create(self);
+          self.load();
+        },
+        load:function() {
+          self.datatiles.setHeight(200);
+          self.working(true);
+          Ajax.Facesheet.get(function(fs) {
+            self.working(false);
+            self.fs = fs;
+            self.draw();
+            ReturnAnchor.create(self, 'Back to Home');
+          })
+        },
+        draw:function() {
+          var into = self.datatiles.setHeight();
+          My.DataTile.asAllergies(into).load(self.fs);
+          My.DataTile.asMeds(into).load(self.fs).bubble('onselect', self.med_onselect);
+          My.DataTile.asProcs(into).load(self.fs).bubble('onselect', self.proc_onselect);;
+          My.DataTile.asImmuns(into).load(self.fs);
+          My.DataTile.asVitals(into).load(self.fs);
+          My.DataTile.asDiagnoses(into).load(self.fs);
+        },
+        med_onselect:function(rec) {
+          self.onselectmed(rec);
+        },
+        proc_onselect:function(rec) {
+          self.onselectproc(rec);
+        }
+      }
+    })
+  },
+  DataTile:{
+    create:function(container) {
+      return Html.Tile.create(container).extend(function(self) {
+        return {
+          onselect:function(rec) {},
+          //
+          init:function() {
+            self.head = Html.H2.create().into(self);
+            self.list = Html.Ul.create().into(self);
+          },
+          load:function(fs) {
+            self.recs = self.getRecs(fs);
+            self.head.setText(self.getHead());
+            if (self.recs) 
+              self.recs.forEach(function(rec) {
+                self.loadItem(self.list.li(), rec);
+              })
+            return self;
+          },
+          getHead:function() {},
+          getRecs:function(fs) {},
+          loadItem:function(li, rec) {},
+          //
+          loadItemAsAnchor:function(li, rec, text) {
+            li.add(Html.Anchor.create('fs', text).bubble('onclick', self.rec_onselect.curry(rec)));
+          },
+          rec_onselect:function(rec) {
+            window.event.srcElement.style.color = 'purple';
+            self.onselect(rec);
+          }
+        }
+      })
+    },
+    asAllergies:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'My Allergies';
+        },
+        getRecs:function(fs) {
+          return fs.Allergies;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.agent));
+        }
+      })
+    },
+    asMeds:function(container) {
+      return this.create(container).extend(function(self) {
+        return {
+          onselect:function(rec) {},
+          //
+          getHead:function() {
+            return 'Current Medications';
+          },
+          getRecs:function(fs) {
+            return fs.Meds;
+          },
+          loadItem:function(li, rec) {
+            self.loadItemAsAnchor(li, rec, rec.name);
+          }
+        }
+      })
+    },
+    asProcs:function(container) {
+      return this.create(container).extend(function(self) {
+        return {
+          getHead:function() {
+            return 'Procedures/Results';
+          },
+          getRecs:function(fs) {
+            return fs.Procs;
+          },
+          loadItem:function(li, rec) {
+            self.loadItemAsAnchor(li, rec, rec.Ipc.name);
+            li.add(Html.Span.create('pad', rec.date));
+          }
+        }
+      })
+    },
+    asImmuns:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Immunization History';
+        },
+        getRecs:function(fs) {
+          return fs.Immuns;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.name));
+          li.add(Html.Span.create('pad', rec.dateGiven));
+        }
+      })
+    },
+    asVitals:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Vital Signs';
+        },
+        getRecs:function(fs) {
+          return fs.Vitals;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.date)).add(Html.Span.create('pad').html(rec.all.join(' &bull; ')));
+        }
+      })
+    },
+    asDiagnoses:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Diagnoses';
+        },
+        getRecs:function(fs) {
+          return fs.Diagnoses;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.text)).add(Html.Span.create('pad', rec._status));
+        }
+      })
+    }
+  }
+}

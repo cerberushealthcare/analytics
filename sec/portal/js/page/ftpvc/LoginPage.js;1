@@ -1,0 +1,20 @@
+/**
+ * LoginPage
+ */
+LoginPage = page = {
+  //
+  load:function() {
+    page.id = _$('id').setFocus();
+    page.pw = _$('pw');
+  },
+  login:function() {
+    var id = String.nullify(page.id.value);
+    var pw = String.nullify(page.pw.value);
+    if (id && pw)
+      Ajax.Login.login(id, pw, function(sess) {
+        if (sess.needsChallenge()) {
+          alert(sess.cqs[0]);
+        }
+      })
+  }
+}

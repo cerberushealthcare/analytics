@@ -1,0 +1,40 @@
+<?php
+/**
+ * Version
+ */
+class Version {
+  //
+  const MAJOR = "4.0";
+  const PROD_DEPLOY = "0";
+  const TEST_DEPLOY = "t30";
+  //
+  public static function getLabel() {
+    return Version::MAJOR . "." . Version::PROD_DEPLOY;
+  }
+  public static function getUrlSuffix() {
+    return Version::MAJOR . "p" . Version::PROD_DEPLOY . "t" . Version::TEST_DEPLOY;
+  }
+}
+/**
+ * 4.0.05u - new template commands for mik + hidden question type
+ * 4.0.05t - using u1 version of med/allergy
+ * 4.0.05s - d/c+add for med sig changes
+ * 4.0.05r - schedule.js fix for editing addresses
+ * 4.0.05q - erxpharm gray link rather than refresh
+ * 4.0.05p - facesheet gender/phone numbers/popup on erx and message
+ * 4.0.05o - facesheet gender color
+ * 4.0.05n - erxstatus status change
+ * 4.0.05m - added DISP to note
+ * 4.0.05l - erxstatus doc filter and staff name
+ * 4.0.05k - added P to section.pars key to accommodate IE9 numeric string key reordering
+ * 4.0.05j - add'l sig fixes
+ * 4.0.05i - doctor combo on pharm requests
+ * 4.0.05h - sig fixes for pharm requests
+ * 4.0.05g - removed 'today' when printing vitals
+ * 4.0.05f - restored doc chooser on med print dialog for erx
+ * 4.0.05e - expired user login req fix
+ * 4.0.05d - facesheet pagebreak fix
+ * 4.0.05c - messaging quick complete
+ * 4.0.05b - print med list for erx
+ */
+?>

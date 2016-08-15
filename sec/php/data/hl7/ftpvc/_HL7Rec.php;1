@@ -1,0 +1,49 @@
+<?php
+/**
+ * HL7Rec
+ * @author Warren Hornsby
+ */
+class HL7Rec {
+  /*
+  public $field = 'ClassName'
+   */
+  //
+  protected function setValues($values) {
+    $fids = $this->getFids();
+    foreach ($fids as $fid => $class) {
+      $value = current($values);
+      if ($class)
+        $this->set($fid, $class, $value);
+      else
+        $this->$fid = $value;
+      next($values);
+    } 
+  }
+  protected function set($fid, $class, $value) {
+    $this->$fid = new $class($value, $this);
+  }
+  protected function getFids() {  // ['fid1'=>'Class',..]
+    static $fids;
+    if ($fids == null) {
+      $vars = get_object_vars($this);
+      $fids = array();
+      foreach ($vars as $var => $class) {
+        if (self::isFid($var, substr($var, 0, 1))) 
+          $fids[$var] = $class;
+      }
+    }
+    return $fids;
+  }
+  protected static function getFidClasses() {  // ['Class'=>'fid1',..]
+    static $classes;
+    if ($classes = null) 
+      $classes = array_flip($this->getFids());
+    return $classes;
+  }
+  protected static function isFid($var, $c1) {
+    return $c1 != '_';
+  }
+  protected static function isUpper($c) {
+    return ($c == strtoupper($c)); 
+  }
+}

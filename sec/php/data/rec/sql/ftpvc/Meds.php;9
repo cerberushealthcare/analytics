@@ -1,0 +1,231 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once 'php/data/rec/sql/MedsLegacy.php';
+require_once 'php/data/rec/sql/MedsNewCrop.php';
+//
+/**
+ * Medication DAO (wrapper for MedsLegacy and MedsNewCrop) 
+ * @author Warren Hornsby
+ */
+class Meds {
+  /**
+   * Build face recs from unprocessed session history
+   * @param int $cid
+   */
+  static function rebuildFromSessions($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Build face recs from NewCrop status (ERX ONLY)
+   * @param int $cid
+   * @param object $current @see NewCrop::pullCurrentMedAllergy()
+   */
+  static function rebuildFromNewCrop($cid, $current) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Save "reviewed" record
+   * @param int $cid
+   * @param string[] $names ['Med Name',..]
+   * @return SessionMedNc
+   */
+  static function saveAsReviewed($cid, $names) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceMed,..)
+   */
+  static function getActive($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get facesheet records by name
+   * @param int $cid
+   * @return array(name=>FaceMed,..)
+   */
+  static function getByName($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  static function getHistoryByDate($cid, $actives = null) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get review/recon history (ERX ONLY)
+   * @param int $cid
+   * @return array(SessionMedNc_Review,..)
+   */
+  static function getReviewHistory($cid) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Get history by name
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  static function getHistoryByName($cid, $actives = null) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Summarize updates from NewCrop since supplied time
+   * @param int $clientId
+   * @param string $since 'yyyy-mm-dd hh:mm:ss'
+   * @return array(
+   *   'nc.add'=>array(JDataMed,..), 
+   *   'nc.dc'=>array(JDataMed,..), 
+   *   'nc.rx'=>array(JDataMed,..)) 
+   */
+  static function getNewCropAudits($cid, $since) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Med
+   */
+  static function save($o) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Med
+   */
+  static function deactivate($id) { 
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * Deactivate records from UI
+   * @param [int,..] $id
+   * @return Med last one deactivated
+   */
+  static function deactivateMultiple($ids) {
+    $med = null;
+    foreach ($ids as $id) 
+      $med = self::deactivate($id);
+    return $med;
+  }
+  /**
+   * Deactivate all legacy-sourced meds
+   * @param int $cid
+   */
+  static function deactivateLegacy($cid) {
+    $meds = FaceMedNc::fetchAllActive($cid);
+    foreach ($meds as $med) 
+      if ($med->isSourceLegacy()) 
+        $med->deactivate();
+  }
+  /**
+   * Deactivate all and Assign 'none active' record 
+   * @param int $cid
+   */
+  static function setNoneActive($cid) {
+    global $myLogin;
+    self::deactivateLegacy($cid);
+    NoneActiveMed::add($myLogin->userGroupId, $cid);
+  }
+  /**
+   * Save audit records for printing RX
+   * @param [Med,..] $meds
+   * @return Med last one updated
+   */
+  static function auditRxPrint($meds) {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  /**
+   * @return string static JSON of Med data object 
+   */
+  static function getStaticJson() {
+    $args = func_get_args();
+    return call_user_func_array(self::getDao(__FUNCTION__), $args);
+  }
+  //
+  static function getDaoClass($isErx) {
+    return ($isErx) ? 'MedsNewCrop' : 'MedsLegacy';
+  }
+  //
+  private static function getDao($method) {
+    global $myLogin;
+    return array(self::getDaoClass($myLogin->isErx()), $method);
+  }
+}
+class NoneActiveMed extends FaceMed {
+  //
+  const NONE_ACTIVE = 'None Active';
+  //
+  public function save() {
+    $this->active = true;
+    SqlRec::save();  
+  }
+  public function toJsonObject(&$o) {
+    $o->_name = $this->text;
+    $o->_none = true;
+  }
+  /**
+   * @param int $cid
+   * @return NoneActiveDiagnosis
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $ugid
+   * @param int $cid
+   */
+  static function add($ugid, $cid) {
+    self::remove($cid);
+    $c = self::from($ugid, $cid);
+    $c->save();
+  }
+  /*
+   * @param int cid
+   */
+  static function remove($cid) {
+    if ($cid) { 
+      $recs = self::fetchAll($cid);
+      foreach ($recs as $rec)
+        self::delete($rec);
+    }
+  }
+  //
+  /**
+   * @param int $ugid
+   * @param int $cid
+   * @return NoneActiveDiagnosis
+   */
+  static function from($ugid, $cid) {
+    $rec = self::asCriteria($cid);
+    $rec->userGroupId = $ugid;
+    $rec->active = true;
+    return $rec;
+  }
+  //
+  static function asCriteria($cid) {
+    $rec = new self();
+    $rec->clientId = $cid;
+    $rec->text = self::NONE_ACTIVE;
+    return $rec;
+  }
+}
+?>

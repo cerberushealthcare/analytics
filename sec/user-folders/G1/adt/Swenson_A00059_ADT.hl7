@@ -1,0 +1,7 @@
+MSH|^~\&|Clicktate|1|||20141104181904||ADT^A01|1-3747-20141104181904|P|2.3.1
+PID|||3747^^^1^MR||Swenson^Brittani^LeAnn||20121204|F||U^Unknown^HL70005|2020 VanBuren Drive^^Lexington^KY^40515^^H||^^^^^888^8254258|||||||||U^Unknown^HL70189
+PV1|1|O|||||1^Papyrus Admin|||||||||||||||||||||||||||||||||||||20140618
+OBX|1|NM|21612-7^REPORTED PATIENT AGE^LN||1|a^year^UCUM|||||F
+DG1|0|I9|530.11^Gastroesophageal Reflux Disease^ICD-9-CM|Gastroesophageal Reflux Disease|20140520|F
+DG1|1||1655^Upper Respiratory Infection^LOCAL CODE SET|Upper Respiratory Infection|20140225|F
+DG1|2||1601^Systolic Heart Murmur^LOCAL CODE SET|Systolic Heart Murmur|20130920|F

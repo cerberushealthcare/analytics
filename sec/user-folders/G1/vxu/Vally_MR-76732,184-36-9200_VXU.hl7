@@ -1,0 +1,7 @@
+MSH|^~\&|Clicktate|X68||LCD|20141206154156||VXU^V04^VXU_V04|1-3818-20141206154156|P|2.5.1|||NE|NE
+PID|1||3818^^^1^MR||Vally^Nitika^^^^^L||19410813|F|||^^^^^^L||^NET^^nvally@fastmail.com
+PD1|||||||||||02^Reminder/recall - any method^HL70215|||||A|20141206|20141206
+ORC|RE||257^LCD|||||||||257-O^Radon^Nicholas^^^^^^Clicktate^L
+RXA|0|1|20120814233801||52^Vaqta (Adult)^CVX|1|mL^milliliter^UCUM||00^New immunization record^NIP001|257-P^^(select)^^^^^^Clicktate^L|^^^G1||||I90FV|19691231190000|MSD^Merck and Co., Inc^MVX|||CP|A
+RXR|IM^IM^HL70162|RA^Right Arm^HL70163
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V01^Not VFC Eligible^HL70064||||||F|||20120814233801|||VXC40^Eligibility captured at the immunization level^CDCPHINVS

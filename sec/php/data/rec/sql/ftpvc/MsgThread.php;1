@@ -1,0 +1,121 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/MsgPost.php';
+require_once 'php/data/rec/sql/Client.php';
+/**
+ * Message Thread 
+ */
+class MsgThread extends SqlRec {
+  //
+  public $threadId;
+  public $userGroupId;
+  public $clientId;
+  public $creatorId;
+  public $creator;
+  public $dateCreated;
+  public $dateToSend;
+  public $type;
+  public $status;
+  public $priority;
+  public $subject;
+  public /*Client*/ $Client;
+  public /*MsgInbox*/ $MsgInbox;
+  public /*[MsgPost]*/ $MsgPosts;
+  public $_closed;
+  public $_unreadCt;
+  //
+  const TYPE_GENERAL = 0;
+  //
+  const STATUS_OPEN = 1;
+  const STATUS_CLOSED = 2;
+  //
+  const PRIORITY_NORMAL = 0;
+  const PRIORITY_STAT = 9;
+  public static $PRIORITIES = array(
+    MsgThread::PRIORITY_NORMAL => 'Normal',
+    MsgThread::PRIORITY_STAT => 'STAT');
+  //
+  public function getSqlTable() {
+    return 'msg_threads';
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    Rec::addDateTimeProps($o, array('dateCreated'));
+    $o->_closed = ($this->isClosed());
+    return $o;
+  }
+  public function isClosed() {
+    return $this->status = MsgThread::STATUS_CLOSED;
+  }
+  public function getLastPost() {
+    $post = null;
+    if ($this->MsgPosts) 
+      $post = end($this->MsgPosts); 
+    return $post;
+  }
+  //
+  /**
+   * @param int $mtid
+   * @return MsgThread // +Client
+   */
+  public static function fetch($mtid) {
+    $rec = new MsgThread($mtid);
+    $rec->Client = new Client();
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * Fetch thread for reading and update MsgInbox
+   * @param int $mtid
+   * @return MsgThread  // +Client,MsgPosts,MsgInbox
+   * @throws SecurityException
+   */
+  public static function fetchForReading($mtid) {
+    $rec = MsgThread::fetch($mtid);
+    if ($rec) {
+      $rec->MsgInbox = MsgInbox::fetchMineForReading($rec);
+      if ($rec->MsgInbox == null && $rec->Client == null) 
+        LoginDao::throwSecurityError('mtid', $mtid);
+      $rec->MsgPosts = MsgPost::fetchByThread($mtid);
+      $rec->_unreadCt = MsgInbox::fetchMyInboxCt();
+    }
+    return $rec;
+  }
+  /**
+   * @param int $cid
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllByClient($cid) {
+    $rec = new MsgThread();
+    $rec->clientId = $cid;
+    return SqlRec::fetchAllBy($rec, new RecSort(array('dateCreated' => RecSort::DESC)));
+  }
+  /**
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllFromInbox() {
+    return MsgThread::_fetchAllFromInbox(CriteriaValue::lessThan(MsgInbox::IS_SENT));
+  }
+  /**
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllFromSent() {
+    return MsgThread::_fetchAllFromInbox(MsgInbox::IS_SENT);
+  }
+  //
+  private static function _fetchAllFromInbox($isRead) {
+    global $myLogin;
+    $inboxes = MsgInbox::fetchMineByIsRead($isRead);
+    $threads = array();
+    foreach ($inboxes as &$inbox) {
+      $thread = MsgThread::fetch($inbox->threadId);
+      $thread->MsgInbox = $inbox;
+      $threads[] = $thread;
+    }
+    Rec::sort($threads, new RecSort(array(
+      'MsgInbox->isRead' => RecSort::ASC,
+      'priority' => RecSort::DESC,
+      'MsgInbox->postId' => RecSort::DESC)));
+    return $threads;
+  }
+}
+?>

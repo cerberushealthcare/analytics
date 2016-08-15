@@ -1,0 +1,150 @@
+<?php
+/**
+ * Auditing
+ * DAO for AuditRecs
+ * @author Warren Hornsby
+ */
+class Auditing {
+  /*
+   * Composite records
+   */
+  const REC_FACESHEET = '(Facesheet)';
+  const REC_POP = '(FacesheetTable)';
+  const REC_VITALS_CHART = '(VitalsChart)';
+  //
+  /**
+   * @param string $action AuditRec::ACTION_
+   * @param int $clientId
+   * @param string $recName
+   * @param string @recId (optional)
+   * @param string $label (optional)
+   * @param string $data (optional)
+   */
+  public static function log($action, $clientId, $recName, $recId = AuditRec::NO_CLIENT, $label = null, $data = null) {
+    global $myLogin;
+    $audit = new AuditRec();
+    $audit->userGroupId = $myLogin->userGroupId;
+    $audit->userId = $myLogin->userId;
+    $audit->clientId = $clientId;
+    $audit->date = nowNoQuotes();
+    $audit->action = $action;
+    $audit->recName = $recName;
+    $audit->recId = $recId;
+    $audit->source = currentUrl();
+    $audit->sessId = session_id();
+    $audit->label = $label;
+    $audit->data = $data;
+    $audit->save();
+    AuditMru::saveAudit($audit);
+  }
+  public static function logCreateRec($rec) {
+    Auditing::logForRec(AuditRec::ACTION_CREATE, $rec);
+  }
+  public static function logUpdateRec($rec) {
+    Auditing::logForRec(AuditRec::ACTION_UPDATE, $rec);
+  }
+  public static function logDeleteRec($rec) {
+    Auditing::logForRec(AuditRec::ACTION_DELETE, $rec);
+  }
+  public static function logPrintRec($rec) {
+    Auditing::logForRec(AuditRec::ACTION_PRINT, $rec);
+  }
+  public static function logReviewRec($rec) {
+    Auditing::logForRec(AuditRec::ACTION_REVIEW, $rec);
+  }
+  public static function logReviewFacesheet($cid) {
+    Auditing::log(AuditRec::ACTION_REVIEW, $cid, Auditing::REC_FACESHEET);
+  }
+  public static function logPrintFacesheet($cid) {
+    Auditing::log(AuditRec::ACTION_PRINT, $cid, Auditing::REC_FACESHEET);
+  }
+  public static function logPrintPop($cid, $tableId) {
+    Auditing::log(AuditRec::ACTION_PRINT, $cid, Auditing::REC_POP, $tableId);
+  }
+  public static function logPrintVitalsChart($cid, $chartId) {
+    Auditing::log(AuditRec::ACTION_PRINT, $cid, Auditing::REC_VITALS_CHART, $chartId);
+  }
+  //
+  private static function logForRec($action, $rec) {
+    Auditing::log($action, $rec->getAuditClientId(), $rec->getMyName(), $rec->getAuditRecId(), $rec->getAuditLabel());
+  }
+}
+//
+/**
+ * Audit Record
+ */
+class AuditRec extends SqlRec implements NoAudit {
+  //
+  public $auditRecId;
+  public $userGroupId;
+  public $clientId;
+  public $userId;
+  public $date;
+  public $action;
+  public $recName;
+  public $recId;
+  public $txId;
+  public $source;
+  public $sessId;
+  public $label;
+  public $data;
+  //
+  const ACTION_CREATE = 'C';
+  const ACTION_REVIEW = 'R';
+  const ACTION_UPDATE = 'U';
+  const ACTION_DELETE = 'D';
+  const ACTION_PRINT  = "P";
+  //
+  const NO_CLIENT = 0;
+  //
+  public function getSqlTable() {
+    return 'audit_recs';
+  }
+}
+/**
+ * Audit Most Recent Update
+ */
+class AuditMru extends SqlRec implements CompositePk, NoAudit {
+  //
+  public $clientId;
+  public $userId;
+  public $date;
+  public $action;
+  public $recName;
+  public $recId;
+  public $label;
+  //
+  public function getSqlTable() {
+    return 'audit_mrus';
+  }
+  //
+  /**
+   * @param int $cid
+   * @return AuditMru 
+   */
+  public static function fetch($cid) {
+    parent::fetch($cid, __CLASS__);
+  }
+  /**
+   * @param AuditRec $audit
+   */
+  public static function saveAudit($audit) {
+    $mru = AuditMru::fromAudit($audit);
+    if ($mru) 
+      $mru->save();
+  }
+  //
+  private static function fromAudit($audit) {
+    if ($audit->clientId != AuditRec::NO_CLIENT) 
+      if ($audit->action != AuditRec::ACTION_REVIEW)
+        return new AuditMru(
+          $audit->clientId,
+          $audit->userId,
+          $audit->date,
+          $audit->action,
+          $audit->recName,
+          $audit->recId,
+          $audit->label);
+  } 
+}
+?>

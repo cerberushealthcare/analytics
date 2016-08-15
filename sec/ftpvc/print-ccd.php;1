@@ -1,0 +1,32 @@
+<?php
+require_once "inc/requireLogin.php";
+require_once 'php/data/rec/GroupFolder_Ccd.php';
+require_once 'php/data/xml/ClinicalXmls.php';
+require_once 'inc/uiFunctions.php';
+//
+$id = $_GET['id'];
+$file = GroupFile_Ccd::from($id);
+$xml = ClinicalXmls::parse($file->readContents());
+?>
+<html>
+<head>
+<title>Clinical Record</title>
+<link rel='stylesheet' type='text/css' href='js/_ui/DocPreview.css' />
+<style>
+BODY {
+font-family:Arial;
+}
+TABLE {
+  border-collapse:collapse;
+}
+</style>
+</head>
+<body>
+<div class='ViewXml'>
+<? echo $xml->asHtml() ?>
+</div>
+</body>
+</html>
+<script>
+//window.print();
+</script>

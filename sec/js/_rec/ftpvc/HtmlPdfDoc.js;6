@@ -1,0 +1,62 @@
+HtmlPdfDoc = Object.Rec.extend({
+  //
+  body:null,
+  head:null,
+  filename:null,
+  author:null,
+  title:null,
+  //
+  download:function() {
+    Html.RecForm.create('serverPdf.php', this).submit();
+  }
+})
+Pdf_Session = HtmlPdfDoc.extend({
+  //
+  fromClosed:function(session) {
+    var body, head, h = session.html.split('<HR/>');
+    if (h.length > 1) {
+      head = h.shift(); 
+      body = h.join('');
+    } else {
+      head = '';
+      body = session.html;
+    }
+    return this.from(session, body, head);
+  },
+  from:function(session, body, head) {
+    var rec = {
+      body:body,
+      head:head,
+      filename:session.cname + "_S" + session.id + '.pdf',
+      author:session.assignedTo || session.createdBy,
+      title:session.title};
+    if (session.cname == null)
+      rec.filename = 'Note_' + session.sessionId + '.pdf';
+    return this.revive(rec);
+  }
+})
+Pdf_Scan = HtmlPdfDoc.extend({
+  //
+  from:function(scanIndex) {
+    var rec = {
+      body:this.getBody(scanIndex.ScanFiles),
+      head:'',
+      filename:scanIndex.Client.name + '_I' + scanIndex.scanIndexId + '.pdf',
+      author:'',
+      title:''}
+    return this.revive(rec);
+  },
+  //
+  getBody:function(files) {
+    var h = [];
+    h.push('<body>');
+    for (var i = 0; i < files.length; i++) 
+      h.push(this.getImg(files[i]));
+    h.push('</body>');
+    return h.join('');
+  },
+  getImg:function(file) {
+    return '<img src="http://test.clicktate.com/sec/user-folders/G1/scan/G1S0000047.gif" />';
+    return '<img src="http://test.clicktate.com/sec/' + file.src + '" />';
+  }
+})

@@ -1,0 +1,32 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/xml/ccd/ClinicalDocuments.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  $id = geta($_GET, 'id');
+  Logger::debug(currentUrl());
+}
+try { 
+  switch ($action) {
+    //
+    case 'get':
+      $ccd = ClinicalDocuments::get($id);
+      $filename = $_GET['name'] . 'xml';
+      header("Content-Type: text/xml"); 
+      header("Content-Disposition: attachment; filename=$filename");
+      echo $ccd->toXml();
+      break;
+  }
+} catch (DisplayableException $e) {
+  echo $e->getMessage();
+} catch (Exception $e) {
+  //$e = Logger::logException($e);
+  echo $e->getMessage();
+} 
+?>

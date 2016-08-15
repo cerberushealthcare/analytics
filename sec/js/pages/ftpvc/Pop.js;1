@@ -1,0 +1,191 @@
+/**
+ * Pop
+ */
+var Pop = {
+  POS_CENTER:1,
+  POS_LAST:2,
+  POS_MOUSE:3,
+  POS_ZOOM:4,
+  _POS_RESTORE:9,
+  //
+  _pop:null,
+  _unders:[],
+  _lastPos:null,
+  _curtain:null,
+  /*
+   * 
+   */
+  show:function(id, pos, focusId) {
+    if (pos != Pop._POS_RESTORE && Pop._pop) 
+      Pop._unders.push(Pop._pop);
+    Pop._pop = $(id);
+    if (Pop._pop.pp == null) 
+      Pop._setProps(Pop._pop);
+    Pop._showCurtainAndPop(Pop._pop);
+    Pop._setPos(Pop._pop, pos);
+    if (focusId)
+      focus(focusId);
+    hidePageScroll();
+  },
+  /*
+   * 
+   */
+  close:function() {
+    var p = Pop._pop;
+    if (p) {
+      p.style.display = 'none';
+      Pop._pop = null;
+      if (Pop._unders.length) {
+        var p = Pop._unders.pop();
+        Pop.show(p.id, Pop._POS_RESTORE);
+      } else {
+        Pop._hideCurtain();
+      }
+    }
+  },
+  //
+  _closeByControlBox:function() {
+    var p = Pop._pop;
+    if (p) {
+      if (p.cap && p.cap.box) {
+        p.cap.box.click();
+      } else {
+        Pop.close();
+      }
+    }
+  },
+  _closeByEventKey:function() {
+    if (event && event.keyCode == 27) {
+      Pop._closeByControlBox();
+    }
+  },
+  _setProps:function(p) {
+    p.pp = 1;
+    p.onmousedown = Pop._cancelBubble;
+    var tags = $$$$('pop-cap', p, 'DIV');
+    if (tags.length == 1) {
+      p.cap = tags[0];
+      p.cap.onmousedown = Pop._startDrag;
+      tags = $$$$('pop-close', Pop._pop.cap, 'A');
+      if (tags.length == 1) 
+        p.cap.box = tags[0];
+    }
+  },
+  _showCurtainAndPop:function(p) {
+    if (Pop._curtain == null) 
+      Pop._curtain = $('curtain');
+    var c = Pop._curtain;
+    if (c.style.display != 'block') {
+      var h = document.body.offsetHeight;
+      var w = document.body.offsetWidth;
+      if (document.documentElement.clientHeight > h) 
+        h = document.documentElement.clientHeight;
+      if (document.documentElement.clientWidth > w) 
+        w = document.documentElement.clientWidth;
+      c.style.height = h;
+      c.style.width = w;
+      c.style.display = 'block';
+    }
+    p.style.display = 'block';
+    Pop._setZIndex();
+    hideCombos();
+    restoreCombos(p);
+  },
+  _hideCurtain:function() {
+    if (Pop._curtain) {
+      Pop._curtain.style.display = 'none';
+      showPageScroll();
+    }
+  },
+  _setPos:function(p, pos) {
+    if (pos != Pop._POS_RESTORE) {
+      if (pos == Pop.POS_LAST && Pop._lastPos) 
+        Pop._setPosLast(p);
+      else if (pos == Pop.POS_MOUSE) 
+        Pop._setPosMouse(p);
+      else
+        Pop._setPosCenter(p);
+    } 
+    Pop._lastPos = Pop._getPos(p);
+  },
+  _setPosCenter:function(p) {
+    var top = document.documentElement.clientHeight / 2 - p.clientHeight / 2;
+    var left = document.documentElement.clientWidth / 2 - p.clientWidth / 2;
+    var width = p.style.width;
+    if (top < 0) 
+      top = 0;
+    if (left < 0) 
+      left = 0;
+    p.style.width = p.clientWidth;
+    p.style.top = top + document.documentElement.scrollTop;
+    p.style.left = left + document.documentElement.scrollLeft;
+    if (width == "") 
+      p.style.width = "";
+  },
+  _setPosLast:function(p) {
+    if (Pop._lastPos == null) 
+      Pop._setPosCenter(p);
+    else {
+      p.style.left = Pop._lastPos.left;
+      p.style.top = Pop._lastPos.top;
+    }
+  },
+  _setPosMouse:function(p) {
+    if (event == null) 
+      Pop._setPosCenter(p);
+    else {
+      var ac = {x:event.clientX - 50, y:event.clientY - 30}; 
+      var cw = document.body.offsetWidth;
+      var ch = document.documentElement.clientHeight;
+      if ((ac.x + p.clientWidth) > cw) 
+        ac.x = cw - p.clientWidth - 30;
+      if ((ac.y + p.clientHeight) > ch) 
+        ac.y = ch - p.clientHeight - 5;
+      if (ac.x < 0) 
+        ac.x = 0;
+      if (ac.y < 0) 
+        ac.y = 0;
+      p.style.top = ac.y + document.documentElement.scrollTop;
+      p.style.left = ac.x;
+    }
+  },
+  _getPos:function(p) {
+    return {
+      'left':p.style.left,
+      'top':p.style.top
+      };
+  },
+  _setZIndex:function() {
+    var z = 255 + Pop._unders.length * 2;
+    if (Pop._curtain)
+      Pop._curtain.style.zIndex = z;
+    Pop._pop.style.zIndex = z + 1;
+  },
+  _cancelBubble:function() {
+    event.cancelBubble = true;
+  },
+  _startDrag:function() {
+    var p = Pop._pop;
+    if (p && event.srcElement.className != 'pop-close') { 
+      document.isdrag = true;
+      document.mx = event.clientX;
+      document.my = event.clientY;
+      document.px = p.offsetLeft;
+      document.py = p.offsetTop;
+      document.onmousemove = Pop._drag;
+      document.onmouseup = Pop._endDrag;
+    }
+  },
+  _drag:function() {
+    var p = Pop._pop;
+    if (p && document.isdrag) {
+      p.style.left = document.px + event.clientX - document.mx;
+      p.style.top = document.py + event.clientY - document.my;
+    }
+  },
+  _endDrag:function() {
+    document.isdrag = false;
+    document.onmousemove = null;
+    document.onmouseup = null;
+  }
+};

@@ -1,0 +1,127 @@
+<?php 
+require_once "inc/requireLogin.php";
+require_once "php/delegates/JsonDelegate.php";
+require_once "php/data/Version.php";
+require_once 'php/data/rec/sql/OrderEntry.php';
+//
+$startNewTemplate = false;
+try {
+  if (isset($_GET['create'])) {
+    $sid = SessionDao::addSession(null, $_GET['tid'], $_GET['cid'], $_GET['kid'], $_GET['dos'], $_GET['tpid'], $_GET['st'], $_GET['sid'], $_GET['ovfs']);
+    header("Location: new-console.php?sid=$sid");
+    exit;
+  }
+  if (isset($_GET["sid"])) {
+    $session = JsonDao::buildJSession($_GET["sid"], true)->out();
+    $tpid = "null";
+    $tid = "null";
+    $tname = "null";
+  } else if (isset($_GET["tpid"])) {
+    $session = "null";
+    $tpid = $_GET["tpid"];
+    $tid = "null";
+    $tname = "null";
+  } else {
+    $session = "null";
+    $tpid = "null";
+    $tid = $_GET["tid"];
+    $tname = "'" . $_GET["tname"] . "'";
+  }
+} catch (SecurityException $e) {
+  echo $e->getMessage();
+  die;
+}
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html>
+  <head>
+    <title>Clicktate</title>
+    <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/xb/console.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/xb/pop.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/xb/EntryForm.css?<?=Version::getUrlSuffix() ?>" />
+    <link rel="stylesheet" type="text/css" href="css/xb/template-pops.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/consolePopIcd.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="js/_ui/ParPreview.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <? if (! $myLogin->isTablet()) { ?>
+      <link rel="stylesheet" type="text/css" href="css/xb/_hover.css?<?=Version::getUrlSuffix() ?>" />
+      <link rel="stylesheet" type="text/css" href="css/xb/console_hover.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <? } ?>    
+    <script language='JavaScript1.2' src='js/_lcd_core.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/_lcd_html.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/_ui/ParPreview.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/_rec/TemplateMap.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/components/CmdBar.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/menu.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/new-open.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/template-pops.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/icd-pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/new-console.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/engine.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/engine-download.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopMed.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopFree.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopAllergy.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopIcd.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopCombo.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/custom-console.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pops/OrderSheet.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/event-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/classes/DocFormatter.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/_rec/HtmlPdfDoc.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>"></script>
+    <? if ($myLogin->isAdmin()) { ?>
+    <style>
+DIV.h2 {
+  display:block;
+  background-color:#c0c0c0;
+}
+    </style>
+    <? } ?>
+  </head>
+  <body id="console-body" onscroll="bodyScroll()" onmousedown="bodyMouseDown()" ontouchend="bodyMouseDown()" onorientationchange="resize()" onresize="resize()">
+    <div id="curtain"></div>
+    <div id="working"></div>
+    <div id="menutool">
+      <div id="menubar" onmousedown="menuMouseDown()" onmouseover="menuMouseOver()" onmouseout="menuMouseOut()" onclick="menuClick()">
+        <div id="dropmenu-file" class="dropmenu" style="width:180px">
+          <ul>
+            <li><a href="javascript:" id="actionNew" hidefocus="hidefocus">New Note...</a></li>
+            <li><a href="javascript:" id="actionNewCopy" hidefocus="hidefocus">New Replicate</a></li>
+            <li><a href="javascript:" id="actionOpen" hidefocus="hidefocus">Open Note...</a></li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionSave" hidefocus="hidefocus">Save</a></li>
+            <li><a href="javascript:" id="actionSign" hidefocus="hidefocus" >Sign and Lock</a></li>
+            <li><a href="javascript:" id="actionAdd" hidefocus="hidefocus" >New Addendum...</a></li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionOrder" hidefocus="hidefocus" >Generate Orders...</a></li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionDownloadPdf" hidefocus="hidefocus">Download as PDF</a></li>
+            <li><a href="javascript:" id="actionDownload" hidefocus="hidefocus">Download as Word</a></li>
+            <li><a href="javascript:" id="actionCopy" hidefocus="hidefocus">Copy to Clipboard</a></li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionDelete" hidefocus="hidefocus">Delete</a></li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionApply" hidefocus="hidefocus">Apply Custom Template...</a></li>
+            <li>
+              <div id="droprmenu-custom" class="droprmenu" style="left:180px; width:150px">
+                <ul>
+                  <li><a href="javascript:" id="actionNewTemplate" hidefocus="hidefocus">New Template</a></li>
+                  <li><a href="javascript:" id="actionOpenTemplate" hidefocus="hidefocus">Open Template...</a></li>
+                  <li><a href="javascript:" id="actionSaveAsTemplate" hidefocus="hidefocus">Save As Template...</a></li>
+                </ul>
+              </div><a href="javascript:" id="rmenu-custom" class="rmenu" hidefocus="hidefocus">Manage Custom Templates</a>
+            </li>
+            <li class="break"></li>
+            <li><a href="javascript:" id="actionExit" hidefocus="hidefocu

@@ -1,0 +1,96 @@
+<?php
+require_once 'php/dao/_util.php';
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/sql/TrackItem.php';
+//
+/**
+ * Order Tracking Data Access Object
+ */
+class OrderTrackingDao {
+  /*
+   * Get constants and lists
+   */
+  public static function getConstantsAndLists() {
+    return array(
+      'constants' => TrackItem::getConstants(),
+      'lists' => array(
+        'cats' => TrackItem::$TCATS,
+        'priorities' => TrackItem::$PRIORITIES,
+        'statuses' => TrackItem::$STATUSES,
+        'closedFors' => TrackItem::$CLOSED_FORS
+        )
+      );
+  }
+  /**
+   * Order entry
+   * @param array $orderItems [{'cid':#,'sid':#,'key':$,'tcat':$,'tdesc':$,'cpt':$},..]
+   * @return array(
+   *   'items'=>array(TrackItem,..),
+   *   'add'=>bool         // true if no items have yet been saved  
+   *   'cl'=>array(..)     // see getConstantsAndLists()
+   *   )
+   */
+  public static function order($orderItems) {
+    global $myLogin;
+    logit_r($orderItems, 'orderItems');
+    $items = array();
+    $sid = null;
+    $add = true;
+    foreach ($orderItems as &$orderItem) {
+      LoginDao::authenticateSessionId($orderItem->sid, $sid);
+      $item = TrackItem::fetchByOrderKey($orderItem->sid, $orderItem->key);
+      if ($item == null) 
+        $item = TrackItem::fromOrderItem(
+          $myLogin->userGroupId, $myLogin->userId, $orderItem);
+      else
+        $add = false;
+      $title = TrackItem::$TCATS[$item->trackCat];
+      $items[] = $item; 
+      $trackCatItems[$title][] = $item;
+    }
+    TrackItem::sort($items);
+    $cl = OrderTrackingDao::getConstantsAndLists();
+    return array(
+      'items' => $items,
+      'add' => $add,
+      'cl' => $cl
+      );
+  }
+  /**
+   * Save track items from Order Entry
+   * @param [TrackItem,..] $trackItems
+   */
+  public static function saveOrderedTrackItems($trackItems) {
+    global $myLogin;
+    $sid = null;
+    foreach ($trackItems as &$item) {
+      LoginDao::authenticateSessionId($item->sessionId, $sid);
+      $item->userGroupId = $myLogin->userGroupId;
+      $item->userId = $myLogin->userId;
+      $item->save();
+    }
+  }
+  /**
+   * Update track item status
+   * @param TrackItem $item
+   */
+  public static function updateTrackItem($item) {
+    global $myLogin;
+    LoginDao::authenticateTrackItemId($item->trackItemId);
+    $item->checkStatusChange($myLogin->userId);
+    $item->save();
+  }
+  /**
+   * Retrieve track items by criteria
+   * @param object $criteria {'cat':$,'cid':$} 
+   * @return array(TrackItem,..) 
+   */
+  public static function getTrackItems($criteria) {
+    global $myLogin;
+    $item = TrackItem::fromCriteria($myLogin->userGroupId, $criteria);
+    $items = TrackItem::fetchAllBy($item);
+    TrackItem::sort($items);
+    return $items;
+  }
+}
+?>

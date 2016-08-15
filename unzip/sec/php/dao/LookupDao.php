@@ -1,0 +1,869 @@
+<?php 
+require_once "php/dao/_util.php";
+
+/**
+ * Generic lookup data 
+ * Primarily for application-specific settings and customizations
+ * 
+ * What kind of data should be stored this way:
+ * - Application-specific, no need to report or interface with other apps
+ * - Not static
+ * - Users should be allowed to override values
+ */
+class LookupDao {
+  
+  const LEVEL_APP = "A";     // Application (system-wide) level_id=0 
+  const LEVEL_GROUP = "G";   // Group (practice)          level_id=[user_group_id]
+  const LEVEL_USER = "U";    // User (doctor)             level_id=[user_id]
+  const LEVEL_CLIENT = "X";  // Client (most specific)    level_id=[client_id]
+  
+  const AS_JSON = 0;
+  const AS_PHP_OBJECT = 1;
+  const AS_ASSOC_ARRAY = 2;
+  const ASSOCIATE_BY_INSTANCE_ID = 0;
+  const ASSOCIATE_BY_ID_PROPERTY = 1;
+  const NO_ASSOCIATE = 2; 
+  const FALLBACK_INSTANCE_ID = "0";
+  const INCLUDE_LOOKUP_PROPS = true;
+  const NO_LOOKUP_PROPS = false;
+  const DEFAULT_USER = null;
+  const DEFAULT_INSTANCE = null;
+  const NO_FALLBACK_INSTANCE = null;
+  const NO_FILTER = null;
+  const NO_FILTER_VALUE = null;
+  const NO_CLIENT = null;
+  
+  ////////////////////////// Start of public table methods //////////////////////////   
+  
+  /* T_DATA_HM_PROCS
+   * Arrangement: Multi records, instance=CTP code
+   * Returns:     Simple array of all records as objects, associated by instance 
+   *   
+   * DataHmProcs{_instance:}  // cpt code
+   *   name
+   *   active  
+   *   icd     // '100.1;100.2',null 
+   *   gender  // 'M','F'
+   *   after   // age
+   *   every   // number
+   *   int     // interval 0=year, 1=month
+   *   quid    // DataHmProcQuids.result (UI question), only present if DataHmProcQuid record exists for this proc
+   * 
+   * DataHmProcQuids{_procInstance:}
+   *   result    // suid.puid.quid e.g. "hpi.colonPolypFu.lastResult"
+   *  
+   * ["10001":{"name":"Colonoscopy","after":50,"every":5,"int":0,"quid":{"result":"hpi.colonPolypFu.lastResult"}},"20001":{"name":"Flexible Sigmoidoscopy"...}]
+   */
+  const T_DATA_HM_PROCS = 18;  
+  const T_DATA_HM_PROC_QUIDS = 19;
+  public static function getDataHmProcs($clientId, $sorted = true) {
+    $dtos = LookupDao::getInheritedInstances(LookupDao::T_DATA_HM_PROCS, LookupDao::DEFAULT_USER, $clientId, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+    foreach ($dtos as $pcid => $dto) {
+      $dto->id = $dto->_instance;
+    }
+    $quids = LookupDao::getInstances(LookupDao::T_DATA_HM_PROC_QUIDS, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+    foreach ($quids as $pcid => $quid) {  // add quid arg to procs
+      if ($dtos[$pcid] == null) {
+      }
+      $dtos[$pcid]->quid = $quid->result;
+    }
+    if ($sorted) {
+      uasort($dtos, array("LookupDao", "cmpHmProcs"));
+    }
+    return $dtos;
+  }
+  public static function getDataHmProcsMapAsJson() {  // {pcid:name,..}
+    $map = array();
+    $dtos = LookupDao::getInstances(LookupDao::T_DATA_HM_PROCS, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+    foreach ($dtos as $pcid => &$dto) {
+      $map[$pcid] = $dto->name;
+    }
+    return jsonencode($map);
+  }
+  public static function saveOurDataHmProcs($json) {
+    LookupDao::saveGroupInstances(LookupDao::T_DATA_HM_PROCS, $json);
+  }
+  private static function cmpHmProcs($a, $b) {
+    return ($a->name < $b->name) ? -1 : 1;
+  }
+  
+  /* DEPRECATED: Replaced by data syncs
+   * 
+   * T_DATA_HIST_PROCS (hcat=0), T_DATA_HIST_PROCS_SURG (hcat=1)
+   * Arrangement: Multi records, instance=sequential
+   * Returns:     Simple array of all records as objects, associated by instance 
+   *   
+   * DataHistProcs{_instance:}
+   *   id        // _instance
+   *   name      
+   *   active    // optional, 1=active (default), 0=inactive
+   *   quids     // DataistmProcQuids (UI questions), only present if DataHmProcQuid record exists for this proc
+   *  
+   * DataHistProcQuids{_procInstance:}
+   *   type      // suid.puid.quid
+   *   custom1   // suid.puid.quid
+   *   custom2   // suid.puid.quid
+   *   custom3   // suid.puid.quid
+   * 
+   * ["3":{"id":3,"name":"Adrenal Hyperplasia","active":1,"quid":{"type":...
+   */
+  const T_DATA_HIST_PROCS = 20;  
+  const T_DATA_HIST_PROC_QUIDS = 21;
+  const T_DATA_HIST_PROCS_SURG = 22;  
+  const T_DATA_HIST_PROC_QUIDS_SURG = 23;
+  public static function getDataHistProcs($hcat, $sorted = true) {
+    $ltid = LookupDao::ltidByHcat($hcat);
+    $ltidQuids = $ltid + 1;
+    $dtos = LookupDao::getInstances($ltid, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID, LookupDao::NO_FILTER, LookupDao::NO_FILTER_VALUE, LookupDao::NO_LOOKUP_PROPS);
+    $quids = LookupDao::getInstances($ltidQuids, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID, LookupDao::NO_FILTER, LookupDao::NO_FILTER_VALUE, LookupDao::NO_LOOKUP_PROPS);
+    foreach ($dtos as $pcid => &$dto) {
+      $dto->id = $pcid;  // add ID argument
+    }
+    foreach ($quids as $pcid => &$quid) {  // add quid arg to procs
+      $dtos[$pcid]->quids = $quid;
+    }
+    if ($sorted) {
+      uasort($dtos, array("LookupDao", "cmpHistProcs"));
+    }
+    return $dtos;
+  }
+  public static function saveOurDataHistProcs($hcat, $json) {
+    LookupDao::saveGroupInstances(LookupDao::ltidByHcat($hcat), $json);
+  }
+  private static function cmpHistProcs($a, $b) {
+    return ($a->name < $b->name) ? -1 : 1;
+  }
+  private static function ltidByHcat($hcat) {
+    switch ($hcat) {
+      case JDataHist::HCAT_MED:
+        return LookupDao::T_DATA_HIST_PROCS;
+      case JDataHist::HCAT_SURG:
+        return LookupDao::T_DATA_HIST_PROCS_SURG;
+    }
+  }
+  
+  /* T_APPT_TYPES
+   * Arrangement: Multi records, instance=record ID
+   * Returns:     Collection of all records as objects, associated by instance.
+   * 
+   * ApptTypes{_instance:} 
+   *   name
+   *   bcolor
+   *   min
+   * 
+   * {"1":{"name":"Acute","bcolor":"#c0c0c0","min":"15"},"2":{"name":"Follow-up","bcolor":"#c0c0c0","min":"15"},"3":...}}
+   */
+  const T_APPT_TYPES = 1;  
+  public static function getApptTypes() {
+    return LookupDao::getInstances(LookupDao::T_APPT_TYPES, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+  }
+  public static function getApptTypesAsJson() {
+    return LookupDao::getInstances(LookupDao::T_APPT_TYPES, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_JSON, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+  }
+  public static function getActiveApptTypes() {
+    return LookupDao::getInstances(LookupDao::T_APPT_TYPES, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID, "active", "1");
+  }
+  public static function saveOurApptTypes($json) {
+    LookupDao::saveGroupInstances(LookupDao::T_APPT_TYPES, $json);
+  }
+  public static function removeOurApptTypes() {
+    LookupDao::saveOurApptTypes(null);
+    return LookupDao::getApptTypesAsJson();
+  }
+  
+  /* T_SCHED_NAMES
+   * Arrangement: Single record, instance=1
+   * Returns:     Object (record's value).
+   * 
+   * SchedNames:{
+   *   userId:'Name',
+   *   userId:'Name',
+   *   userId:null (to exclude ID from schedule)
+   * }
+   */
+  const T_SCHED_NAMES = 30;
+  public static function getSchedNames() {
+    return LookupDao::getSingleInstance(LookupDao::T_SCHED_NAMES, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_ASSOC_ARRAY, LookupDao::NO_LOOKUP_PROPS);
+  }
+  
+  /* T_RECIPS
+   * Arrangement: Single record, instance=1
+   * Returns:     Simple array (record's value)
+   * 
+   * Recips[]
+   * [userId,userId,..]
+   */
+  const T_RECIPS = 31;
+  public static function getRecips() {
+    global $login;
+    return LookupDao::getSingleInstance(LookupDao::T_RECIPS, LookupDao::DEFAULT_INSTANCE, $login->userId);
+  }
+  public static function saveRecips($json) {
+    global $login;
+    LookupDao::saveSingleUserInstance(LookupDao::T_RECIPS, $json, LookupDao::DEFAULT_INSTANCE, $login->userId);
+  }
+  
+  /* T_APPT_COLORS
+   * Arrangement: Single record, instance=1
+   * Returns:     Simple array (record's value).
+   * 
+   * ApptColors[] 
+   * 
+   * ["#DEDEDE","#A6D79B","#9DD6CF","#D39BD7","#F8E880","#FF836F"]
+   */
+  const T_APPT_COLORS = 13;  
+  public static function getApptColors() {
+    return LookupDao::getSingleInstance(LookupDao::T_APPT_COLORS);
+  }
+  public static function getApptColorsAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_APPT_COLORS, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  
+  /* T_VAC_CHART
+   * Arrangement: Single record, instance=1
+   * Returns:     Object (record's value).
+   * 
+   * VacChart:{
+   *    'Category':['Vac1','Vac2',..],
+   *    'Polio':['IPV','OPV'],...
+   *   } 
+   */
+  const T_VAC_CHART = 26;  
+  public static function getVacChart() {
+    return LookupDao::getSingleInstance(LookupDao::T_VAC_CHART, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_PHP_OBJECT, LookupDao::NO_LOOKUP_PROPS);
+  }
+  
+  /* T_SCHED_STATUS
+   * Arrangement: Multi records, instance=record ID
+   * Returns:     Collection of all records as objects, associated by instance.
+   *  
+   * SchedStatus{_instance:} 
+   *   name
+   *   bcolor
+   * 
+   * {"1":{"name":"Arrived","bcolor":"#A6D79B"},"20":{"name":"DNKA","bcolor":"#FF836F"},"30":...}}
+   */
+  const T_SCHED_STATUS = 12;  
+  public static function getSchedStatus() {
+    return LookupDao::getInstances(LookupDao::T_SCHED_STATUS, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+  }
+  public static function getSchedStatusAsJson() {
+    return LookupDao::getInstances(LookupDao::T_SCHED_STATUS, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_JSON, LookupDao::ASSOCIATE_BY_INSTANCE_ID);
+  }
+  public static function getActiveSchedStatus() {
+    return LookupDao::getInstances(LookupDao::T_SCHED_STATUS, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID, "active", "1");
+  }
+  public static function saveOurSchedStatus($json) {
+    LookupDao::saveGroupInstances(LookupDao::T_SCHED_STATUS, $json);
+  }
+  public static function removeOurSchedStatus() {
+    LookupDao::saveOurSchedStatus(null);
+    return LookupDao::getSchedStatusAsJson();
+  }
+  
+  /* T_SCHED_PROFILE
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object for requested user.
+   * 
+   * SchedProfile   
+   *   slotSize    // minutes
+   *   slotStart   // military
+   *   slotEnd     // military
+   *   dowStart    // Sunday=0
+   *   weekLength  // days
+   * 
+   * {"slotSize":"15","slotStart":"800","slotEnd":"1800","dowStart":"1","weekLength":"5"}
+   */  
+  const T_SCHED_PROFILE = 3;
+  public static function getSchedProfile($userId) {
+    return LookupDao::getSingleInstance(LookupDao::T_SCHED_PROFILE, LookupDao::DEFAULT_INSTANCE, $userId);
+  }
+  public static function getSchedProfileAsJson($userId) {
+    return LookupDao::getSingleInstance(LookupDao::T_SCHED_PROFILE, LookupDao::DEFAULT_INSTANCE, $userId, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveSchedProfile($userId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_SCHED_PROFILE, $json, LookupDao::DEFAULT_INSTANCE, $userId);
+  }
+  public static function removeSchedProfile($userId) {
+    LookupDao::saveSchedProfile($userId, null);
+  }
+  
+  /* T_CLIENT_SEARCH_CUSTOM
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   * 
+   * ClientSearchCustom   
+   *   first  // 0=id, 1=name
+   *   incAddress
+   *   incPhone
+   *   incEmail
+   *   incCustom
+   * 
+   * {"first":0,"incAddress":false,"incPhone":false,"incEmail":false,"incCustom":false}
+   */  
+  const T_CLIENT_SEARCH_CUSTOM = 10;
+  public static function getClientSearchCustomAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_CLIENT_SEARCH_CUSTOM, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyClientSearchCustom($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_CLIENT_SEARCH_CUSTOM, $json);
+  }
+  public static function removeMyClientSearchCustom() {
+    LookupDao::saveMyClientSearchCustom(null);
+    return LookupDao::getClientSearchCustomAsJson();
+  }
+  
+  /* T_PATIENTS_VIEW
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   * 
+   * PatientsView   
+   *   pp  // # patient rows per page
+   * 
+   * {"pp":15}
+   */  
+  const T_PATIENTS_VIEW = 24;
+  public static function getPatientsView() {
+    return LookupDao::getSingleInstance(LookupDao::T_PATIENTS_VIEW, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_PHP_OBJECT);
+  }
+  public static function getPatientsViewAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_PATIENTS_VIEW, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyPatientsView($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_PATIENTS_VIEW, $json);
+  }
+  public static function removeMyPatientsView() {
+    LookupDao::saveMyPatientsView(null);
+    return LookupDao::getPatientsViewAsJson();
+  }
+  
+  /* T_PRINT_CUSTOM
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *   
+   * PrintCustom
+   *   fmtAsRtf            
+   *   singleSpace         
+   *   logofile            
+   *   logofile2           
+   *   sigfile             
+   *   noTag  // true = no "printed by clicktate" at the bottom
+   *   noSig  // true = no signature on closed session
+   *   quick  // true = use Clicktate.Helper ActiveX to background Word   
+   * 
+   * {"fmtAsRtf":0,"singleSpace":0,"logofile":"","logofile2":"","sigfile":"","noTag":0,"noSig":0,"quick":0}
+   */  
+  const T_PRINT_CUSTOM = 5;
+  public static function getPrintCustom() {
+    return LookupDao::getSingleInstance(LookupDao::T_PRINT_CUSTOM);
+  }
+  public static function getPrintCustomAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_PRINT_CUSTOM, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyPrintCustom($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_PRINT_CUSTOM, $json);
+  }
+
+  /* T_CONSOLE_CUSTOM
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *   
+   * ConsoleCustom
+   *   ignoreActionErrors  
+   *   hideAllerMedVitals
+   * 
+   * {"ignoreActionErrors":0,"hideAllerMedVitals":0}
+   */  
+  const T_CONSOLE_CUSTOM = 23;
+  public static function getConsoleCustom() {
+    return LookupDao::getSingleInstance(LookupDao::T_CONSOLE_CUSTOM);
+  }
+  public static function getConsoleCustomAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_CONSOLE_CUSTOM, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyConsoleCustom($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_CONSOLE_CUSTOM, $json);
+  }
+  
+  /* DEPRECATED: use T_RX_PAGE_LAYOUT instead
+   * 
+   * T_CONSOLE_RX 
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *   
+   * ConsoleRx
+   *   lmar  // in inches
+   *   tmar  // in inches
+   * 
+   * {"lmar":0,"tmar":0.5}
+   */  
+  const T_CONSOLE_RX = 15;
+  public static function getConsoleRx() {
+    return LookupDao::getSingleInstance(LookupDao::T_CONSOLE_RX);
+  }
+  public static function getConsoleRxAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_CONSOLE_RX, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyConsoleRx($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_CONSOLE_RX, $json);
+  }
+
+  /* T_RX_PAGE_LAYOUT
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *   
+   * RxPageLayout  // all measurements in inches
+   *   sel         // which layout is selected
+   *   layouts[]  
+   *     perPage   // # rx per page   
+   *     pgLmar  
+   *     pgTmar
+   *     rxLmar
+   *     rxTmar
+   *     colSep    // separation between columns
+   *     rowSep    // separation between rows  
+   * 
+   * {"sel":0,"layouts":[{"perPage":4,"pgLmar":0,"pgTmar":0.2,"rxLmar":0,"rxTmar":0,"colSep":0.4,"rowSep":0.4},{"perPage":1,"pgLmar":2,"pgTmar":2.1,"rxLmar":0,"rxTmar":0,"colSep":0,"rowSep":0}]}
+   */  
+  const T_RX_PAGE_LAYOUT = 17;
+  public static function getRxPageLayoutAsJson() {
+    return LookupDao::getSingleInstance(LookupDao::T_RX_PAGE_LAYOUT, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function getSelRxPageLayout($index = null) {
+    $o = LookupDao::getSingleInstance(LookupDao::T_RX_PAGE_LAYOUT);
+    if ($index == null) {
+      $index = $o->sel;
+    }
+    return $o->layouts[$index];
+  }
+  public static function saveMyRxPageLayout($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_RX_PAGE_LAYOUT, $json);
+  }
+  
+  /* T_CONSOLE_AUTOSAVE
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *   
+   * ConsoleAutosave
+   *   on        // bool
+   *   interval  // seconds
+   * 
+   * {"on":"1","interval":"180"}
+   */  
+  const T_CONSOLE_AUTOSAVE = 2;
+  public static function getConsoleAutosave() {
+    return LookupDao::getSingleInstance(LookupDao::T_CONSOLE_AUTOSAVE);
+  }
+  public static function saveMyConsoleAutosave($json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_CONSOLE_AUTOSAVE, $json);
+  }
+  
+  /* T_DEFAULT_TEMPLATE_ID
+   * Arrangement: Single record, instance=1
+   * Returns:     Singleton object.
+   *  
+   * 1  // template ID
+   */  
+  const T_DEFAULT_TEMPLATE_ID = 8;
+  public static function getDefaultTemplateId() {
+    return LookupDao::getSingleInstance(LookupDao::T_DEFAULT_TEMPLATE_ID, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyDefaultTemplateId($value) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_DEFAULT_TEMPLATE_ID, $value);
+  }
+  
+  /* T_DEFAULT_SEND_TO
+   * Arrangement: Single record, instance=1
+   * Returns:     integer (record's value). 
+   * 
+   * 14  // user ID
+   */  
+  const T_DEFAULT_SEND_TO = 9;
+  public static function getDefaultSendTo() {
+    return LookupDao::getSingleInstance(LookupDao::T_DEFAULT_SEND_TO, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyDefaultSendTo($value) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_DEFAULT_SEND_TO, $value);
+  }
+  
+  /* T_REPLICATE_OVERRIDE_FS
+   * Arrangement: Single record, instance=1
+   * Returns:     integer (boolean) 
+   * 
+   * 0  // false, don't copy meds/allergies from replicated note
+   */  
+  const T_REPLICATE_OVERRIDE_FS = 25;
+  public static function getReplicateOverrideFs() {
+    return LookupDao::getSingleInstance(LookupDao::T_REPLICATE_OVERRIDE_FS, LookupDao::DEFAULT_INSTANCE, LookupDao::DEFAULT_USER, LookupDao::NO_FALLBACK_INSTANCE, LookupDao::AS_JSON);
+  }
+  public static function saveMyReplicateOverrideFs($value) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_REPLICATE_OVERRIDE_FS, $value);
+  }
+  
+  /* T_TEMPLATE_MAP
+   * Arrangement: Multi records, instance=template ID
+   * Returns:     Singleton object for requested instance.
+   *  
+   * TemplateMap
+   *   startSection
+   *   main{suid}:[puids]  // pars to include as main
+   *   auto{suid}:[puids]  // pars to auto-include in new document  
+   *   
+   * {"startSection":"HPI","main":null,"auto":null}  // to use default map
+   * {"startSection":"HPI","main":{"hpi":["acBron","acGas","bph","cad","dm2fup","fever","gerd"],"pe":["abExam","breast","card"]},"auto":["pe":["vitals"]]}  // customized
+   */  
+  const T_TEMPLATE_MAP = 4; 
+  public static function getTemplateMap($templateId) {
+    return LookupDao::getSingleInstance(LookupDao::T_TEMPLATE_MAP, $templateId);
+  }
+  public static function saveMyTemplateMap($templateId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_TEMPLATE_MAP, $json, $templateId);
+  }
+  public static function removeMyTemplateMap($templateId) {
+    LookupDao::saveMyTemplateMap($templateId, null);
+  }
+
+  /* T_TEMPLATE_AUTO_INCLUDE
+   * Arrangement: Multi records, instance=template ID (0 used as default)
+   * Returns:     Singleton object for requested instance. If instance not found, default instance returned.
+   * 
+   * TemplateAutoInclude
+   *   sections[]
+   *   pars[]
+   * 
+   * {"sections":["&addSec",""],"pars":["hpi.&intro"]}
+   */  
+  const T_TEMPLATE_AUTO_INCLUDE = 7; 
+  public static function getTemplateAutoInclude($templateId) {
+    return LookupDao::getSingleInstance(LookupDao::T_TEMPLATE_AUTO_INCLUDE, $templateId, LookupDao::DEFAULT_USER, LookupDao::FALLBACK_INSTANCE_ID);
+  }
+  public static function saveMyTemplateAutoInclude($templateId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_TEMPLATE_AUTO_INCLUDE, $json, $templateId);
+  }
+    
+  /* T_TEMPLATE_CUSTOM 
+   * Console customizations by template
+   * Arrangement: Multi records, instance=template ID (0 used as default)
+   * Returns:     Singleton object for requested instance. If instance not found, default instance returned.
+   *  
+   * TemplateCustom
+   *   logofile
+   *   logofile2
+   *   sigfile
+   *   twoColOnly
+   *   headerPar          // optional, to override the default @header.h par
+   *   leftAlignHead      // optional
+   *   reorderSections[]  // optional
+   * 
+   * {"logofile":"","logofile2":"","sigfile":"","twoColOnly":"0","headerPar":"withCustoms"}
+   */  
+  const T_TEMPLATE_CUSTOM = 6; 
+  public static function getTemplateCustomAsJson($templateId) {
+    return LookupDao::getSingleInstance(LookupDao::T_TEMPLATE_CUSTOM, $templateId, LookupDao::DEFAULT_USER, LookupDao::FALLBACK_INSTANCE_ID, LookupDao::AS_JSON);
+  }
+  public static function saveMyTemplateCustom($templateId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_TEMPLATE_CUSTOM, $json, $templateId);
+  }
+  // Get all associated by template ID, e.g. {"1":{"logofile"...},"26":{"logofile"...}}
+  public static function getAllTemplateCustoms() {
+    return LookupDao::getInstances(LookupDao::T_TEMPLATE_CUSTOM, LookupDao::DEFAULT_USER, null, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_INSTANCE_ID, LookupDao::NO_FILTER, LookupDao::NO_FILTER_VALUE, LookupDao::NO_LOOKUP_PROPS);
+  }
+  public static function getAllTemplateCustomsAsJson() {
+    return LookupDao::getInstances(LookupDao::T_TEMPLATE_CUSTOM, LookupDao::DEFAULT_USER, null, LookupDao::AS_JSON, LookupDao::ASSOCIATE_BY_INSTANCE_ID, LookupDao::NO_FILTER, LookupDao::NO_FILTER_VALUE, LookupDao::NO_LOOKUP_PROPS);
+  }
+  
+  /* T_TEMPLATE_ADD_TO_MAP
+   * Arrangement: Multi records, instance=template ID
+   * Returns:     Associated array (value of requested instance).
+   * 
+   * TemplateAddToMap{suid:}  // section UID
+   *   prefs[]  
+   * 
+   * {"hpi":["hpi.+extraPar","hpi.+extraPar2"],"pe":["pe.+extraPar"]}
+   */  
+  const T_TEMPLATE_ADD_TO_MAP = 14; 
+  public static function getTemplateAddToMap($templateId) {
+    return LookupDao::getSingleInstance(LookupDao::T_TEMPLATE_ADD_TO_MAP, $templateId, LookupDao::DEFAULT_USER, null, LookupDao::AS_ASSOC_ARRAY);
+  }
+  public static function saveMyTemplateAddToMap($templateId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_TEMPLATE_ADD_TO_MAP, $json, $templateId);
+  }
+
+  /* T_TEMPLATE_SECTION_REORDER
+   * To override default section order
+   * Arrangement: Multi records, instance=template ID
+   * Returns:     Associated array (value of requested instance)
+   * 
+   * TemplateSectionReorder{suid:}
+   *   newSortIndex  // may use decimals
+   * 
+   * {"impr":6.1,"plan":6.2}
+   */  
+  const T_TEMPLATE_SECTION_REORDER = 16; 
+  public static function getTemplateSectionReorder($templateId) {
+    return LookupDao::getSingleInstance(LookupDao::T_TEMPLATE_SECTION_REORDER, $templateId, LookupDao::DEFAULT_USER, null, LookupDao::AS_ASSOC_ARRAY);
+  }
+  public static function saveMyTemplateSectionReorder($templateId, $json) {
+    LookupDao::saveSingleUserInstance(LookupDao::T_TEMPLATE_SECTION_REORDER, $json, $templateId);
+  }
+  
+  /* DEPRECATED: replaced by DataDao methods 
+   * 
+   * T_DATA_TABLES 
+   * Arrangement: Multi records, instance=sequential
+   * Returns:     Collection of all records as objects, associated by ID 
+   *   
+   * DataTables{id:}
+   *   table 
+   *   pk[]
+   * 
+   * {"vitals":{"table":"data_vitals","pk":["$ugid","$cid","$sid","$dos"]},"meds":{...}
+   */
+  const T_DATA_TABLES = 11;  
+  public static function getDataTables() {
+    return LookupDao::getInstances(LookupDao::T_DATA_TABLES, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, LookupDao::ASSOCIATE_BY_ID_PROPERTY);
+  }
+  public static function getDataTablesAsJson() {
+    return LookupDao::getInstances(LookupDao::T_DATA_TABLES, LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_JSON, LookupDao::ASSOCIATE_BY_ID_PROPERTY);
+  }
+  
+  ////////////////////////// End of public table methods //////////////////////////
+
+  // Construct collection of lookup data values
+  // Values will deserialized if $valuesAs = AS_PHP_OBJECT (default) or AS_ASSOC_ARRAY
+  // Collection will be associated by instanceID (default), data property "id", or none
+  // Will include only rows with data property filter (field) set to value, if supplied
+  // Will attach _id/_level/_instance props to JSON values if includeLookupProps = true
+  // Omit $userId for self
+  public static function getInstances($tableId, $userId = null, $clientId = null, $valuesAs = LookupDao::AS_PHP_OBJECT, $assocBy = LookupDao::NO_ASSOCIATE, $filter = null, $filterValue = null, $includeLookupProps = true) {
+    $dtos = LookupDao::readValues($tableId, $userId, $clientId, $valuesAs, $assocBy, $filter, $filterValue, $includeLookupProps);
+    return $dtos;
+  }
+  
+  /*
+   * Construct lookup data values that inherit from parent 
+   * e.g. include parent fields not present in overrides and include entire parent recs not overridden
+   * Must be associated  
+   */
+  private static function getInheritedInstances($tableId, $userId = null, $clientId = null, $assocBy = LookupDao::ASSOCIATE_BY_INSTANCE_ID) {
+    return LookupDao::readValues($tableId, $userId, $clientId, LookupDao::AS_PHP_OBJECT, $assocBy, null, null, true, true);
+  }
+  
+  // Retrieve a single lookup data value
+  // Value will deserialized if $valueAs = AS_PHP_OBJECT (default) or AS_ASSOC_ARRAY
+  // Omit instanceId if table is a singleton
+  // Omit $userId for self
+  public static function getSingleInstance($tableId, $instanceId = null, $userId = null, $fallbackInstanceId = null, $valueAs = LookupDao::AS_PHP_OBJECT, $includeLookupProps = true) {
+    $value = LookupDao::readSingleValue($tableId, $instanceId, $userId, $valueAs, $includeLookupProps);
+    if ($value == null && $fallbackInstanceId != null) {
+      $value = LookupDao::readSingleValue($tableId, $fallbackInstanceId, $userId, $valueAs);
+    }
+    return $value;
+  }
+  
+  // Retrieve collection of data values for given table ID  
+  // Preference given to overridden instances (user-level first, group-level second)
+  // Values will deserialized if $valuesAs = AS_PHP_OBJECT or AS_ASSOC_ARRAY
+  // Will attach _id/_level/_instance props to JSON values if includeLookupProps = true
+  // Collection Will be associated by instanceID, ID property, or none
+  // Will include only rows with data property filter (field) set to value, if supplied 
+  // Inheritance takes place if mergeAncentry=true (see getInheritedInstances)
+  private static function readValues($tableId, $userId, $clientId, $valuesAs, $assocBy, $filter, $filterValue, $includeLookupProps, $mergeAncestry = false) {
+    global $login;
+    $userId = LookupDao::defaultUserId($login, $userId);
+    $sql = ($mergeAncestry) ? "" : "SELECT lookup_data_id, level, instance, data FROM (";
+    $sql .= "SELECT lookup_data_id, level, instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId . " AND (";
+    if ($clientId != null) {
+      $sql .= "(level='X' and level_id=". $clientId . ") OR ";
+    }
+    $sql .= "(level='U' AND level_id=" . $userId . ") OR (level='G' AND level_id=" . $login->userGroupId . ") OR (level='A')) ORDER BY instance, level DESC";
+    if (! $mergeAncestry) $sql .= ") a GROUP BY a.instance";
+    $res = query($sql);
+    if ($valuesAs == LookupDao::AS_PHP_OBJECT || $valuesAs == LookupDao::AS_ASSOC_ARRAY) {
+      $dtos = array();
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+        $dto = LookupDao::buildValue($row, $valuesAs, $includeLookupProps);
+        if ($filter == null || $dto->$filter == $filterValue) {
+          if ($assocBy == LookupDao::NO_ASSOCIATE) {
+            $dtos[] = $dto;
+          } else {
+            $key = ($assocBy == LookupDao::ASSOCIATE_BY_INSTANCE_ID) ? $row["instance"] : $dto->id;
+            if ($mergeAncestry && isset($dtos[$key])) {
+              $dto = LookupDao::merge($dto, $dtos[$key]);
+            }
+            $dtos[$key] = $dto;
+          }
+        }
+      }
+      return $dtos;
+    } else {
+      $json = "";
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+        if ($json != "") {
+          $json .= ",";
+        }
+        $include = true;
+        if ($assocBy == LookupDao::ASSOCIATE_BY_ID_PROPERTY || $filter != null || $includeLookupProps) {
+          $dto = LookupDao::buildValue($row, LookupDao::AS_PHP_OBJECT, $includeLookupProps);
+          if ($filter != null) {
+            $include = ($dto->$filter == $filterValue);
+          }
+        }
+        if ($include) {
+          if ($assocBy == LookupDao::ASSOCIATE_BY_INSTANCE_ID) {
+            if ($includeLookupProps) {
+              $json .= "\"" . $row["instance"] . "\":" . jsonencode($dto);
+            } else {
+              $json .= "\"" . $row["instance"] . "\":" . $row["data"];
+            }
+          } else if ($assocBy == LookupDao::ASSOCIATE_BY_ID_PROPERTY) {
+            $id = $dto->id;
+            unset($dto->id);
+            $json .= "\"" . $id . "\":" . jsonencode($dto);
+          } else {
+            if ($includeLookupProps) {
+              $json .= jsonencode($dto);
+            } else {
+              $json .= $row["data"];
+            }
+          }
+        }
+      }
+      if ($assocBy == LookupDao::NO_ASSOCIATE) {
+        return "[" . $json . "]";
+      } else {
+        return "{" . $json . "}";
+      }
+    }
+  }
+  
+  private static function merge($parent, $child) {
+    $vars = get_object_vars($child);
+    foreach ($vars as $var => $value) {
+      $parent->$var = $value;
+    }
+    return $parent;
+  }
+  
+  // Retrieve data value for given table ID and instance ID  
+  // Preference given to overridden instances (user-level first, group-level second)
+  // Value will deserialized if $valueAs = AS_PHP_OBJECT or AS_ASSOC_ARRAY
+  private static function readSingleValue($tableId, $instanceId, $userId, $valueAs, $includeLookupProps = true) {
+    global $login;
+    $userId = LookupDao::defaultUserId($login, $userId);
+    $instanceId = LookupDao::defaultInstanceId($instanceId);
+    $sql = "SELECT lookup_data_id, level, instance, data FROM (SELECT lookup_data_id, level, instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId
+        . " AND instance=" . $instanceId 
+        . " AND ((level='U' AND level_id=" . $userId 
+        . ") OR (level='G' AND level_id=" . $login->userGroupId 
+        . ") OR (level='A')) ORDER BY level DESC) a GROUP BY a.instance";
+    return LookupDao::buildValue(fetch($sql), $valueAs, $includeLookupProps);
+  }
+  
+  // Deserialize an instance row
+  private static function buildValue($row, $valueAs = LookupDao::AS_PHP_OBJECT, $includeLookupProps = true) {
+    if (! $row) {
+      return null;
+    }
+    if ($valueAs == LookupDao::AS_PHP_OBJECT) {
+      $dto = jsondecode($row["data"]);
+      if (is_object($dto) && $includeLookupProps) {
+        $dto->_id = $row["lookup_data_id"];
+        $dto->_level = $row["level"];
+        $dto->_instance = $row["instance"];
+      }
+      return $dto;
+    } else if ($valueAs == LookupDao::AS_ASSOC_ARRAY) {
+      return get_object_vars(jsondecode($row["data"]));
+    } else {
+      return $row["data"];
+    }
+  }
+
+  // Save group-overriden data instances (or just delete existing if $json is null)
+  // Supply json in the form of {"instanceId1":record1,"instanceId2":record2,...} 
+  // Omit $userGroupId for self
+  private static function saveGroupInstances($tableId, $json, $userGroupId = null) {
+    global $login;
+    $userGroupId = LookupDao::defaultUserGroupId($login, $userGroupId);
+    LookupDao::deleteInstances($tableId, LookupDao::LEVEL_GROUP, $userGroupId, null);
+    if ($json != null) {
+      $dtos = get_object_vars(jsondecode($json));
+      foreach ($dtos as $id => $dto) {
+        LookupDao::addInstanceObject($tableId, LookupDao::LEVEL_GROUP, $userGroupId, $dto, $id);
+      }
+    }
+  }
+
+  // Save single user-overriden data instance (or just delete existing if $json is null)
+  // Omit instanceId if table is a singleton
+  // Omit $userId for self
+  private static function saveSingleUserInstance($tableId, $json, $instanceId = null, $userId = null) {
+    global $login;
+    $userId = LookupDao::defaultUserId($login, $userId);
+    $instanceId = LookupDao::defaultInstanceId($instanceId);
+    LookupDao::deleteInstances($tableId, LookupDao::LEVEL_USER, $userId, $instanceId);
+    if ($json != null) {
+      LookupDao::addInstance($tableId, LookupDao::LEVEL_USER, $userId, $json, $instanceId);
+    }
+  }
+
+  // Save single client-overriden data instance (or just delete existing if $json is null)
+  // Omit instanceId if table is a singleton
+  private static function saveSingleClientInstance($tableId, $clientId, $json, $instanceId = null) {
+    $instanceId = LookupDao::defaultInstanceId($instanceId);
+    LookupDao::deleteInstances($tableId, LookupDao::LEVEL_CLIENT, $clientId, $instanceId);
+    if ($json != null) {
+      LookupDao::addInstance($tableId, LookupDao::LEVEL_CLIENT, $clientId, $json, $instanceId);
+    }
+  }
+
+  // If $instanceId null, delete all instances for particular table ID / level / level ID combination, e.g. APPT_TYPES / LEVEL_USER / 14 (uid)
+  // Otherwise delete just specific instance
+  private static function deleteInstances($tableId, $level, $levelId, $instanceId) {
+    $sql = "DELETE FROM lookup_data WHERE lookup_table_id=" . $tableId . " AND level='" . $level . "' AND level_id=" . $levelId;
+    if ($instanceId != null) {
+      $sql .= " AND instance=" . $instanceId;
+    }
+    return query($sql);
+  }
+  
+  // Write serialized data instance to database
+  // Provide instanceId or supply _instance prop in $json
+  // Assumes any existing instance has been deleted
+  private static function addInstance($tableId, $level, $levelId, $json, $instanceId = null) {
+    $obj = jsondecode($json);
+    if ($instanceId == null) {
+      $instanceId = $obj->_instance;
+    }
+    return LookupDao::addInstanceObject($tableId, $level, $levelId, $obj, $instanceId);
+  }
+  
+  // Write deserialized data instance to database
+  // Assumes any existing instance has been deleted
+  private static function addInstanceObject($tableId, $level, $levelId, $obj, $instanceId) {
+    unset($obj->_id);
+    unset($obj->_level);
+    unset($obj->_instance);
+    $data = jsonencode($obj);
+    $sql = "INSERT INTO lookup_data VALUES(NULL"
+        . ", " . quote($level) 
+        . ", " . $levelId
+        . ", " . $tableId
+        . ", " . $instanceId
+        . ", " . quote($data)
+        . ")";
+    return insert($sql);
+  } 
+  
+  // Helper functions
+  private static function defaultUserId($login, $userId) {
+    return ($userId == null) ? $login->userId : $userId;
+  }
+  private static function defaultUserGroupId($login, $userGroupId) {
+    return ($userGroupId == null) ? $login->userGroupId : $userGroupId;
+  }
+  private static function defaultInstanceId($instanceId) {
+    return ($instanceId == null) ? "1" : $instanceId;
+  } 
+}

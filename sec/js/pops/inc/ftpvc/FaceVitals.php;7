@@ -1,0 +1,109 @@
+<?
+/**
+ * Facesheet Vitals
+ * Controller: FaceVitals.js
+ */
+?>
+<div id="fsp-vit" class="pop" onmousedown="event.cancelBubble = true" style='width:720px'>
+  <div id="fsp-vit-cap" class="pop-cap">
+    <div id="fsp-vit-cap-text">
+      Vitals
+    </div>
+    <a href="javascript:FaceVitals.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="fsp-vith-div" class="fstab" style="height:300px">
+      <table id="fsp-vith-tbl" class="fsg single grid bigpad">
+        <thead>
+          <tr class="fixed head">
+            <th>Date</th>
+            <th>Pulse</th>
+            <th>Resp</th>
+            <th>BP</th>
+            <th>Temp</th>
+            <th>Wt</th>
+            <th>Ht</th>
+            <th>BMI</th>
+            <th>WC</th>
+            <th>HC</th>
+            <th>O2</th>
+          </tr>
+        </thead>
+        <tbody id="fsp-vith-tbody">
+          <tr>
+            <td colspan="11">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd cmd-right">
+      <table class='h'>
+        <tr>
+          <th>
+            <a href="javascript:FaceVitals.fpPrint()" class="cmd rx">Print...</a>
+            <span>&nbsp;</span>
+            <a href="javascript:" onclick="FaceVitals.fpChart()" class="cmd report">Create Charts...</a>
+          </th>
+          <td>
+            <a id="vit-cmd-add" href="javascript:" onclick="FaceVitals.fpAdd()" class="cmd new">Add Vitals...</a>
+            <span>&nbsp;</span>
+            <a href="javascript:FaceVitals.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Vitals Entry
+ */
+?>
+<div id="pop-ve" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-ve-cap" class="pop-cap">
+    <div id="pop-ve-cap-text">
+      Clicktate - Vitals Entry
+    </div>
+    <a href="javascript:FaceVitalsEntry.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:660px">
+    <ul id="ul-ve-date" style='margin-bottom:10px'>
+    </ul>
+    <ul id="ul-ve-fields" class="entry">
+    </ul>
+    <div class="pop-cmd push">
+      <a href="javascript:" onclick="FaceVitalsEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span id="ve-delete-span">
+        <span>&nbsp;</span>
+        <a href="javascript:" onclick="FaceVitalsEntry.fpDelete()" class="cmd delete-red">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:FaceVitalsEntry.fpClose()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Chart Selector
+ */
+?>
+<div id="pop-vcs" class="pop" onmousedown="event.cancelBubble = true" style='width:400px'>
+  <div id="pop-vcs-cap" class="pop-cap">
+    <div id="pop-vcs-cap-text">
+      Clicktate - Chart Selector
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <h2>Select a chart</h2>
+    <div id="vcs-div" class="fstab" style="height:360px">
+      <table id="vcs-tbl" class="fsgr single grid">
+        <tbody id="vcs-tbody">
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd push">
+      <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>

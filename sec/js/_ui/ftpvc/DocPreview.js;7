@@ -1,0 +1,314 @@
+/**
+ * Pop DocStubPreview
+ */
+DocStubPreview = {
+  /*
+   * @arg DocStub rec to draw first
+   * @arg DocStub[] recs (optional, to implement nav bar)
+   */
+  pop:function(rec, recs) {
+    DocStubPreview = this.create().pop(rec, recs);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('Documentation Preview', 800).extend(function(self) {
+      return {
+        init:function() {
+          self.content.addClass('dsp');
+          self.navbar = My.NavBar.create(self.content).bubble('onselect', self.navbar_onselect);
+          self.viewer = My.Viewer.create(self.content).bubble('onexit', self.close);
+        },
+        pop:function(rec, recs) {
+          self.show();
+          self.navbar.load(recs, rec);
+          return self;
+        },
+        //
+        navbar_onselect:function(rec) {
+          self.viewer.load(rec);
+        }
+      }
+    })
+  },
+  Viewer:{
+    create:function(container) {
+      var self = Html.Tile.create(container, 'Viewer');
+      return self.aug({
+        onexit:function() {},
+        //
+        load:function(rec) {
+          self.reset();
+          self.rec = rec;
+          self.draw();
+        },
+        //
+        reset:function() {
+          if (self.viewing)
+            self.viewing.hide();
+          self.viewing = null;
+        },
+        draw:function() {
+          var view = DocView.from(self.rec);
+          async(function() {
+            self.viewing = view.create(self, self.rec).show().bubble('onexit', self.onexit);
+          })
+        }
+      });
+    }
+  },
+  NavBar:{
+    create:function(container) {
+      var My = this;
+      var self = Html.Tile.create(container);
+      return self.aug({
+        onselect:function(rec) {},
+        //
+        init:function() {
+          self.prevbox = My.LinkBox.asPrev().set('onnav', self.draw);
+          self.onbox = My.OnBox.create(self);
+          self.nextbox = My.LinkBox.asNext().set('onnav', self.draw);
+          Html.Table.create(self, 'w100').tbody().tr().td(self.prevbox).w(100).td(self.onbox).w(700).td(self.nextbox).w(100);
+        },
+        load:function(recs, rec) {
+          self.recs = recs;
+          self._navify(recs);
+          self.draw(rec);
+        },
+        //
+        draw:function(rec) {
+          self.prevbox.load(rec._prev);
+          self.nextbox.load(rec._next);
+          self.onbox.load(rec);
+          self.onselect(rec);
+        },
+        _navify:function(recs) {
+          var last;
+          Array.forEach(recs, function(rec) {
+            if (last) {
+              last._prev = rec;
+              rec._next = last;
+            } else {
+              rec._next = null;
+            }
+            last = rec;
+          });
+        }
+      });
+    },
+    OnBox:{
+      create:function(container) {
+        var self = Html.Div.create('onbox').into(container);
+        return self.aug({
+          load:function(rec) {
+            self.clean();
+            Html.H2.create(rec._type).into(self);
+            Html.Div.create('bold').setText(rec.name).into(self);
+            Html.Div.create().setText(rec.desc).into(self);
+          }
+        });
+      }
+    },
+    LinkBox:{
+      create:function(cls) {
+        var self = Html.Div.create(cls);
+        return self.aug({
+          onnav:function(rec) {},
+          //
+          load:function(rec) {
+            self.clean();
+            self.rec = rec;
+            self.anchor = self.createAnchor();
+            self.addClassIf('empty', self.anchor == null);
+          },
+          //
+          onclick:function() {
+            if (self.rec)
+              self.onnav(self.rec);
+          },
+          onmouseover:function() {
+            if (self.anchor) 
+              self.addClass('hover');
+          },
+          onmouseout:function() {
+            self.removeClass('hover');
+          },
+          createAnchor:function() {
+            if (self.rec) {
+              return AnchorDocStub.create(self.rec, self.onnav).addClass('linkbox').noFocus().into(self);
+            }
+          }
+        });
+      },
+      asPrev:function() {
+        return this.create('linkbox prevbox');
+      },
+      asNext:function() {
+        return this.create('linkbox nextbox');
+      }
+    }
+  }
+}
+DocView = {
+  create:function(container, stub) {
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        onexit:function() {},
+        draw:function() {},
+        //
+        init:function() {
+          self.view = Html.Tile.create(self, 'View');
+          self.table = Html.Table2Col.create(self);
+          Html.CmdBar.create(self.table.right).exit(self.exit_onclick);
+          self.hide();
+        },
+        //
+        load:function(stub) {
+          self.stub = stub;
+          self.rec = self.stub._preview;
+          self.view.clean();
+          if (self.rec) {
+            self.draw();
+          } else {
+            self.working(true);  
+            Ajax.Facesheet.Documentation.preview(self.stub, function(rec) {
+              self.working(false);
+              self.stub._preview = rec;
+              self.rec = rec;
+              self.draw();
+            });
+          }
+        },
+        noPreview:function() {
+          self.view.setText('Preview is not available for this item.');
+        },
+        create:function(container, stub) {
+          self.load(stub);
+          return self;
+        },
+        exit_onclick:function() {
+          self.onexit();
+        }
+      }
+    })
+  },
+  from:function(stub) {
+    switch (stub.type) {
+      case C_DocStub.TYPE_SESSION:
+        return DocViewSession;
+      case C_DocStub.TYPE_MSG:
+        return DocViewMsg;
+      case C_DocStub.TYPE_APPT:
+        return DocViewAppt;
+      case C_DocStub.TYPE_ORDER:
+        return DocViewOrder;
+      case C_DocStub.TYPE_SCAN:
+        return DocViewScan;
+      case C_DocStub.TYPE_RESULT:
+        return DocViewResult;
+    }
+  }
+}
+DocViewSession = {
+  create:function(container, stub) {
+    return DocViewSession = DocView.create(container, stub).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewSession');
+          Html.CmdBar.create(self.table.left).print(self.print_onclick).button('Open in Console', self.open_onclick, 'note');
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+          else
+            self.noPreview();
+        },
+        open_onclick:function() {
+          Page.popConsole(self.rec.sessionId, function() {
+            self.stub._preview = null;
+            self.working(function() {
+              self.load(self.stub);
+            })
+          });
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+DocViewMsg = {
+  create:function(container, stub) {
+    return DocViewMsg = DocView.create(container, stub).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewMsg');
+          Html.CmdBar.create(self.table.left).print(self.print_onclick).button('Open in Message Editor', self.open_onclick, 'note');
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+          else
+            self.noPreview();
+        },
+        open_onclick:function() {
+          Page.Nav.goMessage(self.rec.threadId);
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+DocViewScan = {
+  create:function(container, stub) {
+    return DocViewScan = DocView.create(container, stub).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewScan');
+          Html.CmdBar.create(self.table.left).print(self.print_onclick);
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+DocViewResult = {
+  create:function(container, stub) {
+    return DocViewResult = DocView.create(container, stub).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewResult');
+          Html.CmdBar.create(self.table.left).print(self.print_onclick);
+          self.load(stub);
+        },
+        draw:function() {
+          var proc = self.rec;
+          Html.H3.create(proc.Ipc.name).into(self.view);
+          var t = Html.Table.create(self.view).tbody();
+          proc.ProcResults.forEach(function(result) {
+            t.tr().th(result.Ipc.name).w('20%').td(result._value, result.interpretCode).td(result.range).td(result._interpretCode).td(result.comments);
+          })
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+/**
+ * AnchorDocStub_Preview
+ */
+AnchorDocStub_Preview = {
+  create:function(rec) {
+    if (rec)
+      return AnchorDocStub.create(rec, DocStubPreview.pop);
+  }
+}

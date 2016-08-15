@@ -1,0 +1,19 @@
+<?php
+require_once 'inc/require-login.php';
+set_include_path('../');
+require_once 'php/data/rec/sql/PortalFacesheets.php';
+//
+?>
+<html>
+  <body>
+<?php 
+echo '<pre>';
+switch ($_GET['t']) {
+  case '1':
+    $fs = PortalFacesheets::getMine();
+    print_r($fs);
+    break;
+}
+?>
+  </body>
+</html>

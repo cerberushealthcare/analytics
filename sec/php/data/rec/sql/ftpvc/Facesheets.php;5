@@ -1,0 +1,150 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+//
+class Facesheet extends Rec {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  public /*UserGroup*/ $UserGroup;
+  //
+  static function from($cid) {
+    $client = static::getClient($cid);
+    if ($client) {
+      $me = new static();
+      $me->cid = $cid;
+      $me->Client = $client;
+      $me->UserGroup = static::getUserGroup($cid);
+      return $me;
+    }
+  }
+  //
+  protected static function getClient($cid) {
+    return Clients::get($cid);
+  }
+  protected static function getUserGroup($cid) {
+    return UserGroups::getMineWithAddress();
+  }
+  protected static function getActiveDiagnoses($cid) {
+    return Diagnoses::getActive($cid); 
+  }
+  protected static function getActiveMeds($cid) {
+    return Meds::getActive($cid);
+  }
+  protected static function getActiveAllergies($cid) {
+    return Allergies::getActive($cid);
+  }
+  protected static function getProcedures($cid) {
+    return Procedures::getAllNonAdmin($cid);
+  }
+  protected static function getResults($cid) {
+    return Procedures::getAllDiagnostic($cid);
+  }
+  protected static function getImmuns($cid) {
+    return Immuns::getActive($cid); 
+  }
+  protected static function getSessions($cid) {
+    return Sessions::getStubs($cid);
+  }
+  protected static function getVitals($cid) {
+    return Vitals::getActive($cid);
+  }
+}
+class Facesheet_Hl7Ccd extends Facesheet {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  public /*UserGroup*/ $UserGroup;
+  public /*ErxUser*/ $ErxUser;
+  public /*Med[]*/ $Meds;
+  public /*Allergy[]*/ $Allergies;
+  public /*Vital[]*/ $Vitals;
+  public /*Diagnosis[]*/ $Diagnoses;
+  public /*Proc[]*/ $Procs;
+  public /*Immun[]*/ $Immuns;
+  public /*Session[]*/ $Sessions;
+  //
+  static function from($cid) {
+    $me = parent::from($cid);
+    if ($me) {
+      $me->ErxUser = ErxUsers::getMe();
+      $me->Meds = static::getActiveMeds($cid);
+      $me->Allergies = static::getActiveAllergies($cid);
+      $me->Diagnoses = static::getActiveDiagnoses($cid);
+      $me->Results = static::getResults($cid);
+      $me->Procs = static::getProcedures($cid);
+      $me->Immuns = static::getImmuns($cid);
+      $me->Sessions = static::getSessions($cid);
+      $me->Vitals = static::getVitals($cid);
+    }
+    return $me;
+  }
+}
+class Facesheet_Hl7Ccd_Dos extends Facesheet_Hl7Ccd {
+  //
+  static function from($cid, $dos = null) {
+    if ($dos == null) 
+      $dos = nowNoQuotes();
+    $me = parent::from($cid);
+    // $me->Results = static::extractDos($me->Results, $dos);
+    // $me->Vitals = static::extractDos($me->Vitals, $dos);
+    // $me->Procs = static::extractDos($me->Procs, $dos);
+    // $me->Immuns = static::extractDos($me->Immuns, $dos, 'dateGiven');
+    // $me->Sessions = static::extractDos($me->Sessions, $dos, 'dateService');
+    return $me;
+  }
+  //
+  protected static function extractDos($recs, $dos, $fid = 'date') {
+    return array_filter($recs, function($rec) {
+      return substr($rec->$fid, 0, 10) == $dos;
+    });
+  }
+}
+class Facesheet_Hl7Immun extends Facesheet {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  public /*UserGroup*/ $UserGroup;
+  public /*Immun[]*/ $Immuns;
+  public /*Immun_HL7Codes*/ $Immun_HL7;
+  //
+  static function from($cid) {
+    $me = parent::from($cid);
+    if ($me) {
+      $me->Immuns = static::getImmuns($cid);
+      $me->Immun_HL7 = Immuns::getHL7Codes($cid);
+    }
+    return $me;
+  }
+}
+class Facesheet_Hl7PubHealthSurv extends Facesheet {
+  //
+  public $cid;
+  public /*Client*/ $Client;
+  public /*UserGroup*/ $UserGroup;
+  public /*Diagnosis[]*/ $Diagnoses;
+  public /*Session*/ $Session_Mr;
+  //
+  static function from($cid) {
+    $me = parent::from($cid);
+    if ($me) {
+      $me->Diagnoses = static::getActiveDiagnoses($cid);
+      $me->Session_Mr = static::getSession_Mr($cid);
+    }
+    return $me;
+  }
+  //
+  protected static function getSession_Mr($cid) {
+    return current(parent::getSessions($cid));
+  }
+}
+//
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Immuns.php';
+require_once 'php/data/rec/sql/Sessions.php';
+require_once 'php/data/rec/sql/Vitals.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+require_once 'php/data/rec/sql/ErxUsers.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Allergies.php';
+require_once 'php/data/rec/sql/Procedures.php';

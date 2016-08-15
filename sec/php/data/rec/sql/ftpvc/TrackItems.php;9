@@ -1,0 +1,338 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/SessionStub.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/dao/JsonDao.php';
+//
+/**
+ * TrackItems
+ * DAO for TrackItem
+ * @author Warren Hornsby
+ */
+class TrackItems {
+  /**
+   * @param int $clientId
+   * @return array(TrackItemStub,..)
+   */
+  public static function getActiveStubs($clientId) {
+    $c = new TrackItemStub();
+    $c->clientId = $clientId;
+    $c->status = CriteriaValue::notEquals(TrackItem::STATUS_CLOSED);
+    $recs = TrackItem::fetchAllBy($c, new RecSort('-priority', 'trackDesc'));
+    return $recs;
+  }
+  /**
+   * @param(opt) int $clientId
+   * @return array(TrackItem,..)
+   */
+  public static function getOpen($clientId = null) {
+    global $myLogin;
+    $c = TrackItem::asCriteria($myLogin->userGroupId, $clientId);
+    $c->status = CriteriaValue::notEquals(TrackItem::STATUS_CLOSED);
+    $recs = TrackItems::sort(TrackItem::fetchAllBy($c));
+    return $recs;
+  }
+  /**
+   * @param(opt) int $clientId
+   * @return array(TrackItem,..)
+   */
+  public static function getUnsched($clientId = null) {
+    global $myLogin;
+    $c = TrackItem::asCriteria($myLogin->userGroupId, $clientId);
+    $c->status = CriteriaValue::equals(TrackItem::STATUS_ORDERED);
+    $recs = TrackItem::fetchAllBy($c, new RecSort('-priority', 'orderDate', 'trackDesc'));
+    return $recs;
+  }
+  /**
+   * @param(opt) int $clientId
+   * @return array(TrackItem,..)
+   */
+  public static function getClosed($clientId = null) {
+    global $myLogin;
+    $c = TrackItem::asCriteria($myLogin->userGroupId, $clientId);
+    $c->status = CriteriaValue::equals(TrackItem::STATUS_CLOSED);
+    $recs = TrackItem::fetchAllBy($c, new RecSort('-closedDate', 'trackDesc'));
+    return $recs;
+  }
+  /**
+   * Order entry
+   * @param array $orderItems [{'cid':#,'sid':#,'key':$,'tcat':$,'tdesc':$,'cpt':$},..]
+   * @return array(
+   *   'items'=>array(TrackItem,..),
+   *   'add'=>bool      // true if no items have yet been saved  
+   *   )
+   */
+  public static function order($orderItems) {
+    global $myLogin;
+    $items = array();
+    $sid = null;
+    $add = true;
+    foreach ($orderItems as $orderItem) {
+      if ($orderItem->sid)
+        LoginDao::authenticateSessionId($orderItem->sid, $sid);
+      $item = ($orderItem->sid == TrackItem::SID_FACESHEET) ? null : TrackItem::fetchByOrderKey($orderItem->sid, $orderItem->key);
+      if ($item == null) 
+        $item = TrackItem::fromOrderItem($myLogin->userGroupId, $myLogin->userId, $orderItem);
+      else
+        $add = false;
+      $title = TrackItem::$TCATS[$item->trackCat];
+      $items[] = $item; 
+      $trackCatItems[$title][] = $item;
+    }
+    return array(
+      'items' => TrackItems::sort($items),
+      'add' => $add);
+  }
+  /**
+   * @param array $trackItems from JSON
+   */
+  public static function saveOrder($trackItems) {
+    global $myLogin;
+    $items = TrackItem::fromJsonObjects($trackItems);
+    $sid = null;
+    foreach ($items as $item) {
+      if ($item->sessionId)
+        LoginDao::authenticateSessionId($item->sessionId, $sid);
+      $item->userGroupId = $myLogin->userGroupId;
+      $item->userId = $myLogin->userId;
+      $item->save();
+    }
+  }
+  /**
+   * @param stdClass $object JSON
+   * @return TrackItem 
+   */
+  public static function save($object) {
+    $rec = new TrackItem($object);
+    $rec->save();
+    return $rec;
+  }
+  /**
+   * @return int PID of ordering template
+   */
+  public static function getPid() {
+    $ref = 'orders.+orders';
+    $tid = 30;
+    return JsonDao::toPid($ref, $tid);
+  }
+  //
+  private static function sort($recs) {
+    return Rec::sort($recs, new RecSort(
+    	'trackCat', 
+    	'closedDate', 
+    	'-priority', 
+    	'schedDate', 
+    	'orderDate', 
+    	'trackDesc'));    
+  }
+}
+//
+/**
+ * TrackItem Record
+ */
+class TrackItem extends SqlRec {
+  //
+  public $trackItemId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $key;
+  public $userId;
+  public $priority;
+  public $trackCat;
+  public $trackDesc;
+  public $cptCode;
+  public $status;  
+  public $orderDate;
+  public $orderBy;
+  public $orderNotes;
+  public $schedDate;
+  public $schedWith;
+  public $schedLoc;
+  public $schedBy;
+  public $schedNotes;
+  public $closedDate;
+  public $closedFor;
+  public $closedBy;
+  public $closedNotes;
+  public /*ClientStub*/ $ClientStub;
+  public /*SessionStub*/ $SessionStub;
+  public /*UserStub*/ $UserStub_OrderBy;
+  public /*UserStub*/ $UserStub_SchedBy;
+  public /*UserStub*/ $UserStub_ClosedBy;
+  //
+  const SID_FACESHEET = '0';
+  //
+  const PRIORITY_NORMAL = '0'; 
+  const PRIORITY_STAT = '9';
+  public static $PRIORITIES = array(
+    TrackItem::PRIORITY_NORMAL => 'Normal',
+    TrackItem::PRIORITY_STAT => 'STAT');
+  //
+  const TCAT_LAB = '1';
+  const TCAT_NUCLEAR = '2';
+  const TCAT_RADIO = '3';
+  const TCAT_REFER = '4';
+  const TCAT_TEST = '5';
+  const TCAT_PROC = '6';
+  const TCAT_OTHER = '99';
+  public static $TCATS = array(
+    TrackItem::TCAT_LAB => 'Labs',
+    TrackItem::TCAT_NUCLEAR => 'Nuclear Medicine',
+    TrackItem::TCAT_RADIO => 'Radiology',
+    TrackItem::TCAT_REFER => 'Referrals',
+    TrackItem::TCAT_TEST => 'Tests',
+    TrackItem::TCAT_PROC => 'Procedures',
+    TrackItem::TCAT_OTHER => '(Other)');
+  //
+  const STATUS_ORDERED = '0';
+  const STATUS_SCHED = '1';
+  const STATUS_CLOSED = '9';
+  public static $STATUSES = array(
+    TrackItem::STATUS_ORDERED => 'Ordered',
+    TrackItem::STATUS_SCHED => 'Scheduled',
+    TrackItem::STATUS_CLOSED => 'Closed');
+  //
+  const CLOSED_FOR_RECEIVED = '1';
+  const CLOSED_FOR_CANCELLED = '2';
+  public static $CLOSED_FORS = array(
+    TrackItem::CLOSED_FOR_RECEIVED => 'Received',
+    TrackItem::CLOSED_FOR_CANCELLED => 'Cancelled');
+  //
+  public function getSqlTable() {
+    return 'track_items';
+  }
+  public function getJsonFilters() {
+    return array(
+      'orderDate' => JsonFilter::editableDateTime(),
+      '_orderDate' => JsonFilter::informalDate('orderDate'),
+    	'schedDate' => JsonFilter::editableDateTime(),
+      '_schedDate' => JsonFilter::informalDateTime('schedDate'),
+    	'closedDate' => JsonFilter::editableDate(),
+    	'_closedDate' => JsonFilter::informalDate('closedDate'));
+  }
+  public function getAuditLabel() {
+    return $this->trackDesc;
+  }
+  /**
+   * @see parent::save()
+   */
+  public function save() {
+    global $myLogin;
+    $this->checkStatusChange($myLogin->userId);
+    parent::save();
+  }
+  //  
+  private function checkStatusChange($userId) {
+    $newStatus = $this->determineStatus();
+    if ($this->status != $newStatus) {
+      switch ($newStatus) {
+        case TrackItem::STATUS_ORDERED:
+          $this->clearSchedInfo();
+          $this->clearClosedInfo();
+          break;
+        case TrackItem::STATUS_SCHED:
+          $this->schedBy = $userId;
+          $this->clearClosedInfo();
+          break;
+        case TrackItem::STATUS_CLOSED:
+          $this->closedBy = $userId;
+          break;
+      }
+      $this->status = $newStatus;
+    }
+  }
+  private function determineStatus() {
+    if ($this->closedDate) 
+      return TrackItem::STATUS_CLOSED;
+    if ($this->schedDate)
+      return TrackItem::STATUS_SCHED;
+    return TrackItem::STATUS_ORDERED;
+  }
+  private function clearSchedInfo() {
+    $this->schedBy = null;
+    // TODO: clear other sched fields?
+  }
+  private function clearClosedInfo() {
+    $this->closedBy = null;
+    $this->closedFor = null;
+    $this->closedNotes = null;
+    // TODO: clear other closed fields?
+  }
+  //
+  public static function getStaticJson() {
+    return Rec::getStaticJson('TrackItem');
+  }
+  /**
+   * @param [stdClass,..] $objects
+   * @return array(TrackItem,..)
+   */
+  public static function fromJsonObjects($objects) {
+    return parent::fromJsonObjects($objects, 'TrackItem');    
+  }
+  /**
+   * @param int $sid
+   * @param string $key
+   * @return TrackItem
+   */
+  public static function fetchByOrderKey($sid, $key) {
+    $rec = new TrackItem();
+    $rec->sessionId = $sid;
+    $rec->key = $key;
+    return parent::fetchOneBy($rec);
+  }
+  /**
+   * @param int $ugid
+   * @param int @userId
+   * @param object $orderItem {'cid':#,'sid':#,'key':$,'tcat':$,'tdesc':$,'cpt':$}
+   * @return TrackItem
+   */
+  public static function fromOrderItem($ugid, $userId, $orderItem) {
+    return new TrackItem(
+      null,
+      $ugid, 
+      $orderItem->cid,
+      $orderItem->sid,
+      $orderItem->key,
+      $userId,
+      null,
+      $orderItem->tcat,
+      $orderItem->tdesc,
+      $orderItem->cpt,
+      TrackItem::STATUS_ORDERED,
+      null,
+      $userId
+      );
+  }
+  /**
+   * @return TrackItem
+   */
+  public static function asCriteria($ugid, $cid) {
+    $rec = new TrackItem();
+    $rec->userGroupId = $ugid;
+    $rec->clientId = $cid;
+    $rec->ClientStub = new ClientStub();
+    $rec->SessionStub = new SessionStub();
+    $rec->UserStub_OrderBy = new UserStub();
+    $rec->UserStub_SchedBy = new UserStub();
+    $rec->UserStub_ClosedBy = new UserStub();
+    return $rec;
+  }
+}
+/**
+ * TrackItem Stub
+ */
+class TrackItemStub extends SqlRec implements ReadOnly {
+  //
+  public $trackItemId;
+  public $clientId;
+  public $priority;
+  public $trackDesc;
+  public $status;
+  //
+  public function getSqlTable() {
+    return 'track_items';
+  }
+}
+?>

@@ -1,0 +1,210 @@
+<?php
+/**
+ * HL7Rec
+ * Properties composed of HL7Segments ($Upper), HL7Values ($lower), and helpers ($_underscore)   
+ * Class of both is designated through initial value ('ClassName') 
+ * @author Warren Hornsby
+ */
+class HL7Rec {
+  /*
+  public $field1 = 'ClassName1'
+   */
+  //
+  /**
+   * Recursive getter
+   * @param string $fid 'child.fid'
+   * @return HL7Segment | Hl7Value | null
+   */
+  public function get($fid) {
+    $value = getr($this, $fid);
+    if ($value && self::isSegFid($fid) && is_scalar($value)) 
+      $value = null;
+    return $value;
+  }
+  /**
+   * @return string
+   */
+  public function toJson() {
+    $this->sanitize();
+    return jsonencode($this);
+  }
+  /**
+   * Remove nulls and helper props 
+   */
+  public function sanitize() {
+    $hasValue = false;
+    foreach ($this as $fid => &$value) {
+      if ($value == null || self::isHelperFid($fid)) {
+        unset($this->$fid);
+      } else if (is_string($value)) {
+        if (self::isSegFid($fid))
+          unset($this->$fid);
+        else
+          $hasValue = true;
+      } else {
+        if ($value instanceof HL7Rec) {
+          $value = $value->sanitize();
+        } else if (is_array($value)) {
+          array_walk($value, function($e) {
+            $e->sanitize();
+          });
+          if (empty($value))
+            $value = null; 
+        }
+        if ($value == null)
+          unset($this->$fid);
+      } 
+    }
+    return ($hasValue) ? $this : null;
+  }
+  //
+  protected function setSegments($buffer, $encoding) {
+    $segIds = $this->getSegIds();
+    $fids = $this->getSegFids();
+    do {
+      $segId = $buffer->currentSegId();
+      $fid = geta($segIds, $segId);
+      if ($fid) {
+        $class = $fids[$fid];
+        $this->set($fid, $this->createSegment($class, $buffer, $encoding));
+      }
+    } while ($fid);
+    foreach ($fids as $fid => $value) {
+      if (is_string($this->$fid)) 
+        $this->$fid = null; 
+    }
+  }
+  protected function createSegment($class, $buffer, $encoding) {
+    return new $class($buffer, $encoding);
+  }
+  protected function setValues($values, $encoding) {
+    $fids = $this->getFids();
+    foreach ($fids as $fid => $class) {
+      $value = current($values);
+      if ($class)
+        $this->set($fid, $this->createValueObject($class, $value, $encoding));
+      else
+        $this->set($fid, $value);
+      next($values);
+    }
+  }
+  protected function createValueObject($class, $value, $encoding) {
+    return $class::from($value, $encoding);
+  }
+  protected function set($fid, $value) {
+    $current = $this->get($fid);
+    if (is_array($current)) 
+      array_push($this->$fid, $value);
+    else if (is_object($this->$fid))
+      $this->$fid = array($current, $value);
+    else 
+      $this->$fid = $value;
+  }
+  protected function getFids() {  // ['fid1'=>'Class',..]
+    static $fids;
+    if ($fids == null) 
+      $fids = $this->makeFidArray(false);
+    return $fids;
+  }
+  protected function getSegFids() {  // ['Fid1'=>'PID_Subtype',..]
+    static $fids;
+    if ($fids == null) 
+      $fids = $this->makeFidArray(true);
+    return $fids;
+  }
+  protected function getSegIds() {  // ['PID'=>'Fid1',..]
+    static $segIds;
+    if ($segIds == null) {
+      $segIds = array();
+      $fids = $this->getSegFids();
+      foreach ($fids as $fid => $class) 
+        if ($class)
+          $segIds[substr($class, 0, 3)] = $fid;
+    }
+    return $segIds;
+  }
+  protected function makeFidArray($asSeg) {
+    $vars = get_object_vars($this);
+    $fids = array();
+    foreach ($vars as $var => $class) {
+      if ($class == null || is_string($class)) { 
+        if ($asSeg) { 
+          if (self::isSegFid($var)) 
+            $fids[$var] = $class;
+        } else { 
+          if (self::isFid($var)) 
+            $fids[$var] = $class;
+        }
+      }
+    }
+    return $fids;
+  } 
+  protected static function isFid($var) {
+    $c1 = substr($var, 0, 1);
+    return $c1 != '_' && ! self::isUpper($c1);
+  }
+  protected static function isSegFid($var) {
+    $c1 = substr($var, 0, 1);
+    return $c1 != '_' && self::isUpper($c1);
+  }
+  protected static function isHelperFid($var) {
+    $c1 = substr($var, 0, 1);
+    return $c1 == '_';
+  }
+  protected static function isUpper($c) {
+    return ($c == strtoupper($c)); 
+  }
+}
+/**
+ * HL7 Messaage Buffer
+ * Holds raw message data
+ */
+class HL7Buffer {
+  //
+  public $recs;
+  public $delim = '|';
+  public $compDelim = '^';
+  //
+  public function setDelims($delim, $compDelim) {
+    $this->delim = $delim;
+    $this->compDelim = $compDelim;
+  }
+  /**
+   * @return string 
+   */
+  public function current() {
+    return current($this->recs);
+  }
+  /**
+   * @return string 'OBR' (or null if EOF)
+   */
+  public function currentSegId() {
+    $rec = $this->current();
+    if ($rec)
+      return substr($rec, 0, 3);
+  }
+  /**
+   * @return string header record (shifted off)
+   */
+  public function head() {
+    return array_shift($this->recs);
+  }
+  /**
+   * @return string[] values of current record (and advance pointer)
+   */
+  public function pop() {
+    $values = explode($this->delim, current($this->recs));
+    next($this->recs);
+    return $values;
+  }
+  //
+  /**
+   * @param string $data
+   * @return HL7Buffer
+   */
+  static function from($data) {
+    $me = new self();
+    $me->recs = preg_split('/\n|\r\n?/', $data);
+    return $me;
+  }  
+}

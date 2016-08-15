@@ -1,0 +1,33 @@
+<?php
+require_once 'php/data/LoginSession.php';
+require_once 'php/dao/UserDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+//
+try {
+  LoginSession::verify_forServer();
+  if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+    Logger::debug(currentUrl());
+  } else {
+    $_POST['obj'] = stripslashes($_POST['obj']);
+    $action = $_POST['action'];
+    $obj = json_decode($_POST['obj']);
+    Logger::debug(currentUrl());
+    Logger::debug_r($_POST, '$_POST');;
+  }
+  switch ($action) {
+    //
+    case 'changePassword':
+      $login->changePassword($obj->cpw, $obj->pw);
+      $m = new JAjaxMsg($action, null);
+      break;
+    case 'setPassword':
+      $login->setPassword($obj->pw);
+      $m = new JAjaxMsg($action, null);
+      break;
+  }
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError($e);
+}
+if ($m != null) 
+  echo $m->out();

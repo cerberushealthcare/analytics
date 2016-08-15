@@ -1,0 +1,74 @@
+SPAN.none {
+  font-weight:bold;
+}
+DIV.Stub {
+  padding:5px;
+  background-color:#FFF8C6;
+  border-right:1px solid black;
+  border-bottom:1px solid black;
+  margin-bottom:5px;
+}
+DIV.read {
+  background-color:#e8e8e8;
+}
+DIV.Stub DIV.Topic {
+  border:1px solid #c0c0c0;
+  padding:4px 4px 4px 29px;
+  background:url(../img/envelope.png) white no-repeat 9px center;
+  font-size:14pt;
+  font-weight:bold;
+}
+DIV.Stub DIV.Post {
+  padding-left:30px;
+}
+DIV.Message DIV.Author {
+  background-color:#EEF6FC;
+}
+DIV.Message DIV.self {
+  background-color:#FFF8C6;
+}
+DIV.Message DIV.Author TABLE.t2c {
+  width:100%;
+}
+DIV.Message DIV.Author TH {
+  text-align:left;
+  font-size:13pt;
+  padding-left:2px;
+}
+DIV.Message DIV.Author TD {
+  text-align:right;
+  font-size:11pt;
+  padding-right:2px;
+}
+DIV.Message DIV.Body {
+  padding-left:3px;
+}
+DIV.Message P {
+  margin:0.5em 0;
+}
+DIV.Message A.action {
+  display:block;
+  margin-left:18px;
+  margin-top:20px;
+}
+DIV.Actions {
+  margin-top:15px;
+  padding-left:18px;
+}
+DIV.EditorC {
+  padding-left:3px; 
+}
+DIV.Editor TEXTAREA {
+  width:95%;
+}
+DIV.Editor DIV.Author {
+  margin-top:10px;
+  margin-bottom:10px;
+  background-color:#FFF8C6;
+}
+DIV.Editor LABEL {
+  display:inline-block;
+  color:#004B52;
+  padding-right:5px;
+  margin-bottom:5px;
+}

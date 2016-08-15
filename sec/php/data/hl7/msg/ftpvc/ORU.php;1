@@ -1,0 +1,16 @@
+<?php
+require_once 'php/data/hl7/msg/seg/PID.php';
+require_once 'php/data/hl7/msg/seg/PV1.php';
+require_once 'php/data/hl7/msg/seg/ORC.php';
+
+/**
+ * Unsolicited Observation Message
+ * @author Warren Hornsby
+ */
+class ORU extends HL7Message {
+  //
+  public $PatientId = 'PID';
+  public $PatientVist = 'PV1';
+  public $CommonOrder = 'ORC';
+  //
+}

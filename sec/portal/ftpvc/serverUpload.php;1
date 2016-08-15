@@ -1,0 +1,28 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/PortalUsers_Session.php';
+require_once 'php/data/rec/GroupFolder_Portal.php'; 
+//
+$msg = null;
+$sess = PortalSession::get();
+logit_r($sess, 'sess');
+try {
+  switch ($action) {
+    case 'upload':
+      $folder = GroupFolder_Portal::open();
+      logit_r($folder, 'folder');
+      $filename = $folder->upload($cid);
+      logit_r($filename, 'filename');
+      $msg = new JAjaxMsg($action, $filename);
+      break;
+  }
+} catch (Exception $e) {
+  $msg = JAjaxMsg::constructError($e);
+}
+if ($msg)
+  $msg = jsonencode($msg); 
+?>
+<script>
+if (window.parent && window.parent.Html)
+  window.parent.Html.UploadForm.callback(<?=$msg?>);
+</script>

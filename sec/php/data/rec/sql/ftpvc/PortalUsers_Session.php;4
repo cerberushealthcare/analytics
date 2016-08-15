@@ -1,0 +1,349 @@
+<?php
+require_once 'php/data/rec/sql/_PortalUser.php';
+require_once 'php/data/rec/sql/_ClientRec.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+//
+/**
+ * Patient Portal Session Manager
+ * @author Warren Hornsby 
+ */
+class PortalUsers_Session {
+  /**
+   * Login patient to portal
+   * @param string $uid
+   * @param string $pw plaintext  
+   * @return PortalSession
+   * @throws PortalException
+   */
+  static function login($uid, $pw) {
+    $rec = PortalUser::fetchByUid($uid);
+    if ($rec == null || ! $rec->matchesPassword($pw))
+      throw new PortalException('Your login credentials do not match our records');
+    return new PortalSession($rec);
+  }
+  /**
+   * Ensure login session is valid
+   * @return PortalUser
+   * @throws PortalException
+   */
+  static function reauthenticate() {
+    $sess = PortalSession::get();
+    if (! $sess->reauthenticate(PortalUser::fetchByUid($sess->uid)))
+      throw new PortalException('Your session is no longer valid');
+    return PortalUser::fetchByUid($sess->uid);
+  }
+  /**
+   * Respond to challenge questions
+   * @param string[] $cas
+   * @return PortalSession
+   * @throws PortalException 
+   */
+  static function respond($cas) {
+    $sess = PortalSession::get();
+    $rec = PortalUser::fetchByUid($sess->uid);
+    if (! $rec->answer($cas[0], $cas[1], $cas[2])) 
+      throw new PortalException('Answer(s) supplied do not match our records');
+    return $sess->update($rec);
+  }
+  /** 
+   * Initial set of password (during login)
+   * @param string[] $new plaintext (repeated)
+   * @return PortalSession
+   * @throws PasswordException
+   */
+  static function setPassword($news) {
+    $sess = PortalSession::get();
+    $rec = PortalUser::fetchByUid($sess->uid);
+    $rec->establishPassword($news);
+    return $sess->update($rec);
+  }
+  /**
+   * Change password
+   * @param string $old plaintext
+   * @param string $new plaintext
+   * @return PortalSession
+   * @throws PasswordException
+   */
+  static function changePassword($old, $new) {
+    $sess = PortalSession::get();
+    $rec = PortalUser::fetchByUid($sess->uid);
+    $rec->changePassword($old, $new);
+    return $sess->update($rec);
+  }
+}
+class PortalException extends DisplayableException {}
+class PortalSessionException extends PortalException {}
+//
+/**
+ * Portal Login Session Stub 
+ */
+class PortalSession {
+  //
+  public $portalUserId;
+  public $userGroupId;
+  public $erx;
+  public $estAdjust;
+  public $clientId;
+  public $uid;
+  public $active;
+  public $status;
+  public $cqs;  // string[]  
+  public $pw;   // encrypted 
+  public $lastActivity;  
+  //
+  /**
+   * @param PortalUser $rec
+   * @param string $hashed 
+   */
+  public function __construct($rec) {
+    $this->update($rec);
+  }
+  /**
+   * @param PortalUser $rec
+   * @return bool true on success, false if session doesn't match
+   */
+  public function reauthenticate($rec) {
+    if ($this->differentThan($rec))
+      return false;
+    if ($this->pw != $rec->pw)
+      return false;
+    $this->update($rec);
+    return true;
+  }
+  /**
+   * @param PortalUser $rec
+   * @return PortalSession
+   */
+  public function update($rec) {
+    $this->setFromPortalUser($rec);
+    $this->save();
+    return $this;
+  }
+  /**
+   * @param int $timeout in seconds (default 20 min)
+   */
+  public function isExpired($timeout = 1200) {
+    return ($this->getInactivityDuration() > $timeout);
+  }
+  //
+  /**
+   * @return PortalSession 
+   */
+  static function get() {
+    @session_start();
+    if (! isset($_SESSION) || ! isset($_SESSION['portal_login']))
+      throw new PortalSessionException('Your session has expired');
+    $session = $_SESSION['portal_login'];
+    session_write_close();
+    return $session;
+  }
+  /**
+   * Clear session
+   */
+  static function clear() {
+    @session_start();
+    $_SESSION['portal_login'] = null;
+    session_write_close();
+  }
+  //
+  private function save() {
+    $this->lastActivity = time();
+    @session_start();
+    $_SESSION['portal_login'] = $this;
+    session_write_close();
+  }
+  private function setFromPortalUser($rec) {
+    $this->portalUserId = $rec->portalUserId;
+    $this->userGroupId = $rec->userGroupId;
+    $this->erx = $rec->UserGroup->isErx();
+    $this->estAdjust = $rec->UserGroup->estTzAdj;
+    $this->clientId = $rec->clientId;
+    $this->uid = $rec->uid;
+    $this->pw = $rec->pw;
+    $this->active = $rec->active;
+    $this->status = $rec->status;
+    $this->cqs = ($rec->needsChallenge()) ? array($rec->cq1, $rec->cq2, $rec->cq3) : null;
+  }
+  private function differentThan($rec) {
+    return $this->portalUserId != $rec->portalUserId ||
+      $this->userGroupId != $rec->userGroupId ||
+      $this->clientId != $rec->clientId ||
+      $this->active != $rec->active;
+  }
+  private function getInactivityDuration() {  // in seconds  
+    return time() - $this->lastActivity;
+  }
+}
+/**
+ * PortalUserRec PortalUser
+ */
+class PortalUser extends PortalUserRec implements NoAudit {
+  //
+  public $portalUserId;
+  public $userGroupId;
+  public $clientId;
+  public $uid;
+  public $pw;  // encrypted
+  public $active;
+  public $status;
+  public $createdBy;
+  public $dateCreated;
+  public $pwSet;
+  public $cq1;
+  public $ca1;
+  public $cq2;
+  public $ca2;
+  public $cq3;
+  public $ca3;
+  public /*UserGroup_Ps*/ $UserGroup;
+  public /*Client_Ps*/ $Client;
+  public $_authenticated = true;
+  //
+  const STATUS_RESET = 0;
+  const STATUS_CHALLENGED = 1;
+  const STATUS_PW_SET = 2; 
+  //
+  public function needsChallenge() {
+    return $this->status == self::STATUS_RESET;
+  }
+  /**
+   * @return bool true on success, false if answer mismatch
+   */
+  public function answer($ca1, $ca2, $ca3) {
+    if ($this->matchesAnswers($ca1, $ca2, $ca3)) {
+      if ($this->status == self::STATUS_RESET)
+        $this->updateStatus(self::STATUS_CHALLENGED);
+      return true;
+    }
+  }
+  /**
+   * @throws PasswordException 
+   */
+  public function changePassword($plainOld, $plainNews) {
+    if (! matchesPassword($plainOld))
+      throw new PasswordException('Old password does not match our records');
+    self::setPassword($plainNews);
+  }
+  /**
+   * @throws PasswordException 
+   */
+  public function establishPassword($plainNews) {
+    if ($plainNews[0] != $plainNews[1])
+      throw new PasswordException('New/repeat passwords do not match');
+    $plainNew = $plainNews[0];
+    Password::testStrength($plainNew);
+    $this->setPassword($plainNew);
+    $this->pwSet = nowNoQuotes();
+    $this->status = self::STATUS_PW_SET;
+    $this->save();
+  }
+  /**
+   * @return bool 
+   */
+  public function matchesPassword($plain) {
+    $password = new Password($plain);
+    return $password->matches($this->pw);
+  }
+  //
+  public function toJsonObject(&$o) {
+    unset($o->pw);
+    unset($o->pwSet);
+    unset($o->cq1);
+    unset($o->cq2);
+    unset($o->cq3);
+    unset($o->ca1);
+    unset($o->ca2);
+    unset($o->ca3);
+    unset($o->_authenticated);
+  }
+  //
+  static function fetchByUid($uid) {
+    if ($uid) {
+      $c = new self();
+      $c->uid = $uid;
+      $c->UserGroup = new UserGroup_Ps();
+      $c->Client = new Client_Ps();
+      return self::fetchOneBy($c);
+    }
+  }
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }  
+  //
+  private function setPassword($plain) {
+    $password = new Password($plain);
+    $this->pw = $password->encrypt();
+  }
+  private function updateStatus($status) {
+    $this->status = $status;
+    $this->save();
+  }
+  private function matchesAnswers($ca1, $ca2, $ca3) {
+    return self::isAnswerMatch($this->ca1, $ca1) && self::isAnswerMatch($this->ca2, $ca2) && self::isAnswerMatch($this->ca3, $ca3); 
+  }
+  //
+  private static function isAnswerMatch($a1, $a2) {
+    return self::fixAnswer($a1) == self::fixAnswer($a2);
+  }
+  private static function fixAnswer($a) {
+    return strtoupper(trim($a));
+  }
+}
+/**
+ * UserGroup UserGroup_Ps
+ */
+class UserGroup_Ps extends UserGroup implements ReadOnly {
+  //
+}
+/**
+ * ClientRec Client_Ps
+ */
+class Client_Ps extends ClientRec implements ReadOnly {
+  //
+  public $clientId;
+  public $lastName;
+  public $firstName;
+  public $middleName;
+  public $deceased;
+}
+/**
+ * Password
+ */
+class Password {
+  //
+  public $plain;
+  public $hashed;
+  //
+  public function __construct($plain) {
+    $this->plain = $plain;
+  }
+  /**
+   * @return string encrypted value 
+   */
+  public function encrypt() {
+    $this->hashed = self::hash($this->plain);
+    return $this->hashed; 
+  }
+  /**
+   * @param string $hashed encrypted value
+   * @return bool 
+   */
+  public function matches($hashed) {
+    $hash = self::hash($this->plain, $hashed);
+    return self::hash($this->plain, $hashed) == $hashed;
+  }
+  //
+  static function testStrength($plain) {
+    // TODO
+  }
+  //
+  private static function hash($plain, $salt = null) {
+    if ($salt === null) 
+      $salt = substr(md5(uniqid(rand(), true)), 0, 9);
+    else 
+      $salt = substr($salt, 0, 9);
+    return $salt . sha1($salt . $plain);
+  }
+}
+class PasswordException extends PortalException {} 
+?>

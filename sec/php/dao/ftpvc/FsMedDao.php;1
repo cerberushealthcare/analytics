@@ -1,0 +1,277 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/dao/FacesheetDao.php";
+require_once "php/data/json/JFacesheet.php";
+require_once "php/data/json/JDataMed.php";
+//
+class FsMedDao {
+  //
+  /**
+   * Load meds into facesheet
+   * @param JFacesheet $fs
+   * @param int $clientId
+   * @param bool $includeHistory
+   */
+  public static function loadMeds(&$fs, $clientId, $includeHistory = true) {
+    global $myLogin;
+    $meds = FsMedDao::getMeds($clientId);
+    $fs->meds = $meds;
+    $fs->activeMeds = FacesheetDao::filterInactive($meds);
+    if ($includeHistory) {
+      FsMedDao::loadMedHistory($fs, $clientId, $meds);
+    }
+  }
+  /**
+   * Retrieve active medications 
+   * @param int $clientId
+   * @return array('name'=>JDataMed,..)
+   */ 
+  public static function getMeds($clientId) {
+    global $myLogin;
+    if ($myLogin->isErx()) {
+      $recs = JDataMed::getActiveFacesheetMeds($clientId);
+    } else {
+      $recs = FsMedDao::rebuildFacesheetMeds($clientId);
+    }
+    uasort($recs, array("JDataMed", "cmp"));
+    return $recs;
+  }
+  /**
+   * Rebuild facesheet meds from NewCrop status
+   * @param int $clientId
+   * @param object $current  // see NewCrop::pullCurrentMedAllergy
+   */
+  public static function rebuildNewCropMeds($clientId, $current) {
+    global $myLogin;
+    $meds = JDataMed::fromNewCropMeds($myLogin->userGroupId, $clientId, $current['med']);
+    $faceRecs = JDataMed::getActiveNewCropMeds($clientId);
+    foreach ($meds as $name => $med) {
+      if (isset($faceRecs[$name])) {
+        $face = $faceRecs[$name];
+        if ($med->date != $face->date) {
+          $med->quid = JDataMed::QUID_NC_RX;
+          JDataMed::save($med, true, FacesheetDao::NO_AUDIT);
+          $face = JDataMed::copyAsFace($med, $face->id);
+          JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+        }
+      } else {
+        $med->quid = JDataMed::QUID_NC_ADD;
+        JDataMed::save($med, true, FacesheetDao::NO_AUDIT);
+        $face = JDataMed::copyAsFace($med);
+        JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    $now = nowNoQuotes();
+    foreach ($faceRecs as $name => $face) {
+      if (! isset($meds[$name])) {
+        $med = JDataMed::copyAsNcAudit($face, JDataMed::QUID_NC_DC, $now);
+        JDataMed::save($med);
+        $face->active = false;
+        JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    JDataMed::updateLegacySource($clientId);
+  }
+  /**
+   * Summarize updates from NewCrop since supplied time
+   * @param int $clientId
+   * @param string $since 'yyyy-mm-dd hh:mm:ss'
+   * @return array(
+   *   'nc.add'=>array(JDataMed,..), 
+   *   'nc.dc'=>array(JDataMed,..), 
+   *   'nc.rx'=>array(JDataMed,..)) 
+   */
+  public static function getNewCropAudits($clientId, $since) {
+    $updates = array(
+      JDataMed::QUID_NC_ADD => array(),
+      JDataMed::QUID_NC_DC => array(),
+      JDataMed::QUID_NC_RX => array());
+    $dcAdds = array();
+    $meds = JDataMed::getNewCropAuditsSince($clientId, $since);
+    print_r($meds);
+    foreach ($meds as &$med)  
+      switch ($med->quid) {
+        case JDataMed::QUID_NC_RX:
+          $updates[$med->quid][] = $med;
+          break;
+        case JDataMed::QUID_NC_ADD:
+        case JDataMed::QUID_NC_DC:
+          $dcAdd = geta($dcAdds, $med->name);
+          if ($dcAdd)
+            unset($dcAdds[$med->name]);
+          else 
+            $dcAdds[$med->name] = $med;
+      }
+    foreach ($dcAdds as &$med) 
+      $updates[$med->quid][] = $med;
+    return $updates;
+  }
+  /**
+   * Save med 
+   * @param object $m deserialized JSON  
+   * @return JDataMed updated
+   */
+  public static function save($m) {
+    global $myLogin;
+    $addAsReplace = false;
+    $now = nowShortNoQuotes();
+    if ($m->id == null) {
+      $m->id = JDataMed::getClientMedByName($m->clientId, $m->name);  // see if we are really doing a replace
+      $addAsReplace = true;
+    }
+    if ($m->id != null) {
+      $med = JDataMed::getMed($m->id);
+      $c = JDataMed::compareMedNames($med->name, $m->name);
+      if ($c == 0) {  // med names different, keep old and add new
+        $m->id = null;
+      } else if ($c == 1) {  // med names same/dosage different, deactivate old and add new
+        FsMedDao::deactivate($m->id);
+        $m->id = null;
+      } else {  // med names identical
+        JDataMed::createMedAuditCopy($med, $addAsReplace ? JDataMed::QUID_FS_ADD : JDataMed::QUID_FS_CHANGE);
+        $med->date = $now;
+        $med->name = $m->name;
+        $med->amt = $m->amt;
+        $med->freq = $m->freq;
+        $med->route = $m->route;
+        $med->length = $m->length;
+        $med->asNeed = $m->asNeeded;
+        $med->meals = $m->meals;
+        $med->disp = $m->disp;
+        $med->text = $m->text;
+        $med->rx = null;
+        $med->active = true;
+        $med->setExpires();
+        JDataMed::save($med, true);
+      }
+    }
+    if ($m->id == null) {
+      LoginDao::authenticateClientId($m->clientId);
+      $med = new JDataMed(null,
+          $myLogin->userGroupId,
+          $m->clientId,
+          null,
+          $now,
+          null,
+          null,
+          $m->name,
+          $m->amt,
+          $m->freq,
+          $m->asNeeded,
+          $m->meals,
+          $m->route,
+          $m->length,
+          $m->disp,
+          $m->text,
+          null,
+          true,
+          null,
+          null,
+          null);
+      $med->setExpires();
+      $med = JDataMed::save($med, true);
+      JDataMed::createMedAuditCopy($med, JDataMed::QUID_ADD);
+    }
+    return $med;
+  }
+  /**
+   * Deactivate med
+   * @param int $id
+   * @return JDataMed updated
+   */
+  public static function deactivate($id) {
+    $med = JDataMed::getMed($id);
+    JDataMed::createMedAuditCopy($med, JDataMed::QUID_FS_DEACTIVATE);
+    $med->date = nowShortNoQuotes();
+    $med->active = false;
+    JDataMed::save($med, true);
+    return $med;
+  }
+  /**
+   * Save facesheet audit records for printing RX
+   * @param [JDataMed,..] $meds
+   * @return JDataMed last one updated
+   */
+  public static function auditRxPrint($meds) {
+    foreach ($meds as &$m) {
+      $med = JDataMed::getMed($m->id);
+      JDataMed::createMedAuditCopy($med, JDataMed::QUID_FS_RX, $m->rx);
+      $med->date = nowShortNoQuotes();
+      $med->active = true;
+      JDataMed::save($med, true);
+    }
+    return $med;
+  }
+  /**
+   * Deactivate legacy meds
+   * @param int $clientId
+   */
+  public static function deleteLegacy($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    JDataMed::deactivateLegacy($clientId);
+  }
+  //
+  private static function loadMedHistory(&$fs, $clientId, $meds = null) {
+    global $myLogin;
+    if ($meds == null) {
+      $meds = FsMedDao::getMeds($clientId);
+    }
+    $fs->medsHistByMed = JDataMed::getMedsHistory($clientId, "name, date DESC, `index` DESC");
+    $fs->medsHistByDate = JDataMed::getMedsHistory($clientId, "date DESC, `index`, name");
+    if (! $myLogin->isErx()) {
+      $fs->medsHistByMed = FacesheetDao::syncActive($fs->medsHistByMed, $meds, "name");
+      $fs->medsHistByDate = FacesheetDao::syncActive($fs->medsHistByDate, $meds, "name");
+    }
+  }
+  // Rebuild facesheet records from session history and existing facesheet records
+  // If history rec not in facesheet, it will be added
+  // If history rec is in facesheet, it will be replaced if history rec is newer
+  private static function rebuildFacesheetMeds($clientId) {
+    $sessRecs = JDataMed::getSessionMeds($clientId);
+    $faceRecs = JDataMed::getFacesheetMeds($clientId);
+    $now = nowNoQuotes();
+    foreach ($sessRecs as $name => $sess) {
+      $discontinued = JDataMed::isDiscontinued($sess->quid);
+      if (isset($faceRecs[$name])) {
+        $face = $faceRecs[$name];
+        if (FacesheetDao::isSessNewer($sess, $face)) {
+          $face->date = $now;
+          if ($discontinued) {
+            $face->active = false;
+          } else {
+            $face->amt = FacesheetDao::overrideIfNotBlank($face->amt, $sess->amt);
+            $face->freq = FacesheetDao::overrideIfNotBlank($face->freq, $sess->freq);
+            $face->asNeeded = FacesheetDao::overrideIfNotBlank($face->asNeeded, $sess->asNeeded);
+            $face->meals = FacesheetDao::overrideIfNotBlank($face->meals, $sess->meals);
+            $face->route = FacesheetDao::overrideIfNotBlank($face->route, $sess->route);
+            $face->length = FacesheetDao::overrideIfNotBlank($face->length, $sess->length);
+            $face->disp = FacesheetDao::overrideIfNotBlank($face->disp, $sess->disp);
+            $face->text = FacesheetDao::overrideIfNotBlank($face->text, $sess->text);
+            $face->active = true;
+            if ($sess->quid == JDataMed::QUID_ADD) {
+              $face->setExpires($sess->date);
+            }
+          }
+          $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+        } else {
+          if ($face->isExpired()) {
+            $face->active = false;
+            $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+          }
+        }
+      } else {
+        $face = JDataMed::copy($sess);
+        $face->sessionId = null;
+        $face->quid = null;
+        $face->index = null;
+        $face->date = $now;
+        $face->rx = null;
+        $face->active = ! $discontinued;
+        $face->setExpires($sess->date);
+        $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    return $faceRecs;
+  }
+}
+?>

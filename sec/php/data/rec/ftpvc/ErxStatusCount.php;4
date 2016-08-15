@@ -1,0 +1,60 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Status Count 
+ */
+class ErxStatusCount extends Rec {
+  //
+  public $pendingRxCount;
+  public $alertCount;
+  public $faxCount;
+  public $pharmComCount;     // just mine
+  public $pharmComCountAll;  // whole group
+  //
+  public function getStatusText() {
+    $a = array();
+    if ($this->faxCount > 0) 
+      $a[] = "Fax: $this->faxCount";
+    $a[] = "Pend: $this->pendingRxCount";
+    return nullify(implode(' ', $a)); 
+  }
+  public function getPharmText() {
+    if ($this->pharmComCountAll > 0) 
+      $text = "Pharm: $this->pharmComCount/$this->pharmComCountAll";
+    else 
+      $text = 'Pharm';
+    return $text;
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    $o->_statusText = $this->getStatusText();
+    $o->_pharmText = $this->getPharmText();
+    $o->_pharmColor = ($this->pharmComCount > 0) ? 'red' : '';
+    return $o;
+  }
+  /**
+   * @param object $status @see NewCrop::pullAcctStatus
+   * @param object $pharmReqs @see NewCrop::pullRenewalRequests 
+   * @return ErxStatusCount 
+   */
+  public static function fromNewCrop($status, $pharmReqs) {
+    global $myLogin;
+    $rec =  new ErxStatusCount(get_object_vars($status));
+    if ($pharmReqs) {
+      $rec->pharmComCountAll = count($pharmReqs);
+      $rec->pharmComCount = 0;
+      foreach ($pharmReqs as $req) {
+        logit_r($req); 
+        if ($req->ExternalDoctorId == $myLogin->userId)
+          $rec->pharmComCount++;
+      }
+    } else {
+      $rec->pharmComCountAll = 0;
+      $rec->pharmComCount = 0;
+    }
+    return $rec;
+  }
+}
+?>
+

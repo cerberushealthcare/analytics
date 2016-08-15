@@ -1,0 +1,175 @@
+<?php
+require_once 'php/data/rec/sql/_SessionRec.php';
+require_once 'php/data/rec/sql/_SchedRec.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Messaging.php';
+//
+/**
+ * Documentation DAO
+ * @author Warren Hornsby
+ */
+class Documentation {
+  //
+  static function getAll($cid) {
+    $recs = DocStub::fetchAllTypes($cid);
+    return $recs;
+  }
+}
+class DocStub extends Rec {
+  //
+  public $type;
+  public $date;
+  public $timestamp;
+  public $name;
+  public $desc;
+  //
+  const TYPE_SESSION = 1;
+  const TYPE_MSG = 2;
+  const TYPE_APPT = 3;
+  const TYPE_ORDER = 4;
+  const TYPE_SCAN = 5;
+  const TYPE_RESULT = 6;
+  static $TYPES = array(
+    self::TYPE_SESSION => 'Document',
+    self::TYPE_MSG => 'Message',
+    self::TYPE_APPT => 'Appt',
+    self::TYPE_ORDER => 'Order',
+    self::TYPE_SCAN => 'Scan',
+    self::TYPE_RESULT => 'Result');
+  //
+  public function setDate($date) {
+    $this->date = dateToString($date);
+  }
+  //
+  static function fetchAllTypes($cid) {
+    $sessions = DocStubSession::fetchAll($cid);
+    $msgs = DocStubMsg::fetchAll($cid);
+    $appts = DocStubAppt::fetchAll($cid);
+    $recs = array_merge($sessions, $msgs, $appts);
+    Rec::sort($recs, new RecSort('-date', '-timestamp'));
+    return $recs;
+  }
+  static function fetchAll($cid, $sqlClass, $class) {
+    $recs = sc($sqlClass, 'fetchAll', $cid);
+    return sc($class, 'fromRecs', $recs, $class);
+  }
+  static function fromRecs($froms, $class) {
+    return parent::fromRecs($froms, 'fromRec', $class);
+  }
+}
+class DocStubSession extends DocStub {
+  //
+  static function fetchAll($cid) {
+    return parent::fetchAll($cid, 'DocSession', __CLASS__);
+  }
+  static function fromRec($from) {
+    $rec = new self();
+    $rec->type = self::TYPE_SESSION;
+    $rec->setDate($from->dateService);
+    $rec->timestamp = $from->dateCreated;
+    $rec->name = $from->getLabel();
+    $rec->desc = $from->formatDiagnoses();
+    return $rec; 
+  }
+}
+class DocStubMsg extends DocStub {
+  //
+  static function fetchAll($cid) {
+    return parent::fetchAll($cid, 'DocMessage', __CLASS__);
+  }
+  static function fromRec($from) {
+    $rec = new self();
+    $rec->type = self::TYPE_MSG;
+    $rec->setDate($from->dateCreated);
+    $rec->timestamp = $from->dateCreated;
+    $rec->name = $from->getLabel();
+    $rec->desc = $from->creator;
+    return $rec; 
+  }
+}
+class DocStubAppt extends DocStub {
+  //
+  static function fetchAll($cid) {
+    return parent::fetchAll($cid, 'DocAppt', __CLASS__);
+  }
+  static function fromRec($from, $types, $statuses) {
+    $rec = new self();
+    $rec->type = self::TYPE_MSG;
+    $rec->setDate($from->date);
+    $rec->timestamp = $from->date;
+    $rec->name = $from->getLabel($types, $statuses);
+    $rec->desc = null;
+    return $rec; 
+  }
+  static function fromRecs($froms) {
+    $recs = array();
+    $types = LookupScheduling::getApptTypes();
+    $statuses = LookupScheduling::getStatuses();
+    foreach ($froms as $from) {
+      $rec = self::fromRec($from, $types, $statuses);
+      $recs[] = $rec;     
+    }
+    return $recs;
+  }
+}
+class DocSession extends SessionRec implements ReadOnly {
+  //
+  public function formatDiagnoses() {
+    if ($this->Diagnoses) {
+      $names = DocDiagnosis::formatNames($this->Diagnoses);
+      return implode(', ', $names);
+    }
+  }
+  //
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    $c->Diagnoses = array(new DocDiagnosis());
+    return $c;
+  }
+}
+class DocDiagnosis extends Diagnosis implements ReadOnly {
+  //
+  public function formatName() {
+    $name = $this->text;
+    if ($this->icd) 
+      $name .= " ($this->icd)";
+    return $name;
+  }
+  //
+  static function formatNames($recs) {
+    $names = array();
+    foreach ($recs as $rec) 
+      $names[] = $rec->formatName();
+    return $names;
+  }
+}
+class DocMessage extends MsgThread implements ReadOnly {
+  //
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    return $c;
+  }
+}
+class DocAppt extends SchedRec implements ReadOnly {
+  //
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  static function asCriteria($cid) {
+    $c = new self();
+    $c->clientId = $cid;
+    return $c;
+  }
+} 
+?>

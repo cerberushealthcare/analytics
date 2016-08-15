@@ -1,0 +1,149 @@
+BODY {
+  font-size:1.05;
+}
+.ui-body-c, .ui-overlay-c {
+  background:#001121;
+  color:#d0d0d0;
+}
+.ui-body-c input {
+  color:black !important; 
+}
+DIV.head {
+  height:43px;
+  background-color:#09335b;
+}
+DIV.head TABLE {
+  width:100%;
+  color:white;
+}
+DIV.head TD {
+  width:50px;
+  padding:0 5px;
+  height:43px;
+}
+DIV.head TD.r {
+  text-align:right;
+}
+DIV.head TH {
+  font-weight:normal;
+  font-size:1.1em;
+  font-family:'Avenir-Heavy','Verdana';
+}
+DIV.head A {
+  font-weight:normal !important;
+  text-decoration:none;
+  color:white !important;  
+  display:block;
+  height:40px;
+  line-height:40px;
+}
+A.back {
+  background:url(images/ios7-back.png) no-repeat left center;
+  -webkit-filter:invert(100%);
+}
+A.plus {
+  background:url(images/ios7-plus.png) no-repeat right center;
+}
+A.edit {
+  background:url(images/ios7-edit.png) no-repeat right center;
+}
+DIV.body {
+  background:#001121;
+}
+DIV.scrollable {
+  overflow-y:scroll;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+}
+FORM {
+  padding:10px;
+}
+UL.list {
+  margin-top:10px;
+}
+UL.list LI P {
+  margin-top:0 !important;
+}
+UL.list A {
+  font-weight:normal !important;
+}
+UL.list SPAN.ui-icon-shadow {
+  -moz-box-shadow:0 !important;
+  -webkit-box-shadow:0 !important;
+  box-shadow:0 !important;
+}
+UL.list SPAN.ui-icon-arrow-r {
+  background:url(images/ios7-fwd.png) transparent no-repeat !important;
+  -webkit-border-radius:none !important;
+  border-radius:none !important;
+}
+DIV.canvas {
+  background-color:#001121;
+  padding:5px 0 0 0;
+  text-align:center;
+}
+CANVAS {
+  background-color:#001121;
+  margin:0 auto;
+}
+DIV.label {
+  position:absolute;
+  font-family:Arial;
+  font-size:10px;
+  line-height:10px;
+  position:absolute;
+  z-index:100;  
+  text-align:center;
+  color:white;
+}
+DIV.bullet {
+  font-size:12pt;
+}
+.lgreen {
+  background-color:black;
+  color:#00ff00;
+}
+.lblue {
+  padding:0 2px;
+  background-color:black;
+  color:#01f0ff;
+}
+.lred {
+  background-color:black;
+  color:red;
+}
+.lbull {
+  color:red;
+}
+DIV.fields {
+  padding:0.5em 0;
+}
+.ui-icon-ios7-fwd {
+  background:url(images/ios7-fwd.png) transparent no-repeat !important;
+  -webkit-border-radius:none !important;
+  border-radius:none !important;
+  -webkit-filter:invert(100%);
+}
+.ui-btn-icon-right .ui-btn-inner {
+  padding-right:20px !important;
+}
+DIV.lock {
+  height:32px;
+  width:32px;
+  position:absolute;
+  top:-50px;
+  background:url(images/ios7-unlock-32.png) transparent no-repeat !important;
+  -webkit-filter:invert(100%) opacity(33%);
+}
+DIV.locked {
+  background:url(images/ios7-lock-32.png) transparent no-repeat !important;
+  -webkit-filter:invert(100%) opacity(66%);
+}
+DIV.config {
+  height:32px;
+  width:32px;
+  position:absolute;
+  top:-50px;
+  background:url(images/ios7-config-32.png) transparent no-repeat !important;
+  -webkit-filter:invert(100%) opacity(33%);
+}

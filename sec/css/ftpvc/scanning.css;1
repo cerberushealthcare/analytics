@@ -1,0 +1,46 @@
+TABLE.c2 TD {
+  vertical-align:top;
+}
+TABLE.t2c TH {
+  width:40%;
+}
+TABLE.t2c TD {
+  width:60%;
+}
+TD.pr {
+  padding-left:10px;
+}
+DIV.Folders {
+  padding-left:10px;
+}
+DIV.SavedFolders {
+  text-align:center;
+}
+DIV.SavedFolders H2 {
+  margin:20px 0 0 0;
+}
+DIV.SavedFolders H3 {
+  margin:20px 0 0 0;
+  padding:0;
+  font-size:0.9em;
+  font-weight:bold;
+}
+DIV.pop-cmd {
+  margin-top:5px;
+}
+DIV.Folder {
+  padding:5px;
+  background-color:#FAEE9A;
+  border:1px solid #C8B560;
+  margin:5px 0;
+  text-align:left;
+}
+DIV.Folder A B {
+  font-size:11pt;
+}
+DIV.ScanIndex {
+  overflow-y:scroll;
+  padding:5px;
+  border:1px solid #e0e0e0;
+  background-color:white;
+}

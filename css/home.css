@@ -1,0 +1,454 @@
+BODY {
+  margin:0;
+  background-color:black;
+}
+DIV#body {
+  background-color:#D2E3E0;
+  border-top:1px solid black;
+}
+IMG {
+  border:0;
+}
+P, LI {
+  font-family:Arial;
+  font-size:11pt;
+  line-height:15pt;
+  margin:0 0 0.8em 0;  
+}
+LI {
+  padding:0;
+  margin:0;
+}
+P.i2 {
+  font-size:10pt;
+  line-height:13pt;
+}
+LI P {
+  font-size:10pt;
+  line-height:13pt;
+}
+LI B {
+  font-family:'Lucida Grande','Trebuchet MS';
+  color:#008C7B;
+}
+LI P B {
+  font-family:Arial;
+  color:black;
+}
+H1 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:20pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:1em 0 0.3em 0;
+}
+H2 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:16pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:0.5em 0 0.3em 0;
+}
+H3 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:13pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:0.5em 0 0.3em 0;
+}
+DIV.content {
+  width:800px;
+  margin:0 auto;
+  padding:0 10px;
+}
+DIV.center {
+  text-align:center;
+  background-color:white;
+  border:1px solid white;
+}
+DIV.wm {
+  margin:0 auto;
+  padding:0 10px 2em 100px;
+  width:700px;
+  background:url(../img/watermark.png) no-repeat;
+}
+DIV#head {
+  background-color:#000000;
+  color:white;
+  height:25px;
+  padding:15px 0 5px 0;
+}
+DIV#nav TABLE {
+  width:100%;
+}
+DIV#nav A.login {
+  color:#8BFFF0;
+}
+DIV#nav A {
+  color:white;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:11pt;
+  text-decoration:none;
+}
+DIV#nav A:hover {
+  color:#8BFFF0;
+  text-decoration:underline;
+}
+DIV#nav SPAN {
+  margin:0 10px;
+  color:#a0a0a0;
+}
+DIV#belt {
+  background:#D2E3E0;
+  padding:0;
+}
+TD#belt-left {
+  vertical-align:top;
+  width:330px;
+  padding:10px 0 0 0;
+}
+TD#belt-right {
+  width:500px;
+  text-align:right;
+  vertical-align:bottom;
+  padding:0 0 0 10px;
+}
+DIV#logo {
+  height:100px;
+  background:url(../img/tn-logo.png) no-repeat;
+  padding-left:41px;
+}
+DIV#logo SPAN {
+  display:inline-block;
+  margin-top:42px;
+  width:250px;
+  height:50px;
+  background:url(../img/clicktate2.png) no-repeat;
+}
+DIV#tag {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:21pt;
+  line-height:22pt;
+  color:black;
+  padding:0 0 10px 0;
+}
+DIV#tag2 {
+  padding:7px 30px 8px 0;
+}
+DIV#tag2 P {
+  margin:0;
+}
+/*  ****** crs 6/29/2016
+A.tour {
+  display:inline-block;
+  width:200px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  background:url(../img/tour-background.png) repeat-x;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  color:black;
+  text-decoration:none;
+}
+A.tour:hover {
+  color:#f42941;
+  border:1px solid #f42941; 
+}
+*/
+A.tour {
+  display:block;
+  height:25px;
+  line-height:25px;
+  width:200px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  text-decoration:none;
+  box-shadow: 0 0 5px 1px rgba(0,0,0,0.25) inset;
+  background-color: white !important;
+  color: rgba(0, 0, 0, 0.68) !important;
+  border:1px solid transparent !important;
+  transition:ease-in-out 0.2s;
+}
+A.tour:hover {
+  color:#008C7B !important;
+  border:1px solid #008C7B !important; 
+  transition:ease-in-out 0.2s;
+}
+A.itour {
+  height:25px;
+  display:block;
+  width:120px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  background:url(../img/tour-back.png) #DCE3C3 repeat-x;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  color:black;
+  text-decoration:none;
+}
+A.itour:hover {
+  color:#f42941;
+  border:1px solid #f42941; 
+}
+A.trial {
+  display:block;
+  width:120px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  background:url(../img/trial-back.png) #F7AE5F repeat-x;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  color:black;
+  text-decoration:none;
+  height:25px;
+}
+A.trial:hover {
+  color:#f42941;
+  border:1px solid red; 
+}
+A.video {
+  width:auto;
+  font-size:12pt; 
+  font-family:Arial;
+  height:25px;
+  line-height:25px;
+  padding:5px 10px;
+}
+DIV#flash {
+  width:450px;
+  height:288px;
+  padding:5px;
+  border:1px solid white;
+  background:url(../img/big-logo.png) white center center no-repeat;
+  background:url(../img/screen-shot.png) white center center no-repeat;
+}
+IMG#flash {
+  padding:5px;
+  border:1px solid white;
+}
+DIV#leg {
+  padding:20px 0 10px 0;
+  background-color:white;
+}
+DIV#leg TABLE {
+  width:100%;
+}
+TD#col1 {
+  width:50%;
+  padding-right:15px;
+  vertical-align:top;
+  border-right:1px solid #D2E3E0;
+}
+TD#col2 {
+  width:50%;
+  padding-left:15px;
+  vertical-align:top;
+}
+.drop {
+  margin-top:1em;
+}
+.mt {
+  margin-top:5px;
+}
+DIV#foot {
+  background-color:black;
+  color:white;
+  padding:25px 0 30px 0;
+  text-align:center;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:8pt;
+  color:#a0a0a0;
+}
+DIV.foot-text {
+  padding-bottom:1em;
+}
+DIV#foot A {
+  color:white;
+  text-decoration:none;
+}
+DIV#foot A:hover {
+  color:#f42941;
+  text-decoration:underline;
+}
+DIV#verisign {
+  padding:15px 0;
+  text-align:center;
+}
+DIV.ss {
+  padding:30px 0 35px 0;
+  border-bottom:1px solid #c0c0c0;
+}
+DIV.ss IMG {
+  margin:0.5em 0;
+}
+DIV.sp {
+  padding:10px 120px; 
+  text-align:left;
+  font-size:11pt;
+}
+A.h {
+  font-family:Arial,'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  font-weight:bold;
+  color:blue;
+}
+DIV#pplans {
+  padding:0;
+  margin-top:1em;
+}
+DIV#pplans TABLE {
+  width:80%;
+}
+DIV#pplans TABLE TH {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:15pt;
+  color:#008C7B;
+  color:#A4BD6D;
+  font-weight:bold;
+  border-bottom:3px solid #BAD0CD;
+}
+DIV#pplans TABLE TH.b {
+  width:130px;
+}
+DIV#pplans TABLE TD {
+  padding:3px 5px 0 5px;
+  border-bottom:1px solid #BAD0CD;
+  font-family:Arial;
+  font-size:10pt;
+  font-weight:bold;
+}
+DIV#pplans TABLE TH DIV {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  color:#008C7B;
+  color:black;
+  font-weight:bold;
+}
+DIV#pplans TABLE TD.d {
+  text-align:left;
+  font-family:Arial;
+  font-size:11pt;
+  font-weight:bold;
+  padding-left:20px;
+}
+DIV#pplans TABLE TR.n TD {
+  padding-bottom:5px;
+  border-bottom:3px solid #BAD0CD;
+}
+DIV#trial {
+  padding:15px 0 30px 0;
+  font-family:Arial;
+  font-size:10pt;
+}
+DIV#trial-pop {
+  position:absolute;
+  z-index:255;
+  top:100px;
+  left:100px;
+  border:2px solid #c0c0c0;
+  display:none;
+}
+DIV#trial-pop-c {
+  border:15px solid #008E7F;
+  background-color:#F8F8F8;
+  padding:20px;
+}
+DIV#trial-pop-h {
+  text-align:center;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:16pt;
+  color:#008C7B;
+  font-weight:bold;
+}
+DIV#curtain {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:254;
+  background-color:#999999;
+  opacity:0.75;
+  filter:alpha(opacity=75);
+  display:none;
+}
+LABEL {
+  font-family:Arial;
+  font-size:12pt;
+  line-height:12pt;
+  font-weight:bold;
+  display:block;
+  padding-bottom:2px;
+  margin-top:10px;
+}
+SPAN.ok {
+  border-top:4px solid #F8F8F8;
+  border-bottom:4px solid #F8F8F8;
+}
+SPAN.ok INPUT {
+  border:1px solid black;
+}
+SPAN.err {
+  border:4px solid red;
+  background:red;
+}
+SPAN.err INPUT {
+  border:1px solid red;
+}
+DIV#warn {
+  margin:20px 0 10px 0; 
+  background:url(../img/excl.gif) no-repeat center left;
+  padding:0 40px;
+  color:red;
+  font-family:Arial;
+  font-size:11pt;
+  line-height:12pt;
+  font-weight:bold;
+  visibility:hidden;
+}
+DIV#working-float {
+  position:absolute;
+  top:0;
+  left:0;
+  width:250px;
+  height:70px;
+  background:url(../img/working5.gif) #dddddd no-repeat center center;
+  border:10px solid #008E80;
+  z-index:2000;
+  visibility:hidden;
+}
+TABLE.c {
+  margin-left:auto;
+  margin-right:auto;
+  text-align:left;
+}
+TH.b, TD.b {
+  text-align:center;
+}
+DIV#fadebar {
+  height:10px;
+  background:url(../img/fadebar.png) repeat-x;
+}
+UL.homelist {
+  list-style-image:url(../img/smcheck.png);
+  font-weight:bold;
+  margin-top:0;
+}
+UL.homelist LI {
+  padding-left:expression('2px');
+}

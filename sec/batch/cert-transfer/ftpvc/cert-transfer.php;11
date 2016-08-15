@@ -1,0 +1,77 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('memory_limit', '512M');
+set_include_path('../../');
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once "batch/cert-transfer/sql/SqlRecs_Migrate.php";
+//
+/**
+ * Certification transfer
+ */
+$args = arguments($argv);
+$dbFrom = $args[0];
+$dbTo = $args[1];
+$ugid = $args[2];
+echo '<pre>';
+echo "BUILD CERT TRANSFER SQL\n";
+echo "Database From: $dbFrom\n";
+echo "Database To: $dbTo\n";
+echo "UGID: $ugid\n";
+$myHost = 'prod';
+$filename = "out/UG" . $ugid. ".sql";
+$fp = @fopen($filename, "w");
+fwrite($fp, "USE $dbTo;\n");
+Dao_Migrate::setDb($dbFrom);
+Dao_Cert::setDb($dbTo);
+echo "Building SQL statements...\n";
+$pkmap = PkMapper::fetch();
+UserGroup_Migrate::migrate($fp, $ugid, $pkmap);
+User_Migrate::migrate($fp, $ugid);
+TemplatePreset_Migrate::migrate($fp, $ugid);
+Client_Migrate::migrate($fp, $ugid, $pkmap);
+IpcHm_Migrate::migrate($fp, $ugid, $pkmap);
+Sched_Migrate::migrate($fp, $ugid, $pkmap);
+MsgThread_Migrate::migrate($fp, $ugid, $pkmap);
+Session_Migrate::migrate($fp, $ugid, $pkmap);
+DataAllergy_Migrate::migrate($fp, $ugid, $pkmap);
+DataDiagnosis_Migrate::migrate($fp, $ugid, $pkmap);
+DataHm_Migrate::migrate($fp, $ugid, $pkmap);
+DataImmun_Migrate::migrate($fp, $ugid, $pkmap);
+DataMed_Migrate::migrate($fp, $ugid, $pkmap);
+DataSync_Migrate::migrate($fp, $ugid, $pkmap);
+DataVital_Migrate::migrate($fp, $ugid, $pkmap);
+TrackItem_Migrate::migrate($fp, $ugid, $pkmap);
+fclose($fp);
+echo "Line(s) written to $filename.";
+//
+function arguments($argv){
+  array_shift($argv);
+  $out = array();
+  foreach ($argv as $arg){
+    if (substr($arg,0,2) == '--'){
+      $eqPos = strpos($arg,'=');
+      if ($eqPos === false){
+        $key = substr($arg,2);
+        $out[$key] = isset($out[$key]) ? $out[$key] : true;
+      } else {
+        $key = substr($arg,2,$eqPos-2);
+        $out[$key] = substr($arg,$eqPos+1);
+      }
+    } else if (substr($arg,0,1) == '-'){
+      if (substr($arg,2,1) == '='){
+        $key = substr($arg,1,1);
+        $out[$key] = substr($arg,3);
+      } else {
+        $chars = str_split(substr($arg,1));
+        foreach ($chars as $char){
+          $key = $char;
+          $out[$key] = isset($out[$key]) ? $out[$key] : true;
+        }
+      }
+    } else {
+      $out[] = $arg;
+    }
+  }
+  return $out;
+}

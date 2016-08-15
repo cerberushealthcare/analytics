@@ -1,0 +1,3783 @@
+/**
+ * LCD FRAMEWORK
+ * @version 1.1
+ * @author Warren Hornsby
+ */
+/**
+ * Globals
+ */
+function async(fn) {
+  setTimeout(fn, 1);
+}
+function _$(e) {
+  if (String.is(e))
+    e = document.getElementById(e);
+  return Html.decorate(e);
+}
+/**
+ * Class 
+ */
+Class = {
+  /*
+   * Define constructor function and prototype/static methods
+   */
+  define:function(constructor, prototype, statics) {
+    constructor = constructor || new Function();
+    constructor.prototype = prototype;
+    Class.augment(constructor, null, statics);
+    return constructor;
+  },
+  /*
+   * Augment existing class with additional prototype/static methods
+   */
+  augment:function(object, prototype, statics) {
+    for (var name in prototype)
+      object.prototype[name] = prototype[name];
+    for (var name in statics)
+      object[name] = statics[name];
+    return object;
+  }
+}
+/**
+ * Object
+ */
+Object = Class.augment(Object, null, 
+  {  // statics
+    is:function(e) {
+      return e && typeof e === 'object';  // returns true for arrays as well
+    },
+    isUndefined:function(e) {
+      var u;
+      return e === u;
+    },
+    /*
+     * Create an object instance from prototype
+     * @arg object prototype (optional)
+     * @arg object augs (optional; omit to use standard Object._Proto) 
+     * @return object instance aug'd with Object._Proto
+     */
+    create:function(prototype, augs) {
+      function F() {}
+      F.prototype = prototype;
+      var e = new F();
+      if (e.init)
+        e.init();
+      return Object.augment(e, augs);
+    },
+    /*
+     * Create an object instance (child) by augmenting parent prototype 
+     * @arg object parent prototype
+     * @arg object augs (optional)
+     * @return object instance 
+     */
+    extend:function(parent, augs) {
+      // augs._parent = parent;  TODO: flawed, cannot be used beyond first level because this._parent always points to immediate parent
+      // can this be resolved by wrapping extend creation in a closure giving access to a 'parent' argument, allowing each instance in hiearchy to refer to 'parent' rather than 'this.parent'?
+      return this.create(parent, augs);
+    },
+    /*
+     * Augment existing object  
+     * @arg object e
+     * @arg object augs (optional; omit to use standard Object._Proto) 
+     * @return e augmented
+     */
+    augment:function(e, augs) {
+      augs = augs || Object._Proto;
+      for (var name in augs)
+        e[name] = augs[name];
+      if (augs.init)   
+        e.init();
+      return e;
+    },
+    /*
+     * Deep clone object excluding HTML elements
+     * @arg version omit; used during recursion
+     */
+    deepclone:function(e, version) {
+      try {
+        e._cloned = version || Math.random();
+      } catch (ex) {
+        return e;
+      }
+      var n;
+      if (Array.is(e)) {
+        n = [];
+        for (var i = 0; i < e.length; i++) 
+          n.push(Object.deepclone(e[i], e._cloned));
+      } else if (Object.is(e)) {
+        n = {};
+        for (var i in e) 
+          if (Object.is(e[i]))
+            if (e[i]._cloned == e._cloned || Html.is(e[i])) 
+              n[i] = e[i];
+            else 
+              n[i] = Object.deepclone(e[i], e._cloned);
+          else 
+            n[i] = e[i];
+      } else {
+        n = e;
+      }
+      return n;
+    },
+    /*
+     * Shallow-clone object
+     */
+    clone:function(e) {
+      var n;
+      if (Array.is(e)) {
+        n = [];
+        for (var i = 0; i < e.length; i++) 
+          n.push(Object.clone(e[i]));
+      } else if (Object.is(e)) {
+        n = {};
+        for (var i in e) 
+          n[i] = e[i];
+      } else {
+        n = e;
+      }
+      return n;
+    },
+    /*
+     * Base object prototype
+     */
+    _Proto:{
+      /*
+       * Create an instance from this
+       * @arg object parent (optional)
+       * @return object instance
+       */
+      create:function(parent) {
+        function F() {}
+        F.prototype = this;
+        var e = new F();
+        if (parent)
+          e._parent = parent;
+        return e;
+      },
+      /*
+       * Extend a prototype from this
+       * @arg object proto
+       * @return object prototype
+       */
+      extend:function(proto) {
+        return Object.extend(this, proto);
+      },
+      /*
+       * Augment this
+       * @arg object augs
+       * @return this
+       */
+      aug:function(augs) {
+        Object.augment(this, augs);
+        if (augs.onaug)  // @event fires via e.aug(), not Object.create() or Object.augment()
+          this.onaug();
+        return this;
+      },
+      /*
+       * Apply this to that
+       * @arg object that
+       * @return that;
+       */
+      apply:function(that) {
+        Object.augment(that, this);
+        if (this.onapply)
+          that.onapply();
+        return that;
+      },
+      /*
+       * @arg string event  
+       * @arg object|fn to context|function
+       * @arg string toEvent (optional, default same as event if context supplied)
+       * e.g. bubble('onsave', this)
+       *      bubble('onempty', this.join_onempty.bind(this))
+       *      bubble('onclick', this, 'onabstract')
+       */
+      bubble:function(event, to, toEvent) {
+        if (Function.is(to)) 
+          this[event] = to;
+        else
+          this[event] = function(){return to[toEvent || event].apply(this, arguments)};
+        return this;
+      },
+      /*
+       * @arg string fid
+       * @arg mixed value
+       */
+      set:function(fid, value) {
+        if (fid)
+          this[fid] = value;
+        return this;
+      }
+    }
+  });
+/** 
+ * Rec
+ * Can "revive" simple data recs (e.g. deserialized JSON)  
+ */
+Object.Rec = Object.create({
+  /*  
+   * @events
+   */
+  onload:function(json) {},
+  onrefresh:function(json) {this.onload(json)},
+  /*
+   * @abstract
+   * @return Rec prototype for reviving; can be overriden to use different prototype 
+   */
+  getProto:function(json, i) {
+    return this;
+  },
+  /*
+   * @arg fn(json, i) f
+   */
+  setPrototyper:function(f) {
+    this.getProto = f;
+    return this;
+  },
+  /*
+   * @arg object proto e.g. from Rec::getStaticJson()
+   */
+  constants:function(proto) {
+    this.aug(proto);
+    return this;
+  },
+  /*
+   * @arg object[]|map json
+   * @arg fn(json, i) decorator (optional, for modifying json element prior to reviving) 
+   * @return [Rec,..]|{id:Rec,..} aug'd with json data 
+   */
+  reviveAll:function(jsons, decorator) {
+    if (jsons)
+      if (Array.is(jsons))
+        return this._fromArray(jsons, decorator);
+      else 
+        return this._fromMap(jsons, decorator);
+  },
+  /*
+   * @arg object json {fid:value,..}
+   * @return Rec aug'd with json data
+   */
+  revive:function(json, i) {
+    var rec = Object.create(this.getProto(json, i), json || {});
+    rec.onload(json);
+    return rec;
+  },
+  /*
+   * @arg object json (fid:value,..}
+   */
+  refresh:function(json) {
+    this.aug(json);
+    this.onrefresh(json);
+  },
+  //
+  _fromArray:function(array, decorator) {
+    for (var i = 0, l = array.length; i < l; i++) {
+      if (decorator)
+        decorator(array[i], i);
+      array[i] = this.revive(array[i], i);
+    }
+    return Object.augment(array);
+  },
+  _fromMap:function(map, decorator) {
+    for (var i in map) { 
+      if (decorator)
+        decorator(map[i], i);
+      map[i] = this.revive(map[i], i);
+    }
+    return Object.augment(map);
+  }
+})
+/**
+ * RecArray
+ */
+Object.RecArray = Object.create({
+  /*
+   * @abstract
+   * @arg array|map jsons ref'd in create
+   * @return Rec prototype for array items
+   */
+  getItemProto:function(jsons) {},
+  /*
+   * @events
+   */
+  onload:function(itemProto, jsons) {},
+  onreviveitem:function(json, i) {},
+  //
+  /*
+   * @arg array|map jsons
+   * @arg object proto (optional, will use getItemProto if not supplied)
+   */
+  revive:function(jsons, proto) {
+    jsons = jsons || [];
+    proto = proto || this.getItemProto(jsons);
+    var array = proto.reviveAll(jsons, this.onreviveitem.bind(this));
+    array.aug(this).onload(proto, jsons);
+    array.itemProto = proto;
+    return array;
+  }
+})
+/**
+ * Collection
+ */
+Object.Collection = {
+  items:{},
+  count:0,
+  add:function(item, key) {
+    if (! this.has(key))
+      this.count--;
+    this.items[key] = item;
+    this.count++;
+  },
+  remove:function(key) {
+    if (! this.isEmpty(key)) {
+      delete this.items[key];
+      this.count--;
+    }
+  },
+  get:function(key) {
+    return this.items[key];
+  },
+  getValues:function() {
+    var a = [];
+    for (var key in this.items) 
+      a.push(this.items[key]);
+    return a;
+  },
+  isEmpty:function() {
+    return this.count == 0;
+  },
+  has:function(key) {
+    return key in this.items;
+  }
+}
+/**
+ * Map
+ */
+Map = {
+  is:function(e) {
+    return e && typeof e === 'object' && ! Array.is(e);
+  },
+  length:function(map) {
+    var ct = 0;
+    for (var i in map) 
+      ct++;
+    return ct;
+  },
+  /*
+   * @arg map/array e
+   * @arg string keyFid (optional, to use e[i].keyFid as key; by default, key=i)
+   * @arg string valueFid (optional, to use e[i].valueFid as value; by default, value=e[i])
+   * @return {key:value,..}
+   * Examples:
+   *   Map.from(['a','b','c']) => {'0':'a','1':'b','2':'c'}
+   *   Map.from([{'id':'k1','name':'alpha'},{'id':'k2','name':'beta'}], 'id', 'name') => {'k1':'alpha','k2':'beta'}
+   *   Map.from({'k1':{'name':'alpha'},'k2':{'name':'beta'}}, null, 'name') => {'k1':'alpha','k2':'beta'}
+   */
+  from:function(e, keyFid, valueFid) {
+    var m = {}, key, value;
+    if (Array.is(e)) {
+      for (var i = 0; i <  e.length; i++) {
+        key = (keyFid) ? e[i][keyFid] : i;
+        value = (valueFid) ? e[i][valueFid] : e[i];
+        m[key] = value;
+      }
+    } else if (Map.is(e)) {
+      for (var i in e) {
+        key = (keyFid) ? e[i][keyFid] : i;
+        value = (valueFid) ? e[i][valueFid] : e[i];
+        m[key] = value;
+      }
+    }
+    return m;
+  },
+  /*
+   * @arg map map {'id1':e1,'id2':e2,..}
+   * @arg array ids ['id2','id4',..]
+   * @return {'id2':e2,'id4':e4,..}
+   */
+  extract:function(map, ids) {
+    var m = {};
+    for (var i = 0; i < ids.length; i++) 
+      m[ids[i]] = map[ids[i]];
+    return m;
+  },
+  /*
+   * @arg object[] maps
+   * @return object
+   */
+  combine:function(maps) {
+    var combined = maps[0];
+    for (var i = 1, l = maps.length; i < l; i++) 
+      for (var fid in maps[i]) 
+        combined[fid] = maps[i][fid];
+    return combined;
+  },
+  /*
+   * @arg map e {'k':v,..}
+   * @return array ['k',..]
+   */
+  keys:function(e, fids) {
+    var a = [];
+    for (var i in e)
+      a.push(i);
+    return a;
+  },
+  /*
+   * @arg map e {'k':v,..}
+   * @arg string[] fids (optional, to return values of matching fids)
+   * @return array [v,..]
+   */
+  values:function(e, fids) {
+    var a = [];
+    if (fids) 
+      fids.forEach(function(fid) {
+        if (fid in e)
+          a.push(map[fid]);
+      })
+    else 
+      for (var i in e)
+        a.push(e[i]);
+    return a;
+  },
+  /*
+   * @arg map e
+   */
+  invert:function(e) {
+    var map = {};
+    for (var i in e) 
+      map[e[i]] = i;
+    return map;
+  }
+}
+/**
+ * String
+ */
+String = Class.augment(String, 
+  {  // prototype
+    plural:function(amt) {
+      var noun = (amt == 1) ? this : this + 's';
+      return amt + ' ' + noun;
+    },
+    beginsWith:function(e) {
+      return (this.substr(0, e.length) == e);
+    },
+    endsWith:function(e) {
+      return (this.substr(this.length - e.length) == e);
+    },
+    addSlashes:function() {
+      return this.replace(/([\\"'])/g, "\\$1").replace(/\0/g, "\\0");
+    },
+    ellips:function(len) {
+      if (this.length > len) {
+        for (var i = len; i > 0; i--) 
+          if (this.substr(i, 1) == " ") 
+            return trim(this.substr(0, i)) + "...";
+        return this.substr(0, len) + "...";
+      } else {
+        return this;
+      }
+    }
+  },{  // statics
+    is:function(e) {
+    return e && typeof e == 'string';
+    },
+    isBlank:function(e) {
+      return e == null || String.trim(e).length == 0;
+    },
+    from:function(e) {
+      return e + '';
+    },
+    trim:function(e) {
+      return (e != null) ? (e + '').replace('\xa0',' ').replace(/^\s+|\s+$/g, "") : null;
+    },
+    denull:function(e) {
+      return (e == null) ? '' : e + '';
+    },
+    nullify:function(e) {
+      return (e == null) ? null : (trim(e + '') == '') ? null : e;
+    },
+    toInt:function(e) {
+      var i = parseInt(e, 10);
+      return (isNaN(i)) ? 0 : i;
+    },
+    toFloat:function(e) {
+      var f = parseFloat(e);
+      return (isNaN(f)) ? 0. : f;
+    },
+    zpad:function(i) {
+      return (i < 10) ? '0' + num : num;
+    },
+    rnd:function(prefix, len) {
+      len = len || 8;
+      prefix = prefix || '';
+      return prefix + (Math.random() + '').substr(2, len);
+    },
+    px:function(i) {
+      return (i === null) ? '' : (isNaN(i)) ? i : parseInt(i, 10) + 'px';
+    },
+    percent:function(i) {
+      return (i === null) ? '' : (isNaN(i)) ? i : parseInt(i, 10) + '%';
+    }
+  });
+/**
+ * Boolean
+ */
+Boolean = Class.augment(Boolean, null,
+  {  // statics
+    toInt:function(e) {
+      return (e) ? 1 : 0;
+    },
+    fromInt:function(e) {
+      return (e == 1);
+    },
+    toString:function(e) {
+      return (e) ? 'true' : 'false'
+    },
+    fromString:function(e) {
+      return (e.toUpperCase() == 'TRUE');
+    }
+  });
+/**
+ * Array
+ */
+Array = Class.augment(Array, 
+  {  // prototype
+    isEmpty:function() {
+      return Array.isEmpty(this);
+    },
+    append:function(e) {
+      if (Array.is(e))
+        Array.forEach(this,
+          function(ei) {
+            this.push(ei);
+          }); 
+      else
+        this.push(e);
+    },
+    pushIfNotNull:function(e) {
+      if (e != null)
+        this.push(e);
+    },
+    find:function(item) {
+      for (var i = 0, l = this.length; i < l; i++) 
+        if (this[i] == item) 
+          return i;
+      return -1;
+    },
+    has:function(item) {
+      return this.find(item) > -1;
+    },
+    forEach:function(fn) {
+      return Array.forEach(this, fn);
+    },
+    filter:function(fn) {
+      return Array.filter(this, fn);
+    },
+    /*
+     * PHP-style functions
+     */
+    current:function(inc) {
+      this.__i = (this.__i == null) ? 0 : this.__i;
+      return (this.__i >= 0 && this.__i < this.length) ? this[this.__i] : false;
+    },
+    reset:function() {
+      this.__i = 0;
+      return this;
+    },
+    end:function() {
+      this.__i = this.length - 1;
+      return this.current();
+    },
+    next:function() {
+      this.__i = (this.__i == null) ? 1 : this.__i + 1;
+      return this.current();
+    },
+    prev:function() {
+      this.__i = (this.__i == null) ? 1 : this.__i - 1;
+      return this.current();
+    },
+    unset:function(i) {
+      this.splice(i, 1);
+    }
+  },{  // statics
+    is:function(e) {
+      return e != null && e.constructor == Array;
+    },
+    isEmpty:function(array) {
+      return array == null || array.length == 0;
+    },
+    /*
+     * @arg mixed e
+     * @arg string fid (optional, to get field values of object array)
+     * Examples:
+     *   Array.from(null) => []
+     *   Array.from('one') => ['one']
+     *   Array.from(['one']) => ['one']
+     *   Array.from([{'name':'a'},{'name':'b'},{'name':'c'}], 'name') => ['a','b','c']
+     *   Array.from({'k1':'a','k2':'b','k3':'c'}) => ['a','b','c']
+     */
+    from:function(e, fid) {
+      if (Array.is(e)) {
+        if (fid == null)
+          return e;
+        var a = [];
+        for (var i = 0; i < e.length; i++) 
+          a.push(e[i][fid]);
+        return a;
+      }
+      if (e == null) 
+        return [];
+      if (Map.is(e)) {
+        var a = [];
+        for (var i in e)
+          a.push(e[i]);
+        return a;
+      } else {
+        return [e];
+      }
+    },
+    /*
+     * @arg [e,..] array
+     * @arg fn(e, i) fn for each element
+     */
+    forEach:function(array, fn) {
+      if (array && array.length) 
+        for (var i = 0, l = array.length; i < l; i++)
+          fn.call(array, array[i], i);
+    },
+    /*
+     * @arg array
+     * @arg fn(e, i) fn for each element; return e to retain, null to omit 
+     */
+    filter:function(array, fn) {
+      if (Array.is(array)) {
+        var filtered = [];
+        Array.forEach(array, function(e, i) {
+          e = fn.call(array, e, i);
+          if (e !== null) 
+            filtered.push(e);
+        })
+        return filtered;
+      }
+    },
+    /*
+     * Add _prev and _next links to records
+     * @arg object[] recs
+     * @arg bool descending (optional)
+     * @return object[] 
+     */
+    navify:function(recs, descending) {
+      if (recs) {
+        var last;
+        var prev = (descending) ? '_next' : '_prev';
+        var next = (descending) ? '_prev' : '_next';
+        recs.forEach(function(rec) {
+          if (last) {
+            last[next] = rec;
+            rec[prev] = last;
+            rec[next] = null;
+          } else {
+            rec._prev = null;
+            rec._next = null;
+          }
+          last = rec;
+        });
+        return recs;
+      }
+    }
+  });
+/**
+ * Math
+ */
+Math._round = Math.round;
+Math = Class.augment(Math, null, 
+  {  // statics
+    sgn:function(x) {
+      return (x > 0) | -(x < 0);      
+    },
+    isEven:function(i) {
+      return (i % 2 == 0);
+    },
+    larger:function(x1, x2) {
+      return (x1 > x2) ? x1 : x2;  
+    },
+    largest:function(array) {
+      var max;
+      Array.forEach(array,
+        function(x) {
+          if (max == null || x > max) 
+            max = x;
+        });
+      return max;
+    },
+    smaller:function(x1, x2) {
+      return -Math.larger(-x1, -x2);      
+    },
+    smallest:function(array) {
+      var min;
+      Array.forEach(array,
+        function(x) {
+          if (min == null || x < min) 
+            min = x;
+        });
+      return min;
+    },
+    round:function(num, places) {
+      if (places) { 
+        var pow = Math.pow(10, places);
+        return Math._round(num * pow) / pow;
+      } else {
+        return Math._round(num);
+      }
+    }
+  });
+/**
+ * Function
+ */
+Function = Class.augment(Function, 
+  {  // prototype
+    /*
+     * @arg object context 
+     * @return a function calling self with execution scope (plus any add'l arguments)
+     */
+    bind:function(context) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      var fn = this;
+      return function() {
+        return fn.apply(context, args.concat(Array.prototype.slice.call(arguments)));
+      }
+    }
+  },
+  {  // statics
+    is:function(e) {
+      try {  
+        return /^\s*\bfunction\b/.test(e);  
+      } catch (e) {
+        return false;  
+      }    
+    },
+    from:function(e) {
+      return (Function.is(e)) ? e : new Function(e);
+    }
+  });
+/**
+ * Html
+ */
+Html = {
+  is:function(e) {
+    return e && e.nodeName != null;
+  },
+  create:function(tag, cls) {
+    var e = document.createElement(tag);
+    if (cls)
+      e.className = cls;
+    Html.decorate(e);
+    return e;
+  },
+  getTag:function(tag, container, createIfNull) {
+    var tags = container.getElementsByTagName(tag);
+    if (tags && tags.length > 0)
+      return Html.decorate(tags[0]);
+    else 
+      return (createIfNull) ? container.append(tag) : null;
+  },
+  decorate:function(e) {
+    if (e && ! e._decorated) {
+      Class.augment(e, null, Html._proto);
+      e._decorated = Html;
+      switch (e.tagName) {
+        case 'TABLE':
+          Class.augment(e, null, Html.Table._proto);
+          break;
+        case 'TBODY':
+        case 'THEAD':
+          Class.augment(e, null, Html.Table._protoBody);
+          break;
+      }
+    }
+    return e;
+  },
+  /*
+   * @arg <e> e
+   * @arg fn(self) protof
+   */
+  extend:function(e, protof) {
+    return e.aug(protof(e));
+  },
+  _proto:{
+    /*
+     * @arg object statics
+     */
+    aug:function(statics) {
+      if (statics) {
+        Class.augment(this, null, statics);
+        if (statics.init) 
+          statics.init.call(this);
+      }
+      return this;
+    },
+    /*
+     * @arg fn(self) protof
+     */
+    extend:function(proto, protof) {
+      if (protof == null)
+        return Html.extend(this, proto);
+      proto._protof = protof;
+      return this.aug(protof(this, (function(parent) {
+        return parent._protof(this);
+      }).bind(this))); 
+    },
+    /*
+     * @arg string fid
+     * @arg mixed value
+     */
+    set:function(fid, value) {
+      if (fid)
+        this[fid] = value;
+      return this;
+    },
+    /*
+     * @arg string event  
+     * @arg object|fn to context|function
+     * @arg string toEvent (optional, default same as event if context supplied)
+     * e.g. bubble('onselectopt', self)    
+     *      bubble('onclick', self.toggle)
+     *      bubble('onclick', self, 'onabstract')
+     * Recognize that the second form is no good for events intended to be inherited, as the function reference is evaluated only once at init and will always point to the empty @abstract
+     */
+    bubble:function(event, to, toEvent) {
+      if (Function.is(to)) 
+        this[event] = to;
+      else
+        this[event] = function(){return to[toEvent || event].apply(this, arguments)};
+      return this;
+    },
+    append:function(e, fid) {
+      if (String.is(e)) 
+        e = Html.create(e);
+      this.appendChild(_$(e));
+      if (fid)
+        this.set(fid, e);
+      return e;
+    },
+    into:function(e) {
+      if (e)
+        e.appendChild(this);
+      return this;
+    },
+    before:function(e) {
+      if (e && e.parentElement)
+        e.parentElement.insertBefore(this, e);
+      return this;
+    },
+    after:function(e) {
+      if (e && e.parentElement)
+        e.parentElement.insertBefore(this, e.nextSibling);
+      return this;
+    },
+    add:function(e, fid) {
+      if (e)
+        this.append(e, fid);
+      return this;
+    },
+    clean:function() {
+      while (this.hasChildNodes()) 
+        this.removeChild(this.lastChild);
+      return this;
+    },
+    setId:function(id) {
+      if (id)
+        this.id = id;
+      return this;
+    },
+    setText:function(s) {
+      this.innerText = String.denull(s);
+      return this;
+    },
+    hide:function() {
+      this.style.display = 'none';
+      this.showing = null;
+      return this;
+    },
+    show:function() {
+      this.style.display = '';
+      this.showing = this;
+      return this;
+    },
+    showIf:function(test) {
+      if (test) 
+        this.show();
+      else
+        this.hide();
+    },
+    hideIf:function(test) {
+      this.showIf(! test);
+    },
+    visible:function() {
+      this.style.visibility = '';
+      return this;
+    },
+    invisible:function() {
+      this.style.visibility = 'hidden';
+      return this;
+    },
+    getStyle:function(style) {
+      if (this.currentStyle)
+        return this.currentStyle[style];
+      else
+        return document.defaultView.getComputedStyle(this, null)[style];
+    },
+    float:function(value) {
+      this.style.cssFloat = this.style.styleFloat = value;
+      return this;
+    },
+    getPosDim:function() {
+      var pos = this.getPos();
+      var dim = this.getDim();
+      return Map.combine([pos, dim]);
+    },
+    getPos:function(x) {
+      var l = 0, t = 0;
+      var e = this;
+      if (e.offsetParent) {
+        do {
+          l += e.offsetLeft;
+          t += e.offsetTop;
+          if (e.className == 'pop')
+            break;
+        } while (e = e.offsetParent);
+      }
+      return {'left':l,'top':t};
+    },
+    setLeft:function(i) {
+      this.style.left = String.px(i);
+      return this;
+    },
+    setTop:function(i) {
+      this.style.top = String.px(i);
+      return this;
+    },
+    getDim:function() {
+      var dis = this.style.display;
+      if (this.getStyle('display') == 'none')
+        this.style.display = 'block';
+      var h = this.offsetHeight;
+      var w = this.offsetWidth;
+      this.style.display = dis;
+      return {'height':h,'width':w};
+    },
+    getHeight:function() {
+      return this.getDim().height;
+    },
+    setHeight:function(i, min) {
+      min = min || 0;
+      if (i != null && i < min)
+        i = min;
+      this.style.height = (i == null) ? 'auto' : String.px(i);
+      return this;
+    },
+    setWidth:function(i, min) {
+      min = min || 0;
+      if (i != null && i < min)
+        i = min;
+      this.style.width = (i == null) ? 'auto' : String.px(i);
+      return this;
+    },
+    setHeightToMax:function(pad) {
+      pad = pad || 0;
+      this.setHeight(Html.Window.getViewportDim().height - pad);
+    },
+    setPosition:function(s) {
+      this.style.position = s;
+      return this;
+    },
+    getScrollHeight:function() {
+      return this.scrollHeight;
+    },
+    center:function() {
+      this.clientHeight;
+      var left = document.documentElement.clientWidth/2 - this.clientWidth/2;
+      if (left < 0) 
+        left = 0;
+      var top = document.documentElement.clientHeight/2 - this.clientHeight/2;
+      if (top < 0) 
+        top = 0;
+      left += Html.Window.getScrollLeft();
+      top += Html.Window.getScrollTop();
+      this.setLeft(left).setTop(top);
+    },
+    centerWithin:function(e) {
+      var pp = _$(e).getPos();
+      var pd = e.getDim();
+      var d = this.getDim();
+      return this.setTop(pp.top + pd.height/2 - d.height/2).setLeft(pp.left + pd.width/2 - d.width/2);
+    },
+    setFocus:function() {
+      try {
+        this.focus();
+      } catch (ex) {}
+      return this;
+    },
+    html:function(h) {
+      this.innerHTML = h;
+      return this;
+    },
+    nbsp:function() {
+      this.innerHTML = '&nbsp;';
+      return this;
+    },
+    working:function(e) {
+      if (this._working == null)
+        this._working = Html.Window.append(Html.Div.create('working-float'));
+      this._working.style.display = (e) ? 'block' : 'none';
+      if (e) {
+        this._working.centerWithin(this);
+        this._working.style.visibility = 'visible';
+      }
+      if (Function.is(e)) 
+        async(e);
+      return this;
+    },
+    hasClass:function(cls, startsWith) {
+      var extra = (startsWith) ? '*' : '(?:$|\\s)';  
+      var hasClassName = new RegExp('(?:^|\\s)' + cls + extra);
+      var ec = this.className;
+      if (ec && ec.indexOf(cls) != -1 && hasClassName.test(ec)) 
+        return true; 
+    },
+    setClass:function(cls) {
+      this.className = cls;
+      return this;
+    },
+    addClass:function(cls) {
+      if (! this.hasClass(cls))
+        this.className = String.trim(this.className + ' ' + cls);
+      return this;
+    },
+    removeClass:function(cls) {
+      this.className = String.trim(this.className.replace(cls, ''));
+      return this;
+    },
+    addClassIf:function(cls, test) {
+      if (test)
+        this.addClass(cls);
+      else
+        this.removeClass(cls);
+      return this;
+    },
+    setUnselectable:function() {
+      this.unselectable = 'on';
+      return this;
+    }
+  }
+};
+Html.Window = {
+  getEvent:function(e) {
+    if (e) 
+      e.srcElement = e.target;
+    else 
+      e = window.event;
+    if (e.stopPropagation == null) 
+      e.stopPropagation = function(){this.cancelBubble = true};
+    return e;
+  },
+  cancelBubble:function(e) {
+    this.getEvent(e).stopPropagation();
+  },
+  getScrollTop:function() {
+    if (typeof pageYOffset != 'undefined')
+      return pageYOffset;
+    else
+      return document.documentElement.scrollTop;
+  },
+  getScrollLeft:function() {
+    if (typeof pageXOffset != 'undefined')
+      return pageXOffset;
+    else
+      return document.documentElement.scrollLeft;
+  },
+  getDocumentDim:function() {
+    var h = document.body.offsetHeight;
+    var w = document.body.offsetWidth;
+    if (document.documentElement) { 
+      if (document.documentElement.clientHeight > h) 
+        h = document.documentElement.clientHeight;
+      if (document.documentElement.clientWidth > w) 
+        w = document.documentElement.clientWidth;
+    }
+    return {'height':h,'width':w};
+  },
+  getViewportDim:function() {
+    var h, w;
+    if (typeof window.innerWidth != 'undefined') { 
+      w = window.innerWidth;
+      h = window.innerHeight;
+    } else if (typeof document.documentElement != 'undefined' && typeof document.documentElement.clientWidth != 'undefined' && document.documentElement.clientWidth != 0) {
+      w = document.documentElement.clientWidth;
+      h = document.documentElement.clientHeight
+    } else {
+      w = document.getElementsByTagName('body')[0].clientWidth;
+      h = document.getElementsByTagName('body')[0].clientHeight;
+    }
+    return {'height':h,'width':w};
+  },
+  attachEvent:function(event, fn, o) {
+    o = o || window;
+    if (window.addEventListener)  
+      o.addEventListener(event, fn, false);
+    else 
+      o.attachEvent('on' + event, fn);
+  },
+  detachEvent:function(event, fn, o) {
+    o = o || window;
+    if (window.removeEventListener)
+      o.removeEventListener(event, fn, false);
+    else 
+      o.detachEvent('on' + event, fn);
+  },
+  setOnFocus:function(fn) {
+    if (typeof(document.onfocusin) == 'object') 
+      document.onfocusin = fn;
+    else
+      window.onfocus = fn;
+  },
+  setOnBlur:function(fn) {
+    if (typeof(document.onfocusout) == 'object') 
+      document.onfocusout = fn;
+    else
+      window.onblur = fn;
+  },
+  execScript:function(str) {
+    if (window.execScript)
+      window.execScript(str);
+    else
+      with (window) 
+        window.eval(str);
+  },
+  append:function(e) {
+    $('bodyContainer').appendChild(_$(e));
+    return e;
+  },
+  registerFixedRow:function(tr) {
+    if (this._trs == null)
+      this._trs = [];
+    this._trs.push(tr);
+  },
+  flickerFixedRows:function() {
+    Array.forEach(this._trs, function(tr) {
+      tr.style.display = 'none';
+      tr.style.display = '';
+    });
+  }
+}
+Html.Animator = {
+  /*
+   * Set background yellow
+   * @arg <e> e
+   */
+  highlight:function(e) {
+    highlight(e);
+  },
+  /*
+   * Set background yellow, fade to transparent
+   * @arg <e> e
+   * @arg fn() onfinish (optional)
+   */
+  fade:function(e, onfinish) {
+    fade(e, null, 500, onfinish);
+  },
+  /*
+   * Scroll to element within a scrollable div
+   * @arg <e> div
+   * @arg <e> to
+   * @arg int padding (optional; e.g. to accommodate height of a fixed header row)  
+   */
+  scrollTo:function(div, to, padding) {
+    scrollToElement(div, to, padding);
+  }
+}
+/**
+ * STANDARD TAGS 
+ */
+Html.Anchor = {
+  is:function(e) {
+    return Html.is(e) && e.tagName == 'A';
+  },
+  create:function(cls, text, fn, augs) {
+    var e = Html.create('a', cls);
+    e.href = 'javascript:';
+    e.setText(text);
+    if (fn) 
+      e.onclick = fn;
+    return e.aug({
+      tooltip:function(text) {
+        e.title = text;
+        return e;
+      },
+      noFocus:function() {
+        e.hideFocus = 'hideFocus';
+        return e;
+      }
+    }).aug(augs);
+  }   
+}
+Html.Br = {
+  create:function() {
+    return Html.create('br');
+  }
+}
+Html.Div = {
+  is:function(e) {
+    return Html.is(e) && e.tagName == 'DIV';
+  },
+  create:function(cls, augs) {
+    var e = Html.create('div', cls);
+    return e.aug(augs);
+  }
+}
+Html.Image = {
+  create:function(cls, src, height, width, alt) {
+    var e = Html.create('img', cls);
+    e.src = String.denull(src);
+    e.setHeight(height);
+    e.setWidth(width);
+    e.alt = String.denull(alt);
+    return e;
+  }
+}
+Html.H1 = {
+  create:function(text) {
+    var e = Html.create('h1');
+    e.setText(text);
+    return e;
+  }
+}
+Html.H2 = {
+  create:function(text) {
+    var e = Html.create('h2');
+    e.setText(text);
+    return e;
+  }
+}
+Html.H3 = {
+  create:function(text) {
+    var e = Html.create('h3');
+    e.setText(text);
+    return e;
+  }
+}
+Html.Input = {
+  create:function(type, cls, value, name, augs) { 
+    var e = Html.create('input', cls);
+    e.type = type;
+    e.value = String.denull(value);
+    e.name = String.denull(name);
+    return e.aug(Html.Input._proto).aug(augs);
+  },
+  _proto:{
+    clean:function() {
+      this.value = '';
+    },
+    getValue:function() {
+      return String.trim(this.value);
+    },
+    setValue:function(value) {
+      this.value = String.denull(value);
+      return this;
+    }
+  }
+}
+Html.InputText = {
+  create:function(cls, value, name, augs) {
+    var e = Html.Input.create('text', cls, value, name);
+    return e.aug(this._proto_onkeypresscr).aug({
+      onfocus:function() {
+        e.select();
+      },
+      onblur:function() {  // fixes IE bug
+        var temp = this.value;
+        this.value = '';
+        this.value = temp;
+      },
+      setFocus:function() {
+        try {e.focus()} catch (ex) {}
+        return e;
+      },
+      noSelectFocus:function() {
+        e.onfocus = null;
+        return e;
+      },
+      setSize:function(i) {
+        if (i)
+          e.size = i;
+        return e;
+      },
+      setMaxLength:function(i) {
+        if (i) 
+          e.maxLength = i;
+        return e;
+      }
+    }).aug(augs);
+  },
+  _proto_onkeypresscr:{
+    onkeypresscr:function() {},
+    //
+    onkeypress:function() {
+      if (event.keyCode == 13)
+        this.onkeypresscr();
+    }
+  }
+}
+Html.InputCheck = {
+  create:function(cls, value, name, augs) {
+    var e = Html.Input.create('checkbox', cls, value, name);
+    return e.aug({
+      ondblclick:function() {
+        e.onclick();
+      },
+      setCheck:function(value) {
+        e.checked = (value == true);
+        return e;
+      }
+    }).aug(augs);
+  }
+}
+Html.InputRadio = {
+  create:function(cls, value, name, augs) {
+    var e = Html.Input.create('radio', cls, value, name);
+    return e.aug({
+      ondblclick:function() {
+        e.onclick();
+      },
+      setCheck:function(value) {
+        e.checked = (value == true);
+        return e;
+      }
+    }).aug(augs);
+  }
+}
+Html.InputButton = {
+  create:function(cls, value, augs) {
+    return Html.Input.create('button', cls, value, augs);
+  }
+}
+Html.InputHidden = {
+  create:function(value, name, augs) {
+    return Html.Input.create('hidden', null, value, name, augs);
+  }
+}
+Html.Select = {
+  /*
+   * @arg {value:text,..} map (optional, to load with options on create)
+   * @arg string blank (optional, text for creating first blank value)
+   * @arg string cls (optional)
+   */
+  create:function(map, blank, cls) {
+    var self = Html.create('select', cls);
+    return self.aug({
+      /*
+       * @event when setValue invoked; use onchange for user interaction
+       */
+      onset:function() {},
+      //
+      init:function() {
+        if (map)
+          self.load(map, blank);
+      },
+      load:function(map, blank) {
+        self.clean();
+        if (blank != null) 
+          self.addOption('', blank);
+        var text;
+        for (var value in map) 
+          self.addOption(value, map[value]);
+      },
+      /*
+       * @arg string value
+       * @arg string text (optional, default to value)
+       */
+      addOption:function(value, text) {
+        var o = Html.create('option');
+        self.options.add(o);
+        o.value = String.denull(value);
+        o.text = String.denull(text || o.value);
+      },
+      setValue:function(value) {
+        var cur = self.value;
+        for (var i = 0, l = self.options.length; i < l; i++) 
+          if (self.options[i].value == value)
+            break;
+        var opt = self.options[(i < l) ? i : 0];
+        if (opt.value != self.value) { 
+          opt.selected = true;
+          self.onset();
+        }
+        return self;
+      },
+      getValue:function() {
+        return self.value;
+      },
+      getText:function() {
+        return self.options[self.selectedIndex].text;
+      }
+    })
+  }
+}
+Html.TextArea = {
+  create:function(cls, value, name, augs) {
+    var e = Html.create('textarea', cls);
+    e.value = String.denull(value);
+    e.name = String.denull(name);
+    return e.aug(Html.Input._proto).aug({
+      setRows:function(i) {
+        e.rows = i;
+        return e;
+      }
+    }).aug(augs);
+  }
+}
+Html.AutoSizeTextArea = {
+  create:function(cls, value, name, augs) {
+    var e = Html.TextArea.create(cls, value, name);
+    return e.aug({
+      onkeydown:autosize,
+      onkeyup:autosize,
+      onkeypress:autosize,
+      autosize:function() {
+        self.setHeight(self.getScrollHeight() + 15);
+      }
+    }).aug(augs);
+  }
+}
+Html.Label = {
+  create:function(cls, text, augs) {
+    var e = Html.create('label', cls);
+    e.setText(text);
+    return e.aug(augs);
+  }
+}
+Html.Span = {
+  create:function(cls, text, augs) {
+    var e = Html.create('span', cls);
+    e.setText(text);
+    return e.aug({
+      html:function(h) {
+        e.innerHTML = h;
+        return e;
+      }}).aug(augs);
+  }
+}
+Html.Table = {
+  is:function(e) {
+    return Html.is(e) && e.tagName == 'TABLE';
+  },
+  create:function(container, cls) {
+    return Html.create('table', cls).into(container);
+  },
+  _proto:{
+    tbody:function() {
+      if (this._tbody == null) 
+        this._tbody = Html.getTag('tbody', this, true);
+      return this._tbody; 
+    },
+    thead:function() {
+      if (this._thead == null)
+        this._thead = Html.getTag('thead', this, true);
+      return this._thead; 
+    }
+  },
+  _protoBody:{
+    tr:function(cls) {
+      this._tr = Html.create('tr', cls).into(this);
+      return Html.Table._protoBody._trAppender(this._tr);
+    },
+    trFixed:function() {
+      var appender = this.tr('fixed head');
+      Html.Window.registerFixedRow(this._tr);
+      return appender;
+    },
+    _trAppender:function(tr) {
+      return {
+        td:function(e, cls) {
+          this._cell = Html.create('td', cls).into(tr);
+          this._appendOrText(e);
+          return this;
+        },
+        th:function(e, cls) {
+          this._cell = Html.create('th', cls).into(tr);
+          this._appendOrText(e);
+          return this;
+        },
+        html:function(s) {
+          this._cell.html(s);
+          return this;
+        },
+        w:function(i) {
+          this._cell.setWidth(i);
+          return this;
+        },
+        rowspan:function(i) {
+          this._cell.rowSpan = i;
+          return this;
+        },
+        colspan:function(i) {
+          this._cell.colSpan = i;
+          return this;
+        },
+        _tr:function() {
+          return tr;
+        },
+        _appendOrText:function(e) {
+          if (e)
+            if (Html.is(e))
+              this._cell.append(e);
+            else 
+              this._cell.setText(e);
+        }
+      }
+    }
+  }
+}
+Html.Ul = {
+  create:function(cls) {
+    var self = Html.create('ul', cls);
+    return self.aug({
+      li:function(cls) {
+        return Html.create('li', cls).into(self);
+      }
+    });
+  }
+}
+/**
+ * CLICKTATE TAGS 
+ */
+/**
+ * Anchor AnchorAction
+ */
+Html.AnchorAction = {
+  create:function(cls, text, augs) {
+    return Html.Anchor.create('action ' + cls, text).aug(augs); 
+  },
+  asSelect:function(text, augs) {
+    return this.create('edit', text, augs);
+  },
+  asSelectGreen:function(text, augs) {
+    return this.create('editgreen', text, augs);
+  },
+  asOpen:function(text, augs) {
+    return this.create('open', text, augs);
+  },
+  asNew:function(text, augs) {
+    return this.create('new-folder', text, augs);
+  },
+  asPrint:function(text, augs) {
+    return this.create('print', text, augs);
+  },
+  asView:function(text, augs) {
+    return this.create('view2', text, augs);
+  },
+  asWarning:function(text, augs) {
+    return this.create('warning', text, augs);
+  },
+  asUpdate:function(text, augs) {
+    return this.create('update', text, augs);
+  },
+  asDelete:function(text, augs) {
+    return this.create('dele', text, augs);
+  },
+  asGrid:function(text, augs) {
+    return this.create('grid', text, augs);
+  },
+  asCustom:function(text, augs) {
+    return this.create('configure', text, augs);
+  },
+  asNote:function(text, augs) {
+    return this.create('page', text, augs);
+  },
+  asAppt:function(text, augs) {
+    return this.create('appt', text, augs);
+  },
+  asOrder:function(text, augs) {
+    return this.create('track', text, augs);
+  },
+  asMsg:function(text, augs) {
+    return this.create('msg', text, augs);
+  },
+  asAttach:function(text, augs) {
+    return this.create('attach', text, augs);
+  },
+  asGraph:function(text, augs) {
+    return this.create('graph', text, augs);
+  }
+}
+/*
+ * AnchorAction AnchorRec 
+ */
+Html.AnchorRec = {
+  /*
+   * @arg string cls
+   * @arg string text
+   * @arg Rec rec
+   * @arg fn(Rec) onclick
+   */
+  create:function(cls, text, rec, onclick) {
+    return this.from(Html.AnchorAction.create(cls, text), rec, onclick);
+  },
+  /*
+   * @arg AnchorACtion a
+   * @arg Rec rec
+   * @arg fn(Rec) onclick
+   */
+  from:function(a, rec, onclick) {
+    return a.bubble('onclick', onclick.bind(onclick, rec));
+  },
+  //
+  asSelect:function(text, rec, onclick) {
+    return this.create('edit', text, rec, onclick);
+  }
+}
+AnchorClient = {
+  create:function(rec, onclick) {
+    var cls = (rec.sex == 'M') ? 'umale' : 'ufemale';
+    return Html.AnchorRec.create(cls, rec.name, rec, onclick);
+  }
+}
+AnchorClient_Facesheet = {
+  create:function(rec) {
+    return AnchorClient.create(rec, function(rec) {Page.Nav.goFacesheet(rec.clientId)});
+  }
+}
+AnchorDocStub = {
+  create:function(rec, onclick) {
+    var m = 'as' + [null, 'Note','Msg','Appt','Order','Attach','Graph'][rec.type];
+    return Html.AnchorRec.from(Html.AnchorAction[m](rec.name), rec, onclick);
+  }
+}
+AnchorTrackItem = {
+  create:function(rec, onclick) {
+    var self = Html.AnchorRec.from(Html.AnchorAction.asOrder(rec.trackDesc), rec, onclick);
+    if (rec.priority == C_TrackItem.PRIORITY_STAT)
+      self.addClass('red');
+    return self;
+  }
+}
+AnchorProc = {
+  create:function(rec, onclick) {
+    return Html.AnchorRec.from(Html.AnchorAction.asGraph(rec.Ipc.name), rec, onclick);
+  }
+}
+/**
+ * Span LabelCheck
+ *   Input check
+ *   Label label
+ */
+Html.LabelCheck = {
+  /*
+   * @arg string text
+   * @arg mixed value (optional, default '1')
+   */
+  create:function(text, value) {
+    var self = Html.Span.create().setUnselectable();
+    return self.aug({
+      /*
+       * @events
+       */
+      onclick_check:function(lcheck) {},
+      //
+      init:function() {
+        self.check = Html.LabelCheck.Check.create(self, value || '1').aug({
+          onpropertychange:function() {
+            if (self.label)
+              self.label.setClass((self.check.checked) ? 'lcheck-on' : 'lcheck');
+          },
+          onclick:function() {
+            self.onclick_check(self);        
+          }
+        }); 
+        self.label = Html.LabelCheck.Label.create(self, text).aug({
+          onclick:function() {
+            self.setChecked(! self.isChecked());
+            if (self.check)
+              self.onclick_check(self);
+          }
+        });
+      },
+      isChecked:function() {
+        return self.check.checked;
+      },
+      setChecked:function(b) {
+        self.check.checked = b;
+      },
+      getValue:function() {
+        return value;
+      },
+      getText:function() {
+        return text;
+      }
+    });
+  },
+  Check:{
+    create:function(container, value) {
+      var self = Html.InputCheck.create(null, value).into(container);
+      return self;
+    }
+  },
+  Label:{
+    create:function(container, text) {
+      var self = Html.Label.create('lcheck', text).setUnselectable().into(container);
+      return self.aug({
+        ondblclick:function() {
+          self.onclick();
+        }
+      });
+    }
+  }
+}
+/**
+ * Span LabelChecks
+ *   LabelCheck[] lchecks
+ */
+Html.LabelChecks = {
+  /*
+   * @arg {value:text,..} map
+   * @arg int cols (optional, to spread into columns; default 1)
+   */
+  create:function(map, cols) {
+    var self = Html.Span.create().setUnselectable();
+    return self.aug({
+      /*
+       * @events
+       */
+      onclick_check:function(lcheck) {},
+      //
+      init:function() {
+        self.lchecks = [];
+        for (var value in map) 
+          self.lchecks.push(Html.LabelCheck.create(map[value], value).bubble('onclick_check', self));
+        Html.TableCol.create(self, cols, self.lchecks); 
+      },
+      /*
+       * @return [LabelCheck,..]
+       */
+      getChecked:function() {
+        var checked = [];
+        Array.forEach(self.lchecks, function(lcheck) {
+          if (lcheck.isChecked())
+            checked.push(lcheck);
+        });
+        return checked;
+      },
+      /*
+       * @arg [value,..] values
+       */
+      setChecked:function(values) {
+        self._origValues = values;
+        values = Array.from(values);
+        Array.forEach(self.lchecks, function(lcheck) {
+          lcheck.setChecked(values.has(lcheck.getValue()));
+        });
+      },
+      isDirty:function() {
+        if (self._origValues) {
+          for (var i = 0, j = self.lchecks.length; i < j; i++) {
+            var lcheck = self.lchecks[i];
+            if (self._origValues.has(lcheck.getValue())) { 
+              if (! lcheck.isChecked())
+                return true;
+            } else {
+              if (lcheck.isChecked()) 
+                return true;
+            }
+          }
+          return false;
+        }
+      },
+      /*
+       * @return [value,..]
+       */
+      getCheckedValues:function() {
+        var checked = [];
+        Array.forEach(self.getChecked(), function(lcheck){checked.push(lcheck.getValue())});
+        return checked;
+      },
+      /*
+       * @return [text,..]
+       */
+      getCheckedTexts:function() {
+        var checked = [];
+        Array.forEach(self.getChecked(), function(lcheck){checked.push(lcheck.getText())});
+        return checked;
+      }
+    });
+  }
+}
+/**
+ * Span LabelRadios
+ *   {value:LabelRadio,..} lradios
+ */
+Html.LabelRadios = {
+  /*
+   * @arg {value:text,..} map
+   * @arg int cols (optional, to spread into columns; default map length)
+   */
+  create:function(map, cols) {
+    var self = Html.Span.create().setUnselectable();
+    var name = String.rnd('LR');
+    return self.aug({
+      onselect:function(value) {},
+      //
+      init:function() {
+        self.lradios = {};
+        self.value = null;
+        var value, len = 0;
+        for (value in map) {
+          self.lradios[value] = Html.LabelRadios.LabelRadio.create(name, map[value], value).bubble('onclick_radio', self.radio_onclick);
+          if (self.value == null)
+            self.value = value;
+          len++;
+        }
+        Html.TableCol.create(self, cols || len, Array.from(self.lradios));
+        self.setValue(self.value);
+      },
+      setValue:function(value) {
+        self.value = value;
+        self.lradios[value].setChecked(true);
+      },
+      getValue:function(value) {
+        return self.value;
+      },
+      //
+      radio_onclick:function(lradio) {
+        self.value = lradio.getValue();
+        self.onselect(self.value);
+      }
+    });
+  },
+  LabelRadio:{
+    create:function(name, text, value) {
+      var _proto = this;
+      var self = Html.Span.create().setUnselectable();
+      return self.aug({
+        onclick_radio:function(lradio) {},
+        //
+        init:function() {
+          self.radio = _proto.Radio.create(self, value, name).aug({
+            onpropertychange:function() {
+              if (self.label)
+                self.label.setClass((self.radio.checked) ? 'lcheck-on' : 'lcheck');
+            },
+            onclick:function() {
+              self.onclick_radio(self);        
+            }
+          }); 
+          self.label = _proto.Label.create(self, text).aug({
+            onclick:function() {
+              self.setChecked(true);
+              if (self.radio) 
+                self.onclick_radio(self);
+            }
+          });
+        },
+        isChecked:function() {
+          return self.radio.checked;
+        },
+        setChecked:function(b) {
+          self.radio.checked = b;
+        },
+        getValue:function() {
+          return value;
+        },
+        getText:function() {
+          return text;
+        }
+      });
+    },
+    Radio:{
+      create:function(container, value, name) {
+        var self = Html.InputRadio.create(null, value, name).into(container);
+        return self;
+      }
+    },
+    Label:{
+      create:function(container, text) {
+        var self = Html.Label.create('lcheck', text).setUnselectable().into(container);
+        return self.aug({
+          ondblclick:function() {
+            self.onclick();
+          }
+        });
+      }
+    }
+  }
+}
+/**
+ * Ul EntryForm
+ */
+Html.EntryForm = {
+  create:function(container, firstLabelCls, augs) {
+    var ul = Html.Ul.create().into(container);
+    ul.ef = new EntryForm(ul, firstLabelCls);
+    return Object.augment(ul.ef, augs); 
+  }
+}
+/**
+ * Tile NavBar
+ *   LinkBox prevbox
+ *   Tile onbox
+ *   LinkBox nextbox
+ */
+Html.NavBar = {
+  create:function(container) {
+    var My = this;
+    return Html.Tile.create(container, 'NavBar').extend(function(self) {
+      return {
+        onselect:function(rec) {},
+        ondraw_load:function(rec, header, content) {
+          // @abstract
+        },  
+        //
+        init:function() {
+          self.prevbox = My.LinkBox.asPrev().bubble('onnav', self.draw);
+          self.onbox = My.OnBox.create();
+          self.nextbox = My.LinkBox.asNext().bubble('onnav', self.draw);
+          Html.Table.create(self, 'w100').tbody().tr().td(self.prevbox).w('15%').td(self.onbox).w('70%').td(self.nextbox).w('15%');
+        },
+        /*
+         * @arg Rec[] recs
+         * @arg Rec rec
+         * @arg proto anchor e.g. AnchorDocStub 
+         * @arg bool descending (optional)
+         */
+        load:function(recs, rec, anchor, descending) {
+          self.navs = Array.navify(recs, descending);
+          self.anchor = anchor;
+          self.draw(rec);
+        },
+        //
+        draw:function(rec) {
+          self.prevbox.load(rec._prev, self.anchor);
+          self.nextbox.load(rec._next, self.anchor);
+          self.draw_onbox(rec);
+          self.onselect(rec);
+        },
+        draw_onbox:function(rec) {
+          self.onbox.header.clean();
+          self.onbox.content.clean();
+          self.ondraw_load(rec, self.onbox.header, self.onbox.content);
+        }
+      }
+    })
+  },
+  OnBox:{
+    create:function() {
+      return Html.Div.create('onbox').extend(function(self) {
+        return {
+          init:function() {
+            self.header = Html.H2.create().into(self);
+            self.content = Html.Tile.create(self, 'content');
+          }
+        }
+      })
+    }
+  },
+  LinkBox:{
+    create:function(cls) {
+      return Html.Div.create(cls).extend(function(self) {
+        return {
+          onnav:function(rec) {},
+          //
+          load:function(rec, anchor) {
+            self.clean();
+            self.rec = rec;
+            self.anchor = (rec) ? anchor.create(self.rec, self.onnav).addClass('linkbox').noFocus().into(self) : null;
+            self.addClassIf('empty', rec == null);
+          },
+          //
+          onclick:function() {
+            if (self.rec)
+              self.onnav(self.rec);
+          },
+          ondblclick:function() {
+            self.onclick();
+          },
+          onmouseover:function() {
+            if (self.anchor) 
+              self.addClass('hover');
+          },
+          onmouseout:function() {
+            self.removeClass('hover');
+          }
+        }
+      })
+    },
+    asPrev:function() {
+      return this.create('linkbox prevbox');
+    },
+    asNext:function() {
+      return this.create('linkbox nextbox');
+    }
+  }
+}
+/**
+ * Div TemplateUi
+ *   TemplateUi tui
+ */
+Html.TemplateUi = {
+  /*
+   * @arg <e> container
+   * @arg Facesheet fs
+   */
+  create:function(container, fs) {
+    var self = Html.Div.create().into(container);
+    return self.aug({
+      /*
+       * @events
+       */
+      onload:function() {},
+      onchange:function(q) {},
+      /*
+       * @abstract (must override if using argless load)
+       * @arg fn(pid) callback_pid
+       */
+      getPid:function(callback_pid) {
+        callback_pid(self.pid);
+      },
+      //
+      init:function() {
+        self.tui = new TemplateUi(self, fs, null, null, TemplateUi.FORMAT_ENTRY_FORM_WIDE, null, function(q){self.onchange(q)});
+      },
+      /*
+       * @arg int pid (optional; if omitted, must implement getPid)
+       * @arg fn() onload (optional)
+       */
+      load:function(pid, onload) {
+        self.onload = onload;
+        self.pid = pid;
+        self.working(function() {
+          self.getPid(function(pid) {
+            self.pid = pid;
+            self.tui.reset();
+            self.tui.getParInfo(self.pid, function() {
+              self.working(false);
+              self.onload();
+            });
+          });
+        });
+      },
+      isLoaded:function() {
+        return self.pid;
+      },
+      /*
+       * Reset form with same paragraph 
+       */
+      reset:function() {
+        self.clean();
+        self.tui.reset();
+        if (self.pid)
+          self.working(function() {
+            self.tui.getParInfo(self.pid, function() {
+              self.working(false);
+            });
+          });
+      }
+    });
+  }
+}
+/**
+ * Div Tile
+ */
+Html.Tile = {
+  create:function(container, cls) {
+    return Html.Div.create(cls).into(container);
+  }
+}
+/**
+ * Div ScrollDiv
+ */
+Html.ScrollDiv = {
+  create:function(container, cls) {
+    var self = Html.Div.create(cls).into(container);
+    return self.aug({
+      clean:function() {
+        Html._proto.clean.call(self);
+        self.scrollTop = 0;
+      }
+    })
+  }
+  
+}
+/**
+ * Table Table2Col
+ *   Th left
+ *   Tr right
+ */
+Html.Table2Col = {
+  /*
+   * @arg col1, col2 (optional contents of table)
+   */
+  create:function(container, col1, col2) {
+    var self = Html.Table.create(container, 'h');
+    return self.aug({
+      init:function() {
+        self.tr = self.tbody().tr(); 
+        self.left = self.tr.th(col1)._cell;
+        self.right = self.tr.td(col2)._cell;
+      }
+    });
+  }
+}
+/**
+ * Table TableCol
+ */
+Html.TableCol = {
+  /*
+   * @arg <e> container
+   * @arg int cols (default 1)
+   * @arg obj[] items (optional, to populate table at create time)
+   */
+  create:function(container, cols, items) {
+    cols = cols || 1;
+    var table = Html.Table.create(container);
+    var tbody = table.tbody();
+    tbody.aug({
+      init:function() {
+        tbody.reset(cols);
+      },
+      reset:function(cols) {
+        tbody.clean();
+        tbody.ct = 0;
+        tbody.cols = cols;
+      },
+      add:function(e) {
+        if (tbody.ct % tbody.cols == 0)
+          tbody.trapp = tbody.tr();
+        tbody.ct++;
+        tbody.trapp.td(e);
+      }
+    });
+    if (items)
+      Array.forEach(items, function(item) {
+        tbody.add(item);
+      });
+    return tbody;
+  }
+}
+/**
+ * TableCol Table1Row
+ */
+Html.Table1Row = {
+  /*
+   * @arg <e> container
+   * @arg obj[] items
+   */
+  create:function(container, items) {
+    cols = items.length;
+    return Html.TableCol.create(container, cols, items);
+  }
+}
+/**
+ * Table ScrollTable
+ *   Div wrapper
+ */
+Html.ScrollTable = {
+  create:function(container, tableCls, wrapperCls) {
+    var My = this;
+    var div = Html.Div.create(wrapperCls || 'fstab').into(container);
+    return Html.Table.create(div, tableCls || 'fsy').extend(My, function(self) {
+      return {
+        init:function() {
+          self.wrapper = div;
+        },
+        working:function(e) {
+          self.wrapper.working(e);
+        },
+        setHeight:function(i) {
+          div.setHeight(i);
+        },
+        scrollTo:function(e, padding) {
+          Html.Animator.scrollTo(self.wrapper, e, padding);
+        },
+        hide:function() {
+          self.wrapper.hide();
+        },
+        show:function() {
+          self.wrapper.show();
+        }
+      }
+    })
+  }
+}
+/**
+ * CmdBarAppender CmdBar 
+ **/
+Html.CmdBar = {
+  create:function(container, context) {
+    var cb = new CmdBar(container, null, context);
+    return Object.augment(cb.appender()).aug({
+      wrapper:_$(cb.div)
+    });
+  }
+}
+/**
+ * CmdBar SplitCmdBar 
+ */
+Html.SplitCmdBar = {
+  create:function(container, context) {
+    var table = Html.Table2Col.create(container);
+    var cbLeft = Html.CmdBar.create(table.left, context);
+    var cbRight = Html.CmdBar.create(table.right, context);
+    cbLeft.wrapper.addClass('cmd-left');
+    cbRight.wrapper.addClass('cmd-right');
+    return cbLeft.aug({
+      split:function() {
+        return cbRight;
+      }
+    });
+  }   
+}
+/**
+ * ScrollTable TableLoader
+ *   TableLoader loader()
+ */
+Html.TableLoader = {
+  /*
+   * var self = Html.TableLoader.create(container);
+   * return self.aug({
+   *  init:function() {
+   *    self.setHeight(500);
+   *    self.thead().trFixed().th('Date').w('10%').th('Type').w('10%').th('Name').w('30%').th('').w('50%');
+   *    self.setTopFilter();
+   *  },
+   *  filter:function(rec) {
+   *    return {'Type':rec._type};
+   *  },
+   *  rowBreaks:function(rec) {
+   *    return [rec.date];
+   *  },
+   *  rowOffset:function(rec) {
+   *    return rec.date;
+   *  },
+   *  add:function(rec, tr) {
+   *    tr.td(rec.date, 'bold nw').td(rec._type).select(AnchorDocStub).td(rec.desc);
+   *  }
+   * });
+   */
+  create:function(container, tableCls, wrapperCls) {
+    var My = this;
+    var table = Html.ScrollTable.create(container, tableCls, wrapperCls);
+    table.tl = new TableLoader(table.tbody(), 'off', table);
+    return table.extend(My, function(self) {
+      return {
+        onselect:function(rec) {},
+        onload:function(recs) {},
+        ondraw:function() {},
+        //
+        init:function() {
+          self.thead();
+        },
+        /*
+         * @abstract (optional)
+         * @return string e.g. return rec.ipc
+         */
+        rowKey:function(rec) {},
+        /*
+         * @abstract (optional)
+         * @return string[] e.g. return [rec.date, rec.sessionId]
+         */
+        rowBreaks:function(rec) {},
+        /*
+         * @abstract (optional)
+         * @return string e.g. return rec.cat
+         */
+        rowOffset:function(rec) {
+          var s = self.rowBreaks(rec);
+          if (s)
+            return s.join();
+        },
+        /*
+         * @abstract (optional)
+         * Rec to filter function
+         * @return object e.g. return {'Category':C_Ipc.CATS[rec.cat]}
+         */
+        filter:function(rec) {},
+        /*
+         * @abstract (must override if using argless load)
+         * @arg fn(Rec[]) callback_recs
+         */
+        fetch:function(callback_recs) {
+          callback_recs(self.recs);
+        },
+        /*
+         * @abstract (required if using load)
+         * @arg Rec rec
+         * @arg TrAppender tr to build record row e.g. tr.select(rec, rec.name).td(rec.desc)
+         */
+        add:function(rec, tr) {},
+        //
+        /*
+         * @arg Rec[] recs (optional; if null, must implement fetch) 
+         */
+        load:function(recs) {
+          self.recs = recs;
+          self.reset();
+          self.working(function() {
+            self.fetch(function(recs) {
+              self.onload(recs);
+              self.recs = recs;
+              self.draw();
+              self.loaded = true;
+            });
+          })
+        },
+        /*
+         * @return bool
+         */
+        isLoaded:function() {
+          return self.loaded;
+        },
+        /*
+         * Refresh table after record add/update/delete
+         * @arg Rec/int e (Rec if add/update, int ID if delete)
+         * @requires fetch() and rowKey()  
+         */
+        update:function(e) {
+          var rec = (Object.is(e)) ? e : null;
+          var key = rec ? self.rowKey(rec) : e;
+          var tr = self.tl.getRowByKey(key);
+          if (tr) {
+            Html.Animator.highlight(tr);
+            self.working(function() {
+              self.recs = null;
+              self.fetch(function(recs) {
+                self.recs = recs;
+                // todo... apply revived recs to table loader rows
+                if (self.tl.getRowByKey(key)) {
+                  if (rec) {
+                    self.working(false);
+                    self.drawRow(rec);
+                    self.tl.reapply();
+                    Html.Animator.fade(tr);
+                  } else {
+                    self.working(false);
+                    Html.Animator.fade(tr, function() {
+                      self.tl.removeTrs([key]);
+                    });
+                  }
+                }
+              });
+            });
+          } else {
+            self.load();
+          }
+        },
+        /*
+         * @arg string key
+         * @return Rec
+         */
+        findKey:function(key) {
+          for (var i = 0; i < self.recs.length; i++) 
+            if (self.rowKey(self.recs[i]) == key) 
+              return self.recs[i];
+        },
+        thead:function() {
+          var thead = Html.Table._proto.thead.call(self);
+          return thead.aug({
+            /*
+             * @return TrAppender of header
+             */
+            tr:function(cls) {
+              var tr = Html.Table._protoBody.tr.call(thead, cls);
+              self.tl.setTrHead(tr._tr());
+              return tr;
+            }
+          });
+        },
+        tbody:function() {
+          var tbody = Html.Table._proto.tbody.call(self);
+          if (! tbody._auged) {
+            tbody._auged = tbody.aug({
+              /*
+               * @arg Rec rec (optional, if supplied remaining args pulled from abstract row methods at top)
+               * @args optional (see TableLoader) and may be specified independently below (e.g. breaks())
+               * @return TrAppender of body
+               */ 
+              tr:function(rec, offset, breaks, filter, key, index) {
+                if (rec) {
+                  offset = self.rowOffset(rec);
+                  breaks = self.rowBreaks(rec);
+                  filter = self.filter(rec);
+                  key = self.rowKey(rec);
+                }
+                self.tl.createTr(offset, breaks, filter, key, index);
+                self._tr = self.tl.tr;
+                if (rec)
+                  self._tr.rec = rec;
+                return this._trAppender(self._tr); 
+              },
+              _trAppender:function(tr) {
+                return {
+                  /*
+                   * Create a <td>
+                   * @arg <e>|string e contents of cell
+                   * @arg string cls (optional)
+                   * @return TrAppender
+                   */
+                  td:function(e, cls) {
+                    if (String.is(e))
+                      self.tl.createTd(cls, e);
+                    else
+                      self.tl.createTdAppend(cls, e);
+                    this._cell = self.tl.td;
+                    return this;
+                  },
+                  colspan:function(i) {
+                    this._cell.colSpan = i;
+                    return this;
+                  },
+                  html:function(s) {
+                    this._cell.innerHTML = s;
+                  },
+                  /*
+                   * Create a checkbox cell
+                   * @arg string|Rec value (optional; by default check.value set to row key and check.rec set to row rec) 
+                   * @arg bool checked (optional)
+                   * @return TrAppender
+                   */
+                  check:function(value, checked) {
+                    var rec;
+                    if (Object.is(value)) {
+                      rec = value;
+                      value = '';
+                    } else {
+                      rec = self._tr.rec;
+                      value = value || self.tl.tr.key;
+                    }
+                    var e = Html.InputCheck.create().setValue(value);
+                    self.tl.createTdAppend('check', e);
+                    self.tl.tr.check = e;
+                    e.aug({
+                      rec:rec,
+                      tr:self.tl.tr,
+                      onclick:function() {
+                        e.tr.style.backgroundColor = (e.checked) ? '#FFFF40' : '';  
+                      }
+                    });
+                    if (checked)
+                      e.click();
+                    return this;
+                  },
+                  /*
+                   * Create a select anchor cell
+                   * @arg <a>|proto|string e e.g. AnchorTrackItem 
+                   * @arg Rec|string rec (or ID) to supply to onselect event (optional, uses rec assigned to row if supplied)
+                   * @arg fn(Rec) onclick (optional, self.onselect by default)
+                   * @return TrAppender
+                   */
+                  select:function(e, rec, onclick, cls) {
+                    rec = rec || self._tr.rec;
+                    cls = cls || 'nw';
+                    onclick = onclick || self.onselect;
+                    if (String.is(e))
+                      e = Html.AnchorRec.asSelect(e, rec, onclick);
+                    else if (Html.Anchor.is(e))
+                      e.bubble('onclick', onclick.bind(onclick, rec));
+                    else
+                      e = e.create(rec, onclick);
+                    this.td(e, cls);
+                    return this;
+                  }
+                }
+              }
+            });
+          }
+          return tbody;
+        },
+        reset:function() {
+          self.tl.reset();
+          self.tl.defineFilter(self.filter({}));
+          self.loaded = false;
+        },
+        /*
+         * @return [value,..] of checked rows
+         */
+        getCheckValues:function() {
+          var values = [];
+          Array.forEach(self.tl.trs(), function(tr) {
+            if (tr.check && tr.check.checked)
+              values.push(tr.check.value);
+          });
+          return values;
+        },
+        /*
+         * @return [value,..] of checked rows
+         */
+        getCheckRecs:function() {
+          var values = [];
+          Array.forEach(self.tl.trs(), function(tr) {
+            if (tr.check && tr.check.checked)
+              values.push(tr.check.rec);
+          });
+          return values;
+        },
+        /*
+         * @arg int[] values of rows to check
+         */
+        setChecks:function(values) {
+          self.resetChecks();
+          Array.forEach(self.tl.trs(), function(tr) {
+            if (tr.check && values.has(tr.check.value))
+              tr.check.click();
+          });
+        },
+        resetChecks:function() {
+          Array.forEach(self.tl.trs(), function(tr) {
+            if (tr.check && tr.check.checked)
+              tr.check.click();
+          });
+        },
+        /*
+         * Assign rec filter values to a top filter bar (created upon first use)
+         * @arg Rec rec (optional, leave null to reset)
+         */
+        setTopFilter:function(rec) {
+          if (self.topFilter == null) 
+            self.topFilter = Html.TableLoader.TopFilterBar.create(self);
+          self.tl.loadFilterTopbar(this.topFilter, self.filter(rec || {}));
+        },
+        /*
+         * @return TableLoader
+         */
+        loader:function() {
+          return self.tl;
+        },
+        //
+        draw:function() {
+          self.working(function() {
+            Array.forEach(self.recs, function(rec) {
+              self.drawRow(rec);
+            });
+            self.ondraw();
+            if (self.topFilter)  
+              self.setTopFilter();
+            self.working(false);
+          });
+        },
+        drawRow:function(rec) {
+          self.add(rec, self.tbody().tr(rec));
+        }
+      }
+    })
+  },
+  TopFilterBar:{
+    create:function(table) {
+      var div = Html.Div.create('topfilter').before(table.wrapper);
+      return Html.Ul.create('topfilter').into(div);
+    }
+  }
+}
+/**
+ * Tile Panels
+ *   Panel[] panels
+ */
+Html.Panels = {
+  /*
+   * @arg {'name':contentProto,..}
+   */
+  create:function(container, panels) {
+    var My = this;
+    return Html.Tile.create(container, 'Panels').extend(this, function(self) {
+      return {
+        onselect:function(panel) {},
+        //
+        init:function() {
+          var panel, proto;
+          self.Panels = {};
+          for (var name in panels) {
+            proto = panels[name];
+            panel = My.Panel.create(self, name, proto).bubble('onselect', self.panel_onselect);
+            self.Panels[name] = panel;
+          } 
+        },
+        /*
+         * @arg fn(My.Panel) callback 
+         */
+        forEach:function(callback) {
+          for (var name in self.Panels) 
+            callback(self.Panels[name]);
+        },
+        reset:function() {
+          if (self.selected)
+            self.selected.reset();
+        },
+        setMaxHeight:function(i) {
+          self.forEach(function(p) {
+            p.setMaxHeight(i);
+          })
+        },
+        //
+        panel_onselect:function(panel) {
+          if (panel.name != self.selname) {
+            self.selname = panel.name;
+            self.selected = panel.content;
+            self.forEach(function(p) {
+              p.hideIf(p.name != panel.name);
+            })
+          }
+        }
+      }
+    })
+  },
+  Panel:{
+    create:function(container, name, contentProto) {
+      return Html.Tile.create(container, 'Panel').hide().extend(function(self) {
+        return {
+          onselect:function(panel) {},
+          //
+          init:function() {
+            self.name = name;
+          },
+          select:function() {
+            self.show();
+            if (self.content == null)  
+              self.createContent();
+            self.onselect(self);
+            return self.content;
+          },
+          createContent:function() {
+            self.content = contentProto.create(self);
+            self.setContentMaxHeight();
+          },
+          setMaxHeight:function(i) {
+            if (self.maxHeight != i) {
+              self.maxHeight = i;
+              self.setContentMaxHeight();
+            }
+          },
+          setContentMaxHeight:function() {
+            if (self.maxHeight)
+              if (self.content && self.content.setMaxHeight) 
+                self.content.setMaxHeight(self.maxHeight);
+          }
+        }
+      })
+    }
+  }
+} 
+/**
+ * Div TabPanels
+ *   Div bar
+ *     TabBar tb
+ *   Div panels
+ */
+Html.TabPanels = {
+  /*
+   * @arg string[] panelTitles ['Documentation History',..]   
+   * @arg string[] tabCaptions ['Documents',..] (optional, will use titles if omitted)
+   */
+  create:function(container, panelTitles, tabCaptions) {
+    var self = Html.Div.create().into(container.clean());
+    return self.aug({
+      /*
+       * @events
+       */
+      panel_onselect:function(panel) {},
+      //
+      init:function() {
+        self.bar = Html.TabPanels.Bar.create(self, {
+          onselect:function(panel) {
+            self.panel_onselect(panel);
+          }
+        });
+        self.panels = Html.TabPanels.Panels.create(self, panelTitles.length);
+        self.bar.load(panelTitles, tabCaptions);
+      },
+      /*
+       * @arg int index
+       */
+      select:function(index) {
+        self.bar.select(index);
+      },
+      /*
+       * @return Panel
+       */
+      selected:function() {
+        return self.panels.get(self.bar.tb.getSelIndex());
+      }
+    });
+  },
+  Bar:{
+    create:function(container, augs) {
+      var self = Html.Tile.create(container, 'tabbar');
+      return self.aug({
+        onselect:function(panel) {},
+        //
+        load:function(titles, captions) {
+          self.tb = new TabBar(container, titles, captions);
+          self.tb._onSelectCallback = function(index, panel) {
+            Html.Window.flickerFixedRows();
+            self.onselect(panel);
+          };
+        },
+        select:function(index) {
+          self.tb.select(index);
+        }
+      }).aug(augs);
+    }
+  },
+  Panels:{
+    create:function(container, count) {
+      var self = Html.Tile.create(container, 'tabpanels');
+      self.panels = [];
+      for (var i = 0; i < count; i++)
+        self.panels.push(Html.TabPanels.Panel.create(self, i));
+      return self.aug({
+        get:function(index) {
+          return self.panels[index];
+        },
+        getAll:function() {
+          return self.panels;
+        },
+        /*
+         * @arg fn(panel) callback 
+         */
+        forEach:function(callback) {
+          Array.forEach(self.panels, callback);
+        }
+      });
+    }
+  },
+  Panel:{
+    create:function(container, index) {
+      var self = Html.Tile.create(container, 'tabpanel');
+      return self.aug({
+        index:index
+      });
+    }
+  }
+}
+/**
+ * Div Pop
+ *   Div cap
+ *     Div caption
+ *     Anchor ctlbox
+ *   Div content
+ */
+Html.Pop = {
+  /*
+   * AbcPop = {                                     
+   *   pop:function(x, y) {                   
+   *     AbcPop = this.create().pop(x, y);      
+   *   },                                           
+   *   create:function() {                      
+   *     var self = Html.Pop.create('Caption');     
+   *     return self.aug({
+   *       init:function() {
+   *         //..
+   *       },                          
+   *       pop:function(x, y) {                     
+   *         //..          
+   *         self.show(z);
+   *         return self; 
+   *       }               
+   *     });    
+   *   }                   
+   * }                     
+   * AbcPop.pop('x', 'y').aug({
+   *   onshow:function(z) {
+   *     //..
+   *   }
+   * });
+   */
+  create:function(caption, width) {  
+    var id = String.rnd('pop');
+    var pop = Html.Div.create('pop', {
+      init:function() {
+        this.cap = Html.Pop.Cap.create(this, caption);
+        this.content = Html.Pop.Content.create(this);
+      }
+    });
+    Html.Window.append(pop.setWidth(width));
+    return this._augment(pop);
+  },
+  /*
+   * From existing <html> source
+   */
+  from:function(id) {
+    var pop = _$(id);
+    if (pop.cap == null) {
+      pop.cap = self.firstChild;
+      pop.content = self.lastChild;
+      this._augment(pop);
+    }
+    return pop;
+  },
+  _augment:function(self) {
+    return self.aug({
+      /*
+       * @events
+       */
+      onshow:function() {},  // passes any arguments supplied to pop() 
+      onclose:function() {},
+      /*
+       * @abstract
+       * @return self
+       */
+      pop:function() {
+        self.show.apply(this, arguments);
+        return self;
+      },
+      /*
+       * @abstract 
+       * @arg CmdBar cb
+       */
+      buildCmd:function(cb) {},
+      //
+      /*
+       * @return int viewport height
+       */
+      fullscreen:function() {
+        var w = Html.Window.getViewportDim();
+        self.setWidth(Math.smaller(w.width - 40, 1000));
+        return w.height;
+      },
+      show:function() {
+        Pop.show(self);
+        self.onshow.apply(this, arguments);
+        return self;
+      },
+      close:function() {
+        Pop.close();
+      },
+      showPosCursor:function() {
+        Pop.showPosCursor(self);
+        self.onshow.apply(this, arguments);
+        return self;
+      },
+      setCaption:function(text) {
+        self.cap.caption.setText(text);
+      }
+    });
+  },
+  Cap:{
+    create:function(container, text, onClose) {
+      var cap = Html.Div.create('pop-cap').into(container);
+      cap.caption = Html.Div.create().into(cap).setText(text);
+      cap.ctlbox = Html.Anchor.create('pop-close', null, function(){container.close()}).into(cap);
+      return cap;
+    }
+  },
+  Content:{
+    create:function(container) {
+      return Html.Div.create('pop-content').into(container);
+    }
+  },
+  Frame:{
+    create:function(container, caption, anchor) {
+      var div = Html.Div.create('pop-frame').into(container);
+      var head;
+      if (anchor) {
+        head = Html.Div.create('pop-frame-head').into(div);
+        head.add(Html.H1.create(String.denull(caption))).add(anchor);
+      } else if (caption) {
+        div.add(Html.H1.create(caption));
+      }
+      var self = Html.Div.create('pop-frame-content').into(div);
+      self.frame = div;
+      self.head = head;
+      return self;
+    }
+  },
+  CmdBar:{
+    create:function(pop) {
+      var cb = Html.CmdBar.create(pop.content, pop);
+      return cb.aug({
+        build:function() {
+          if (! cb._built) {
+            pop.buildCmd(cb);
+            cb._built = cb;
+          }
+          return cb;
+        },
+        reset:function() {
+          cb.container().clean();
+          cb._built = null;
+        },
+        saveCancel:function(cap) {
+          cb.save(pop.save_onclick, cap).cancel(pop.close);
+        }
+      });
+    }
+  },
+  ErrorBox:{
+    create:function(pop) {
+      return Html.Div.create('pop-error').into(pop.content);
+    }
+  }
+}
+/**
+ * Pop IncludedSourcePop
+ */
+Html.IncludedSourcePop = {
+  /*
+   * @arg string name 'PatientSelector' 
+   * @arg string id 'pop-ps' 
+   * @arg fn(Pop) oninclude
+   */
+  create:function(name, id, oninclude) {
+    Pop.cacheMousePos();
+    var src = 'js/pops/inc/' + name + '.php';
+    Includer.getWorking(src, function() {
+      var self = Html.Pop.from(id);
+      oninclude(self);
+    });
+  }
+}
+/**
+ * Pop RecordEntryPop
+ *   PopFrame frame
+ *   EntryForm form
+ *   CmdBar cmd
+ */
+Html.RecordEntryPop = {
+  /*
+   * AbcEntryPop = {
+   *   pop:function(rec) {
+   *     AbcEntryPop = this.create().pop(rec); 
+   *   },
+   *   create:function() {
+   *     var self = Html.RecordEntryPop.create('Caption');
+   *     return self.aug({
+   *       //..
+   *     });
+   *   }
+   * }
+   * AbcEntryPop.pop(rec).aug({
+   *   onsave:function(rec) {..}
+   *   ondelete:function(id) {..}
+   * });
+   */
+  create:function(caption, width, frameCaption) {
+    var self = Html.Pop.create(caption, width || 600);
+    return self.aug({
+      /*
+       * @events
+       */
+      onshow:function(rec, focusId) {  // assumes focusId passed to pop, but this is optional    
+        self.form.focus(focusId);
+      },
+      onload:function(rec) {},
+      onsave:function(rec) {},  
+      onerror:function(e) {
+        self.working(false);
+        self.errorbox.html(e.message).show();
+        Html.Window.flickerFixedRows();
+      },
+      /*
+       * @abstract
+       * @arg EntryForm ef
+       * @arg Rec rec
+       */
+      buildForm:function(ef, rec) {},
+      /*
+       * @abstract 
+       * @arg CmdBar cb
+       */
+      buildCmd:function(cb) {
+        cb.save(self.save_onclick).cancel(self.cancel_onclick);
+      },
+      /*
+       * @abstract 
+       * @arg Rec rec
+       * @arg fn(Rec) onsuccess
+       * @arg fn(Rec) onerror 
+       */
+      save:function(rec, onsuccess, onerror) {
+      },
+      /*
+       * @abstract
+       * @return bool
+       */
+      isDeletable:function(rec) {
+        return rec != null;
+      },
+      //
+      init:function() {
+        self.frame = Html.Pop.Frame.create(self.content, frameCaption);
+        self.form = Html.RecordEntryPop.Form.create(self);
+        self.cmd = Html.Pop.CmdBar.create(self); 
+        self.errorbox = Html.Pop.ErrorBox.create(self);
+      },
+      /*
+       * @arg Rec rec
+       * @arg string focusId (optional)
+       */
+      pop:function(rec, focusId) {
+        self.rec = rec;
+        self.onload(rec);
+        self.form.build().setRecord(rec);
+        self.cmd.build();
+        self.errorbox.hide();
+        self.show.apply(this, arguments);
+        self.cmd.showDelIf(self.isDeletable(rec))
+        return self;
+      },
+      isDirty:function() {
+        return self.form.isRecordChanged();
+      },
+      close:function(saved) {
+        if (saved)
+          Pop.close(true);
+        else
+          Pop.Confirm.closeCheckDirty(self, self.save_onclick);
+      },
+      //
+      save_onclick:function() {
+        var rec = self.form.applyTo(self.rec);
+        self.working(function() {
+          self.errorbox.hide();
+          self.save(rec, 
+            function(rec) {
+              self.working(false);
+              self.close(true);
+              self.onsave(rec);
+            },
+            [self.onerror, self]);
+        });
+      },
+      cancel_onclick:function() {
+        self.close();
+      }
+    });
+  },
+  Form:{
+    create:function(pop) {
+      var ef = Html.EntryForm.create(pop.frame);
+      return ef.aug({
+        build:function() {
+          if (! ef._built) {
+            pop.buildForm(ef);
+            ef._built = ef;
+          }
+          return ef;
+        }
+      });
+    }
+  }
+}
+/**
+ * RecordEntryPop RecordEntryDeletePop
+ */
+Html.RecordEntryDeletePop = {
+  create:function(caption, width, frameCaption) {
+    var self = Html.RecordEntryPop.create(caption, width);
+    return self.aug({
+      /*
+       * @events
+       */
+      onsave:function(rec) {},  
+      ondelete:function(id) {},  // @arg int id of Rec deleted
+      /*
+       * @abstract 
+       * @arg CmdBar cb
+       */
+      buildCmd:function(cb) {
+        cb.save(self.save_onclick).del(self.del_onclick).cancel(self.cancel_onclick);
+      },
+      /*
+       * @abstract 
+       * @arg Rec rec
+       * @arg fn(id) onsuccess 
+       */
+      remove:function(rec, onsuccess) {
+      },
+      /*
+       * @abstract
+       * @return string
+       */
+      getDeleteNoun:function() {
+        return 'record';
+      },
+      //
+      del_onclick:function() {
+        var rec = self.form.getRecord();
+        Pop.Confirm.showYesNo('Are you sure you want to remove this ' + this.getDeleteNoun() + '?', function() {
+          self.working(true);
+          self.errorbox.hide();
+          self.remove(rec, 
+            function(id) {
+              self.working(false);
+              self.close();
+              self.ondelete(id);
+            },
+            [self.onerror, self]);
+        });
+      }
+    });
+  }
+}
+/**
+ * Span TextAnchor
+ *   InputText input
+ *   Anchor anchor
+ */
+Html.TextAnchor = {
+  create:function(anchorCls, inputSize) {
+    var self = Html.Span.create();
+    return self.aug({
+      onclick_anchor:function(text) {},
+      //
+      init:function() {
+        self.input = Html.InputText.create().setSize(inputSize).into(self).aug({
+          onkeypresscr:function() {
+            self.anchor_onclick();
+          }
+        });
+        self.anchor = Html.Anchor.create(anchorCls, null, self.anchor_onclick).into(self);
+      },
+      setText:function(text) {
+        self.input.value = String.denull(text);
+      },
+      getText:function() {
+        return self.input.value;
+      },
+      setFocus:function() {
+        self.input.setFocus();
+      },
+      //
+      anchor_onclick:function() {
+        self.onclick_anchor(self.getText());
+      }
+    });
+  }
+}
+/**
+ * TextAnchor SearchTextAnchor
+ *   InputText input
+ *   Anchor anchor 
+ */
+Html.SearchTextAnchor = {
+  create:function(inputSize) {
+    return Html.TextAnchor.create('mglass', inputSize);
+  }
+}
+/**
+ * AnchorTab AnchorTab 
+ */
+Html.AnchorTab = {
+  create:function(text, cls) {
+    var at = new AnchorTab(text || '(Select)', cls || 'atedit');
+    return Class.augment(at, null, {
+      checks:function(recs, cols) {
+        at.loadChecks(recs, null, null, null, null, null, cols);
+        return at;
+      },
+      radios:function(recs, cols) {
+        at.loadRadios(recs, null, null, null, null, cols);
+        return at;
+      },
+      okCancel:function(onok) {
+        at.appendCmd(null, onok);
+        return at;
+      },
+      cancelOnly:function() {
+        at.appendCmd(AnchorTab.BUTTONS_CANCEL_ONLY);
+        return at;
+      }
+    });
+  }
+}
+/**
+ * Anchor AnchorTabSelector
+ */
+Html.AnchorTabSelector = {
+  create:function(cls, cols) {
+    cols = cols || 3;
+    var at = new AnchorTab('(Select)', cls || 'atedit');
+    var self = at.anchor;
+    return self.aug({
+      onchange:function(value) {},
+      //
+      /*
+       * @arg Rec[] recs
+       * @arg string valueFid (optional)
+       * @arg string textFid (optional)
+       */
+      radios:function(recs, valueFid, textFid) {
+        at.loadRadios(recs, valueFid, textFid, null, null, cols);
+        at.appendCmd(AnchorTab.BUTTONS_CANCEL_ONLY);
+        at.setOnchange(self.at_onchange);
+        return self;
+      },
+      setValue:function(value) {
+        at.setValue(value);
+      },
+      getValue:function() {
+        return at.getValue();
+      },
+      getText:function() {
+        return self.innerText;
+      },
+      //
+      at_onchange:function() {
+        self.onchange(at.getValue());
+      }
+    })
+  }
+}
+/**
+ * SearchTextAnchor Picker
+ *   Pop pop
+ */
+Html.Picker = {
+  create:function(inputSize, pop) {
+    return Html.SearchTextAnchor.create(inputSize).extend(this, function(self) {
+      return {
+        init:function() {
+          self.pop = pop;
+          pop.parent = self;
+        },
+        getValue:function() {
+          return self.value;
+        },
+        set:function(value, text) {
+          self.value = value;
+          self.setText(text);
+        },
+        //
+        onclick_anchor:function(text) {
+          self.pop.show(self.value, self.getText());
+        }
+      }
+    })
+  }
+}
+/**
+ * ScrollTable RecordTable
+ */
+Html.RecordTable = {
+  create:function(container, cls) {
+    var self = Html.ScrollTable.create(container, cls);
+    return self.aug({
+      /*
+       * @events
+       */
+      onselect:function(rec) {},
+      onload:function(recs) {},
+      /*
+       * @abstract (must override if using argless load)
+       * @arg fn(Rec[]) callback_recs
+       */
+      fetch:function(callback_recs) {
+        callback_recs(self.recs);
+      },
+      /*
+       * @abstract
+       * @arg Rec rec
+       * @arg TrAppender tr to build record row e.g. tr.select(rec, rec.name).td(rec.desc)
+       */
+      add:function(rec, tr) {},
+      //
+      /*
+       * @arg Rec[] recs (optional; if null, must implement fetch) 
+       */
+      load:function(recs) {
+        self.recs = recs;
+        self.fetch(function(recs) {
+          self.recs = recs;
+          self.draw();
+          self.onload(recs);
+        });
+      },
+      //
+      tbody:function() {
+        var tbody = Html.Table._proto.tbody.call(self);
+        if (! tbody._auged) {
+          tbody.aug({
+            tr:function(cls) {
+              cls = cls || Math.isEven(self.ct++) ? '' : 'off';
+              var appender = Html.Table._protoBody.tr.call(tbody, cls);
+              return Class.augment(appender, null, {
+                /*
+                 * @arg Rec rec
+                 * @arg proto|<a>|string e e.g. AnchorTrackItem
+                 * @return TrAppender 
+                 */
+                select:function(rec, e) {
+                  if (String.is(e))
+                    e = Html.AnchorRec.asSelect(e, rec, self.onselect);
+                  else if (Html.Anchor.is(e))
+                    e.bubble('onclick', self.onselect.bind(self.onselect, rec));
+                  else
+                    e = e.create(rec, self.onselect);
+                  return this.td(e);
+                }
+              });
+            }
+          });
+          tbody._auged = self;
+        }
+        return tbody;
+      },        
+      clean:function() {
+        self.tbody().clean();
+        self.ct = 0;
+      },
+      draw:function() {
+        self.clean();
+        self.working(function() {
+          Array.forEach(self.recs, function(rec) {
+            self.add(rec, self.tbody().tr());
+          });
+          self.working(false);
+        });
+      }
+    })
+  }
+}
+/**
+ * Div SearchRecordTable
+ *   Div searcher
+ *     SearchTextAnchor input
+ *     Span filterbox
+ *   RecordTable table 
+ */
+Html.SearchRecordTable = {
+  create:function(container) {
+    var self = Html.Div.create().into(container);
+    return self.aug({
+      /*
+       * @events
+       */
+      onload:function(recs) {},
+      onselect:function(rec) {},
+      /*
+       * @abstract
+       * @arg fn(Rec[]) callback_recs 
+       */
+      fetch:function(callback_recs) {},
+      /*
+       * @abstract
+       * @arg Rec rec
+       * @arg RegExp search
+       * @return bool true if rec should be displayed based upon search  
+       */
+      applies:function(rec, search) {},
+      /*
+       * @abstract
+       * @arg Rec rec
+       * @arg TrAppender tr to build record row e.g. tr.select(rec, rec.name).td(rec.desc)
+       */
+      add:function(rec, tr) {},
+      //
+      init:function() {
+        self.searcher = Html.SearchRecordTable.Searcher.create(self).aug({
+          onclick_search:function(text) {
+            self.load(text);
+          }
+        });
+        self.table = Html.SearchRecordTable.Table.create(self).aug({
+          fetch:function(callback_recs) {
+            self.fetch(callback_recs);
+          },
+          add:function(rec, tr) {
+            self.add(rec, tr);
+          },
+          onselect:function(rec) {
+            self.onselect(rec);
+          },
+          onload:function(recs) {
+            self.onload(recs);
+          }
+        });
+      },
+      load:function(text) {
+        self.searcher.setSearchText(text);
+        if (self.loaded) {
+          self.table.draw();
+        } else {
+          self.loaded = self;
+          self.table.load();
+        }
+      },
+      setFocus:function() {
+        self.searcher.setFocus();
+      },
+      thead:function() {
+        return self.table.thead();
+      },
+      //
+      tbody:function() {
+        return self.table.tbody();
+      },
+      clean:function() {
+        self.table.clean();
+        self.loaded = null;
+      }
+    });
+  },
+  Table:{
+    create:function(container) {
+      var self = Html.RecordTable.create(container);
+      return self.aug({
+        draw:function() {
+          self.clean();
+          self.working(function() {
+            var search = container.searcher.getSearchRegExp();
+            var unapplies = [];
+            Array.forEach(self.recs, function(rec) {
+              if (container.applies(rec, search)) 
+                container.add(rec, self.tbody().tr(''));
+              else 
+                unapplies.push(rec);
+            })
+            Array.forEach(unapplies, function(rec) {
+              container.add(rec, self.tbody().tr('off'));
+            })
+            self.working(false);
+          })
+        }
+      })
+    }
+  },
+  Searcher:{
+    create:function(container) {
+      var self = Html.Div.create('mb5').into(container);
+      return self.aug({
+        onclick_search:function(text) {},
+        //
+        init:function() {
+          self.input = Html.SearchTextAnchor.create().into(self).aug({
+            onclick_anchor:function(text) {
+              self.onclick_search(text);
+            }
+          });
+          self.filterbox = Html.Span.create().into(self);
+        },
+        getSearchRegExp:function() {
+          var text = String.nullify(self.input.getText());
+          return (text) ? new RegExp(text, 'i') : null;
+        },
+        setSearchText:function(text) {
+          self.input.setText(text);
+        },
+        setFocus:function() {
+          self.input.setFocus();
+        }
+      });
+    } 
+  }
+}
+/**
+ * Picker RecordPicker
+ *   Pop pop
+ *     SearchRecordTable table
+ *     CmdBar cmd
+ */
+Html.RecordPicker = {
+  create:function(popCaption, inputSize, popWidth) {
+    var My = this;
+    var pop = My.Pop.create(popCaption || 'Selector', popWidth);
+    return Html.Picker.create(inputSize, pop).extend(My, function(self) {
+      return {
+        /*
+         * @events
+         */
+        onset:function(rec) {},
+        //
+        init:function() {
+          self.pop = pop.aug({
+            onselect:function(rec) {
+              self.set(rec);
+              self.onset(rec);
+            },
+            onclose:function() {
+              self.setFocus();
+            },
+            table_fetch:function(callback_recs) {
+              self.fetch(callback_recs);
+            },
+            table_applies:function(rec, search) {
+              return self.applies(rec, search);
+            },
+            table_add:function(rec, tr) {
+              self.add(rec, tr);
+            }
+          })
+        },
+        /*
+         * @arg Rec rec
+         */
+        set:function(rec) {
+          if (rec) 
+            self.setValueText(self.getValueFrom(rec), self.getTextFrom(rec));
+          else
+            self.setValueText(null, '');
+        },
+        /*
+         * @arg string value
+         * @arg string text
+         */
+        setValueText:function(value, text) {
+          self.value = value;
+          self.setText(text);
+        },
+        /*
+         * @return string
+         */
+        getValue:function() {
+          return self.value;
+        },
+        /*
+         * @return string
+         */
+        getText:function() {
+          return self.input.value;
+        },
+        //
+        /*
+         * @abstract
+         * @arg Rec rec
+         * @return string
+         */
+        getValueFrom:function(rec) {},
+        /*
+         * @abstract
+         * @arg Rec rec
+         * @return string
+         */
+        getTextFrom:function(rec) {},
+        /*
+         * @abstract
+         * @arg fn(Rec[]) callback_recs
+         */
+        fetch:function(callback_recs) {},
+        /*
+         * @abstract
+         * @arg Rec rec
+         * @arg RegExp search
+         * @return bool true if rec should be displayed based upon search  
+         */
+        applies:function(rec, search) {},
+        /*
+         * @abstract
+         * @arg Rec rec
+         * @arg TrAppender tr to build record row e.g. tr.select(rec, rec.name).td(rec.desc)
+         */
+        add:function(rec, tr) {},
+        thead:function() {
+          return self.pop.table.thead();
+        },
+        /*
+         * Override to create add'l buttons
+         */
+        buttons:function(cmd) {
+          cmd.cancel(self.pop.close);
+        }
+      }
+    })
+  },
+  Pop:{
+    create:function(caption, width) {
+      var My = this;
+      return Html.Pop.create(caption, width || 600).extend(function(self) {
+        return {
+          onselect:function(rec) {},
+          table_fetch:function(callback_recs) {},
+          table_applies:function(rec, search) {},
+          table_add:function(rec, tr) {},
+          //
+          init:function() {
+            self.table = Html.SearchRecordTable.create(self.content).aug({
+              onselect:function(rec) {
+                self.select(rec);
+              },
+              fetch:function(callback) {
+                self.table_fetch(callback);
+              },
+              applies:function(rec, search) {
+                return self.table_applies(rec, search);
+              },
+              add:function(rec, tr) {
+                self.table_add(rec, tr);
+              }
+            });
+            self.cmd = My.CmdBar.create(self);
+          },
+          clean:function() {
+            self.table.clean();
+          },
+          show:function(value, text) {
+            self.cmd.load();
+            Pop.showPosCursor(self);
+            self.table.load(text);
+            self.table.setFocus();
+          },
+          select:function(rec) {
+            self.onselect(rec);
+            self.close();
+          },
+          loadCmdBar:function() {
+            self.parent.cmd.cancel(self.close);
+          }
+        }
+      })
+    },
+    CmdBar:{
+      create:function(pop) {
+        var self = Html.CmdBar.create(pop.content);
+        return Class.augment(self, null, {
+          load:function() {
+            if (! self.loaded) {
+              pop.parent.buttons(self);
+              self.loaded = self;
+            }
+          }
+        })
+      }
+    }
+  }
+}
+/**
+ * Json
+ */
+Json = {
+  //
+  _re:/[\x00-\x1f\\"]/,
+  _stringescape:{'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"' :'\\"','\\':'\\\\'},
+  //
+  ERR_DECODE:'Json.decode',
+  /*
+   * Encodes object into JSON string
+   * @arg mixed obj
+   * @arg bool elimTempProps (optional; if true, underscore-prefixed props are removed, default false)
+   * @arg bool retainNullProps (optional; if true, null props are removed, default false)
+   */
+  encode:function(obj, elimTempProps) {
+    switch (typeof obj) {
+      case 'string':
+        return '"' + (this._re.test(obj) ? this._stringencode(obj) : obj) + '"';
+      case 'number':
+      case 'boolean':
+        return String(obj);
+      case 'object':
+        if (obj) {
+          var a, val;
+          switch (obj.constructor) {
+            case Array:
+              a = [];
+              for (var i = 0, l = obj.length; i < l; i++) 
+                a.push(this.encode(obj[i], elimTempProps));
+              return '[' + a.join(',') + ']';
+            case Object:
+              a = [];
+              for (var prop in obj)
+                if (obj.hasOwnProperty(prop)) 
+                  if (! elimTempProps || prop.substr(0, 1) != '_') { 
+                    val = this.encode(obj[prop], elimTempProps);
+                    if (val != 'null')
+                      a.push('"' + (this._re.test(prop) ? this._stringencode(prop) : prop) + '":' + val);
+                  }
+              return '{' + a.join(',') + '}';
+            case String:
+              return '"' + (this._re.test(obj) ? this._stringencode(obj) : obj) + '"';
+            case Number:
+            case Boolean:
+              return String(obj);
+            case Function:
+            case Date:
+            case RegExp:
+              return 'null';
+          }
+        }
+        return 'null';
+      case 'function':
+      case 'undefined':
+      case 'unknown':
+        return 'null';
+      default:
+        return 'null';
+    }
+  },
+  /*
+   * Encodes object into JSON string suitable for passing as URL query string / HTTP form value
+   */
+  uriEncode:function(obj) {
+    return encodeURIComponent(this._fix(this.encode(obj, true)));
+  },
+  /*
+   * Decodes JSON into object/value
+   */
+  decode:function(string) {
+    try {
+      return ! (/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(string.replace(/"(\\.|[^"\\])*"/g, ''))) && eval('(' + string + ')');
+    } catch (e) {
+      throw Page.error(Json.ERR_DECODE, 'Json.decode(' + string + ')', e);
+    }
+  },
+  //
+  _fix:function(string) {
+    string = string.replace(/\u2022/g, "&bull;")
+    return string;
+  },
+  _stringencode:function(string) {
+    var self = this;
+    return string.replace(
+      /[\x00-\x1f\\"]/g,
+      function(a) {
+        var b = self._stringescape[a];
+        if (b)
+          return b;
+        b = a.charCodeAt();
+        return '\\u00' + Math.floor(b / 16).toString(16) + (b % 16).toString(16);
+      }
+    )
+  }
+};
+/**
+ * Cookies  
+ */
+Cookies = {
+  /*
+   * @arg string name 'cookieName'
+   * @arg mixed value 
+   * @arg int _expires minutes; omit to last for session  
+   */
+  set:function(name, value, _expires, _path, _domain, _secure) {
+    var args = [name + '=' + escape(Json.encode(value))];
+    if (_expires) {
+      if (_expires == -1) {
+        args.push('expires=Thu, 01-Jan-1970 00:00:01 GMT');
+      } else {
+        var d = new Date();
+        d.setTime(d.getTime() + _expires * 60000);
+        args.push('expires=' + d.toUTCString());
+      }
+    }
+    if (_path) 
+      args.push('path=' + _path);
+    if (_domain)
+      args.push('domain=' + _domain);
+    if (_secure) 
+      args.push('secure');
+    document.cookie = args.join(';');
+  },
+  /*
+   * @arg string name 'cookieName'
+   * @return mixed value
+   */
+  get:function(name) {
+    var nameValues = document.cookie.split(';');
+    for (i = 0, j = nameValues.length; i < j; i++) {
+      var nameValue = nameValues[i].split('=');
+      if (name == nameValue[0].replace(/^\s+|\s+$/g, ""))
+        return Json.decode(unescape(nameValue[1]));
+    }
+  },
+  /*
+   * @arg string name 'cookieName' 
+   */
+  expire:function(name, _path, _domain) {
+    if (Cookies.get(name)) 
+      Cookies.set(name, null, -1, _path, _domain);
+  }
+}

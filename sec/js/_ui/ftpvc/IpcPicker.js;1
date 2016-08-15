@@ -1,0 +1,34 @@
+/**
+ * RecordPicker IpcPicker
+ */
+IpcPicker = {
+  create:function() {
+    var My = this;
+    return Html.RecordPicker.create('Test/Procedure Selector', 26).extend(function(self) {
+      return {
+        init:function() {
+          self.thead().tr('fixed head').th('Test/Procedure').w('35%').th('Description').w('45%').th('Category').w('20%');
+        },
+        fetch:function(callback_recs) {
+          Ajax.Ipc.getAll(callback_recs);
+        },
+        applies:function(rec, search) {
+          if (search)
+            return rec.name.match(search);
+          return true;
+        },
+        add:function(rec, tr) {
+          var cat = C_Ipc.CATS[rec.cat];
+          var a = (rec.custom) ? Html.AnchorAction.asSelectGreen(rec.name) : Html.AnchorAction.asSelect(rec.name);
+          tr.select(rec, a).td(rec.desc).td(cat);
+        },
+        getValueFrom:function(rec) {
+          return rec.ipc;
+        },
+        getTextFrom:function(rec) {
+          return rec.name;
+        }
+      }
+    })
+  }
+}

@@ -1,0 +1,6 @@
+MSH|^~\&|Clicktate|X68||LCD|20141216125548||VXU^V04^VXU_V04|1-3824-20141216125548|P|2.5.1|||NE|NE
+PID|1||3824^^^1^MR||Kirk^James^Tiberius^^^^L||19540919|M||2106-3^White^CDCREC|1701 Space Dock Drive^^Enterprise^NC^43234^USA^L||^PRN^PH^^^888^8254258|||||||||2186-5^Not Hispanic or Latino^CDCREC
+ORC|RE||9999^CDC
+ORC|RE||9999^CDC
+RXA|0|1|20141205222101||998^No vaccine administered^CVX|999||||||||||||||NA
+OBX|1|CE|59784-9^Disease with presumed immunity^LN|1|38907003^Varicella infection^SCT||||||F

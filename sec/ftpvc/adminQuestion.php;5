@@ -1,0 +1,420 @@
+<?php
+require_once "inc/noCache.php";
+require_once "inc/requireLogin.php";
+require_once "inc/uiFunctions.php";
+require_once "php/dao/TemplateAdminDao.php";
+require_once "php/forms/QuestionForm.php";
+
+$sorted = false;
+$noValidateSave = false;
+$form = new QuestionForm();
+if (isset($_GET['qref'])) 
+  $getId = JsonDao::validateQref($_GET['tid'], null, $_GET['qref']);
+else
+  $getId = isset($_GET["id"]) ? $_GET["id"] : null;
+if (isset($getId)) {
+
+  // Page entry from link
+  if ($getId != "") {
+    try {
+      $question = TemplateAdminDao::getQuestion($getId, true, true);
+      $form->setFromDatabase($question);
+      $form->templateId = $_GET["tid"];
+      $form->sectionId = $question->sectionId;  // $_GET["sid"];
+    } catch (SecurityException $e) {
+      die($e->getMessage());
+    }
+  } else {
+    $form->templateId = $_GET["tid"];
+    $form->sectionId = $_GET["sid"];
+    $form->parId = $_GET["pid"];
+  }
+} else {
+
+  // Page submitted from action
+  $form->templateId = $_POST["templateId"];
+  $form->sectionId = $_POST["sectionId"];
+  $form->parId = $_POST["parId"];
+  try {
+    $action = isset($_POST["action"]) ? $_POST["action"] : null;
+    if ($action == " Exit ") {
+      header("Location: adminPar.php?id=" . $form->parId . "&tid=" . $form->templateId);
+      exit;
+    }
+    $sorted = false;
+    if (isset($_POST["insert"])) {
+      $msg = "Blank option line inserted (not yet saved).";
+      $i = key($_POST["insert"]);
+      $form->setFromPost();
+      $form->insertBlankAfter($i);
+      $sorted = true;
+    } else if ($action == " Sort ") {
+      $msg = "Options sorted (not yet saved).";
+      $form->setFromPost(false);
+      $form->sortOptions();
+      $sorted = true;
+    } else if ($action == "Sort By Text") {
+      $msg = "Options sorted (not yet saved).";
+      $form->setFromPost(false);
+      $form->sortOptions(false);
+      $sorted = true;
+    } else if ($action == "Sort Single Options") {
+      $form->setFromPost(false);
+      $form->sortSingleOptions();
+      $msg = "Single options sorted (not yet saved).";
+      $sorted = true;
+    } else if ($action == "Delete Question") {
+      TemplateAdminDao::deleteQuestion($_POST["id"]);
+      $form->parId = $_POST["parId"];
+      $msg = "Question deleted.";
+    } else if ($action == "Add New") {
+      $form->parId = $_POST["parId"];
+      $msg = "Ready to enter new question.";
+    } else if ($action == "< Prev") {
+      $question = TemplateAdminDao::getPrevQuestion($form->parId, $_POST["sortOrder"], true);
+      if ($question == null) {
+        $form->setFromPost();
+      } else {
+        $form->setFromDatabase($question);
+        $omsg = "Displaying previous question.";
+      }
+    } else if ($action == "Next >") {
+      $question = TemplateAdminDao::getNextQuestion($form->parId, $_POST["sortOrder"], true);
+      if ($question == null) {
+        $form->setFromPost();
+      } else {
+        $form->setFromDatabase($question);
+        $omsg = "Displaying next question.";
+      }
+    } else if ($action == "Copy") {
+      $form->setFromPost();
+      $form->id = "";
+      $form->sortOrder = null;
+      $form->uid .= "Copy";
+      $msg = "Question copied and ready to save.";
+    } else {
+      if (! $sorted) {
+        $form->setFromPost();
+      }
+      if (! $action == "Save Anyway") {
+        $form->validate();
+      }
+      TemplateAdminDao::deleteParJson($form->parId);
+      $question = $form->buildQuestion();
+      if ($question->id == "") {
+        $form->id = TemplateAdminDao::addQuestion($question);
+        $msg = "Question added.";
+      } else {
+        TemplateAdminDao::updateQuestion($question);
+        $msg = "Question updated.";
+      }
+      $question = TemplateAdminDao::getQuestion($form->id, true, true);
+      $form->setFromDatabase($question);
+    }
+  } catch (ValidationException $e) {
+    $errors = $e->getErrors();
+    $noValidateSave = true;
+  } catch (DuplicateInsertException $e) {
+    $errors = singleError(null, "A question for this paragraph already exists with that ID.");
+  } catch (SecurityException $e) {
+    die($e->getMessage());
+  }
+}
+$update = (! isBlank($form->id));
+$form->breadcrumb = TemplateAdminDao::buildQuestionBreadcrumb($form->parId);
+$form->sortOrders = TemplateAdminDao::buildQuestionSortCombo($form->parId, $form->id);
+$form->sortOrder = TemplateAdminDao::denullifySortOrder($form->sortOrders, $form->sortOrder);
+$ix = 0;
+?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2006 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>clicktate : Question</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <link rel="stylesheet" type="text/css" href="css/med.css?1" media="screen" />
+    <script language="JavaScript1.2" src="js/admin.js"></script>
+  </head>
+  <body onbeforeunload="return checkDirty()">
+    <?php include "inc/banner.php" ?>
+    <form method="post" action="adminQuestion.php">
+      <input type="hidden" name="id" value="<?=$form->id ?>">
+      <input type="hidden" name="templateId" value="<?=$form->templateId ?>">
+      <input type="hidden" name="sectionId" value="<?=$form->sectionId ?>">
+      <input type="hidden" name="parId" value="<?=$form->parId ?>">
+      <input type="hidden" name="mix" value="<?=$form->mix ?>">
+      <input type="hidden" name="mix2" value="<?=$form->mix2 ?>">
+      <?php require_once "inc/errors.php" ?>
+      <? if ($noValidateSave) { ?>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="action" value="Save Anyway" onclick="ignoreDirty()">
+        <br><br>
+      <? } ?>
+      <div id="breadcrumb">
+        <?=$form->breadcrumb ?><br>
+        <h1><?=($update) ? "" : "New " ?>Question <?=$form->uid ?></h1>
+      </div>
+      <div class="action">
+        <input type="submit" value=" Save " onclick="ignoreDirty()">
+        <?php if ($update) { ?>
+          <span></span>
+          <input type="submit" name="action" value="Add New">
+          <input type="submit" name="action" value="Copy">
+          <span></span>
+          <input type="submit" name="action" value="Delete Question" onclick="if (deleteCancelled()) {return false} else {ignoreDirty()}">
+          <span></span>
+          <input type="submit" name="action" value="< Prev">
+          <input type="submit" name="action" value="Next >">
+        <?php } ?>
+        <span></span>
+        <input type="button" value="Preview" onclick="preview(<?=$form->templateId ?>,<?=$form->parId ?>)">
+        <span></span>
+        <input type="submit" name="action" value=" Exit ">
+      </div>
+      <div class="roundBox">
+        <div class="roundTop"><img src="img/tl.gif"></div>
+        <div class="roundContent">
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <td class="label first">Question ID</td>
+              <td width=5></td>
+              <td><input type="text" size="25" name="uid" value="<?=$form->uid ?>" onchange="makeDirty()"></td>
+              <td><a class="hover" style="margin-left:3px;" href="javascript:" onclick="alert(this.title)" title="!allergy&#13;#calculator&#13;%calendar&#13;%calendar-date-only%&#13;$free&#13;@med&#13;*button&#13;?combo&#13;^no-toggle&#13;=hiddene">Help</a>
+              <td width=15></td>
+              <td class="label">Sync ID</td>
+              <td width=5></td>
+              <td><input type="text" size="20" name="sync" value="<?=$form->sync ?>" onchange="makeDirty()"></td>
+              <? if ($form->sync != "") { ?>
+              <td><a class="hover" style="margin-left:3px;" href="javascript:showPopAdmin('qsyncSearch','<?=$form->sync ?>')">Ref?</a></td>
+              <? } ?>
+              <td width=15></td>
+              <td class="label">Data Sync ID</td>
+              <td width=5></td>
+              <td><input type="text" size="40" name="dsync" value="<?=$form->dsync ?>" onchange="makeDirty()"></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <td class="label first">Popup Question</td>
+              <td width=5></td>
+              <td><input type="text" size="40" name="desc" value="<?=$form->desc ?>" onchange="makeDirty()"></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>
+            <tr>
+              <td class="label first">Sort Position</td>
+              <td width=5></td>
+              <td>
+                <?php renderCombo("sortOrder", $form->sortOrders, $form->sortOrder, "onchange=\"makeDirty()\"") ?>
+              </td>
+              <td width=15></td>
+              <td class="label">Break</td>
+              <td width=5></td>
+              <td>
+                <?php renderCombo("break", $form->breaks, $form->break, "onchange=\"makeDirty()\"") ?>
+              </td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0>           
+            <tr>
+              <td class="label first" style="vertical-align:top;padding-top:5px" nowrap>Show Condition</td>
+              <td width=5 nowrap></td>
+              <td width=100%><textarea name="test" onchange="makeDirty()"><?=$form->test ?></textarea></td>
+              <td width=5 nowrap></td>
+              <td><a class=hover href="javascript:" onclick="return showPopBuilder('test','isSel',4,' or: ',<?=$form->templateId ?>,<?=$form->sectionId ?>,<?=$form->parId ?>)">isSel</a></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0 width="95%">           
+            <tr>
+              <td class="label first" nowrap style="vertical-align:top;padding-top:5px">In Data Actions</td>
+              <td width=5 nowrap></td>
+              <td style="vertical-align:top;padding-top:1px">
+                <?php renderCombo("inTablec", $form->dataTables, $form->inTable, null, true) ?>
+                <input type="hidden" name="inTable" value="<?=$form->inTable ?>">
+              </td>
+              <td width=5 nowrap></td>
+              <td width=100%><textarea name="inActions" onchange="makeDirty()"><?=$form->inActions ?></textarea></td>
+            </tr>
+            <tr>
+              <td class="label first" nowrap style="vertical-align:top;padding-top:5px">Out Data</td>
+              <td width=5 nowrap></td>
+              <td style="vertical-align:top;padding-top:1px">
+                <?php renderCombo("outTable", $form->dataTables, $form->outTable, "onchange=\"makeDirty()\"") ?>
+              </td>
+              <td width=5 nowrap></td>
+              <td width="100%"><textarea name="outCols" onchange="makeDirty()"><?=$form->outCols ?></textarea></td>
+            </tr>
+          </table>           
+          <table border=0 cellpadding=0 cellspacing=0 width="95%" style="margin-top:15px">
+            <tr>
+              <td class="label first" valign="top" style="padding-top:5px">Before Text</td>
+              <td width=5></td>
+              <td><textarea name="bt" onchange="makeDirty()"><?=$form->bt ?></textarea></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0 width="95%">
+            <tr>
+              <td class="label first" valign="top" style="padding-top:5px" nowrap>Before Text<br>(Multi&nbsp;Selected)</td>
+              <td width=5 nowrap></td>
+              <td width=50%><textarea <?php if (! $form->anyMulti) { ?>class="blue"<?php } ?> name="btms" onchange="makeDirty()"><?=$form->btms ?></textarea></td>
+              <td width=10 nowrap></td>
+              <td class="label" valign="top" style="padding-top:5px" nowrap>After Text<br>(Multi&nbsp;Selected)</td>
+              <td width=5 nowrap></td>
+              <td width=50%><textarea <?php if (! $form->anyMulti) { ?>class="blue"<?php } ?> name="atms" onchange="makeDirty()"><?=$form->atms ?></textarea></td>
+            </tr>
+            <tr>
+              <td class="label first" valign="top" style="padding-top:5px" nowrap>Before Text<br>(Multi&nbsp;Unselected)</td>
+              <td width=5></td>
+              <td><textarea <?php if (! $form->anyMulti) { ?>class="blue"<?php } ?> name="btmu" onchange="makeDirty()"><?=$form->btmu ?></textarea></td>
+              <td width=10></td>
+              <td class="label first" valign="top" style="padding-top:5px">After Text<br>(Multi&nbsp;Unselected)</td>
+              <td width=5></td>
+              <td><textarea <?php if (! $form->anyMulti) { ?>class="blue"<?php } ?> name="atmu" onchange="makeDirty()"><?=$form->atmu ?></textarea></td>
+            </tr>
+          </table>
+          <table border=0 cellpadding=0 cellspacing=0 width="95%">
+            <tr>
+              <td class="label first" valign="top" style="padding-top:5px">After Text</td>
+              <td width=5></td>
+              <td><textarea name="at" onchange="makeDirty()"><?=$form->at ?></textarea></td>
+            </tr>
+            <tr><td height=10></td></tr>
+          </table>
+          <?php if ($update) { ?>
+            <?php for ($i = 0; $i < count($form->actionIfs); $i++) { ?>
+            <table border=0 cellpadding=0 cellspacing=0>
+                <tr><td height=5></td></tr>
+                <tr>
+                  <td class="label first">Action Condition</td>
+                  <td width=5></td>
+                  <td><input id="actionIf<?=$i ?>" type="text" size="100" name="actionIfs[<?=$i ?>]" value="<?=$form->actionIfs[$i] ?>" onchange="makeDirty()"></td>
+                  <td width=5></td>
+                  <td><a class=hover href="javascript:" onclick="return showPopBuilder('actionIf<?=$i ?>','isSel',4,' or: ',<?=$form->templateId ?>,<?=$form->sectionId ?>,<?=$form->parId ?>,<?=$form->id ?>)">isSel</a></td>
+                </tr>
+            </table>
+            <table border=0 cellpadding=0 cellspacing=0>
+                <tr>
+                  <td class="label first">Action</td>
+                  <td width=5></td>
+                  <td><input id="actionThen<?=$i ?>" type="text" size="100" name="actionThens[<?=$i ?>]" value='<?=$form->actionThens[$i] ?>' onchange="makeDirty()"></td>
+                  <td width=5></td>
+                  <td><a class=hover href="javascript:" onclick="return showPopBuilder('actionThen<?=$i ?>','inject',2,'; ',<?=$form->templateId ?>)">inject</a></td>
+                  <td width=5></td>
+                  <td><a class=hover href="javascript:" onclick="return showPopBuilder('actionThen<?=$i ?>','setDefault',4,';',<?=$form->templateId ?>,<?=$form->sectionId ?>,<?=$form->parId ?>,<?=$form->id ?>)">setDefault</a></td>
+                  <td width=5></td>
+                  <td><a class=hover href="javascript:" onclick="return showPopBuilder('actionThen<?=$i ?>','setChecked',4,';',<?=$form->templateId ?>,<?=$form->sectionId ?>,<?=$form->parId ?>,<?=$form->id ?>)">setChecked</a></td>
+                  <td width=5></td>
+                  <td><a class=hover href="javascript:" onclick="return showPopBuilder('actionThen<?=$i ?>','setTextFromSel',3,';',<?=$form->templateId ?>)">setTextFromSel</a></td>
+                </tr>
+              <?php } ?>
+            </table>
+          <?php } ?>
+        </div>
+        <div class="roundBottom"><img src="img/bl.gif"></div>
+      </div>
+      <?php if (! $update) { ?>
+        <div class="action lift">
+          <input type="button" value="Make Yes / No Options" onclick="makeYesNo()">
+        </div>
+      <?php } ?>
+      <div class="roundBox">
+       <div class="roundTitle">Single Options</div>
+        <div class="roundContent">
+          <div class="scrollTable noScroll">
+            <table border=0 cellpadding=0 cellspacing=0>
+              <tr>
+                <th class="noBorder">Def?</th>
+                <th class="noBorder" width=33%>Popup Option Button</th>
+                <th class="noBorder" width=66%>Text (if different)</th>
+                <th class="noBorder">CPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                <th class="noBorder">Track</th>
+                <th class="noBorder">Sync&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+              </tr>
+              <?php foreach ($form->singleOptions as $k => $optionLine) { ?>
+                <tr class="blue1">
+                  <td align="center"><input type="radio" name="defix" <?php checkedIf($ix == $form->defix) ?> value="<?= $ix ?>" onclick="makeDirty()"></td>
+                  <td><input type="text" maxlength=25 class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optDesc[<?= $ix ?>]" value="<?=$optionLine->desc ?>" onchange="makeDirty()"></td>
+                  <?php if ($ix == 0) { ?>
+                    <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optText[<?= $ix ?>]" value="<?=$optionLine->text ?>" onchange="makeDirty()"></td>
+                    <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optCpt[<?= $ix ?>]" value="<?=$optionLine->cpt ?>" onchange="makeDirty()"></td>
+                    <td><?php renderCombo("optTrack[$ix]", $form->trackCats, $optionLine->trackCat, "onchange=\"makeDirty()\"") ?></td>
+                    <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optSync[<?= $ix++ ?>]" value="<?=$optionLine->sync ?>" onchange="makeDirty()"></td>
+                  <?php } else { ?>
+                    <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optText[<?= $ix ?>]" value="<?=$optionLine->text ?>" onchange="makeDirty()"></td>
+                    <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optCpt[<?= $ix ?>]" value="<?=$optionLine->cpt ?>" onchange="makeDirty()"></td>
+                    <td><?php renderCombo("optTrack[$ix]", $form->trackCats, $optionLine->trackCat, "onchange=\"makeDirty()\"") ?></td>
+                    <td><input type="hidden" name="optSync[<?= $ix++ ?>]" /></td>
+                  <?php } ?>
+                  </tr>
+  			      <?php } ?>
+            </table>
+          </div>
+          <div style="text-align:center"><input type="submit" name="action" value="Sort Single Options" onclick="ignoreDirty()"></div>
+        </div>
+        <div class="roundBottom"><img src="img/bl.gif"></div>
+      </div>
+      <div class="action lift">
+        <input type="submit" value=" Save " onclick="ignoreDirty()">
+      </div>
+      <div class="roundBox">
+       <div class="roundTitle">Multi Options</div>
+        <div class="roundContent">
+        <table border=0 cellpadding=0 cellspacing=0>
+	       <tr style="padding-bottom:6px">
+            <td class="label" width="53">Caption</td>
+            <td width=5></td>
+            <td><input type="text" size="40" name="mcap" value="<?=$form->mcap ?>" onchange="makeDirty()"></td>
+            <td width=10></td>
+            <td class="label">List Type</td>
+            <td width=5></td>
+            <td>
+              <?php renderCombo("listType", $form->listTypes, $form->listType, "onchange=\"makeDirty()\"") ?>
+            </td>
+            <td width=10></td>
+            <td>
+              <input type="submit" name="action" value=" Sort " onclick="ignoreDirty()">
+              <!-- <input type="submit" name="action" value="Sort By Text" onclick="ignoreDirty()"> -->
+            </td>
+          </tr>
+        </table>
+          <div class="scrollTable noScroll">
+            <table border=0 cellpadding=0 cellspacing=0>
+              <tr>
+                <th class="noBorder">Def?</th>
+                <th class="noBorder" width=33%>Popup Checkbox</th>
+                <th class="noBorder" width=66%>Text (if different)</th>
+                <th class="noBorder">CPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                <th class="noBorder">Track</th>
+                <th class="noBorder">Sync&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                <th class="noBorder">&nbsp;</th>
+              </tr>
+              <?php foreach ($form->multiOptions as $k => $optionLine) { ?>
+                <tr class="blue1">
+                  <td align="center"><input type="radio" name="defix" <?php checkedIf($ix == $form->defix) ?> value="<?= $ix ?>" onclick="makeDirty()"></td>
+                  <td><input type="text" maxlength=25 class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optDesc[<?= $ix ?>]" value="<?=$optionLine->desc ?>" onchange="makeDirty()"></td>
+                  <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optText[<?= $ix ?>]" value="<?=$optionLine->text ?>" onchange="makeDirty()"></td>
+                  <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optCpt[<?= $ix ?>]" value="<?=$optionLine->cpt ?>" onchange="makeDirty()"></td>
+                  <td><?php renderCombo("optTrack[$ix]", $form->trackCats, $optionLine->trackCat, "onchange=\"makeDirty()\"") ?></td>
+                  <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optSync[<?= $ix ?>]" value="<?=$optionLine->sync ?>" onchange="makeDirty()"></td>
+                  <td><? if (! isBlank($optionLine->uid)) { ?><input type="submit" name="insert[<?=$ix ?>]" value="Insert" onclick="ignoreDirty()" style="font-family:Calibri;font-size:8pt"><? } ?></td>
+                </tr>
+              <? $ix++ ?>
+              <?php } ?>
+            </table>
+          </div>
+        </div>
+        <div class="roundBottom"><img src="img/bl.gif"></div>
+      </div>
+      <div class="action lift">
+        <input type="submit" value=" Save " onclick="ignoreDirty()">
+      </div>
+    </form>
+  </body>
+</html>
+<? if ($sorted) { ?>
+<script>
+makeDirty();
+</script>
+<? } ?>

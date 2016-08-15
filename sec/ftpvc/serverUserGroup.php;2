@@ -1,0 +1,43 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/UserGroups.php'; 
+require_once 'php/data/rec/sql/PortalUsers_Admin.php'; 
+require_once 'php/data/json/JAjaxMsg.php'; 
+//
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  Logger::debug(currentUrl());
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = json_decode($_POST['obj']);
+  Logger::debug(currentUrl());
+  Logger::debug_r($_POST, '$_POST');;
+}
+try {
+  switch ($action) {
+    //
+    case 'getUsers':
+      $users = UserGroups::getAllUsers();
+      $m = new JAjaxMsg($action, jsonencode($users));
+      break;
+    case 'getPortalUsers':
+      $pusers = PortalUsers_Admin::getAll();
+      $m = new JAjaxMsg($action, jsonencode($pusers));
+      break;
+    case 'createPortalUser':
+      $puser = PortalUsers_Admin::create($obj);
+      $m = new JAjaxMsg($action, jsonencode($puser));
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+}
+if ($m != null) 
+  echo $m->out();
+?>

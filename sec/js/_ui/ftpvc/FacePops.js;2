@@ -1,0 +1,92 @@
+/**
+ * Pop ProcsPop
+ */
+ProcsPop = {
+  pop:function(fs) {
+    return this.create().pop(fs);
+  },
+  create:function() {
+    My = this;
+    return ProcsPop = Html.Pop.create('Procedures', 0).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          var height = self.fullscreen(1000, 600);
+          self.table = My.ProcsTable.create(self.content, height).bubble('onupdate', self.table_onupdate);
+          self.cb = Html.CmdBar.create(self.content).add('Add Test/Procedure...', self.new_onclick).exit(self.close);
+        },
+        pop:function(fs) {
+          self.fs = fs;
+          self.updated = false;
+          self.show();
+          self.table.load(fs);
+          return self;
+        },
+        close:function() {
+          if (self.updated)
+            self.onupdate();
+          Pop.close();
+        },
+        //
+        table_onupdate:function() {
+          self.updated = true;
+        },
+        new_onclick:function() {
+          self.table.edit();
+        }
+      }
+    })
+  },
+  ProcsTable:{
+    create:function(container, height) {
+      return Html.TableLoader.create(container, 'fsp').extend(this, function(self, parent) {
+        return {
+          onupdate:function() {},
+          //
+          init:function() {
+            self.setHeight(height);
+            self.thead().trFixed().th('Date').w('10%').th('Category').w('10%').th('Name').w('20%').th('Results').w('60%');
+            self.setTopFilter();
+          },
+          edit:function(proc) {
+            proc = proc || Proc.asNew(self.cid);
+            ProcEntry.pop(proc).bubble('onsave', self.update).bubble('ondelete', self.pop_onupdate);
+          },
+          load:function(fs) {
+            if (fs) {
+              self.cid = fs.clientId;
+              parent(Html.TableLoader).load(fs.procedures);
+            } else {
+              parent(Html.TableLoader).load();
+            }
+          },
+          //
+          fetch:function(callback_recs) {
+            Ajax.Procedures.getAll(self.cid, callback_recs);
+          },
+          filter:function(rec) {
+            var ipc = (rec.Ipc) ? rec.Ipc : {};
+            return {'Category':C_Ipc.CATS[ipc.cat],'Name':ipc.name};
+          },
+          rowKey:function(rec) {
+            return rec.procId;
+          },
+          drawRow:function(rec) {
+            rec._cat = rec.Ipc && C_Ipc.CATS[rec.Ipc.cat];
+            if (rec._results)
+              rec.__results = rec._results.join('; ');
+            self.tbody().tr(rec).td(rec.date, 'bold nw').td(rec._cat).select(AnchorProc).td(rec.__results);
+          },
+          onselect:function(rec) {
+            self.edit(rec);
+          },
+          pop_onupdate:function() {
+            self.onupdate();
+            self.load();
+          }
+        }
+      })
+    }
+  }
+}

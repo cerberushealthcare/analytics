@@ -1,0 +1,306 @@
+<?php
+require_once 'php/data/xml/_XmlRec.php';
+require_once 'php/data/xml/ccd/POCD_MT000040.php';
+require_once 'php/data/xml/ccd/datatypes_base.php';
+require_once 'php/data/xml/ccd/Section_Types.php';
+//
+/**
+ * Clinical Document (CCD)
+ * @author Warren Hornsby 
+ */
+class ClinicalDocument extends XmlRec {
+  //
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClinicalDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId; //REQ
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id; //REQ
+  public /*CE*/ $code; //REQ
+  public /*ST*/ $title;
+  public /*TS*/ $effectiveTime; //REQ
+  public /*CE*/ $confidentialityCode; //REQ
+  public /*CS*/ $languageCode;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+  public /*TS*/ $copyTime;
+  public /*RecordTarget[]*/ $recordTarget; //REQ
+  public /*Author[]*/ $author; //REQ
+  public /*DataEnterer*/ $dataEnterer;
+  public /*Informant12[]*/ $informant;
+  public /*Custodian*/ $custodian; //REQ
+  public /*InformationRecipient[]*/ $informationRecipient;
+  public /*LegalAuthenticator*/ $legalAuthenticator;
+  public /*Authenticator[]*/ $authenticator;
+  public /*Participant1[]*/ $participant;
+  public /*InFulfillmentOf[]*/ $inFulfillmentOf;
+  public /*DocumentationOf[]*/ $documentationOf;
+  public /*RelatedDocument[]*/ $relatedDocument;
+  public /*Authorization[]*/ $authorization;
+  public /*Component1*/ $componentOf;
+  public /*Component2*/ $component; //REQ
+  //
+  private $client;
+  private $userGroup;
+  private $user;
+  /**
+   * Construct with required defaults
+   * @param Client $client
+   * @param UserGroup $userGroup
+   * @param ErxUser $user
+   */
+  public function __construct($client, $userGroup, $user) {
+    $this->client = $client;
+    $this->userGroup = $userGroup;
+    $this->user = $user;
+    $this->setNamespaces();
+    $this->typeId = InfrastructureRoot_typeId::fromExtension('POCD_HD000040');
+    $this->templateId = InfrastructureRoot_templateId::asCCD();
+    $this->code = new CE_LOINC('34133-9', 'Summarization of Episode Note');
+    $this->confidentialityCode = new CE_HL7_Confidentiality('N');
+    $this->languageCode = CS_LanguageType::asUsEnglish(); 
+    $this->effectiveTime = TS::fromNow();
+    $this->component = Component2::asStructuredBody();
+  }
+  public function getClient() {
+    return $this->client;
+  }
+  /**
+   * @return POCD.Patient 
+   */
+  public function getPatient() {
+    return get_recursive($this, 'recordTarget.patientRole.patient');
+  }
+  /**
+   * @return array(templateId => Section,..)
+   */
+  public function getSections() {
+    static $sections;
+    if ($sections == null) {
+      $sections = array();
+      $components = arrayify(get_recursive($this, 'component.structuredBody.component'));
+      if ($components) {
+        foreach ($components as $component) {
+          $section = get($component, 'section');
+          if ($section) {
+            $id = $section->getTemplateId();
+            $sections[$id] = $section;
+          }
+        }
+      }
+    }
+    return $sections;
+  }
+  public function getSection($templateId) {
+    $sections = $this->getSections();
+    return geta($sections, $templateId->_root);
+  }
+  public function getSectionVitals() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionVitals());
+  }
+  public function getSectionProcedures() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionProcedures());
+  }
+  public function getSectionProblems() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionProblems());
+  }
+  public function getSectionEncounters() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionEncounters());
+  }
+  public function getSectionAlerts() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionAlerts());
+  }
+  public function getSectionMeds() {
+    return $this->getSection(InfrastructureRoot_templateId::asSectionMeds());
+  }
+  /**
+   * Assign required header elements
+   * @param string $id
+   * @param string $title
+   * @param string $dateFrom 'CCYYMMDD', 'CCYYMM', 'CCYY' 
+   * @param string $dateTo 'CCYYMMDD', 'CCYYMM', 'CCYY'
+   */
+  public function setHeader($id, $title, $dateFrom, $dateTo) {
+    $this->id = II::from($id);
+    $this->title = ST::asText($title);
+    $this->recordTarget = RecordTarget::from($this->client, $this->userGroup);
+    $this->author = Author::from($this->user, $this->userGroup);
+    $this->custodian = Custodian::from($this->userGroup);
+    $this->documentationOf = DocumentationOf::from($this->client, $this->user, $this->userGroup, $dateFrom, $dateTo);
+  }
+  /**
+   * Add a participant to header
+   * @param AssociatedEntity $entity e.g. AssociatedEntity::asGuardian()
+   */
+  public function addParticipant($entity) {
+    $this->set('participant', Participant1::asIndirectTarget($entity));
+  }
+  /**
+   * Medication section
+   * @param Med[] $meds 
+   */
+  public function setMedsSection($meds) {
+    if (! empty($meds))
+      $this->component->structuredBody->add(new Section_Meds($meds));
+  }
+  /**
+   * Alerts section
+   * @param Allergy[] $allers 
+   */
+  public function setAlertsSection($allers) {
+    $this->component->structuredBody->add(new Section_Alerts($allers));
+  }
+  /**
+   * Vitals section
+   * @param Vital[] $vitals
+   */
+  public function setVitalsSection($vitals) {
+    if (! empty($vitals)) 
+      $this->component->structuredBody->add(new Section_Vitals($vitals));
+  }
+  /**
+   * Immunizations section
+   * @param Immun[] $immuns
+   */
+  public function setImmunsSection($immuns) {
+    if (! empty($immuns)) 
+      $this->component->structuredBody->add(new Section_Immuns($immuns));
+  }
+  /**
+   * Procedures section
+   * @param Proc[] $procs
+   */
+  public function setProcsSection($procs) {
+    if (! empty($procs)) 
+      $this->component->structuredBody->add(new Section_Procedures($procs));
+  }
+  /**
+   * Encounters section
+   * @param Session[] $sessions
+   * @param UserGroup $ug
+   */
+  public function setEncountersSection($sessions, $ug) {
+    if (! empty($sessions)) 
+      $this->component->structuredBody->add(new Section_Encounters($sessions, $ug));
+  }
+  /**
+   * Problems section
+   * @param Diagnosis[] $diags 
+   * @param CE $code (optional) @see CE_LOINC_ProblemContent
+   */
+  public function setProblemsSection($diags, $code = null) {
+    if (! empty($diags)) 
+      $this->component->structuredBody->add(new Section_Problems($diags, $code));
+  }
+  //
+  private function setNamespaces() {
+    $this->_xmlns = 'urn:hl7-org:v3';
+    $this->_xmlns_voc = 'urn:hl7-org:v3/voc';
+    $this->_xmlns_xsi = 'http://www.w3.org/2001/XMLSchema-instance';
+    $this->_xsi_schemaLocation = 'urn:hl7-org:v3 CDA.xsd';
+  }
+}
+class InfrastructureRoot_templateId extends II {
+  public /*uid*/ $_root;
+  public /*xs:boolean*/ $_unsorted;
+  //
+  static function asCCD() {
+    return array(
+      new self('2.16.840.1.113883.3.88.11.32.1'),
+      new self('2.16.840.1.113883.10.20.1'));
+  }
+  static function asSectionAlerts() {
+    return array(
+      new self('2.16.840.1.113883.10.20.1.2'),
+      new self('2.16.840.1.113883.3.88.11.83.102'),
+      new self('1.3.6.1.4.1.19376.1.5.3.1.3.13'));
+  }
+  static function asSectionResults() {
+    return array(
+      new self('2.16.840.1.113883.10.20.1.14'),
+      new self('2.16.840.1.113883.3.88.11.83.122'),
+      new self('1.3.6.1.4.1.19376.1.5.3.1.3.28'));
+  }
+  static function asSectionProblems() {
+    return array(
+      new self('2.16.840.1.113883.10.20.1.11'),
+      new self('2.16.840.1.113883.3.88.11.83.103'),
+      new self('1.3.6.1.4.1.19376.1.5.3.1.3.6'));
+  }
+  static function asSectionEncounters() {
+    return new self('2.16.840.1.113883.10.20.1.3');
+  }
+  static function asSectionImmuns() {
+    return new self('2.16.840.1.113883.10.20.1.6');
+  }
+  static function asSectionMeds() {
+    return new self('2.16.840.1.113883.10.20.1.8');
+  }
+  static function asSectionProcedures() {
+    return new self('2.16.840.1.113883.10.20.1.12');
+  }
+  static function asSectionVitals() {
+    return new self('2.16.840.1.113883.10.20.1.16');
+  }
+  static function asAlertObservation() {
+    return new self('2.16.840.1.113883.10.20.1.18');
+  }
+  static function asCoverageActivity() {
+    return new self('2.16.840.1.113883.10.20.1.20'); 
+  }
+  static function asEncounterActivity() {
+    return new self('2.16.840.1.113883.10.20.1.21'); 
+  }
+  static function asMedActivity() {
+    return new self('2.16.840.1.113883.10.20.1.24'); 
+  }
+  static function asProblemAct() {
+    return new self('2.16.840.1.113883.10.20.1.27'); 
+  }
+  static function asProblemObservation() {
+    return new self('2.16.840.1.113883.10.20.1.28'); 
+  }
+  static function asProcedureActivity() {
+    return new self('2.16.840.1.113883.10.20.1.29'); 
+  }
+  static function asPurposeActivity() {
+    return new self('2.16.840.1.113883.10.20.1.30'); 
+  }
+  static function asResultObservation() {
+    return new self('2.16.840.1.113883.10.20.1.31'); 
+  }
+  static function asResultOrganizer() {
+    return new self('2.16.840.1.113883.10.20.1.32');
+  }
+  static function asVitalSignsOrganizer() {
+    return new self('2.16.840.1.113883.10.20.1.35');
+  }
+  static function asAlertStatusObservation() {
+    return new self('2.16.840.1.113883.10.20.1.39');
+  }
+  static function asProblemStatusObservation() {
+    return new self('2.16.840.1.113883.10.20.1.50');
+  }
+  static function asProduct() {
+    return new self('2.16.840.1.113883.10.20.1.53');
+  }
+  static function asReactionObservation() {
+    return new self('2.16.840.1.113883.10.20.1.54');
+  }
+}
+class InfrastructureRoot_typeId extends II {
+  public /*uid*/ $_root = "2.16.840.1.113883.1.3"; //REQ
+}
+class InFulfillmentOf extends XmlRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipFulfills*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Order*/ $order; //REQ
+}
+
+?>

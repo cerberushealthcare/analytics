@@ -1,0 +1,98 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/UserAdministration.php';
+//
+?>
+<html>
+  <head>
+    <style>
+BODY {
+}
+TABLE {
+  font-family:Calibri;
+  font-size:10pt;
+  margin-bottom:1em;
+  border-collapse:collapse;
+}
+TH {
+  text-transform:uppercase;
+  background-color:black;
+  color:white;
+  padding:2px 4px;
+}
+TD {
+  vertical-align:top;
+  border:1px solid #c0c0c0;
+  padding:2px 4px;
+  white-space:nowrap;
+}
+A {
+  font-family:Consolas;
+  font-size:10pt;
+}
+TABLE.v {
+  width:100%;
+}
+TABLE.v TH {
+  text-align:right;
+  width:10%;
+}
+TABLE.v TD {
+  width:90%;
+  border:none;
+}
+    </style>
+  </head>
+  <body>
+<?php 
+$action = $_GET['a'];
+$value = isset($_GET['v']) ? $_GET['v'] : null;
+switch ($action) {
+  case 'search':
+    echo "<h1>Searching by $value</h1>";
+    $recs = UserAdministration::searchUsersByName($value);
+    echo UserAdministration::asHtmlVTables($recs);
+    break;
+  case 'loginsByIp':
+    echo "<h1>Logins by IP $value</h1>";
+    $recs = UserAdministration::getLoginsByIp($value);
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case 'loginsByUid':
+    echo "<h1>Logins by $value</h1>";
+    $recs = UserAdministration::getLoginsByUid($value);
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case 'loginsByDate':
+    echo "<h1>Logins on $value</h1>";
+    $recs = UserAdministration::getLoginsByDate($value);
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case 'counts':
+    echo "<h1>Trial Counts by Date</h1>";
+    $recs = UserAdministration::getCreatedCounts();
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case 'usersByCreateDate':
+    echo "<h1>Users Created on $value</h1>";
+    $recs = UserAdministration::getUsersByCreateDate($value);
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+  case 'userByUid':
+    $rec = UserAdministration::getUserByUid($value);
+    $name = ($rec) ? $rec->name : $value;
+    echo "<h1>User '$name'</h1>";
+    echo UserAdministration::asHtmlVTable($rec);
+    break;
+  case 'usersByUgid':
+    $ug = UserGroupAdmin::fetch($value);
+    $name = ($ug) ? $ug->name : $value;
+    $recs = UserAdministration::getUsersByUgid($value);
+    echo "<h1>Users in Group '$name'</h1>";
+    echo UserAdministration::asHtmlTable($recs);
+    break;
+}
+echo '</pre>';
+?>
+  </body>
+</html>

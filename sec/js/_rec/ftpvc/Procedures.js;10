@@ -1,0 +1,75 @@
+/**
+ * Rec Proc
+ *   RecArray Results
+ */
+Proc = Object.Rec.extend({
+  //
+  onload:function() {
+    this.ProcResults = ProcResults.create(this).revive(this.ProcResults, ProcResult.create(this));
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  //
+  asNew:function(cid) {
+    return this.revive({'clientId':cid});
+  },
+  ajax:function(worker) {
+    var self = this;
+    return {
+      save:function(onsuccess, onerror) {
+        Ajax.Procedures.saveProc(self, worker, onsuccess, onerror);
+      },
+      remove:function(onsuccess) {
+        Ajax.Procedures.deleteProc(self.procId, worker, onsuccess);
+      }
+    }
+  },
+  /*
+   * @arg int procId
+   * @return Proc
+   */
+  fetch:function(procId, callback) {
+    Ajax.Procedures.get(procId, callback);
+  }
+})
+//
+Procedures = Object.RecArray.of(Proc, {
+  //
+  getMostRecent:function(ipc) {  // assumes Procedures loaded most recent to earliest
+    for (var i = 0; i < this.length; i++)
+      if (this[i].ipc == ipc)
+        return this[i];
+  }
+})
+/**
+ * Rec ProcResult
+ */
+ProcResult = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  //
+  asNew:function(proc) {
+    var rec = this.revive({'procId':proc.procId,'clientId':proc.clientId});
+    rec.Ipc = null;
+    return rec;
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      save:function(onsuccess, onerror) {
+        Ajax.Procedures.saveResult(self.procId, self, worker, onsuccess, onerror);
+      }
+    }
+  }
+})
+ProcResults = Object.RecArray.of(ProcResult, {
+  //
+})
+//
+Ipc_NotFound = {
+  name:'NOT FOUND'
+}

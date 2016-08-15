@@ -1,0 +1,16 @@
+/*/**
+ * Rec MsgThread
+ */
+MsgThread = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Stub && this.MsgPosts)
+      this.MsgPosts[0].Stub = this.Stub;
+  },
+  isRead:function() {
+    return this.Inbox.isRead == C_MsgInbox.IS_READ;
+  }
+})
+MsgThreads = Object.RecArray.of(MsgThread, {
+  //
+})

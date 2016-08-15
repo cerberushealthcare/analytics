@@ -1,0 +1,493 @@
+<?php
+require_once 'php/data/rec/sql/UserLogins.php';
+require_once 'php/data/rec/sql/UserRoles.php';
+require_once 'php/data/rec/sql/UserLoginReqs.php';
+require_once 'inc/serverFunctions.php';
+//
+/**
+ * Login Session
+ * Saved into $_SESSION['mylogin'] and global $login
+ * @author Warren Hornsby
+ */
+class LoginSession extends Rec {
+  //
+  public $env;
+  public $cache;
+  public $sessionId;
+  public $userGroupId;
+  public $userId;
+  public $uid;
+  public $ui;
+  public $active;
+  public $admin;
+  public $daysLeft;  // either on trial or until card expires
+  public $expireReason;  // 'Expiration reason'
+  public $json;
+  public /*UserLogin*/ $User;
+  public /*UserRole*/ $Role;
+  public /*UserLoginReqs*/ $LoginReqs;
+  //
+  private $ptpw; 
+  private $timeout;
+  private $lastActivity;
+  private $hideStickies;  // array('stickyId'=>1,..) for closed stickies 
+  private $glassBreaks;  // array(cid=>1,..) for patients chart brought up after restriction warning 
+  //
+  const ENV_LOCAL = 1;
+  const ENV_TEST = 2;
+  const ENV_PRODUCTION = 9;
+  const ENV_PAPYRUS_LOCAL = 11;
+  const ENV_PAPYRUS_TEST = 12;
+  const ENV_PAPYRUS_PROD = 19;
+  //
+  static $for;
+  //
+  public function __construct() {  // for internal use; to create, use static::login
+    $this->env = static::getEnv();
+    $this->cache = array();
+    $this->hideStickies = array();
+    $this->glassBreaks = array();
+  }
+  public function toJsonObject(&$o) {  // used by Rec
+    unset($o->cache);
+    unset($o->LoginReqs);
+    if ($this->isPapyrus())
+      $o->pap = 1;
+    if ($this->User && $this->User->isOnTrial())
+      $o->trial = 1;
+  }
+  //
+  public function asJson() {
+    if ($this->json == null)
+      $this->json = jsonencode($this);
+    return $this->json;
+  }
+  public function haveTermsExpired() {
+    if (! $this->isPapyrus())
+      return $this->User->haveTermsExpired();
+  }
+  public function isTrialFirstLogin() {
+    return $this->User->isTrialFirstLogin();
+  }
+  public function isInactive() {
+    return ! $this->active;
+  }
+  public function isErx() {
+    return $this->User->UserGroup->isErx();
+  }
+  public function isPapyrus() {
+    return $this->env == static::ENV_PAPYRUS_TEST || $this->env == static::ENV_PAPYRUS_PROD || $this->env == static::ENV_PAPYRUS_LOCAL;
+  }
+  public function isSessionExpired() {
+    if ($this->isPapyrus())
+      return false;
+    if ($this->lastActivity) 
+      return time() - $this->lastActivity > $this->timeout;
+  }
+  public function getEstAdjust() {
+    return $this->User->UserGroup->estTzAdj;
+  }
+  public function shouldPopLoginReqs() {
+    if ($this->LoginReqs) {
+      if (! isset($this->_loginReqsShown)) {
+        $this->_loginReqsShown = true;
+        $this->save();
+        return true;
+      }
+    }
+  }
+  public function setupTrial() {
+    require_once 'php/data/rec/sql/TrialSetup.php';
+    $left = TrialSetup::setupOne($this->userGroupId, $this->userId);
+    if ($left == 0)
+      $this->acceptTerms();
+    return $left;
+  }
+  public function acceptTerms() {
+    $this->User->acceptTerms();
+    return $this->refresh();
+  }
+  public function setTimeout($min) {
+    $this->User->UserGroup->setTimeout($min);
+    return $this->refresh();
+  }
+  public function hideSticky($id) {
+    $this->hideStickies[$id] = true;
+    $this->save();
+  }
+  public function isStickyHidden($id) {
+    return isset($this->hideStickies[$id]);
+  }
+  public function isGlassBroken($cid) {
+    return isset($this->glassBreaks[$cid]);
+  }
+  public function breakGlass($cid) {
+    $this->glassBreaks[$cid] = 1;
+    $this->save();
+  }
+  /**
+   * @param string $old
+   * @param string $new
+   * @throws UserPasswordException
+   */
+  public function changePassword($old, $new) {
+    $this->User->changePassword($old, $new);
+    $this->ptpw = $new;
+    return $this->refresh();
+  }
+  /**
+   * @param string $new
+   * @throws UserPasswordException
+   */
+  public function setPassword($new) {
+    $this->User->changePassword($this->ptpw, $new);
+    $this->ptpw = $new;
+    return $this->refresh();
+  }
+  /**
+   * Refresh after user field update
+   */
+  public function refresh() {
+    $this->setUserFields();
+    return $this->save();
+  }
+  public function save() {
+    @session_start();
+    $_SESSION['mylogin'] = $this;
+    session_write_close();
+    return $this;
+  }
+  //
+  /**
+   * Create a login session
+   * @param string $uid
+   * @param string $ptpw
+   * @param string $sessionId (optional)
+   * @return LoginSession
+   * @throws LoginInvalidException
+   * @throws LoginDisallowedException
+   */
+  static function login($uid, $ptpw, $sessionId = null) {
+    $user = static::fetchUser($uid, $ptpw);
+    if ($user == null)
+      throw new LoginInvalidException();
+    $me = new static();
+    $me->userGroupId = $user->userGroupId;
+    $me->userId = $user->userId;
+    $me->uid = $uid;
+    $me->ptpw = $ptpw;
+    $me->setUserFields($user);
+    if ($user->isLoginDisallowed())
+      throw new LoginDisallowedException();
+    global $login;
+    $login = $me->save();
+    $login->sessionId = session_id();
+    return $login;
+  }
+  static function setUi($isTablet) {
+    $login = static::get();
+    $login->ui = new stdClass();
+    $login->ui->tablet = $isTablet;
+    return $login->save();
+  }
+  /**
+   * Verify valid login session is still alive
+   * @param bool $updateLastActivity (optional)
+   * @param string $sessionId (optional)
+   * @return LoginSession
+   * @throws SessionExpiredException
+   * @throws SessionInvalidException
+   */
+  static function verify($updateLastActivity = true) {
+    $sessionId = static::getSessionIdFromRequest();
+    $login = static::get($sessionId);
+    if ($updateLastActivity)
+      $login->lastActivity = time();
+    $user = $login->refetchUser();
+    if ($user == null)
+      throw new SessionInvalidException();
+    return $login->save($sessionId);
+  }
+  static function verify_forPolling() {
+    return static::verify(false);
+  }
+  static function verify_forUser() {  // see requires() for method chaining example
+    static::$for = 1;
+    try {
+      $login = static::verify(true);
+      if ($login->User->isPasswordExpired()) {
+        header("Location: index.php?cp=1");
+        exit;
+      }
+      header('P3P:CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"');
+      return $login;
+    } catch (SessionExpiredException $e) {
+      header("Location: index.php?timeout=1");
+      exit;
+    } catch (SessionInvalidException $e) {
+      header("Location: index.php?invalid=1");
+      exit;
+    }
+  }
+  static function verify_forServer() {  // see requires() for method chaining example
+    static::$for = 2;
+    return static::verify(true);
+  }
+  private static function getSessionIdFromRequest() {
+    if (isset($_GET['sess']))
+      return $_GET['sess'];
+    if (isset($_POST['sess']))
+      return $_POST['sess'];
+  }
+  static function requires($value) {  // e.g. Login_Session::verify_forUser()->requires($login->Role->Patient->any());
+    if (! $value) {
+      if (static::$for == 1) {
+        header('Location: welcome.php');
+        exit;
+      } else {
+        throw new UnauthorizedException('Your account is not authorized to perform the requested function.');
+      }
+    }
+  }
+  /**
+   * Destroy session
+   */
+  static function clear() {
+    global $login;
+    $login = null;
+    @session_start();
+    unset($_SESSION['mylogin']);
+    @session_destroy();
+    @session_write_close();        
+  }
+  /**
+   * Get session
+   * @param string $sessionId (optional)
+   * @throws SessionExpiredException
+   */
+  static function get($sessionId = null) {
+    if ($sessionId)
+      session_id($sessionId);
+    @session_start();
+    if (! isset($_SESSION) || ! isset($_SESSION['mylogin'])) 
+      throw new SessionExpiredException();
+    global $login; 
+    $login = $_SESSION['mylogin'];
+    if ($login->isSessionExpired()) {
+      static::clear();
+      throw new SessionExpiredException();
+    }
+    session_write_close();
+    return $login;
+  }
+  static function isProdEnv() {
+    $env = static::getEnv();
+    return $env == static::ENV_PRODUCTION || $env == static::ENV_PAPYRUS_PROD;
+  }
+  static function getEnv() {
+    static $env;
+    if ($env == null) {
+      switch ($_SERVER['SERVER_PORT']) {
+        case '80':
+          $prefix = substr($_SERVER['HTTP_HOST'], 0, 4);
+          if ($prefix == 'loca' || $prefix == '192.')
+            $env = strpos($_SERVER['REQUEST_URI'],'papyrus') ? static::ENV_PAPYRUS_LOCAL : static::ENV_LOCAL;
+          else if ($prefix == 'test')
+            $env = static::ENV_TEST;
+          else if ($prefix == 'papy')
+            //$env = static::ENV_PAPYRUS_TEST;
+            $env = static::ENV_PAPYPRUS_PROD;
+          else
+            $env = strpos($_SERVER['REQUEST_URI'],'papyrus') ? static::ENV_PAPYRUS_TEST : static::ENV_PRODUCTION;
+          break;
+        case '443':
+          $env = strpos($_SERVER['REQUEST_URI'],'papyrus') ? static::ENV_PAPYRUS_TEST : static::ENV_PRODUCTION;
+          break;
+      }
+    }
+    return $env;
+  }
+  //
+  protected function setUserFields($user = null) {  // null to refresh
+    if ($user == null)
+      $user = UserLogin::fetchByUid($this->uid);
+    $this->User = $user;
+    $this->json = null;
+    $this->admin = $this->User->isAdmin() ? true : null;
+    $this->timeout = $this->User->UserGroup->sessionTimeout * 60;
+    $this->setActiveStatus();  
+    $this->Role = UserRole::from($this->User);
+    if (! $this->isPapyrus())
+      $this->LoginReqs = UserLoginReqs::getAllFor($this->User, $this->Role);
+      
+    return $this->save();
+  }
+  protected function setActiveStatus() {  // assigns active and daysLeft
+    if (! $this->isPapyrus()) { 
+      if ($this->User->active) {
+        switch ($this->User->subscription) {
+          case UserLogin::SUBSCRIPTION_TRIAL:
+            $this->daysLeft = $this->User->getTrialDaysLeft();
+            if ($this->daysLeft < 0)  
+              $this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_TRIAL_OVER);
+            break;
+          case UserLogin::SUBSCRIPTION_CREDITCARD:
+            $bill = get($this->User, 'BillInfo');
+            if ($bill == null) { 
+              $this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_MISSING_BILLINFO);
+            } else {
+              $this->daysLeft = $bill->getDaysLeft();
+              if ($bill->getDaysLeft() < 0)
+                $this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_CARD_EXPIRED);
+            }
+            break;
+          case UserLogin::SUBSCRIPTION_FREE:
+            $this->daysLeft = 1000;
+          case UserLogin::SUBSCRIPTION_INVOICE:
+            $this->daysLeft = 365;  // TODO
+        }
+      }
+    }
+    $this->active = $this->User->active;
+  }
+  protected function refetchUser() {
+    $user = static::fetchUser($this->uid, $this->ptpw);
+    if ($user) {
+      if ($this->userId != $user->userId)
+        return null;
+      if ($this->active && ! $user->active)
+        return null;
+    }
+    return $user;
+  }
+  //
+  protected static function fetchUser($uid, $ptpw) {
+    $user = UserLogin::fetchByUid($uid);
+    if ($user && ! $user->isPasswordCorrect($ptpw))
+      return null;
+    return $user;
+  }
+}
+/**
+ * Session Caches
+ */
+class SessionCache {
+  /**
+   * @param string $key
+   * @return mixed
+   */
+  static function get($key) {
+    global $login;
+    return geta($login->cache, $key);
+  }
+  /**
+   * @param string $key
+   * @param mixed $data
+   */
+  static function set($key, $data) {
+    global $login;
+    $login->cache[$key] = $data;
+    $login->save();
+  }
+  /**
+   * @param string key
+   */
+  static function clear($key) {
+    global $login;
+    unset($login->cache[$key]);
+    $login->save();
+  }
+  /**
+   * @param string $partial 'startsWith'
+   */
+  static function clearAll($partial) {
+    $len = strlen($partial);
+    global $login;
+    foreach ($login->cache as $key => $value)
+      if (substr($key, 0, $len) == $partial)
+        unset($login->cache[$key]);
+    $login->save();
+  }
+  /**
+   * @param string $key
+   * @param closure $fn to retrieve data (and cache) if not found in cache
+   * @return mixed
+   */
+  static function getset($key, $fn) {
+    global $login;
+    if (! isset($login))
+      return $fn();
+    if (array_key_exists($key, $login->cache)) {
+      $data = $login->cache[$key];
+    } else {
+      $data = $fn();
+      self::set($key, $data);
+    }
+    return $data;
+  }
+}
+class MethodCache extends SessionCache {
+  /**
+   * @param string $method __METHOD__
+   * @param array $args func_get_args()
+   * @param closure $fn
+   * @example
+   *   function getStuff($stuffId) {
+   *     return MethodCache::getset(__METHOD__, func_get_args(), function() use ($stuffId) {
+   *       $stuff = Dao::getStuffFromDatabase($stuffId);
+   *       return $stuff;
+   *     });
+   *   }
+   */
+  static function getset($method, $args, $fn) {
+    $key = self::makeKey($method, $args);
+    return parent::getset($key, $fn);
+  }
+  /**
+   * @param string $class 'UserGroups'
+   */
+  static function clearAll($class) {
+    $partial = "$class::";
+    parent::clearAll($partial);
+  }
+  //
+  private static function makeKey($method, $args) {
+    return $method . "(" . implode(',', $args) . ")";  // 'Class::method(arg1,arg2)'
+  }
+}
+class AuthCache extends MethodCache {
+  //
+  static function needsAuth($key) {
+    global $login;
+    return ! isset($login->cache[$key]);
+  }
+  static function user($id, $fn) {
+    $key = "u$id";
+    if (self::needsAuth($key)) {
+      $fn($id);
+      self::set($key, true);
+    }
+  }
+  static function ugid($ugid, $fn) {
+    $key = "ugid$ugid";
+    if (self::needsAuth($key)) {
+      $fn($ugid);
+      self::set($key, true);
+    }
+  }
+  static function ugidWithin($table, $col, $id, $fn) {
+    $key = "ugid[$table,$id]";
+    if (self::needsAuth($key)) {
+      $fn($table, $col, $id);
+      self::set($key, true);
+    }
+  }
+}
+/**
+ * Exceptions
+ */
+class LoginInvalidException extends Exception {}
+class LoginDisallowedException extends Exception {}
+class SessionInvalidException extends Exception {}
+class SessionExpiredException extends SessionInvalidException {}
+class UnauthorizedException extends DisplayableException {}

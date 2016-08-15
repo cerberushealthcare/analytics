@@ -1,0 +1,328 @@
+/**
+ * Facesheet
+ */
+Facesheet = Object.Rec.extend({
+  //
+  onstale:function() {},
+  //
+  onload:function() {
+    this.cid = this.client && this.client.clientId;
+    this.procedures = Procedures.revive(this.procedures);
+    this.surgs = this.procedures.getSurgs();
+    this.docstubs = DocStubs.revive(this.docstubs);
+    this.diagnoses = Diagnoses.revive(this.diagnoses);
+    this.meds = Meds.revive(this.meds);
+    this.allergies = Allergies.revive(this.allergies);
+    this.hms = IpcHms.from(this);
+    this.tracking = TrackItems.revive(this.tracking);
+    this.portalUser = PortalUser.from(this);
+  },
+  acceptNcRefresh:function(f) {
+    this.cuTimestamp = f.cuTimestamp;
+    this.allergies = Allergies.revive(f.allergies);
+    this.meds = Meds.revive(f.meds);
+    this.activeMeds = f.activeMeds;
+  },
+  setImage:function(img) {
+    this.cid.img = img;
+  },
+  //
+  polling:function() {
+    var self = this;
+    var p = Polling.StaleFacesheet;
+    return {
+      start:function() {
+        if (p.isLoaded())
+          p.resume();
+        else
+          p.load(self.onstale).start(self);
+      },
+      stop:function() {
+        p.stop();
+      }
+    }
+  },
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    var self = this;
+    return {
+      /*
+       * @arg int cid
+       * @arg fn(Facesheet) callback
+       */
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.get(cid, worker, callback);
+      },
+      /*
+       * @arg fn(Facesheet) callback only if facesheet updated
+       */
+      refetchIfChanged:function(callback) {
+        Polling.StaleFacesheet.stop();
+        Ajax.Facesheet.getIfUpdated(self.cid, self.cuTimestamp, worker, function(fs) {
+          if (fs) 
+            callback(fs);
+          else 
+            Polling.StaleFacesheet.start(self);
+        })
+      },
+      refetch:function(callback) {
+        Ajax.Facesheet.get(self.cid, worker, callback);
+      },
+      refetchProcs:function(callback) {
+        Ajax.Procedures.getAll(self.cid, worker, function(recs) {
+          self.procedures = recs;
+          self.surgs = self.procedures.getSurgs();
+          callback(recs);
+        })
+      },
+      refetchHms:function(callback) {
+        Ajax.Ipc.getIpcHmsFor(IpcHms.cid, worker, function(recs) {
+          Ajax.Ipc.getIpcHmsFor(IpcHms.cid, worker, callback);
+          self.hms = recs;
+          callback(recs);
+        })
+      }
+    }
+  }
+})
+/**
+ * DocStub
+ */
+DocStub = Object.Rec.extend({
+  onload:function() {
+    if (this.Unreviewed && this.Unreviewed.Client) 
+      this.Client = this.Unreviewed.Client;
+  },
+  resetPreview:function(callback) {
+    this._preview = null;
+  },
+  //
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    var self = this;
+    return {
+      /*
+       * @arg fn callback(DocStubPreview) e.g. DocSession, DocMsg, etc.
+       */
+      fetchPreview:function(callback) {
+        if (self._preview) {
+          callback(self._preview);
+        } else {
+          Ajax.Facesheet.Documentation.preview(self, worker, function(rec) {
+            self._preview = rec;
+            callback(rec);
+          })
+        }
+      },
+      refetch:function(callback) {
+        Ajax.Facesheet.Documentation.refetch(self, worker, function(rec) {
+          if (self.Client)
+            rec.Client = self.Client;
+          return rec;
+        })
+      }
+    }
+  }
+})
+//
+DocStubs = Object.RecArray.of(DocStub, {
+  get:function(type, id) {
+    var key = type + ',' + id;
+    if (this._map == null)
+      this.createMap();
+    return this._map[key];
+  },
+  get_proc:function(id) {
+    return this.get(C_DocStub.TYPE_RESULT, id);
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      fetch:function(cid, callback) {
+        Ajax.Facesheet.Documentation.getAll(cid, callback);
+      },
+      fetchUnreviewed:function(callback) {
+        Ajax.Facesheet.Documentation.getUnreviewed(worker, callback);
+      }
+    }
+  },
+  createMap:function() {
+    this._map = Map.from(this, function(stub) {
+      return stub.type + ',' + stub.id;
+    })
+  }
+})
+//
+DocStubPreview = Object.Rec.extend({
+  _getProto:function(stub) {
+    switch (stub.type) {
+//      case C_DocStub.TYPE_SCAN:
+//        return DocScanIndex;
+      default:
+        return DocStubPreview;
+    }
+  },
+  onload:function() {
+    this.ScanFiles = ScanFiles.revive(this.ScanFiles);  // in the future, any could have scanfiles associated
+  },
+  reviveFrom:function(stub, json) {
+    var proto = DocStubPreview._getProto(stub);
+    var rec = proto.revive(json);
+    rec._stub = stub;
+    rec.ReviewThread = ThreadStub.revive(rec.ReviewThread);
+    return rec;
+  },
+  needsReview:function() {
+    return this.ReviewThread && this.ReviewThread.isUnreviewed();
+  },
+  getReviewedLabel:function() {
+    return this.ReviewThread && this.ReviewThread.getReviewedLabel();
+  },
+  ajax:function(worker) {
+    var self = this;
+    worker = worker || Html.Window;
+    return {
+      reviewed:function(callback) {
+        Ajax.Facesheet.Documentation.reviewed(self.ReviewThread, worker, callback);
+      }
+    }
+  }  
+})
+//DocScanIndex = DocStubPreview.extend({
+//  onload:function() {
+//    this.ScanFiles = ScanFiles.revive(this.ScanFiles);
+//  }
+//})
+//DocScanProc = DocStubPreview.extend({
+//  onload:function() {
+//    this.ScanFiles = ScanFiles.revive(this.ScanFiles);
+//  }
+//})
+/** 
+ * ThreadStub
+ */
+ThreadStub = Object.Rec.extend({
+  onload:function() {
+    this.Inbox = InboxStub.revive(this.Inbox);
+    this.Posts = PostStubs.revive(this.Posts);
+  },
+  isUnreviewed:function() {
+    return this.Inbox && this.Inbox.isUnreviewed();
+  },
+  isClosed:function() {
+    return this.status == C_MsgThread.STATUS_CLOSED;
+  },
+  getReviewedLabel:function() {
+    if (this.isClosed() && this.Posts && this.Posts.reviewedPost) 
+      return 'Reviewed ' + this.Posts.reviewedPost.dateCreated + ' by ' + this.Posts.reviewedPost.author;
+  }
+})
+ThreadStubs = Object.RecArray.of(ThreadStub, {
+  //
+})
+InboxStub = Object.Rec.extend({
+  isUnreviewed:function() {
+    return this.isRead == C_MsgInbox.IS_UNREVIEWED;
+  }
+})
+PostStub = Object.Rec.extend({
+})
+PostStubs = Object.RecArray.of(PostStub, {
+  onload:function() {
+    var post = this.end();
+    if (post.action == C_MsgPost.ACTION_REVIEWED)
+      this.reviewedPost = post;
+  }
+})
+/**
+ * Diagnosis
+ */
+Diagnosis = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+  },
+  //
+  uiDateRange:function() {
+    var s = this.date;
+    if (this.dateClosed)
+      s += ' - ' + this.dateClosed;
+    return s;
+  },
+  cloneNewActive:function() {
+    var rec = Diagnosis.asNew(this.clientId);
+    rec.text = this.text;
+    rec.icd = this.icd;
+    return rec;
+  },
+  //
+  asNew:function(cid) {
+    return Diagnosis.revive({
+      clientId:cid,
+      date:DateUi.getToday(),
+      status:C_Diagnosis.STATUS_ACTIVE});
+  }
+})
+//
+Diagnoses = Object.RecArray.of(Diagnosis, {
+  //
+  ajax:function(worker) {
+    worker = worker || Html.Window;
+    return {
+      setNone:function(cid, callback) {
+        Ajax.Facesheet.Diagnoses.setNone(cid, worker, callback);
+      }
+    }
+  }
+})
+/**
+ * Med
+ */
+Med = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+    this._status = (this.active) ? 'Active' : 'Discontinued';
+  }
+})
+//
+Meds = Object.RecArray.of(Med, {
+  //
+})
+/**
+ * Allergy
+ */
+Allergy = Object.Rec.extend({
+  onload:function() {
+    this._active = (this.active) ? 'Active Only' : 'Inactive Only';
+  }
+})
+//
+Allergies = Object.RecArray.of(Allergy, {
+  //
+})
+/**
+ * Track Item
+ */
+TrackItem = Object.Rec.extend({
+  onload:function() {
+    if (this.DocSession)
+      this.DocSession = DocStub.revive(this.DocSession);
+  }
+})
+//
+TrackItems = Object.RecArray.of(TrackItem, {
+  //
+  ajax:function(worker) {
+    return {
+      fetch:function(type, criteria, callback) {
+        Ajax.Tracking.getTrackItems(type, criteria, worker, callback);
+      },
+      fetch_open:function(cid, callback) {
+        this.fetch(0, {'cid':cid}, callback);
+      },
+      fetch_unsched:function(cid, callback) {
+        this.fetch(1, {'cid':cid}, callback);
+      }
+    }
+  }
+})

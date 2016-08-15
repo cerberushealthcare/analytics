@@ -1,0 +1,17 @@
+TABLE.filter {
+  border-collapse:collapse;
+  width:100%;
+}
+TABLE.filter TH {
+  font-weight:normal;
+  vertical-align:top;
+}
+TABLE.filter TD {
+  vertical-align:top;
+}
+TABLE.filter TD.left {
+  padding-right:5px;
+]
+TABLE.filter TD.right {
+  padding-left:5px;
+]

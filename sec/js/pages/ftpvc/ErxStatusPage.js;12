@@ -1,0 +1,77 @@
+var C_ErxStatus;  
+/**
+ * ERX Status Page
+ * Global static, instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var ErxStatusPage = {
+  /*
+   * Loader
+   */
+  load:function(query, cErxStatus) {
+    C_ErxStatus = cErxStatus;
+    Page.setEvents();
+    this.reset();
+  },
+  reset:function() {
+    Pop.Working.show('Gathering status from ePrescribing partner site');
+    flicker('results-head');
+    var self = this;
+    Ajax.Erx.getStatusDetails(
+      function(recs) {
+        self._load(recs);
+        Pop.Working.close();
+      });
+  },
+  pNewCrop:function(cid, dest) {
+    NewCrop.sendFromStatus(cid, dest, function() {
+      Header.ncRefreshStat();
+      page.reset();
+    });
+  },
+  //
+  _load:function(recs, filter) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl', 'results-head');
+    t.defineFilter(filter ? filter : this._getFilter());
+    var last = null;
+    for (var i = 0, j = recs.length; i < j; i++) {
+      var rec = recs[i];
+      var status = C_ErxStatus.STATUSES[rec.status];
+      var doc = rec.UserStub_Doctor.name;
+      var name = (rec.staff) ? rec.staff : doc;
+      if (status != last) {
+        t.createTr(true);
+        t.createTd('histbreak', status);
+        t.td.colSpan = 4;
+        last = status;
+      }
+      t.createTr(false, null, this._getFilter(doc));
+      t.createTdAppend('nowrap', this._getClientAnchor(rec));
+      t.createTd('nowrap', rec.date);
+      t.createTd('nowrap', rec.drugInfo);
+      t.createTd('nowrap', name);
+    }
+    t.loadFilterTopbar($('topbar-filter'), filter);
+  },
+  _getClientAnchor:function(rec) {
+    var a;
+    var dest = C_ErxStatus.DEST_BY_STATUS[rec.status];
+    var client = rec.ClientStub;  // may be null (if no ExternalPatientId was supplied)
+    if (client) {
+      a = ClientUi.createClientAnchor(client);
+      a.href = 'javascript:page.pNewCrop(' + client.clientId + ',"' + dest + '")';
+    } else {
+      a = createAnchor(null, null, null, rec.patientName);
+      a.href = 'javascript:page.pNewCrop(null, "' + dest + '")';
+    }
+    return a;
+  },
+  _getFilter:function(doctor) {
+    return {
+      'Doctor':doctor};
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = ErxStatusPage;  

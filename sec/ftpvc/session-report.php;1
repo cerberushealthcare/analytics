@@ -1,0 +1,214 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/Session.php';
+//
+if (! $myLogin->admin) 
+  header("Location: welcome.php");
+?>
+<pre>
+<?
+class SessionSearch extends Session {
+  //
+  static function search() {
+    $token = '],null,[\\\\';
+    $c = new self();
+    // $c->dateCreated = CriteriaValue::greaterThan('2010-01-01');
+    $c->data = CriteriaValue::contains($token);
+    $recs = self::fetchAllBy($c);
+    return $recs;
+  }
+}
+class Action {
+  //
+  public $fn;
+  public $args;
+  //
+  public function __construct($string) {
+    $a = explode('(', $string, 2);
+    $this->fn = $a[0];
+    $args = substr($a[1], 0, -1);
+    $this->args = json_decode('[' . str_replace("'", '"', $args) . ']');
+  }
+  //
+  static function fromSession($s) {
+    $actions = json_decode($s->data);
+    foreach ($actions as &$action)
+      $action = new self($action);
+    return $actions;
+  }
+}
+class QsAction {
+  //
+  public $pid;
+  public $qid;
+  public $sel;
+  public $del;
+  public $singleOther;
+  public $multiOthers;
+  public $qref;
+  //
+  public function hasOther() {
+    return count($this->multiOthers) > 0;
+  }
+  //
+  public function __construct($action) {
+    $this->pid = $action->args[0];
+    $this->qid = $action->args[1];
+    $this->sel = $action->args[2];
+    $this->del = $action->args[3];
+    $this->singleOther = $action->args[4];
+    $this->multiOthers = $action->args[5];
+    if (count($action->args) > 6)
+      $this->qref = $action->args[6];
+  }
+  //
+  static function fromActions($actions) {
+    $recs = array();
+    foreach ($actions as $action) {
+      if ($action->fn == 'qs') 
+        $recs[] = new self($action);
+    }
+    return $recs;
+  }
+}
+class Result extends Rec {
+  //
+  public $sid;
+  public $tid;
+  public $cid;
+  public $pid;
+  public $qid;
+  public $qref;
+  public $text;  
+  //
+  static function fromSessions($sessions) {
+    $recs = array();
+    foreach ($sessions as $session)
+      $recs = array_merge($recs, self::fromSession($session));
+    return $recs;
+  }
+  static function fromSession($session) {
+    $actions = Action::fromSession($session);
+    $qsActions = QsAction::fromActions($actions);
+    return self::fromQsActions($session, $qsActions);
+  }
+  static function fromQsActions($session, $qsActions) {
+    $recs = array();
+    foreach ($qsActions as $qsAction) 
+      if ($qsAction->hasOther()) 
+        $recs = array_merge($recs, self::fromQsAction($session, $qsAction));
+    return $recs;
+  }
+  static function fromQsAction($session, $qsAction) {
+    $recs = array();
+    foreach ($qsAction->multiOthers as $text) {
+      $rec = new Result();
+      $rec->sid = $session->sessionId;
+      $rec->tid = $session->templateId;
+      $rec->cid = $session->clientId;
+      $rec->pid = $qsAction->pid;
+      $rec->qid = $qsAction->qid;
+      $rec->qref = $qsAction->qref;
+      $rec->text = $text;
+      $key = self::getKey($session, $qsAction, $text);
+      $recs[$key] = $rec;
+    }
+    return $recs;
+  }
+  //
+  private static function getKey($session, $qsAction, $text) {
+    return "$session->sessionId/$qsAction->qid/$text"; 
+  }
+}
+class Collector {
+  //
+  public $recs;
+  //
+  public function __construct($recs) {
+    $this->recs = $recs;
+  }
+  public function sortBy() {
+    $fids = func_get_args();
+    Rec::sort($this->recs, new RecSort($fids));
+  }
+  public function aggregateBy($fid, $class = 'Aggregate') {
+    $this->recs = sc($class, 'from', $this->recs, $fid);
+  }
+  public function out() {
+    foreach ($this->recs as $rec) 
+      echo "$rec<br>";
+  }
+  //
+}
+class Aggregate {
+  //
+  public $fid;
+  public $key;
+  public $recs;
+  //
+  public function __construct($fid, $rec) {
+    $this->fid = $fid;
+    $this->key = $rec->$fid;
+    $this->recs = array($rec); 
+  }
+  public function add($rec) {
+    $this->recs[] = $rec;
+  }
+  public function count() {
+    return count($this->recs);
+  }
+  public function __toStringKey() {
+    return "$this->key:";
+  }
+  public function __toString() {
+    $count = $this->count();
+    if (current($this->recs) instanceof Aggregate) {
+      $key = $this->__toStringKey();
+      $s[] = $key;
+      foreach ($this->recs as $rec) 
+        $s[] = "    $rec";
+      return join('<br>', $s);
+    } else {
+      return "$this->key ($count)";
+    }  
+  }
+  // 
+  static function from($recs, $fid, $class = __CLASS__) {
+    $a = array();
+    foreach ($recs as $id => $rec) {
+      if ($rec instanceof Aggregate) {
+        $rec->recs = self::from($rec->recs, $fid);
+        $a[$id] = $rec;
+      } else {
+        $key = $rec->$fid;
+        if (isset($a[$key])) 
+          $a[$key]->add($rec);
+        else
+          $a[$key] = new $class($fid, $rec);
+      }
+    }
+    return $a;
+  }
+}
+class AggregateQref extends Aggregate {
+  //
+  public function __construct($fid, $rec) {
+    parent::__construct($fid, $rec);
+    $this->tid = $rec->tid;
+  }
+  public function __toStringKey() {
+    return "T$this->tid: <a href='adminQuestion.php?tid=$this->tid&qref=$this->key'>$this->key</a>";
+  }
+  static function from($recs, $fid) {
+    return parent::from($recs, $fid, __CLASS__);
+  }
+}
+//
+$recs = SessionSearch::search();
+$r = new Collector(Result::fromSessions($recs));
+$r->sortBy('tid', 'qref', 'text');
+$r->aggregateBy('qref', 'AggregateQref');
+$r->aggregateBy('text');
+$r->out();
+?>
+</pre>

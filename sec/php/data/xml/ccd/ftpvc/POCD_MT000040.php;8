@@ -1,0 +1,1882 @@
+<?php
+require_once 'php/data/xml/ccd/datatypes_base.php';
+require_once 'php/data/xml/ccd/voc.php';
+require_once 'php/data/xml/ccd/CodeSystems.php';
+//
+class Act extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActClassDocumentEntryAct*/ $_classCode;
+  public /*x_DocumentActMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code; //REQ
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*CS*/ $languageCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  //
+  public function __construct($classCode, $moodCode) {
+    $this->_classCode = $classCode;
+    $this->_moodCode = $moodCode;
+  }
+}
+class Act_PurposeActivity extends Act {
+  //
+  public function __construct() {
+    parent::__construct(ActClass::ACT, ActMood::EVENT);
+    $this->templateId = InfrastructureRoot_templateId::asPurposeActivity();
+    // TODO
+  }
+}
+class Act_CoverageActivity extends Act {
+  //
+  public function __construct() {
+    parent::__construct(ActClass::ACT, ActMood::DEFINITION);
+    $this->templateId = InfrastructureRoot_templateId::asCoverageActivity();
+    // TODO
+  }
+}
+class Act_ProblemAct extends Act {
+  //
+  public function __construct() {
+    parent::__construct(ActClass::ACT, ActMood::EVENT);
+    $this->templateId = InfrastructureRoot_templateId::asProblemAct();
+    $this->code = CD::asNull('NA');
+  }
+  public function getProblemObservation() {
+    $observation = get_recursive($this, 'entryRelationship.observation');
+    if ($observation->getTemplateId() == InfrastructureRoot_templateId::asProblemObservation()->_root) 
+      return $observation;
+  }
+  public function getAlertObservation() {
+    $observation = get_recursive($this, 'entryRelationship.observation');
+    if ($observation->getTemplateId() == InfrastructureRoot_templateId::asAlertObservation()->_root) 
+      return $observation;
+  }
+  //
+  static function fromAller($aller) {
+    $e = new self();
+    $e->id = II::fromAller($aller);
+    $observation = Observation_Alert::from($aller);
+    $e->entryRelationship = EntryRelationship::asSubjectObservation($observation, true);
+    return $e;
+  }
+  static function fromDiag($diag) {
+    $e = new self();
+    $e->id = II::fromDiag($diag);
+    $observation = Observation_Problem::from($diag);
+    $e->entryRelationship = EntryRelationship::asSubjectObservation($observation);
+    return $e;
+  }
+}
+class AssignedAuthor extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Organization*/ $representedOrganization;
+  public /*Person*/ $assignedPerson;
+  public /*AuthoringDevice*/ $assignedAuthoringDevice;
+  //
+  static function from($user, $userGroup) {
+    $e = new self();
+    $e->id = II::fromUser($user);
+    $e->assignedPerson = Person::fromUser($user);
+    $e->representedOrganization = Organization::from($userGroup);
+    return $e;
+  }
+}
+class AssignedCustodian extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CustodianOrganization*/ $representedCustodianOrganization; //REQ
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->representedCustodianOrganization = CustodianOrganization::from($userGroup);
+    return $e;
+  }
+}
+class AssignedEntity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssignedEntity*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $assignedPerson;
+  public /*Organization*/ $representedOrganization;
+  //
+  static function from($user, $userGroup) {
+    $e = new self();
+    $e->id = II::fromUser($user);
+    $e->assignedPerson = Person::fromUser($user);
+    $e->representedOrganization = Organization::from($userGroup);
+    return $e;
+  }
+}
+class AssociatedEntity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassAssociative*/ $_classCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $associatedPerson;
+  public /*Organization*/ $scopingOrganization;
+  //
+  static function fromClient($client, $classCode) {
+    $e = new self();
+    $e->_classCode = $classCode;
+    $e->id = II::fromClient($client);
+    if ($client->Address_Home)
+      $e->addr = AD::from($client->Address_Home);
+    $e->associatedPerson = Person::fromClient($client);
+    return $e;
+  }
+  static function asGuardian($client) {
+    return self::fromClient($client, RoleClassAssociative::GUARDIAN);
+  }
+  static function asNextOfKin($client, $code) {
+    $e = self::fromClient($client, RoleClassAssociative::NEXT_OF_KIN);
+    $e->code = $code;
+    return $e;
+  }
+  static function asNextOfKinMother($client) {
+    return self::asNextOfKin($client, CE_SNOMED_Relationship::asBiologicalMother());
+  }
+}
+class Authenticator extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time; //REQ
+  public /*CS*/ $signatureCode; //REQ
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Author extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*TS*/ $time; //REQ
+  public /*AssignedAuthor*/ $assignedAuthor; //REQ
+  //
+  static function from($user, $userGroup) {
+    $e = new self();
+    $e->time = TS::fromNow();
+    $e->assignedAuthor = AssignedAuthor::from($user, $userGroup);
+    return $e;
+  }
+}
+class AuthoringDevice extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassDevice*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*SC*/ $manufacturerModelName;
+  public /*SC*/ $softwareName;
+  public /*MaintainedEntity[]*/ $asMaintainedEntity;
+}
+class Authorization extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Consent*/ $consent; //REQ
+}
+class Birthplace extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Place*/ $place; //REQ
+}
+class Component1 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*EncompassingEncounter*/ $encompassingEncounter; //REQ
+}
+class Component2 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*NonXMLBody*/ $nonXMLBody; //REQ
+  public /*StructuredBody*/ $structuredBody; //REQ
+  //
+  static function asStructuredBody() {
+    $e = new self();
+    $e->structuredBody = new StructuredBody();
+    return $e;
+  }
+}
+class Component3 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*POCD_Section*/ $section; //REQ
+  //
+  static function bySection($section) {
+    $e = new self();
+    $e->section = $section;
+    return $e;
+  }
+}
+class Component4 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*INT*/ $sequenceNumber;
+  public /*BL*/ $seperatableInd;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+  //
+  static function byObservation($observation) {
+    $e = new self();
+    $e->observation = $observation;
+    return $e;
+  }
+}
+class Component5 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipHasComponent*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*POCD_Section*/ $section; //REQ
+}
+class Consent extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*CS*/ $statusCode; //REQ
+}
+class Consumable extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ManufacturedProduct*/ $manufacturedProduct; //REQ
+  //
+  static function fromMed($med) {
+    $e = new self();
+    $e->manufacturedProduct = ManufacturedProduct::byManufacturedMaterial(Material::fromMed($med));
+    return $e;
+  }
+  static function fromImmun($immun) {
+    $e = new self();
+    $e->manufacturedProduct = ManufacturedProduct::byManufacturedMaterial(Material::fromImmun($immun));
+    return $e;
+  }
+}
+class Criterion extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*ANY*/ $value;
+}
+class Custodian extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedCustodian*/ $assignedCustodian; //REQ
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->assignedCustodian = AssignedCustodian::from($userGroup);
+    return $e;
+  }
+}
+class CustodianOrganization extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassOrganization*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*ON*/ $name;
+  public /*TEL*/ $telecom;
+  public /*AD*/ $addr;
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->id = II::fromUserGroup($userGroup);
+    $e->name = ON::asText($userGroup->name);
+    return $e;
+  }
+}
+class DataEnterer extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Device extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassDevice*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*SC*/ $manufacturerModelName;
+  public /*SC*/ $softwareName;
+}
+class DocumentationOf extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ServiceEvent*/ $serviceEvent; //REQ
+  //
+  static function from($client, $user, $userGroup, $dateFrom, $dateTo) {
+    $e = new self();
+    $performer = Performer1::asPrimaryCareProvider($user, $userGroup, $dateFrom, $dateTo);
+    $e->serviceEvent = ServiceEvent::asDocumentationOf($client, $performer);
+    return $e; 
+  }
+}
+class EncompassingEncounter extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*IVL_TS*/ $effectiveTime; //REQ
+  public /*CE*/ $dischargeDispositionCode;
+  public /*ResponsibleParty*/ $responsibleParty;
+  public /*EncounterParticipant[]*/ $encounterParticipant;
+  public /*Location*/ $location;
+}
+class Encounter extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode; //REQ
+  public /*x_DocumentEncounterMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class EncounterParticipant extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_EncounterParticipant*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Entity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassRoot*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*ED*/ $desc;
+}
+class Entry extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipEntry*/ $_typeCode;
+  public /*bl*/ $_contextConductionInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+  //
+  public function __construct($typeCode = ActRelationshipType::IS_DERIVED_FROM) {
+    $this->_typeCode = $typeCode;
+  }
+  //
+  static function fromMed($med) {
+    $e = new self();
+    $e->substanceAdministration = SubstanceAdministration_MedActivity::fromMed($med);
+    return $e;
+  }
+  static function fromImmun($immun) {
+    $e = new self();
+    $e->substanceAdministration = SubstanceAdministration_MedActivity::fromImmun($immun);
+    return $e;
+  }
+  static function fromAller($aller) {
+    $e = new self();
+    $e->act = Act_ProblemAct::fromAller($aller);
+    return $e;
+  }
+  static function fromDiag($diag) {
+    $e = new self();
+    $e->act = Act_ProblemAct::fromDiag($diag);
+    return $e;
+  }
+  static function fromProc($proc) {
+    $e = new self();
+    $e->procedure = Procedure_ProcedureActivity::fromProc($proc);
+    return $e;
+  }
+  static function fromProcResults($proc) {
+    $e = new self();
+    $e->organizer = Organizer_Result::fromProc($proc);
+    return $e;
+  }
+  static function fromVital($vital) {
+    $e = new self();
+    $e->organizer = Organizer_VitalSigns::fromVital($vital);
+    return $e;
+  }
+}
+class EntryRelationship extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipEntryRelationship*/ $_typeCode; //REQ
+  public /*bl*/ $_inversionInd;
+  public /*bl*/ $_contextConductionInd;
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*INT*/ $sequenceNumber;
+  public /*BL*/ $seperatableInd;
+  public /*Act*/ $act; //REQ
+  public /*Encounter*/ $encounter; //REQ
+  public /*Observation*/ $observation; //REQ
+  public /*ObservationMedia*/ $observationMedia; //REQ
+  public /*Organizer*/ $organizer; //REQ
+  public /*Procedure*/ $procedure; //REQ
+  public /*RegionOfInterest*/ $regionOfInterest; //REQ
+  public /*SubstanceAdministration*/ $substanceAdministration; //REQ
+  public /*Supply*/ $supply; //REQ
+  //
+  public function __construct($typeCode, $inversionInd = null) {
+    $this->_typeCode = $typeCode;
+    $this->_inversionInd = $inversionInd;
+  }
+  //
+  static function asComponentAct($act, $inversionInd = null) {
+    return self::_asComponent('act', $act, $inversionInd);
+  }
+  static function asManifestationOfObservation($observation, $inversionInd = null) {
+    return self::_asManifestationOf('observation', $observation, $inversionInd);
+  }
+  static function asReasonAct($act, $inversionInd = null) {
+    return self::_asReason('act', $act, $inversionInd);
+  }
+  static function asReasonObservation($observation, $inversionInd = null) {
+    return self::_asReason('observation', $observation, $inversionInd);
+  }
+  static function asRefersToAct($act, $inversionInd = null) {
+    return self::_asRefersTo('act', $act, $inversionInd);
+  }
+  static function asRefersToObservation($observation, $inversionInd = null) {
+    return self::_asRefersTo('observation', $observation, $inversionInd);
+  }
+  static function asStartsAfterAct($act, $inversionInd = null) {
+    return self::_asStartsAfter('act', $act, $inversionInd);
+  }
+  static function asSubjectObservation($observation, $inversionInd = null) {
+    return self::_asSubject('observation', $observation, $inversionInd);
+  }
+  static function asSubjectProcedure($procedure, $inversionInd = null) {
+    return self::_asSubject('procedure', $procedure, $inversionInd);
+  }
+  //
+  private static function _asComponent($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::HAS_COMPONENT, $fid, $object, $inversionInd);
+  }
+  private static function _asManifestationOf($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::IS_MANIFESTATION_OF, $fid, $object, $inversionInd);
+  }
+  private static function _asReason($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::HAS_REASON, $fid, $object, $inversionInd);
+  }
+  private static function _asRefersTo($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::REFERS_TO, $fid, $object, $inversionInd);
+  }
+  private static function _asStartsAfter($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::STARTS_AFTER_START_OF, $fid, $object, $inversionInd);
+  }
+  private static function _asSubject($fid, $object, $inversionInd) {
+    return self::_as(ActRelationshipType::HAS_SUBJECT, $fid, $object, $inversionInd);
+  }
+  private static function _as($typeCode, $fid, $object, $inversionInd) {
+    $e = new self($typeCode, $inversionInd);
+    $e->$fid = $object;
+    return $e;
+  }
+}
+class ExternalAct extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class ExternalDocument extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+}
+class ExternalObservation extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class ExternalProcedure extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+}
+class Guardian extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $guardianPerson; //REQ
+  public /*Organization*/ $guardianOrganization; //REQ
+}
+class HealthCareFacility extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassServiceDeliveryLocation*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*Place*/ $location;
+  public /*Organization*/ $serviceProviderOrganization;
+}
+class Informant12 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+  public /*RelatedEntity*/ $relatedEntity; //REQ
+}
+class InformationRecipient extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_InformationRecipient*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IntendedRecipient*/ $intendedRecipient; //REQ
+}
+class IntendedRecipient extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_InformationRecipientRole*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Person*/ $informationRecipient;
+  public /*Organization*/ $receivedOrganization;
+}
+class LabeledDrug extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassManufacturedMaterial*/ $_classCode;
+  public /*EntityDeterminerDetermined*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*EN*/ $name;
+}
+class LanguageCommunication extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CS*/ $languageCode;
+  public /*CE*/ $modeCode;
+  public /*CE*/ $proficiencyLevelCode;
+  public /*BL*/ $preferenceInd;
+}
+class LegalAuthenticator extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*TS*/ $time; //REQ
+  public /*CS*/ $signatureCode; //REQ
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Location extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationTargetLocation*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*HealthCareFacility*/ $healthCareFacility; //REQ
+}
+class MaintainedEntity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Person*/ $maintainingPerson; //REQ
+}
+class ManufacturedProduct extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassManufacturedProduct*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*Organization*/ $manufacturerOrganization;
+  public /*LabeledDrug*/ $manufacturedLabeledDrug; //REQ
+  public /*Material*/ $manufacturedMaterial; //REQ
+  //
+  public function __construct() {
+    $this->templateId = InfrastructureRoot_templateId::asProduct();
+  }
+  static function byManufacturedMaterial($manufacturedMaterial) {
+    $e = new self();
+    $e->manufacturedMaterial = $manufacturedMaterial;
+    return $e;
+  }
+}
+class Material extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassManufacturedMaterial*/ $_classCode;
+  public /*EntityDeterminerDetermined*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*EN*/ $name;
+  public /*ST*/ $lotNumberText;
+  //
+  static function fromMed($med) {
+    $e = new self();
+    $e->code = CE_RxNorm::fromMed($med);
+    return $e;    
+  }
+  static function fromImmun($immun) {
+    $e = new self();
+    $e->code = CE_CVX::fromImmun($immun);
+    return $e;
+  }
+}
+class NonXMLBody extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ED*/ $text; //REQ
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+}
+class Observation extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode; //REQ
+  public /*x_ActMoodDocumentObservation*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code; //REQ
+  public /*ST*/ $derivationExpr;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*CS*/ $languageCode;
+  public /*ANY[]*/ $value;
+  public /*CE[]*/ $interpretationCode;
+  public /*CE[]*/ $methodCode;
+  public /*CD[]*/ $targetSiteCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  public /*ReferenceRange[]*/ $referenceRange;
+  //
+  public function __construct($classCode = ActClass::OBSERVATION, $moodCode = ActMood::EVENT) {
+    $this->_classCode = $classCode;
+    $this->_moodCode = $moodCode;
+    $this->statusCode = CS_Status::asCompleted();
+  }
+  public function setCodeAndValue($code, $value, $xsiType = null) {
+    if ($value) {
+      $this->code = $code;
+      $this->value = $value;
+      $this->value->setXsiType($xsiType);
+    }
+  }
+  public function addEntryRelationship($e) {
+    $this->set('entryRelationship', $e);
+  }
+}
+class Observation_Problem extends Observation {
+  public function __construct() {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asProblemObservation();
+  } 
+  public function getProblemStatusObservation() {
+    $observation = get_recursive($this, 'entryRelationship.observation');
+    if ($observation->getTemplateId() == InfrastructureRoot_templateId::asProblemStatusObservation()->_root) 
+      return $observation;
+  }
+  //
+  static function from($diag) {
+    $e = new self();
+    $e->setCodeAndValue(CE_SNOMED_ProblemCode::asDiagnosis(), CE_ICD9::fromDiag($diag), 'CD');
+    $e->effectiveTime = IVL_TS::fromDate($diag->date);  // TODO: make this a range
+    $e->addEntryRelationship(EntryRelationship::asRefersToObservation(Observation_ProblemStatus::from($diag)));
+    
+    return $e;
+  }
+}
+class Observation_ProblemStatus extends Observation {
+  public function __construct() {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asProblemStatusObservation();
+  }
+  //
+  static function from($diag) {
+    $e = new self();
+    $e->setCodeAndValue(CE_LOINC::asStatus(), CE_SNOMED_Status::fromDiag($diag));
+    return $e;
+  }
+}
+class Observation_Alert extends Observation {
+  private $__source;
+  //
+  public function __construct() {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asAlertObservation();
+    $this->setCodeAndValue(CE_HL7_ActCode::asAssertion(), CE_SNOMED_Reaction::asAdverseReactionToSubstance(), 'CD');
+  }
+  public function getSource() {
+    return $this->__source;
+  }
+  public function getPlayingEntityCode() {
+    return get_recursive($this, 'participant.participantRole.playingEntity.code');
+  }
+  //
+  static function from($aller) {
+    $e = new self();
+    $e->__source = $aller;
+    $e->participant = Participant2::fromAller($aller);
+    $reactions = $aller->getReactions();
+    if ($reactions) {
+      foreach ($reactions as $reaction) 
+        $e->addEntryRelationship(EntryRelationship::asManifestationOfObservation(Observation_Reaction::from($reaction), true));
+    }
+    $e->addEntryRelationship(EntryRelationship::asRefersToObservation(Observation_AlertStatus::asActive()));
+    return $e;
+  }
+}
+class Observation_AlertStatus extends Observation {
+  public function __construct() {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asAlertStatusObservation();
+  }
+  //
+  static function asActive() {  
+    $e = new self();
+    $e->setCodeAndValue(CE_LOINC::asStatus(), CE_SNOMED_Status::asActive());
+    return $e;
+  }
+}
+class Observation_Reaction extends Observation {
+  public function __construct() {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asAlertStatusObservation();
+  }
+  //
+  static function from($reaction) {
+    $e = new self();
+    $e->setCodeAndValue(CE_HL7_ActCode::asAssertion(), CE_SNOMED_Reaction::fromReaction($reaction), 'CD');
+    return $e; 
+  }
+}
+class Observation_Result extends Observation {
+  public function __construct($id) {
+    parent::__construct();
+    $this->templateId = InfrastructureRoot_templateId::asResultObservation();
+    $this->id = $id;
+  }
+  //
+  static function asVital($id, $effectiveTime, $code, $value) {
+    $e = new self($id, $effectiveTime);
+    $e->effectiveTime = $effectiveTime;    
+    $e->setCodeAndValue($code, $value);
+    return $e;
+  }
+  static function from($result) {
+    $e = new self(II::fromResult($result));
+    $e->effectiveTime = IVL_TS::fromDate($result->getDate());
+    $code = CE_CodeSystem::fromProc($result);
+    $value = PQ::from($result->value, $result->valueUnit);
+    $e->setCodeAndValue($code, $value);
+    $e->interpretationCode = CE_HL7_Interpretation::fromResult($result);
+    $e->referenceRange = ReferenceRange::fromResult($result);
+    return $e;
+  }
+}
+class ObservationMedia extends CcdRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode; //REQ
+  public /*ActMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CS*/ $languageCode;
+  public /*ED*/ $value; //REQ
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class ObservationRange extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassObservation*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*ANY*/ $value;
+  public /*CE*/ $interpretationCode;
+  //
+  static function fromResult($result) {
+    if ($result->range) {
+      $e = new self();
+      $e->text = $result->range;
+      return $e;
+    }
+  }
+}
+class Order extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CE*/ $code;
+  public /*CE*/ $priorityCode;
+}
+class Organization extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassOrganization*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*ON[]*/ $name;
+  public /*TEL[]*/ $telecom;
+  public /*AD[]*/ $addr;
+  public /*CE*/ $standardIndustryClassCode;
+  public /*OrganizationPartOf*/ $asOrganizationPartOf;
+  //
+  static function from($userGroup) {
+    $e = new self();
+    $e->id = II::fromUserGroup($userGroup);
+    $e->name = ON::asText($userGroup->name);
+    return $e;
+  }
+}
+class OrganizationPartOf extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Organization*/ $wholeOrganization;
+}
+class Organizer extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActClassDocumentEntryOrganizer*/ $_classCode; //REQ
+  public /*ActMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*CS*/ $statusCode; //REQ
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  public /*Component4[]*/ $component;
+  //
+  public function __construct($classCode, $moodCode = ActMood::EVENT) {
+    $this->_classCode = $classCode;
+    $this->_moodCode = $moodCode;
+    $this->statusCode = CS_Status::asCompleted();
+    $this->component = array();
+  }
+  public function add($component) {
+    $this->component[] = $component;
+  }
+}
+class Organizer_Result extends Organizer {
+  //
+  public function __construct() {
+    parent::__construct(ActClass::BATTERY);
+    $this->templateId = InfrastructureRoot_templateId::asResultOrganizer();
+  }
+  public function add($result) {
+    $observation = Observation_Result::from($result);
+    parent::add(Component4::byObservation($observation));
+  }
+  //
+  static function fromProc($proc) {
+    $e = new self();
+    $e->id = II::fromProc($proc);
+    $e->effectiveTime = IVL_TS::fromDate($proc->date);
+    $e->code = CE_CodeSystem::fromProc($proc);
+    foreach ($proc->results as $result)
+      $e->add($result);
+  }
+}
+class Organizer_VitalSigns extends Organizer {
+  private $__source;
+  //
+  public function __construct() {
+    parent::__construct(ActClass::CLUSTER);
+    $this->templateId = InfrastructureRoot_templateId::asVitalSignsOrganizer();
+  }
+  public function getSource() {
+    return $this->__source;
+  }
+  public function add($code, $value) {
+    $observation = Observation_Result::asVital($this->id, $this->effectiveTime, $code, $value);
+    parent::add(Component4::byObservation($observation));
+  }
+  //
+  static function fromVital($vital) {
+    $e = new self();
+    $e->__source = $vital;
+    $e->id = II::fromVital($vital);
+    $e->effectiveTime = IVL_TS::fromDate($vital->date);
+    if ($vital->pulse) 
+      $e->add(CE_LOINC_Vitals::asPulseRate(), PQ::asPerMin($vital->pulse));
+    if ($vital->resp) 
+      $e->add(CE_LOINC_Vitals::asRespRate(), PQ::asPerMin($vital->resp));
+    if ($vital->bpSystolic) 
+      $e->add(CE_LOINC_Vitals::asBpSystolic(), PQ::asMmHg($vital->bpSystolic));
+    if ($vital->bpDiastolic) 
+      $e->add(CE_LOINC_Vitals::asBpDiastolic(), PQ::asMmHg($vital->bpDiastolic));
+    if ($vital->temp) 
+      $e->add(CE_LOINC_Vitals::asBodyTemp(), PQ::asFahrenheit($vital->temp));
+    if ($vital->wt) 
+      $e->add(CE_LOINC_Vitals::asBodyWeight(), PQ::asKg($vital->getWtKg()));
+    if ($vital->height) 
+      $e->add(CE_LOINC_Vitals::asBodyHeight(), PQ::asCm($vital->getHtCm()));
+    if ($vital->o2Sat) 
+      $e->add(CE_LOINC_Vitals::asO2Saturation(), PQ::asPercent($vital->o2Sat));
+    if ($vital->bmi) 
+      $e->add(CE_LOINC_Vitals::asBmi(), PQ::from($vital->bmi));
+    return $e;
+  }
+}
+class ParentDocument extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClinicalDocument*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*II*/ $setId;
+  public /*INT*/ $versionNumber;
+}
+class Participant1 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode; //REQ
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*IVL_TS*/ $time;
+  public /*AssociatedEntity*/ $associatedEntity; //REQ
+  //
+  public function __construct($typeCode) {
+    $this->_typeCode = $typeCode;
+  }
+  //
+  static function asIndirectTarget($associatedEntity) {
+    $e = new self(ParticipationType::INDIRECT_TARGET);
+    $e->associatedEntity = $associatedEntity;
+    return $e; 
+  }
+}
+class Participant2 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode; //REQ
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*CE*/ $awarenessCode;
+  public /*ParticipantRole*/ $participantRole; //REQ
+  //
+  public function __construct($typeCode) {
+    $this->_typeCode = $typeCode;
+  }
+  //
+  static function asConsumable($participantRole) {
+    $e = new self(ParticipationType::CONSUMABLE);
+    $e->participantRole = $participantRole;
+    return $e;
+  }
+  static function fromAller($aller) {
+    return self::asConsumable(ParticipantRole::fromAller($aller));
+  }
+}
+class ParticipantRole extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassRoot*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Entity*/ $scopingEntity;
+  public /*Device*/ $playingDevice;
+  public /*PlayingEntity*/ $playingEntity;
+  //
+  public function __construct($classCode = null) {
+    $this->_classCode = $classCode;
+  }
+  //
+  static function asManufacProduct($playingEntity) {
+    $e = new self(RoleClass::MANUFACTURED_PRODUCT);
+    $e->playingEntity = $playingEntity;
+    return $e;
+  }
+  static function fromAller($aller) {
+    return self::asManufacProduct(PlayingEntity::fromAller($aller));
+  }
+}
+class Patient extends CcdRec {
+  private $__source;
+  //
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id;
+  public /*PN[]*/ $name;
+  public /*CE*/ $administrativeGenderCode;
+  public /*TS*/ $birthTime;
+  public /*CE*/ $maritalStatusCode;
+  public /*CE*/ $religiousAffiliationCode;
+  public /*CE*/ $raceCode;
+  public /*CE*/ $ethnicGroupCode;
+  public /*Guardian[]*/ $guardian;
+  public /*Birthplace*/ $birthplace;
+  public /*LanguageCommunication[]*/ $languageCommunication;
+  //
+  public function getSource() {
+    return $this->__source;
+  }
+  //
+  static function from($client) {
+    $e = new self();
+    $e->__source = $client;
+    $e->name = PN::fromClient($client);
+    $e->administrativeGenderCode = CE_HL7_AdministrativeGender::fromClient($client);
+    $e->birthTime = TS::fromDate($client->birth);
+    return $e;
+  }
+}
+class PatientRole extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClass*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*Patient*/ $patient;
+  public /*Organization*/ $providerOrganization;
+  //
+  static function from($client, $userGroup) {
+    $e = new self();
+    $e->id = II::fromClient($client);
+    if ($client->Address_Home) 
+      $e->addr = AD::from($client->Address_Home);
+    $e->patient = Patient::from($client);
+    $e->providerOrganization = Organization::from($userGroup);
+    return $e;
+  }
+}
+class Performer1 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ServiceEventPerformer*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $functionCode;
+  public /*IVL_TS*/ $time;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+  //
+  static function from($assignedEntity, $typeCode = ParticipationType::PERFORMER) {
+    $e = new self();
+    $e->_typeCode = $typeCode;
+    $e->assignedEntity = $assignedEntity;
+    return $e; 
+  }
+  static function asPrimaryCareProvider($user, $userGroup, $dateFrom, $dateTo) {
+    $e = self::from(AssignedEntity::from($user, $userGroup));
+    $e->functionCode = new CE_HL7_ParticipationFunction('PCP');
+    $e->time = IVL_TS::asLowHigh($dateFrom, $dateTo);
+    return $e;
+  }
+}
+class Performer2 extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationPhysicalPerformer*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*IVL_TS*/ $time;
+  public /*CE*/ $modeCode;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class Person extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PN[]*/ $name;
+  //
+  static function fromUser($user) {
+    $e = new self();
+    $e->name = PN::fromNcUser($user->NcUser);
+    return $e;
+  }
+  static function fromClient($client) {
+    $e = new self();
+    $e->name = PN::fromClient($client);
+    return $e;
+  }
+}
+class Place extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassPlace*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*EN*/ $name;
+  public /*AD*/ $addr;
+}
+class PlayingEntity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClassRoot*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*PQ[]*/ $quantity;
+  public /*PN[]*/ $name;
+  public /*ED*/ $desc;
+  //
+  public function __construct($classCode = null) {
+    $this->_classCode = $classCode;
+  }
+  //
+  static function asManufacMaterial($code) {
+    $e = new self(EntityClass::MANUFACTURED_MATERIAL);
+    $e->code = $code;
+    return $e;
+  }
+  static function fromAller($aller) {
+    return self::asManufacMaterial(CE_RxNorm::fromAller($aller));
+  }
+}
+class Precondition extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*Criterion*/ $criterion; //REQ
+}
+class Procedure extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode; //REQ
+  public /*x_DocumentProcedureMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*CS*/ $languageCode;
+  public /*CE[]*/ $methodCode;
+  public /*CD[]*/ $approachSiteCode;
+  public /*CD[]*/ $targetSiteCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+  //
+  public function __construct($classCode, $moodCode) {
+    $this->_classCode = $classCode;
+    $this->_moodCode = $moodCode;
+  }
+}
+class Procedure_ProcedureActivity extends Procedure {
+  private $__source;
+  //
+  public function __construct() {
+    parent::__construct(ActClass::PROCEDURE, ActMood::EVENT);
+    $this->templateId = InfrastructureRoot_templateId::asProcedureActivity();
+    $this->statusCode = CS_Status::asCompleted();
+  }
+  public function getSource() {
+    return $this->__source;
+  }
+  //
+  static function fromProc($proc) {
+    $e = new self();
+    $e->__source = $proc;
+    $e->id = II::fromProc($proc);
+    $e->code = CE_CodeSystem::fromProc($proc);
+    if ($proc->location) 
+      $e->code->addQualifier(CR_SNOMED_Laterality::fromProc($proc));
+    if ($proc->priority) 
+      $e->code->addQualifier(CR_SNOMED_Priorities::fromProc($proc));
+    $e->effectiveTime = TS::fromDate($proc->date);
+    return $e;
+  } 
+}
+class Product extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ManufacturedProduct*/ $manufacturedProduct; //REQ
+}
+class RecordTarget extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PatientRole*/ $patientRole; //REQ
+  //
+  static function from($client, $userGroup) {
+    $e = new self();
+    $e->patientRole = PatientRole::from($client, $userGroup);
+    return $e;
+  }
+}
+class Reference extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipExternalReference*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*BL*/ $seperatableInd;
+  public /*ExternalAct*/ $externalAct; //REQ
+  public /*ExternalObservation*/ $externalObservation; //REQ
+  public /*ExternalProcedure*/ $externalProcedure; //REQ
+  public /*ExternalDocument*/ $externalDocument; //REQ
+}
+class ReferenceRange extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActRelationshipType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ObservationRange*/ $observationRange; //REQ
+  //
+  static function fromResult($result) {
+    $observationRange = ObservationRange::fromResult($result);
+    if ($observationRange) {
+      $e = new self();
+      $e->observationRange = ObservationRange::fromResult($result);
+      return $e;
+    }
+  }
+}
+class RegionOfInterest_value extends INT {
+  public /*xs:boolean*/ $_unsorted;
+}
+class RegionOfInterest extends CcdRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode = "ROIOVL"; //REQ
+  public /*ActMood*/ $_moodCode = "EVN"; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id; //REQ
+  public /*CS*/ $code; //REQ
+  public /*RegionOfInterest_value[]*/ $value; //REQ
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class RelatedDocument extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_ActRelationshipDocument*/ $_typeCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*ParentDocument*/ $parentDocument; //REQ
+}
+class RelatedEntity extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassMutualRelationship*/ $_classCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Person*/ $relatedPerson;
+}
+class RelatedSubject extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*x_DocumentSubject*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $code;
+  public /*AD[]*/ $addr;
+  public /*TEL[]*/ $telecom;
+  public /*SubjectPerson*/ $subject;
+}
+class ResponsibleParty extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*AssignedEntity*/ $assignedEntity; //REQ
+}
+class POCD_Section extends CcdRec {
+  public /*xs:ID*/ $_ID;
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II*/ $id;
+  public /*CE*/ $code;
+  public /*ST*/ $title;
+  public /*StrucDoc_Text*/ $text;
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+  public /*Subject*/ $subject;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Entry[]*/ $entry;
+  public /*Component5[]*/ $component;
+  //
+  public function __construct() {
+    $this->entry = array();
+  }
+  public function add($entry) {
+    $this->entry[] = $entry;
+  }
+  public function getEntries() {
+    return $this->entry;
+  }
+  protected function getEntryObjects($tagName) {
+    $objects = array();
+    foreach ($this->getEntries() as $entry) {
+      $object = get($entry, $tagName);
+      if ($object)
+        $objects[] = $object;
+    }
+    return $objects;
+  }
+  public function getActs() {
+    return $this->getEntryObjects('act');
+  }
+  public function getOrganizers() {
+    return $this->getEntryObjects('organizer');
+  }
+  public function getProcedures() {
+    return $this->getEntryObjects('procedure');
+  }
+  public function getSubstanceAdmins() {
+    return $this->getEntryObjects('substanceAdministration');
+  }
+}
+class ServiceEvent extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassRoot*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CE*/ $code;
+  public /*IVL_TS*/ $effectiveTime;
+  public /*Performer1[]*/ $performer;
+  //
+  static function from($performer, $classCode = ActClass::CARE_PROVISION) {
+    $e = new self();
+    $e->_classCode = $classCode;
+    $e->performer = $performer;
+    return $e;
+  }
+  static function asDocumentationOf($client, $performer) {
+    $e = self::from($performer);
+    if ($performer->time) 
+      $e->effectiveTime = IVL_TS::asLowHigh($client->birth, $performer->time->high->_value);
+    return $e;
+  }
+}
+class Specimen extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationType*/ $_typeCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*SpecimenRole*/ $specimenRole; //REQ
+}
+class SpecimenRole extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*RoleClassSpecimen*/ $_classCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*PlayingEntity*/ $specimenPlayingEntity;
+}
+class StructuredBody extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode;
+  public /*ActMood*/ $_moodCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $confidentialityCode;
+  public /*CS*/ $languageCode;
+  public /*Component3[]*/ $component; //REQ
+  //
+  public function __construct() {
+    $this->component = array();
+  }
+  public function add($section) {
+    $this->component[] = Component3::bySection($section);
+  } 
+}
+class Subject extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ParticipationTargetSubject*/ $_typeCode;
+  public /*ContextControl*/ $_contextControlCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*CE*/ $awarenessCode;
+  public /*RelatedSubject*/ $relatedSubject; //REQ
+}
+class SubjectPerson extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*EntityClass*/ $_classCode;
+  public /*EntityDeterminer*/ $_determinerCode;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*PN[]*/ $name;
+  public /*CE*/ $administrativeGenderCode;
+  public /*TS*/ $birthTime;
+}
+class SubstanceAdministration extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClass*/ $_classCode = "SBADM"; //REQ
+  public /*x_DocumentSubstanceMood*/ $_moodCode; //REQ
+  public /*bl*/ $_negationInd;
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*SXCM_TS[]*/ $effectiveTime;
+  public /*CE*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*CE*/ $routeCode;
+  public /*CD[]*/ $approachSiteCode;
+  public /*IVL_PQ*/ $doseQuantity;
+  public /*IVL_PQ*/ $rateQuantity;
+  public /*RTO_PQ_PQ*/ $maxDoseQuantity;
+  public /*CE*/ $administrationUnitCode;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Consumable*/ $consumable; //REQ
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+class SubstanceAdministration_MedActivity extends SubstanceAdministration {
+  private $__source;
+  //
+  public function __construct() {
+    $this->_classCode = ActClass::SUBSTANCE_ADMINISTRATION;
+    $this->_moodCode = ActMood::EVENT;
+    $this->templateId = InfrastructureRoot_templateId::asMedActivity(); 
+  }
+  public function getSource() {
+    return $this->__source;
+  }
+  public function getEffectiveTimePeriod() {
+    $times = arrayify(get($this, 'effectiveTime'));
+    foreach ($times as $time) 
+      if ($time->getXsiType == 'PIVL') 
+        return $time->period;
+  }
+  //
+  static function fromMed($med) {
+    $e = new self();
+    $e->__source = $med;
+    $e->id = II::fromMed($med);
+    $e->statusCode = CS_Status::fromMed($med);
+    $e->effectiveTime = SXCM_TS::fromMed($med);
+    //$e->routeCode = CE_NCI_Route::fromMed($med);
+    $e->routeCode = CE::from($med->ncRouteId, 'NewCrop', $med->route);
+    $e->doseQuantity = IVL_PQ::asDoseQuantity($med);
+    //$e->administrationUnitCode = CE_NCI_DosageForm::fromMed($med);
+    $e->administrationUnitCode = CE::from($med->ncDosageFormId, 'NewCrop', $med->ncDosageForm);
+    $e->consumable = Consumable::fromMed($med);
+    return $e;
+  }
+  static function fromImmun($immun) {
+    $e = new self();
+    $e->__source = $immun;
+    $e->id = II::fromImmun($immun);
+    $e->statusCode = CS_Status::asCompleted();
+    $e->effectiveTime = SXCM_TS::fromImmun($immun);
+    $e->routeCode = CE_NCI_Route::fromImmun($immun);
+    $e->consumable = Consumable::fromImmun($immun);
+    return $e;
+  }
+}
+class Supply extends CcdRec {
+  public /*NullFlavor*/ $_nullFlavor;
+  public /*ActClassSupply*/ $_classCode = "SPLY"; //REQ
+  public /*x_DocumentSubstanceMood*/ $_moodCode; //REQ
+  //
+  public /*CS[]*/ $realmCode;
+  public /*InfrastructureRoot_typeId*/ $typeId;
+  public /*InfrastructureRoot_templateId[]*/ $templateId;
+  public /*II[]*/ $id;
+  public /*CD*/ $code;
+  public /*ED*/ $text;
+  public /*CS*/ $statusCode;
+  public /*SXCM_TS[]*/ $effectiveTime;
+  public /*CE[]*/ $priorityCode;
+  public /*IVL_INT*/ $repeatNumber;
+  public /*BL*/ $independentInd;
+  public /*PQ*/ $quantity;
+  public /*IVL_TS*/ $expectedUseTime;
+  public /*Subject*/ $subject;
+  public /*Specimen[]*/ $specimen;
+  public /*Product*/ $product;
+  public /*Performer2[]*/ $performer;
+  public /*Author[]*/ $author;
+  public /*Informant12[]*/ $informant;
+  public /*Participant2[]*/ $participant;
+  public /*EntryRelationship[]*/ $entryRelationship;
+  public /*Reference[]*/ $reference;
+  public /*Precondition[]*/ $precondition;
+}
+/**
+ * Base class
+ */
+abstract class CcdRec extends XmlRec {
+  //
+  public function getTemplateId() {
+    $template = get($this, 'templateId');
+    if ($template) 
+      return $template->_root;
+  }
+} 
+?>

@@ -1,0 +1,41 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/hl7/msg/VXUMessage.php';
+require_once 'php/data/rec/GroupFolder_Vxu.php';
+require_once 'php/data/rec/sql/Facesheets.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  $id = geta($_GET, 'id');
+  Logger::debug(currentUrl());
+}
+try { 
+  switch ($action) {
+    //
+    case 'get':
+      $password = geta($_GET, 'pw');
+      $fs = Facesheet_Immun::from($id); 
+      $vxu = VXUMessage::from($fs);
+      $folder = GroupFolder_Vxu::open();
+      $file = $folder->save($vxu, $password);
+      $m = new JAjaxMsg($action, jsonencode($file));
+      break;
+    case 'download':
+      $folder = GroupFolder_Vxu::open();
+      $folder->download($id);
+      exit;
+  }
+} catch (DisplayableException $e) {
+  echo $e->getMessage();
+} catch (Exception $e) {
+  //$e = Logger::logException($e);
+  echo $e->getMessage();
+} 
+if ($m != null) 
+  echo $m->out();

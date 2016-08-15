@@ -1,0 +1,57 @@
+TABLE.datasheet TD, TABLE.datasheet TH {
+  font-family:Tahoma,Arial;
+  font-size:11pt;
+  padding:2px;
+}
+DIV.gridsheet TD {
+  font-family:Tahoma,Arial;
+  font-size:9pt;
+}
+DIV.gridsheet TH {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:8pt;
+}
+DIV.small TD, DIV.small TH {
+  font-size:8pt;
+  line-height:11pt;
+}
+TD.icons A.icon {
+  font-size:10pt;
+}
+A.icon {
+  font-family:Tahoma,Arial;
+  font-size:10pt;
+}
+A.big {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+}
+A.go {
+  background:url(../img/icons/view.gif) no-repeat left 2px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  height:17px;
+  line-height:19px;
+  padding-left:19px;
+}
+A.arrow-big {
+  background:url(../img/icons/view.gif) no-repeat left 4px;  
+  font-size:11pt;
+}
+A.med {
+  font-size:10.5pt;
+}
+A.nav-prev {
+  font-size:8pt;
+  padding-top:4px;
+}
+A.nav-next {
+  font-size:8pt;
+  padding-top:4px;
+}
+DIV.nav {
+  font-size:8pt;
+}
+DIV.nav TD.nav {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:10pt;
+}

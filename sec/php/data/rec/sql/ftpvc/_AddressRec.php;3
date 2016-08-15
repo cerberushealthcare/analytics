@@ -1,0 +1,74 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Address Base Class
+ * @author Warren Hornsby 
+ */
+abstract class AddressRec extends SqlRec {
+  /*  
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $phone3;
+  public $phone3Type;
+  public $email1;
+  public $email2;
+  public $name;
+  */  
+  const TABLE_USERS = 'U';
+  const TABLE_USER_GROUPS = 'G';
+  const TABLE_CLIENTS = 'C';
+  //
+  const TYPE_SHIP = '0';
+  const TYPE_BILL = '1';
+  const TYPE_EMER = '2';
+  const TYPE_SPOUSE = '3';
+  const TYPE_RX = '4';
+  const TYPE_MOTHER = '5';  
+  const TYPE_FATHER = '6';  
+  //
+  const PHONE_TYPE_PRIMARY = 0;
+  const PHONE_TYPE_WORK = 1;
+  const PHONE_TYPE_CELL = 2;
+  const PHONE_TYPE_EMER = 3;
+  const PHONE_TYPE_FAX = 4;
+  const PHONE_TYPE_OTHER = 9;
+  public static $PHONE_TYPES = array(
+    self::PHONE_TYPE_PRIMARY => 'Primary',
+    self::PHONE_TYPE_WORK => 'Work',
+    self::PHONE_TYPE_CELL => 'Cell',
+    self::PHONE_TYPE_EMER=> 'Emergency',
+    self::PHONE_TYPE_FAX => 'Fax',
+    self::PHONE_TYPE_OTHER => 'Other');
+  //
+  public function getSqlTable() {
+    return 'addresses';
+  }
+  public function setPrimaryPhone($phone) {
+    $this->setPhone1(self::PHONE_TYPE_PRIMARY, $phone);
+  }
+  public function setPhone1($type, $phone) {
+    $this->phone1Type = $type;
+    $this->phone1 = $phone;
+  }
+  public function setPhone2($type, $phone) {
+    $this->phone2Type = $type;
+    $this->phone2 = $phone;
+  }
+  //
+  public static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }
+}

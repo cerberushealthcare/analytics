@@ -1,0 +1,202 @@
+/**
+ * Polling
+ * @author Warren Hornsby
+ */
+Polling = {
+  //
+  _polls:{},
+  /*
+   * @arg string id poll ID
+   * @arg int interval in seconds
+   * @arg int max total iterations allowed (optional)
+   * @arg Function fn
+   * @return Poll
+   */
+  register:function(id, interval, max, fn) {
+    var poll = this._polls[id];
+    if (poll == null) {
+      poll = new Poll(id, interval, max, fn);
+      this._polls[id] = poll;
+    }
+    return poll;
+  }
+}
+function Poll(id, interval, max, fn) {
+  this.id = id;
+  this.iter = {
+    'fn':fn,
+    'interval':interval * 1000,
+    'max':(max) ? max : 3600 / interval,
+    'ct':0};
+}
+Poll.prototype = {
+  id:null,
+  iter:null,
+  running:null,
+  /*
+   * @arg delay in seconds (optional, default 0)
+   */
+  start:function(delay) {  // Log.fn('Poll.start', [delay]);
+    if (this.running == null) {
+      var running = (Math.random() + '').substr(2);
+      this.running = running;
+      this.iter.ct = 0;
+      if (delay == null)
+        delay = 0;
+      setTimeout(this._iterate.bind(this, running), delay * 1000);
+    }
+  },
+  stop:function() {
+    if (this.running) 
+      this.running = null;
+  },
+  isRunning:function() {
+    return this.running != null;
+  },
+  //
+  _iterate:function(running) {  // Log.fn('Poll._iterate', [running]);// Log.log('this.running=' + this.running);
+    if (this.running == running) {
+      this.iter.fn();
+      this.iter.ct++;
+      var self = this;
+      if (this.max && this.iter.ct >= this.iter.max)
+        this.stop();
+      else
+        setTimeout(this._iterate.bind(this, running), this.iter.interval);
+    }
+  }
+}
+/**
+ * Invocations
+ */
+Polling.Inbox = {
+  //
+  DELAY:120,
+  INTERVAL:120,
+  /*
+   * @callback(inboxCt) when changed 
+   */
+  start:function(inboxCt, callback) {
+    Polling.register('Inbox', this.INTERVAL, null, function() {
+      Ajax.Polling.getMyInboxCt(function(ct) {
+        if (ct != inboxCt) {
+          inboxCt = ct;
+          callback(inboxCt);
+        }
+      })
+    }).start(this.DELAY);
+  }
+}
+Polling.Review = {
+  //
+  DELAY:90,
+  INTERVAL:120,
+  /*
+   * @callback(ct, silent) when changed 
+   */
+  start:function(ct, callback) {
+    this.ct = ct;
+    this.callback = callback;
+    Polling.register('Review', this.INTERVAL, null, this.poll.bind(this)).start(this.DELAY);
+  },
+  poll:function(silent) {
+    var self = this;
+    Ajax.Polling.getMyUnreviewedCt(function(ct) {
+      if (ct != self.ct) {
+        self.ct = ct;
+        self.callback(ct, silent);
+      }
+    })
+  },
+  refresh:function() {
+    this.poll(true);
+  }
+}
+Polling.LabInbox = {
+  //
+  DELAY:60,
+  INTERVAL:120,
+  /*
+   * @callback(inboxCt) when changed
+   */
+  start:function(inboxCt, callback) {
+    Polling.register('LabInbox', this.INTERVAL, null, function() {
+      Ajax.Polling.getMyInboxCt(function(ct) {
+        if (ct != inboxCt) {
+          inboxCt = ct;
+          callback(inboxCt);
+        }
+      })
+    }).start(this.DELAY);
+  }  
+}
+Polling.StaleFacesheet = {
+  //
+  DELAY:3,
+  INTERVAL:10,
+  /*
+   * @callback(timestamp) when facesheet is stale (i.e. timestamp has changed)
+   */
+  load:function(callback) {
+    var self = this;
+    this._poll = Polling.register('StaleFacesheet', self.INTERVAL, null, function() {
+      var fs = self.fs;  // Log.fn('iterate', [fs]);
+      if (fs && fs.client) {
+        Ajax.Polling.pollCuTimestamp(fs.client.clientId,
+          function(timestamp) {  // Log.log(timestamp + ',' + fs.cuTimestamp);
+            if (timestamp && timestamp != fs.cuTimestamp) {
+              self.stop();
+              callback(timestamp);
+            }
+          });
+      }
+    });
+    return this;
+  },
+  isLoaded:function() {
+    return this._poll != null;
+  },
+  /*
+   * Start polling for supplied facesheet after standard delay 
+   * @arg Facesheet fs
+   */
+  start:function(fs) {  // Log.fn('start', [fs]);
+    if (this._poll) {
+      if (this._poll.running)
+        this.stop();
+      this.fs = fs;
+      this._poll.start(this.DELAY);
+    }
+  },
+  /*
+   * Start immediately with same facesheet
+   */
+  resume:function() {  // Log.fn('resume');
+    if (this._poll) {
+      if (this._poll.running)
+        this.stop();
+      this._poll.start();
+    }
+  },
+  /*
+   * Stop/pause
+   */
+  stop:function() {  // Log.fn('stop');
+    if (this._poll)
+      this._poll.stop();
+  }
+}
+Polling.ErxStatus = {
+  //
+  DELAY:3,
+  INTERVAL:60,
+  /*
+   * @callback() when time to pull NewCrop status
+   */
+  start:function(callback) {
+    var max = 5;
+    Polling.register('ErxStatus', this.INTERVAL, max, function() {
+      callback();
+    }).start(this.DELAY);
+  }
+}

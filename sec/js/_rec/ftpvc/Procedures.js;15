@@ -1,0 +1,108 @@
+/**
+ * Rec Proc
+ *   RecArray Results
+ */
+Proc = Object.Rec.extend({
+  //
+  onload:function() {
+    this.ProcResults = ProcResults.create(this).revive(this.ProcResults, ProcResult.create(this));
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  uiResults:function() {
+    return this._results && this._results.join(': '); 
+  },
+  isNew:function() {
+    return this.procId == null;
+  },
+  /*
+   * @arg int cid
+   * @arg Ipc Ipc (optional)
+   */
+  asNew:function(cid, Ipc) {
+    var o = {'clientId':cid};
+    if (Ipc) {
+      o.ipc = Ipc.ipc;
+      o.Ipc = Ipc;
+    }
+    return this.revive(o);
+  },
+  ajax:function(worker) {
+    var self = this;
+    return {
+      save:function(onsuccess, onerror) {
+        Ajax.Procedures.saveProc(self, worker, onsuccess, onerror);
+      },
+      remove:function(onsuccess) {
+        Ajax.Procedures.deleteProc(self.procId, worker, onsuccess);
+      }
+    }
+  },
+  /*
+   * @arg int procId
+   * @return Proc
+   */
+  fetch:function(procId, callback) {
+    Ajax.Procedures.get(procId, callback);
+  }
+})
+//
+Procedures = Object.RecArray.of(Proc, {
+  //
+  getMostRecent:function(ipc) {  // assumes Procedures loaded most recent to earliest
+    for (var i = 0; i < this.length; i++)
+      if (this[i].ipc == ipc)
+        return this[i];
+  },
+  filter:function(ipc) {
+    return Array.filterOn(this, 'ipc', ipc);
+  }
+})
+/**
+ * Rec ProcResult
+ */
+ProcResult = Object.Rec.extend({
+  //
+  onload:function() {
+    if (this.Ipc == null)
+      this.Ipc = Ipc_NotFound;
+  },
+  isNew:function() {
+    return this.procResultId == null;
+  },
+  //
+  asNew:function(proc, asLabPanel) {
+    var rec = {
+      'procId':proc.procId,
+      'clientId':proc.clientId};
+    if (! asLabPanel && Array.isEmpty(proc.ProcResults)) {
+      rec.ipc = proc.ipc;
+      rec.Ipc = proc.Ipc;
+    }
+    return this.revive(rec);
+  },
+  //
+  ajax:function(worker) {
+    var self = this;
+    return {
+      save:function(onsuccess, onerror) {
+        Ajax.Procedures.saveResult(self.procId, self, worker, onsuccess, onerror);
+      }
+    }
+  }
+})
+ProcResults = Object.RecArray.of(ProcResult, {
+  hasMore:function(result) {
+    return result && ! result.isNew() && this.end().seq !== result.seq;
+  },
+  after:function(result) {
+    if (this.hasMore(result)) 
+      for (var i = 0; i < this.length; i++) 
+        if (this[i].seq == result.seq)
+          return this[i + 1];
+  }
+})
+//
+Ipc_NotFound = {
+  name:'NOT FOUND'
+}

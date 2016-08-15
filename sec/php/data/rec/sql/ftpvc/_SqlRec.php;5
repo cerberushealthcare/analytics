@@ -1,0 +1,410 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+/**
+ * Persistable Data Record  
+ */
+class SqlRec extends Rec {
+  //
+  private static $cache = array();  // 'SQL_WHERE' => Rec
+  //
+  /**
+   * To override, e.g. return 'table_name' 
+   * @return string
+   * @throws RecRequiredException if not overridden
+   */
+  public function getSqlTable() {
+    throw new RecRequiredException(array('getSqlTable'));
+  }
+  /**
+   * Assigns fields based upon args supplied:
+   *   (value1,value2,..)      multiple args: each assigned in field definition order
+   *   ([sql_field=>value,..]) single arg, SQL array: assigned in field definition order 
+   *   ({fid:value,..})        single arg, decoded JSON object: values mapped to fields
+   * To call this from an overriden constructor, use:
+   *   $args = func_get_args(); 
+   *   call_user_func_array(array('SqlRec', '__construct'), $args);
+   */
+  public function __construct() {
+    $args = func_get_args();
+    $fids = $this->getFids();
+    if (count($args) == 1) {  
+      if (is_assoc($args[0])) {  // construct from SQL array
+        $arr = $args[0];
+        for ($i = 0, $l = count($fids); $i < $l; $i++) {
+          $value = current($arr);
+          $this->set($fids[$i], $value);
+          next($arr);
+        }
+        $args = null;
+      } else if (is_object($args[0])) {  // construct from decoded JSON object
+        $obj = $args[0];
+        foreach ($obj as $fid => $value)
+          $this->set($fid, $value);
+        $args = null;
+      }
+    }
+    if ($args) {  // construct from arg list
+      for ($i = 0, $l = count($args); $i < $l; $i++) {
+        $value = current($args);
+        $this->set($fids[$i], $value); 
+        next($args); 
+      }
+    }
+  }
+  /**
+   * Assign field value according to type
+   * @param string $fid
+   * @param string $value: simple field assignment
+   *        array $value: child Rec assignment from SQL array [sql_field=>value,..]
+   *        object $value: child Rec assignment from decoded JSON object {fid:value,..}  
+   */
+  public function set($fid, $value) {
+    if ($value !== null)
+      if (is_scalar($value)) {
+        $dfids = $this->getDateFids(); 
+        if (isset($dfids[$fid])) 
+          $this->$fid = SqlRec::jsonToSqlDate($value);
+        else
+          $this->$fid = $value;
+      } else if (is_object($value)) {
+        $class = Rec::getClassFromJsonField($fid);
+        $this->$fid = new $class($value);
+      } else {
+        $class = SqlRec::getClassFromSqlField(key($value));
+        $this->$fid = new $class($value);
+      }
+  }
+  /**
+   * Persist record to database
+   */
+  public function save() {
+    $this->validate();
+    if ($this->getPkValue()) {
+      query($this->getSqlUpdate());
+    } else {
+      query($this->getSqlInsert());
+    }
+  }
+  //
+  /**
+   * Build SQL INSERT
+   * @return string SQL
+   */
+  protected function getSqlInsert() {
+    $table = $this->getSqlTable();
+    $values = $this->getSqlValues();
+    $values = implode(',', $values);
+    $sql = "INSERT INTO $table VALUES($values)";
+    return $sql;
+  }
+  /**
+   * Build SQL UPDATE
+   * @return string SQL
+   */
+  protected function getSqlUpdate() {
+    $table = $this->getSqlTable();
+    $fields = $this->getSqlFields();
+    $values = $this->getSqlValues();
+    $pkField = array_shift($fields);
+    $pkValue = array_shift($values);
+    $values = implode_with_keys(',', array_combine($fields, $values));
+    $sql = "UPDATE $table SET $values WHERE $pkField=$pkValue"; 
+    return $sql;
+  }
+  /**
+   * Build SQL SELECT clause using this record as criteria
+   * @return array(
+   *   'sql'=>'SQL statement',
+   *   'cacheKey'=>'table|where')
+   * @return string SQL
+   * @throws InvalidCriteriaException
+   */
+  protected function getSqlSelect($recs = null, $infos = null) {
+    if ($recs == null) {
+      $recs = $this->getRecsFromCriteria();
+      $infos = SqlRec::buildSqlSelectInfos($recs);
+    }
+    if ($infos['where'][0] == null)
+      $this->throwNoCriteriaException($infos, 0);
+    $alias0 = $infos['alias'][0];
+    $infos['table'][0] .= " $alias0";
+    for ($i = 1, $j = count($recs); $i < $j; $i++) {
+      next($recs);
+      $fid = key($recs);
+      $table = $infos['table'][$i];
+      $alias = $infos['alias'][$i];
+      $pk = $infos['pk'][$i];
+      $fk = SqlRec::getFkFromFid($fid, $pk);
+      $fkfid = SqlRec::sqlToCamel($fk);
+      if (property_exists($this, $fkfid)) {  
+        $infos['table'][$i] = " LEFT JOIN $table $alias ON $alias0.$fk=$alias.$pk";
+      } else {  
+        if ($infos['where'][$i] == null)
+          $this->throwNoCriteriaException($infos, $i);
+        $infos['table'][$i] = ", $table $alias";
+      }
+    }
+    $fields = implode(', ', $infos['fields']);
+    $table = implode('', $infos['table']);
+    $where = implode(' AND ', array_filter($infos['where']));
+    $sql = "SELECT $fields FROM $table WHERE $where";
+    $cacheKey = "$table|$where";
+    return array(
+      'sql' => $sql,
+      'cacheKey' => $cacheKey);
+  }
+  private function throwNoCriteriaException($infos, $i) {
+    throw new InvalidCriteriaException($this, 'No criteria specified for ' . $infos['table'][$i]);
+  }
+  /**
+   * Build SQL WHERE clause using this record as criteria
+   * @param(opt) string $tableAlias 
+   * @return string 'field_name=field_value AND..'
+   */
+  protected function getSqlWhere($tableAlias = null) {
+    $fields = $this->getSqlFields();
+    if ($tableAlias == null) 
+      $tableAlias = $this->getSqlTable();
+    $values = array();
+    foreach ($this as $fid => &$value) {
+      if ($value !== null && is_scalar($value)) {
+        $field = $tableAlias . '.' . current($fields);
+        $values[$field] = $this->getSqlValue($fid);
+      }
+      next($fields);        
+    }
+    $values = count($values) ? implode_with_keys(' AND ', $values) : null;
+    return $values;
+  }
+  /**
+   * @return array(fid=>sql_field,..)
+   */
+  protected function getSqlFields() {
+    static $fields;
+    if ($fields == null) { 
+      $fields = $this->buildSqlFields();
+    }
+    return $fields;
+  }
+  /**
+   * @return int
+   */
+  protected function getSqlFieldCt() {
+    static $ct;
+    if ($ct == null) {
+      $ct = count($this->getSqlFields());
+    }
+    return $ct;
+  }
+  /**
+   * @return string 'sql_field'
+   */
+  protected function getPkField() {
+    static $field;
+    if ($field == null) {
+      reset($this);
+      $fid = key($this);
+      $field = SqlRec::camelToSql($fid);
+    }
+    return $field;
+  }
+  /**
+   * @return string
+   */
+  protected function getPkValue() {
+    reset($this);
+    return current($this);
+  }
+  //
+  protected function getSqlValue($fid) {
+    $value = $this->$fid;
+    return quote($value);
+  }
+  protected function getSqlValues() {
+    $values = array();
+    foreach ($this as $fid => &$value) {
+      if (! SqlRec::isUpper(substr($fid, 0, 1))) 
+        $values[] = $this->getSqlValue($fid);
+    }
+    return $values;
+  }
+  protected function buildSqlFields() {
+    $fields = array();
+    foreach ($this as $fid => $value) {
+      if (! SqlRec::isUpper(substr($fid, 0, 1))) 
+        $fields[$fid] = SqlRec::camelToSql($fid);
+    }
+    return $fields;
+  }
+  protected function buildSqlSelectFields($tableAlias = null) {
+    $fields = $this->getSqlFields();
+    $class = $this->getMyName();
+    if ($tableAlias) 
+      $class .= ".$tableAlias";
+    else 
+      $tableAlias = $this->getSqlTable();      
+    foreach ($this as $fid => &$value) {
+      $field = geta($fields, $fid);
+      if ($field) 
+        $fields[$fid] = "$tableAlias.$field AS `$class.$fid`"; 
+    }
+    $fields = implode(', ', $fields);
+    return $fields;
+  }
+  protected function getRecsFromCriteria() {
+    $recs = array(
+      $this->getMyName() => $this);
+    foreach ($this as $fid => &$value) { 
+      if (is_object($value)) 
+        $recs[$fid] = $value;
+    }
+    return $recs;  // array(fid=>rec,..)
+  }
+  //
+  // Statics
+  //
+  /**
+   * Fetch by primary key
+   * @param int $id auto-inc PK value
+   * @param(opt) string $class 'SomeRec' 
+   * @return Rec  
+   */
+  public static function fetch($id, $class) {
+    if ($class == null)
+      $class = get_called_class();
+    $rec = new $class($id);
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * Fetch record(s) using supplied record as criteria
+   * @param Rec $rec
+   * @param(opt) string $orderBy
+   * @return array(Rec,..)
+   */
+  public static function fetchAllBy($rec, $orderBy = null) {
+    $class = $rec->getMyName();
+    $critRecs = $rec->getRecsFromCriteria();
+    $critRecCt = count($critRecs);
+    $infos = SqlRec::buildSqlSelectInfos($critRecs);
+    $select = $rec->getSqlSelect($critRecs, $infos);
+    $sql = $select['sql'];
+    $cacheKey = $select['cacheKey'];
+    if ($orderBy) 
+      $sql .= " ORDER BY $orderBy";
+    if (isset(SqlRec::$cache[$cacheKey]))  
+      $recs = SqlRec::$cache[$cacheKey];
+    else { 
+      $recs = array();
+      $rows = fetchArray($sql);
+      if ($critRecCt > 1) 
+        $rows = SqlRec::unflattenRows($rows, $infos, $critRecCt);
+      foreach ($rows as &$row) 
+        $recs[] = new $class($row);
+      if (count($recs) < 2)  
+        SqlRec::$cache[$cacheKey] = $recs;
+    }
+    return $recs;
+  }
+  /**
+   * Return first result of SqlRec::fetchAllBy($rec)  
+   * @return Rec
+   */
+  public static function fetchOneBy($rec) {
+    return current(SqlRec::fetchAllBy($rec));
+  }
+  //
+  protected static function buildSqlSelectInfos($recs) {
+    $infos = array();
+    $fix = 0;
+    $ix = 0;
+    foreach ($recs as &$rec) {
+      $tableAlias = "T$ix";
+      $info = SqlRec::buildSqlSelectInfo($rec, $tableAlias);
+      push($infos, 'alias', $tableAlias);
+      push($infos, 'fields', $info['fields']);
+      push($infos, 'fct', $info['fct']);
+      push($infos, 'table', $info['table']);
+      push($infos, 'pk', $info['pk']);
+      push($infos, 'where', $info['where']);
+      push($infos, 'fix', $fix);
+      $fix += $info['fct'];
+      $ix++;
+    }
+    return $infos;
+  }
+  protected static function buildSqlSelectInfo($rec, $tableAlias = null) {
+    return array(
+      'fields' => $rec->buildSqlSelectFields($tableAlias),
+      'fct' => $rec->getSqlFieldCt(),
+      'table' => $rec->getSqlTable(),
+      'alias' => $tableAlias,
+      'pk' => $rec->getPkField(),
+      'where' => $rec->getSqlWhere($tableAlias)  
+      );  
+  }
+  protected static function unflattenRows($rows, $infos, $recCt) {
+    $urows = array();
+    foreach ($rows as &$row) {
+      $urow = array_slice($row, 0, $infos['fct'][0], true);
+      for ($i = 1; $i < $recCt; $i++) {
+        $urow[] = array_slice($row, $infos['fix'][$i], $infos['fct'][$i]);
+      }
+      $urows[] = $urow;
+    }
+    return $urows;     
+  }
+  protected static function camelToSql($str) {
+    $str[0] = strtolower($str[0]);
+    $func = create_function('$c', 'return "_" . strtolower($c[1]);');
+    $field = preg_replace_callback('/([A-Z])/', $func, $str);
+    return "`$field`";
+  }
+  protected static function sqlToCamel($str, $capitalizeFirstChar = false) {
+    if (substr($str, 0, 1) == '`') 
+      $str = substr($str, 1, -1);
+    if ($capitalizeFirstChar) 
+      $str[0] = strtoupper($str[0]);
+    $func = create_function('$c', 'return strtoupper($c[1]);');
+    return preg_replace_callback('/_([a-z])/', $func, $str);
+  }
+  protected static function getClassFromSqlField($field) {
+    $a = explode('.', $field);
+    return $a[0];
+  }
+  protected static function getFkFromFid($parentFid, $childPk) {
+    // Extracts PK from fid, e.g. 'order_by' from '$User_orderBy'
+    $a = explode('_', $parentFid);
+    if (count($a) == 1) 
+      return $childPk;
+    else 
+      return SqlRec::camelToSql($a[1]);
+  }
+  protected static function isUpper($c) {
+    return ($c == strtoupper($c)); 
+  }
+  protected function getDateFids() {
+    static $dfids;
+    if ($dfids == null) {
+      $dfids = array();
+      foreach ($this as $fid => &$value) {
+        if (substr($fid, -4) == 'Date')
+          $dfids[$fid] = $fid;
+      }
+    }
+    return $dfids;
+  }
+  protected static function jsonToSqlDate($value) {
+    return (isBlank($value)) ? null : date("Y-m-d", strtotime($value)); 
+  }
+}
+/**
+ * Exceptions
+ */
+class InvalidCriteriaException extends RecException {
+  public /*Rec*/ $criteria;
+  public function __construct($criteria, $message) {
+    $this->criteria = $criteria;
+    $this->message = $message;
+  }
+}
+?>

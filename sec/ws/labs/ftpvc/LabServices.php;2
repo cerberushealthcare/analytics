@@ -1,0 +1,19 @@
+<?php
+set_include_path('../../');
+require_once 'php/data/rec/sql/dao/Logger.php';
+/*
+ * Lab Web Services
+ * @author Warren Hornsby
+ */
+ini_set("soap.wsdl_cache_enabled", "0"); // disabling WSDL cache
+$server = new SoapServer('LabServices.wsdl');
+$server->addFunction('postMessage');
+$server->handle();
+function postMessage($msg) {
+  Logger::debug_r($msg, 'postMessage');
+  $result = new stdClass();
+  $result->status = 'FAIL';
+  $result->errorMsg = 'Request is not valid.';
+  return $result;
+}
+

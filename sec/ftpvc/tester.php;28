@@ -1,0 +1,398 @@
+<?php
+require_once 'inc/requireLogin.php';
+require_once 'php/data/rec/sql/Users_Admin.php';
+require_once 'php/data/rec/sql/UserLoginReqs.php';
+require_once 'php/data/rec/sql/UserLogin.php';
+require_once 'php/data/rec/sql/UserStub.php';
+require_once 'php/data/rec/sql/Messaging.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Diagnoses.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/TemplateOrderEntry.php';
+require_once 'php/data/rec/sql/Providers.php';
+require_once 'php/data/rec/sql/Reporting.php';
+require_once 'php/data/rec/sql/Scanning.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+require_once 'php/data/rec/sql/LookupScheduling.php';
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'php/data/rec/sql/Documentation.php';
+require_once 'php/data/rec/sql/IProcCodes_Admin.php';
+require_once 'php/data/rec/sql/IProcCodes_Hm.php';
+require_once 'php/data/rec/sql/DrugClasses_Admin.php';
+require_once 'php/data/rec/sql/PortalUsers.php';
+//
+?>
+<html>
+  <head>
+    <script language="JavaScript1.2" src="js/ui.js"></script>
+    <script language="JavaScript1.2" src="js/_ui/Templates.js"></script>
+  </head>
+  <body>
+<?php 
+echo '<pre>';
+switch ($_GET['t']) {
+  case '1':
+    $text = 'renovascular hypertension';
+    $text = 'abdominal pain';
+    $text = 'edema';
+    $text = 'coronary artery disease';
+    $text = '384.1';
+    $r = IcdCodes::search($text);
+    print_r($r);
+    break;
+  case '2':
+    $search = new SearchText('abdominal pain pain');
+    print_r($search);
+    $expr = $search->expr; 
+    $pattern = "/" . $expr . "/i";
+    $text = 'He has some serious abdominal pain going on with pain in his abdominal region.';
+    //print_r($search->matchDistinct($text));
+    print_r(jsondecode(jsonencode($search)));
+    break;
+  case '3':
+    $user = UserLogin::fetch(46);
+    print_r($user);
+    if ($user->isPrimaryDoc()) 
+      echo 'yep';
+    break;
+  case '4':
+    $reqs = UserLoginReqs::getAllFor(1);
+    print_r($reqs);
+    break;
+  case '5':
+    $reqs = LoginReq::fetchAllActive();
+    print_r($reqs);
+    break;
+  case '6':
+    print_r(Messaging::getListsAsJson());
+    break;
+  case '7':
+    print_r(Messaging::getMyUnreadCt());
+    break;
+  case '8':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $j = jsonencode($dm);
+    print_r(jsondecode($j));
+    break;
+  case '9':
+    $dm = DataImmun::fetchForFacesheet('1656');
+    $d = $dm[0];
+    print_r($d);
+    $j = jsonencode($d);
+    $j = jsondecode($j);
+    print_r($j);
+    $j->_dateGiven = 'Nov 1970';
+    print_r($j);
+    $d = DataImmun::fromJsonObject($j);
+    print_r($d);
+    break;
+  case '10':
+    $o = jsondecode('{"dataImmunId":1}');
+    $d = new DataImmun($o);
+    break;
+  case '11':
+    $c = Client::fetchWithDemo(1664);
+    $j = jsonencode($c);
+    print_r(jsondecode($j));
+    break;
+  case '12':
+    $r = TrackItems::getOpen(1666);
+    print_r($r);
+    break;
+  case '13':
+    $s = '2010-11-23 16:00:01';
+    $x = formatDateTime($s);
+    print_r($x);
+    print_r('<br>');
+    $s = formatFromDateTime($x);
+    print_r($s);
+    print_r('<br>');
+    $s = formatFromDateTime('2010-11-23');
+    print_r($s);
+    break;
+  case '14':
+    $u = new UserReport();
+    $u->active = 1;
+    $u->userType = 1;
+    $u->subscription = 0;
+    $users = SqlRec::fetchAllBy($u);
+    foreach ($users as $user) {
+      $user->AddressGroup = AddressReport::fetchByTable('G', $user->userGroupId, 0);
+      $user->UsageYTD = UsageDetails::getUsageYTD($user->userId);
+    }
+    print_r($users);
+    break;
+  case '15':
+    $user = SqlRec::fetch($_GET['id'], 'UserReport');
+    $user->AddressGroup = AddressReport::fetchByTable('G', $user->userGroupId, 0);
+    print_r($user);
+    break;
+  case '16':
+    $reqs = UserLoginReqs::getAll();
+    print_r($reqs);
+    break;
+  case '17':
+    $o = '{"clientId":"1687","userGroupId":"1","uid":"234234","lastName":"Foot","firstName":"Big","sex":"F","birth":"09-Nov-1955","dateCreated":"2010-01-30 23:06:42","active":"1","notes":"ewrwer","dateUpdated":"2011-03-02 12:49:07","Address_Home":{"addressId":"4656","tableCode":"C","tableId":"1687","type":"0","addr1":"500 Main","city":"Lexington","state":"KY","zip":"40207","phone1":"502 999-1212","phone1Type":"1","csz":"Lexington, KY 40207"},"Address_Emergency":{"tableCode":"C","tableId":"1687","type":"2","csz":""},"Address_Spouse":{"tableCode":"C","tableId":"1687","type":"3","csz":""},"Address_Father":{"tableCode":"C","tableId":"1687","type":"6","csz":""},"Address_Mother":{"tableCode":"C","tableId":"1687","type":"5","csz":""},"Address_Rx":{"tableCode":"C","tableId":"1687","type":"4","csz":""},"ICards":[{"clientId":"1687","seq":"1"},{"clientId":"1687","seq":"2","planName":"23423"}],"age":55,"ageYears":55,"name":"Foot, Big","icard":{"clientId":"1687","seq":"1"},"icard2":{"clientId":"1687","seq":"2","planName":"23423"},"middleName":""}';
+    $obj = jsondecode($o);
+    $client = new Client($obj);
+    print_r($client);
+    break;
+  case '18':
+    $s = '19950102';
+    print_r(formatDate($s));
+    exit;
+    $recs = Clients::search('Hornsby', 'W');
+    print_r($recs);
+    break;
+  case '20':
+    $meds = Meds::getActive('1674');
+    print_r($meds);
+    break;
+  case '21':
+    $meds = Meds::getHistory('1663');
+    $meds = jsondecode(jsonencode($meds));
+    print_r($meds);
+    break;
+  case '22':
+    $recs = Users_Admin::searchUsersByName('hornsby');
+    echo Users_Admin::asHtmlTable($recs);
+    break;
+  case '23':
+    $recs = Users_Admin::getCreatedCounts();
+    echo Users_Admin::asHtmlTable($recs);
+    break;
+  case '24':
+    $recs = Users_Admin::getUsersByCreateDate('2010-10-15');
+    echo Users_Admin::asHtmlTable($recs);
+    break;
+  case '25':
+    $recs = Users_Admin::getLoginsByUser(1);
+    echo Users_Admin::asHtmlTable($recs);
+    break;
+  case '26':
+    $recs = Users_Admin::getLoginsByIp('192.168.1.1');
+    echo Users_Admin::asHtmlTable($recs);
+    break;
+  case '27':
+    $recs = Diagnoses::getActive('1672');
+    print_r($recs);
+    break;
+  case '28':
+    $cid = 1666;
+    Procedures::migrate($cid);
+    break;
+  case '29':
+    $recs = TemplateOrderEntry::getWithQuestions();
+    print_r($recs);
+    break;
+  case '30':
+    $sql = IProcCodes_Build::buildSqlScript();
+    print_r($sql);
+    break;
+  case '31':
+    $rec = IProcCodes::getByName('AV Repair');
+    print_r($rec);
+    $rec = IProcCodes::getByName('AAA Repair');
+    print_r($rec);
+    break;
+  case '32': 
+    $recs = Providers::getAll();
+    print_r($recs);
+    break;
+  case '33':
+    $recs = Reporting::patientsByIcd('786.');
+    print_r($recs);
+    break;
+  case '34':
+    $recs = Reporting::patientsByAge(2, 15);
+    $recs = Reporting::patientsByAge(0, 1);
+    print_r($recs);
+    break;
+  case '35':
+    $recs = Reporting::patientsByMed('al');
+    print_r($recs);
+    break;
+  case '36':
+    $recs = Reporting::patientsByLocation(null, 'l');
+    print_r($recs);
+    break;
+  case '37':
+    $recs = Reporting::patientsByResults(null, null, 14);
+    print_r($recs);
+    break;
+  case '38':
+    $recs = Scanning::getIndexedToday();
+    print_r($recs);
+    $rec = $recs[0];
+    $j = jsonencode($rec);
+    print_r($j);
+    $o = jsondecode($j);
+    $o->areas = array(7, 8);
+    print_r($o);
+    $index = new ScanIndex($o);
+    print_r($index);
+    break;
+  case '40':
+    $recs = UserGroups::getDocsJsonList();
+    print_r($recs);
+    print_r('<br>');
+    $first = UserGroups::getFirstDoc();
+    print_r($first);
+    break;
+  case '41':
+    $rec = Clients::get('1666');
+    //print_r($rec);
+    $r = jsondecode(jsonencode($rec));
+    print_r($r);
+    break;
+  case '42':
+    $recs = Documentation::getAll(1687);
+    $recs = jsonencode($recs);
+    print_r($recs);
+    break;
+  case '43':
+    $rec = LookupRec::getJsonLists(LookupScheduling::getApptTypes(), LookupScheduling::getStatuses(), LookupScheduling::getProfileFor(1));
+    $rec = jsondecode($rec);
+    print_r($rec);
+    break;
+  case '44':
+    $rec = LookupScheduling::getProfileFor(1);
+    print_r($rec);
+    break;
+  case '45':
+    $rec = QuestionIpc::fetch('23008');
+    print_r($rec);
+    break;
+  case '46':
+    $ids = array(686265, 686278);
+    $qid = 23008;
+    IprocCodes_Admin::copyToQuestion($ids, $qid);
+    $rec = QuestionIpc::fetch('23008');
+    print_r($rec);
+    break;
+  case '47':
+    $pis = JsonDao::getJParInfosByPid(2302);
+    print_r(jsondecode($pis));
+    break;
+  case '48':
+    $date = '2010E';
+    echo date("Y-m-d", strtotime($date));
+    exit;
+  case '49':
+    $recs = DrugClasses_Admin::getAll();
+    print_r($recs);
+    exit;
+  case '50':
+    $recs = Reporting::test1();
+    print_r($recs);
+    exit;
+  case '51':
+    $recs = Reporting::test2();
+    print_r($recs);
+    exit;
+  case '52':
+    $recs = Reporting::test3();
+    print_r($recs);
+    exit;
+  case '53':
+    $recs = Reporting::test4();
+    print_r($recs);
+    exit;
+  case '54':
+    $rec = Reporting::test0();
+    $rec = jsonencode($rec);
+    print_r($rec);
+    exit;
+  case '55':
+    $rec = '{"name":"Patient Report","Rec":{"uid":{"fid":"Patient ID"},"lastName":{"fid":"Last Name"},"firstName":{"fid":"First Name"},"sex":{"fid":"Sex"},"birth":{"fid":"Age"},"deceased":{"fid":"Deceased"},"race":{"fid":"Race"},"ethnicity":{"fid":"Ethnicity"},"language":{"fid":"Language"},"Joins":[{"jt":"1","table":"Allergies","Recs":[{"agent":{"fid":"Agent"},"active":{"fid":"Active"},"Joins":null,"_class":"Allergy_Rep"}]}],"_class":"Client_Rep"},"Joins":null}';
+    $rec = jsondecode($rec);
+    Reporting::generate($rec);
+    exit;
+  case '56':
+    $report = '{"reportId":"20","name":"A Test Report","comment":"This is a test","Rec":{"uid":null,"lastName":null,"firstName":null,"sex":{"op":"30","value":"M","text_":"Male"},"birth":null,"deceased":{"text_":"Yes"},"race":{"text_":"American Native\/Alaskan Native"},"ethnicity":{"text_":"Hispanic Origin"},"language":null,"Joins":[{"jt":"1","table":"5","Recs":[{"ipc":{"op":"30","value":"842651","text_":"AAA Repair"},"date":null,"cat":null,"providerId":null,"addrFacility":null,"location":null,"Joins":null,"table_":"5","pid_":null}]}],"table_":"0","pid_":null},"Joins":null,"_tableName":"Patients"}';
+    $recs = Reporting::generate(jsondecode($report));
+    print_r($recs);
+    exit;
+  case '60':
+    $recs = PortalUsers::getAll();
+    print_r($recs);
+    exit;
+  case '61':
+    $rec = '{"clientId":"1666","uid":"bb","pw":"bb","cq1":"What is your name?","ca1":"bb","cq2":"What is your quest?","ca2":"holy grail","cq3":"What is your favorite color?","ca3":"blue"}';
+    $rec = PortalUsers::create(jsondecode($rec));
+    print_r($rec);
+    exit;
+  case '70':
+    $rec = IProcCodes::getEmptyCriteria();
+    p_r($rec);
+    p_r(jsonencode($rec));
+    exit;
+  case '71':
+    $rc = IpcHm::getStaticJson();
+    p_r($rc);
+    exit;
+  case '72':
+    $o = '{"fred":"FRED","test":false}';
+    $o = jsondecode($o);
+    p_r($o);
+    $fid = 'test';
+    p_r(isset($o->$fid));
+    exit;
+  case '73':
+    $rc = IpcHm::fetch(1, 710127);
+    print_r($rc);
+    $crit = RepCritRec::revive(jsondecode($rc->criteria));
+    print_r($crit);
+    $recs = $crit->fetchAll(1);
+    print_r($recs);
+    exit;
+  case '74':
+    $rc = IpcHm::fetch(1, 710127);
+    print_r($rc);
+    $crit = $rc->getRepCrit(false, 1272);  // pooh bear
+    print_r($crit);
+    $recs = $crit->fetchAll(1);
+    print_r($recs);
+    exit;
+  case '75':
+    $rc = IpcHm::fetch(1, 710127);
+    print_r($rc);
+    $applicable = $rc->isApplicable(1, 1706);  // buddy holly
+    p_r('applicable=' . $applicable);
+}
+function is_date( $str ) 
+{ 
+  $stamp = strtotime( $str ); 
+  
+  if (!is_numeric($stamp)) 
+  { 
+     return FALSE; 
+  } 
+  $month = date( 'm', $stamp ); 
+  $day   = date( 'd', $stamp ); 
+  $year  = date( 'Y', $stamp ); 
+  
+  if (checkdate($month, $day, $year)) 
+  { 
+     return TRUE; 
+  } 
+  
+  return FALSE; 
+} 
+?>
+  </body>
+<script>
+var pis = <?=$pis?>;
+pis = ParInfos.create(pis);
+var q = pis[1].questions[1];
+alert(Json.encode(q.opts.unsel));
+q.opts.select([7],[12]);
+alert(Json.encode(q.opts.unsel));
+//var q = pis[3].questions[3];
+//var other = q.opts[q.opts.soix];
+//var o = q.opts[0];
+//other.setText('fred');
+
+</script>
+</html>

@@ -1,0 +1,28 @@
+<?php
+require_once 'php/data/xml/ccd/ClinicalDocument.php';
+require_once 'php/data/rec/sql/Facesheets.php';
+//
+/**
+ * HL7 CCD Accessor
+ * @author Warren Hornsby
+ */
+class HL7_ClinicalDocuments {
+  //
+  /**
+   * @param int $cid
+   * @return ClinicalDocument
+   */
+  static function build($cid) {
+    $fs = Facesheet_Hl7Ccd::from($cid);
+    $doc = new ClinicalDocument($fs->Client, $fs->UserGroup, $fs->ErxUser);
+    $doc->setHeader('db734647-fc99-424c-a864-7e3cda82e703', 'Continuity of Care Document', null, null);
+    $doc->setMedsSection($fs->Meds);
+    $doc->setAlertsSection($fs->Allergies);
+    $doc->setVitalsSection($fs->Vitals);
+    $doc->setImmunsSection($fs->Immuns);
+    $doc->setProblemsSection($fs->Diagnoses);
+    $doc->setProcsSection($fs->Procs);
+    $doc->setEncountersSection($fs->Sessions, $fs->UserGroup);
+    return $doc;
+  }  
+}

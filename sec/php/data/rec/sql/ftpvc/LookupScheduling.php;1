@@ -1,0 +1,109 @@
+<?php
+require_once 'php/data/rec/sql/_LookupRec.php';
+//
+/**
+ * Lookup Scheduling
+ * @author Warren Hornsby 
+ */
+class LookupScheduling {
+  //
+  /**
+   * @return array(id=>ApptType,..)
+   */
+  static function getApptTypes() {
+    return ApptType::fetchAll();
+  }
+  /**
+   * @param ApptType[] $types
+   * @param int $id
+   * @return string 
+   */
+  static function getApptTypeName($types, $id) {
+    return ApptType::getName($types, $id);
+  }
+  /**
+   * @return array(id=>SchedStatus,..)
+   */
+  static function getStatuses() {
+    return SchedStatus::fetchAll();
+  }
+  /**
+   * @param SchedStatus[] $statuses
+   * @param int $id
+   * @return string 
+   */
+  static function getStatusName($statuses, $id) {
+    return SchedStatus::getName($statuses, $id);
+  }
+  /**
+   * @param int $userId
+   * @return SchedProfile
+   */
+  static function getProfileFor($userId) {
+    return SchedProfile::fetch($userId);
+  }
+}
+class ApptType extends LookupRec {
+  //
+  public $name;
+  public $bcolor;
+  public $min;
+  //
+  public function getLookupTable() {
+    return 1;
+  }
+  public function getLookupName() {
+    return 'APPT_TYPE';
+  }
+  //
+  static function fetchAll() {
+    return parent::fetchAll(__CLASS__);
+  }
+  static function getName($recs, $id) {
+    $rec = geta($recs, $id);
+    if ($rec)
+      return $rec->name;
+  }
+}
+class SchedStatus extends LookupRec {
+  //
+  public $name;
+  public $bcolor;  
+  public $active;
+  //
+  public function getLookupTable() {
+    return 12;
+  }
+  public function getLookupName() {
+    return 'SCHED_STATUS';
+  }
+  //
+  static function fetchAll() {
+    return parent::fetchAll(__CLASS__);
+  }
+  static function getName($recs, $id) {
+    $rec = geta($recs, $id);
+    if ($rec)
+      return $rec->name;
+  }
+}
+class SchedProfile extends LookupRec {
+  //
+  public $slotSize;
+  public $slotStart;
+  public $slotEnd;
+  public $dowStart;
+  public $weekLength;
+  //
+  public function getLookupTable() {
+    return 3;
+  }
+  public function getLookupName() {
+    return 'SCHED_PROFILE';
+  }
+  //
+  static function fetch($userId) {
+    return parent::fetch(__CLASS__, null, $userId);
+  }
+}
+?>

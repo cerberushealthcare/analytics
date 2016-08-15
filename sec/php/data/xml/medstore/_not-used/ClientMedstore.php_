@@ -1,0 +1,76 @@
+<?php
+require_once 'php/data/rec/sql/Clients.php';
+//
+class ClientMedstore extends Client {
+  //
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $cdata5;
+  public $cdata6;
+  public $cdata7;
+  public $middleName;
+  public $notes;
+  public $dateUpdated;
+  public /*Address*/ $Address_Home;
+  public /*Address*/ $Address_Emergency;
+  public /*Address*/ $Address_Spouse;
+  public /*Address*/ $Address_Father;
+  public /*Address*/ $Address_Mother;
+  public /*Address*/ $Address_Rx;
+  public /*Address*/ $Address_Birth;
+  public /*[ICard]*/ $ICards;
+  public $age;  // '1y 2m';
+  public $ageYears;
+  //
+  public function formatBirthplace() {
+    if ($Address_Birth) {
+      $a = nonNulls($Address_Birth->city, $Address_Birth->state);
+      return implode(', ', $a);
+    }
+  }
+  public function formatBirth() {
+    if ($this->birth)
+      return date("Y-m-d", strtotime($this->birth));
+  }
+  /**
+   * @param int $cid
+   * @return Client
+   */
+  static function fetch($cid) {
+    return parent::fetch($cid, 'ClientMedStore');
+  }
+  /**
+   * @param int $cid
+   * @return Client(+Addresses,Icards)
+   */
+  static function fetchWithDemo($cid) {
+    $rec = self::fetch($cid);
+    if ($rec) {
+      $rec->Address_Home = Address::fetchByClient($cid, Address::TYPE_SHIP); 
+      $rec->Address_Emergency = Address::fetchByClient($cid, Address::TYPE_EMER); 
+      $rec->Address_Spouse = Address::fetchByClient($cid, Address::TYPE_SPOUSE); 
+      $rec->Address_Father = Address::fetchByClient($cid, Address::TYPE_FATHER);
+      $rec->Address_Mother = Address::fetchByClient($cid, Address::TYPE_MOTHER);
+      $rec->Address_Rx = Address::fetchByClient($cid, Address::TYPE_RX);
+      $rec->Address_Birth = Address::fetchByClient($cid, Address::TYPE_BIRTH);
+      $rec->ICards = ICard::fetchAllByClient($cid);
+      $cage = chronAge($rec->birth);
+      $rec->age = self::formatAge($cage);
+      $rec->ageYears = $cage['y']; 
+    }
+    return $rec;
+  }
+}
+?>

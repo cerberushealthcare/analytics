@@ -1,0 +1,185 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/MsgPost.php';
+require_once 'php/data/rec/sql/Client.php';
+/**
+ * Message Thread 
+ */
+class MsgThread extends SqlRec {
+  //
+  public $threadId;
+  public $userGroupId;
+  public $clientId;
+  public $creatorId;
+  public $creator;
+  public $dateCreated;
+  public $dateToSend;
+  public $dateClosed;
+  public $type;
+  public $status;
+  public $priority;
+  public $subject;
+  public /*Client*/ $Client;
+  public /*MsgInbox*/ $MsgInbox;
+  public /*[MsgPost]*/ $MsgPosts;
+  public $_closed;
+  public $_unreadCt;
+  //
+  const TYPE_GENERAL = 0;
+  //
+  const STATUS_OPEN = 1;
+  const STATUS_CLOSED = 2;
+  //
+  const PRIORITY_NORMAL = 0;
+  const PRIORITY_STAT = 9;
+  public static $PRIORITIES = array(
+    MsgThread::PRIORITY_NORMAL => 'Normal',
+    MsgThread::PRIORITY_STAT => 'STAT');
+  //
+  public function getSqlTable() {
+    return 'msg_threads';
+  }
+  public function toJsonObject() {
+    $o = parent::toJsonObject();
+    Rec::addDateTimeProps($o, array('dateCreated'));
+    $o->_closed = ($this->isClosed());
+    return $o;
+  }
+  public function isClosed() {
+    return $this->status == MsgThread::STATUS_CLOSED;
+  }
+  public function getLastPost() {
+    $post = null;
+    if ($this->MsgPosts) 
+      $post = $this->MsgPosts[0]; 
+    return $post;
+  }
+  //
+  /**
+   * @param int $mtid
+   * @return MsgThread // +Client
+   */
+  public static function fetch($mtid) {
+    $rec = new MsgThread($mtid);
+    $rec->Client = new Client();
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * Fetch thread for reading and update MsgInbox
+   * @param int $mtid
+   * @return MsgThread  // +Client,MsgInbox,MsgPosts
+   * @throws SecurityException
+   */
+  public static function fetchForReading($mtid) {
+    $thread = MsgThread::fetch($mtid);
+    if ($thread) {
+      $thread->MsgInbox = MsgInbox::fetchMineFor(MsgInbox::ACCESS_READ, $thread);
+      $thread->MsgPosts = MsgPost::fetchByThread($mtid);
+      $thread->_unreadCt = MsgInbox::fetchMyInboxCt();
+    }
+    return $thread;
+  }
+  /**
+   * @param int $cid
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllByClient($cid) {
+    $rec = new MsgThread();
+    $rec->clientId = $cid;
+    return SqlRec::fetchAllBy($rec, new RecSort(array('dateCreated' => RecSort::DESC)));
+  }
+  /**
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllFromInbox() {
+    return MsgThread::_fetchAllFromInbox(CriteriaValue::lessThan(MsgInbox::IS_SENT));
+  }
+  /**
+   * @return array(MsgThread,..)
+   */
+  public static function fetchAllFromSent() {
+    return MsgThread::_fetchAllFromInbox(MsgInbox::IS_SENT);
+  }
+  /**
+   * Create new thread
+   * @param stdClass $json from serialized JSON
+   * @return MsgThread 
+   */
+  public static function newThread($json) {
+    global $myLogin;
+    $thread = new MsgThread();
+    $thread->userGroupId = $myLogin->userGroupId;
+    $thread->clientId = $json->cid;
+    $thread->creatorId = $myLogin->userId;
+    $thread->creator = $myLogin->name;
+    $thread->type = MsgThread::TYPE_GENERAL;
+    $thread->status = MsgThread::STATUS_OPEN;
+    $thread->priority = $json->priority;
+    $thread->subject = $json->subject;
+    $thread->save();
+    return MsgThread::_addPost(MsgPost::ACTION_CREATE, $thread->threadId, $json->to, $json->html, $json->data);
+  }
+  /**
+   * Add post as reply 
+   * @param stdClass $json from serialized JSON
+   * @return MsgThread 
+   */
+  public static function addPostReply($json) {
+    return MsgThread::_addPost(MsgPost::ACTION_REPLY, $json->id, $json->to, $json->html, $json->data);
+  }
+  /**
+   * Add post and complete thread 
+   * @param stdClass $json from serialized JSON
+   * @return MsgThread 
+   */
+  public static function addPostComplete($json) {
+    $thread = MsgThread::_addPost(MsgPost::ACTION_CLOSE, $json->id, null, $json->html, $json->data);
+    $thread->status = MsgThread::STATUS_CLOSED;
+    $thread->dateClosed = nowNoQuotes();
+    $thread->save();
+    return $thread;
+  }
+  //
+  private static function _addPost($action, $mtid, $sendTos, $body, $data) {
+    $thread = MsgThread::fetch($mtid);
+    if ($thread) {
+      $thread->MsgInbox = MsgInbox::fetchMineFor(MsgInbox::ACCESS_POST, $thread);
+      $post = MsgPost::fromUi($action, $mtid, $sendTos, $body, $data);
+      $post->save();
+      switch ($action) {
+        case MsgPost::ACTION_CREATE:
+          MsgInbox::saveForThreadCreator($post);
+          MsgInbox::saveAsUnreadFor($sendTos, $post);
+          break;
+        case MsgPost::ACTION_REPLY:
+          $thread->MsgInbox->saveAsSent($post);
+          MsgInbox::saveAsUnreadFor($sendTos, $post);
+          break;
+        case MsgPost::ACTION_CLOSE:
+          $thread->MsgInbox->saveAsClose($post);
+          break;
+      }
+      $thread = MsgThread::fetchForReading($mtid);
+    }
+    return $thread;
+  }
+  private static function _fetchAllFromInbox($isRead) {
+    global $myLogin;
+    $inboxes = MsgInbox::fetchMineByIsRead($isRead);
+    $threads = array();
+    foreach ($inboxes as &$inbox) {
+      $thread = MsgThread::fetch($inbox->threadId);
+      $thread->MsgInbox = $inbox;
+      if (! $thread->isClosed() || $thread->MsgInbox->isRead == MsgInbox::IS_UNREAD) 
+        $threads[] = $thread;
+    }
+//    print_r($inboxes);
+//    exit;
+    Rec::sort($threads, new RecSort(array(
+      'MsgInbox->isRead' => RecSort::ASC,
+      'priority' => RecSort::DESC,
+      'MsgInbox->postId' => RecSort::DESC)));
+    return $threads;
+  }
+}
+?>

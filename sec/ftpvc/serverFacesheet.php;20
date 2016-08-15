@@ -1,0 +1,411 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/dao/AuditDao.php';
+require_once 'php/dao/FacesheetDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'img/charts/ChartIndex.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Documentation.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  if ($action != 'pollCuTimestamp')
+    Logger::debug(currentUrl());
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  Logger::debug(currentUrl());
+  Logger::debug_r($_POST, '$_POST');
+}
+try {
+  switch ($action) {
+    /*
+     * Get facesheet
+     */
+    case 'get':
+      $cid = $_GET['id'];
+      $facesheet = FacesheetDao::getFacesheet($cid);
+      Auditing::logReviewFacesheet($facesheet->client);  
+      $m = new JAjaxMsg($action, $facesheet->out());
+      break;
+    /*
+     * Get facesheet if updated
+     */
+    case 'getIfUpdated':
+      $cid = $_GET['id'];
+      $cuLastTimestamp = $_GET['cu'];
+      $cuTimestamp = AuditDao::getClientUpdateTimestamp($cid);
+      if ($cuTimestamp != $cuLastTimestamp) {
+        $facesheet = FacesheetDao::getFacesheet($cid, false);  
+        $m = new JAjaxMsg($action, $facesheet->out());
+      } else {
+        $m = new JAjaxMsg($action, null);
+      }
+      break;
+    /*
+     * Get last client update timestamp
+     */
+    case 'pollCuTimestamp':
+      $cid = $_GET['id']; 
+      $timestamp = AuditDao::getClientUpdateTimestamp($cid);
+      $m = new JAjaxMsg($action, jsonencode($timestamp));
+      break;
+    /*
+     * List of available charts
+     */
+    case 'getCharts': 
+      $charts = ChartIndex::getChartsJson($_GET['sex'], $_GET['age']);
+      $m = new JAjaxMsg($action, $charts);
+      break;
+    /*
+     * Patient 
+     */
+    case 'savePatient':
+      $client = Clients::save($obj);
+      $m = new JAjaxMsg($action, jsonencode($client));
+      break;
+    case 'savePatientAddress':
+      $client = Clients::updateAddress($obj->address, $obj->id);
+      $m = new JAjaxMsg($action, jsonencode($client));
+      break;
+    case 'savePatientICard':
+      $client = Clients::updateICard($obj->icard, $obj->id);
+      $m = new JAjaxMsg($action, jsonencode($client));
+      break;
+    case 'savePatientNotes':  
+      $facesheet = FacesheetDao::saveClientNotes($obj->cid, $obj->text);
+      $m = new JAjaxMsg($action, $facesheet->out());
+      break;
+    case 'breakGlass':
+      Clients::breakGlass($_GET['id']);
+      $m = new JAjaxMsg($action, null);
+      break;
+    case 'removeImg':
+      $client = Clients::removeImage($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($client));
+      break;
+    /*
+     * Medications
+     */
+    case 'getMedHist':
+      $facesheet = FacesheetDao::getMedClientHistory($_GET['id']);
+      $m = new JAjaxMsg($action, $facesheet->out());
+      break;
+    case 'deactivateMeds':
+      $facesheet = FacesheetDao::deactivateMeds($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'saveMed':  
+      $facesheet = FacesheetDao::saveMed($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deleteLegacyMeds': 
+      $facesheet = FacesheetDao::deleteLegacyMeds($_GET['id']);
+      $m = new JAjaxMsg($action, $facesheet->out());
+      break;
+    case 'printRxMeds': 
+      $facesheet = FacesheetDao::printRxForMeds($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'setMedsNone':
+      $facesheet = FacesheetDao::setMedsNone($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'saveReviewed':
+      $facesheet = FacesheetDao::saveReviewed($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    /*
+     * Allergies
+     */
+    case 'getAllergyQuestion':
+      $q = FacesheetDao::getAllergyQuestion();
+      $m = new JAjaxMsg('getAllergyQuestion', $q->out());
+      break;
+    case 'saveAllergy':  
+      $facesheet = FacesheetDao::saveAllergy($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deactivateAllergy': 
+      $facesheet = FacesheetDao::deactivateAllergy($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deactivateAllergies':
+      $facesheet = FacesheetDao::deactivateAllergies($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deleteLegacyAllergies': 
+      $facesheet = FacesheetDao::deleteLegacyAllergies($_GET['id']);
+      $m = new JAjaxMsg($action, $facesheet->out());
+      break;
+    /*
+     * Vitals
+     */
+    case 'getVitalQuestions':
+      $vqs = FacesheetDao::getVitalQuestions();
+      $m = new JAjaxMsg('getVitalQuestions', aarr($vqs));
+      break;
+    case 'saveVital':  
+      $facesheet = FacesheetDao::saveVital($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deactivateVital': 
+      $facesheet = FacesheetDao::deactivateVital($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    /*
+     * Immuns
+     */
+    case 'saveImmun': 
+      $facesheet = FacesheetDao::saveImmun($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deleteImmun': 
+      $facesheet = FacesheetDao::deleteImmun($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    /*
+     * Diagnoses
+     */
+    case 'saveDiagnosis':  
+      $facesheet = FacesheetDao::saveDiagnosis($obj);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'deleteDiagnosis':
+      $facesheet = FacesheetDao::deleteDiagnosis($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    case 'setDiagnosisNone':
+      $facesheet = FacesheetDao::setDiagnosisNone($_GET['id']);
+      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+      break;
+    /*
+     * Documentation
+     */
+    case 'getDocStubs':
+      $stubs = Documentation::getAll($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($stubs));
+      break;
+    case 'preview':
+      $rec = Documentation::preview($obj);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+  //$m = JAjaxMsg::constructError($e);
+}
+if ($m != null) 
+  echo $m->out();
+
+//  case 'getSochxQuestions':
+//    $qs = FacesheetDao::getSochxQuestions();
+//    $m = new JAjaxMsg('getSochxQuestions', aarr($qs));
+//    break;
+//  
+//  case 'getHxQuestions':
+//    $qs = FacesheetDao::getHxQuestions($_GET['cat']);
+//    $m = new JAjaxMsg('getHxQuestions', aarr($qs));
+//    break;    
+//    
+//  case 'getFamhxQuestions':
+//    $qs = FacesheetDao::getFamhxQuestions();
+//    $out = cb(
+//        qqo('+male', aarr($qs['+male']) . C .
+//        qqo('+female', aarr($qs['+female'])))); 
+//    $m = new JAjaxMsg('getFamhxQuestions', $out);
+//    break;    
+//  
+//  case 'removeFamhx':
+//    $cid = $_GET['cid'];
+//    $puid = $_GET['puid'];
+//    $facesheet = FacesheetDao::removeFamhx($cid, $puid);  
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'getQuestionByQuid':
+//    $q = SessionDao::getQuestion($_GET['id']);
+//    $m = new JAjaxMsg('getQuestionByQuid', $q->out());
+//    break;
+//    
+//  case 'getQuestionsForHproc':
+//    $id = $_POST['id'];
+//    $quids = jsondecode($obj);
+//    $qs = SessionDao::getQuestions($quids);
+//    $o = cb(qqo('pcid', $id) . C . qqo('qs', aarr($qs)));
+//    $m = new JAjaxMsg('getQuestionsForHproc', $o);
+//    break;
+//    
+//  case 'saveSochx': 
+//    $sochx = jsondecode($obj);
+//    $cid = $_POST['cid'];
+//    $facesheet = FacesheetDao::saveSochx($cid, $sochx);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveSocialHx': 
+//    $o = jsondecode($obj);
+//    $cid = $o->cid;
+//    $sochx = $o->rec;
+//    $facesheet = FacesheetDao::saveSochx($cid, $sochx);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveHx': 
+//    $rec = jsondecode($obj);
+//    $cat = $_POST['cat'];
+//    $cid = $_POST['cid'];
+//    $facesheet = FacesheetDao::saveHx($cid, $cat, $rec);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'saveMedSurgHx':
+//    $o = jsondecode($obj);
+//    $facesheet = FacesheetDao::saveHx($o->cid, $o->cat, $o->rec);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveFamhx': 
+//    $rec = jsondecode($obj);
+//    $cid = $_POST['cid'];
+//    $facesheet = FacesheetDao::saveFamhx($cid, $rec);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveFamilyHx':
+//    $o = jsondecode($obj);
+//    $rec = $o->rec;
+//    $cid = $o->cid;
+//    $facesheet = FacesheetDao::saveFamhx($cid, $rec);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'saveHxProcs': 
+//    $value = $_POST['obj'];  // don't jsondecode
+//    $cat = $_POST['cat'];
+//    $cid = $_POST['cid'];
+//    $facesheet = FacesheetDao::saveHxProcs($cid, $cat, $value); 
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'saveMedSurgHxProcs':
+//    $o = jsondecode($obj);
+//    $cat = $o->cat;
+//    $cid = $o->cid;
+//    $value = jsonencode($o->rec); 
+//    $facesheet = FacesheetDao::saveHxProcs($cid, $cat, $value); 
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'saveFamHxSopts':
+//    $value = $_POST['obj'];  // don't jsondecode
+//    $suid = $_POST['suid'];
+//    $cid = $_POST['cid'];
+//    $facesheet = FacesheetDao::saveFamHxSopts($cid, $suid, $value); 
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveSuidQuestion':
+//    $o = jsondecode($obj);
+//    $suid = $o->suid;
+//    $cid = $o->cid;
+//    $value = jsonencode($o->rec);
+//    $facesheet = FacesheetDao::saveFamHxSopts($cid, $suid, $value); 
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'getProcQuestion':
+//    $q = FacesheetDao::getProcQuestion($_GET['cat']);
+//    $m = new JAjaxMsg('getProcQuestion', $q->out());
+//    break;
+//    
+//  case 'getSuidQuestion':
+//    $q = FacesheetDao::getSuidQuestion($_GET['suid']);
+//    $m = new JAjaxMsg('getSuidQuestion', $q->out());
+//    break;
+//
+//  case 'saveImmun': 
+//    $immun = jsondecode($obj);
+//    $facesheet = FacesheetDao::saveImmun($immun);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'getTracking': 
+//    $facesheet = FacesheetDao::getTrackingFacesheet($_GET['id']);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//
+//  case 'saveHist':  
+//    $hist = jsondecode($obj);
+//    try {
+//      $facesheet = FacesheetDao::saveHist($hist);
+//      $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    } catch (JDataException $e) {
+//      $m = new JAjaxMsg('dataException', $e->out());
+//    }
+//    break;
+//
+//  case 'saveDataHistProcs':
+//    LookupDao::saveOurDataHistProcs($_POST['hcat'], $obj);
+//    $facesheet = FacesheetDao::getFacesheetHist($_POST['cid'], true);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'saveHm':  
+//    $hm = jsondecode($obj);
+//    $facesheet = FacesheetDao::saveHm($hm);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'saveHmInt':  
+//    $hm = jsondecode($obj);
+//    $facesheet = FacesheetDao::saveHmInt($hm);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'addFacesheetHm':
+//    $hm = jsondecode($obj);
+//    $facesheet = FacesheetDao::addFacesheetHm($hm);
+//    $m = new JAjaxMsg('addFacesheetHm', $facesheet->out());
+//    break;
+//
+//  case 'saveDataHmProcs':
+//    LookupDao::saveOurDataHmProcs($obj);
+//    $facesheet = FacesheetDao::getFacesheetHm($_POST['cid']);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//  
+//  case 'customizeHmProcs':
+//    $o = jsondecode($obj);
+//    $cid = $o->cid;
+//    $rec = $o->rec;
+//    LookupDao::saveOurDataHmProcs(jsonencode($rec));
+//    $facesheet = FacesheetDao::getFacesheetHm($cid);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//  
+//  case 'deactivateHist': 
+//    $facesheet = FacesheetDao::deactivateHist($_GET['id']);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//    
+//  case 'deactivateHm': 
+//    $facesheet = FacesheetDao::deactivateHm($_GET['id']);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break;
+//
+//  case 'deactivateHms':
+//    $a = jsondecode($obj); 
+//    $facesheet = FacesheetDao::deactivateHms($a);
+//    $m = new JAjaxMsg('refreshFacesheet', $facesheet->out());
+//    break; 
+?>

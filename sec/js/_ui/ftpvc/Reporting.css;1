@@ -1,0 +1,11 @@
+DIV.CritRecEntry TABLE TD {
+  padding:1px 3px;
+}
+DIV.CritRecEntry TD.Op {
+  height:24px;
+}
+SPAN.FidLabel {
+  display:inline-block;
+  width:100px;
+  text-align:right;
+}

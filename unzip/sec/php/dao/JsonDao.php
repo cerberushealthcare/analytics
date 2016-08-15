@@ -1,0 +1,1055 @@
+<?php
+p_i('JsonDao');
+/*
+ * JsonDao
+ * JSON data builder for template requests 
+ */
+class JsonDao {
+  //
+  const PID_ARGS_NEEDED = 'null,null';  // placeholder for pidi/csuf args to attach to all par-related tests/actions (this is done by engine for managing clone instance references)     
+  /**
+   * Build JParInfos for user-requested pids 
+   * Pars will include any IN DATA actions for client
+   * @param int $templateId
+   * @param string $noteDate 'yyyy-mm-dd'; defaulted to current date 
+   * @param int $clientId
+   * @param array $pids [pid,..]
+   * @return '[JParInfo,..]' JSON string
+   */
+  public static function getJParInfos($templateId, $noteDate, $clientId, $pids) {
+    JsonDao::defaultNoteDate($noteDate);
+    $ppis = JsonDao::ppis($pids);
+    $out = JsonDao::buildJParInfos($templateId, $noteDate, $clientId, $ppis);
+    //logit_r($out, 'buildjparinfos');
+    return $out;
+  }
+  /**
+   * Build JParInfos for injection pool 
+   * Pars will include any IN DATA actions for client
+   * @param int $templateId
+   * @param string $noteDate 'yyyy-mm-dd'; defaulted to current date
+   * @param int $clientId
+   * @param array $pool [[pref,injectorPidi],..]
+   * @return '[[JParInfo,..],[JParInfo,..]]' JSON string
+   */
+  public static function getJParInfosByInjects($templateId, $noteDate, $clientId, $pool) {
+    JsonDao::defaultNoteDate($noteDate);
+    $jsons = array();
+    foreach ($pool as $p) {
+      $injectPref = $p[0];
+      $injectorPidi = $p[1];
+      $pid = JsonDao::toPid($injectPref, $templateId, $noteDate);
+      if (! JsonDao::isCloneable($injectPref)) {
+        $injectorPidi = null;  // no need to supply injector if requested injection not cloneable
+      }
+      $ppis = array(JsonDao::ppi($pid, null, $injectorPidi));
+      $jsons[] = JsonDao::buildJParInfos($templateId, $noteDate, $clientId, $ppis);
+    }
+    return simpleArray($jsons);
+  }
+  /**
+   * Build JParInfos
+   * @param int $templateId
+   * @param string $noteDate 'yyyy-mm-dd'
+   * @param int $clientId
+   * @param array $ppis [['pid'=>#,'cix'=>#,'inj'=>$],..]
+   * @return '[JParInfo,..]' JSON string
+   */
+  private static function buildJParInfos($templateId, $noteDate, $clientId, $ppis) {
+    $conn = batchOpen();
+    $jsons = array();        // ['pidi'=>json,..]
+    $toCache = array();      // ['pid'=>json]
+    $icdDefCache = array();  // ['text'=>['icd'=>$,'desc'=>$],..]
+    for ($p = 0; $p < count($ppis); $p++) {
+      $ppi = $ppis[$p];
+      $ppd = JsonDao::getParsedParData($templateId, $noteDate, $clientId, $ppi['pid'], $ppi['inj'], $ppi['cix'], $icdDefCache);
+      if ($ppd['toCache']) {
+        $toCache[$ppd['pid']] = $ppd['toCache'];
+      }
+      $jsons[$ppd['pidi']] = $ppd['json'];
+      foreach ($ppd['injections'] as &$ppiAuto) {  // iterate thru auto-injects
+        if ($ppiAuto['inj'] == null && isset($jsons[$ppiAuto['pid']])) {
+          // static auto-inject already processed, ignore
+        } else {
+          $ppis[] = $ppiAuto;
+        }
+      }
+    }
+    foreach ($toCache as $pid => $json) {
+      JsonDao::insertParJson($pid, $json);
+    }
+    batchClose($conn);
+    return simpleArray(array_values($jsons));
+  }
+  /**
+   * Build requested paragraph JSON
+   * @param int $cid: client ID, for appending any IN DATA actions
+   * @param int $cloneix: requested instance # (supply only if this par is cloneable)  
+   * @param string $injectorPidi: direct injector (supply only if this par is cloneable) 
+   * @param(opt) array $icdDefCache: cache for ICD default lookup, just pass an empty array to use
+   * @return array(
+   *   'pid'=>#,
+   *   'pidi'=>$,    // pid + cloneSuffix (cloneSuffix = cloneIx + injectorPidi) 
+   *   'toCache'=>$  // if returned, caller needs to do an insertParJson
+   *   'json'=>$,    // cached json + dynamic args (see note below)
+   *   'injections'=>array(
+   *      array('pid'=>#,'inj'=$),..)  // pars ref'd in conditionless injects; inj returned only for cloneable injection
+   *    )
+   * Dynamic args appended to 'json':
+   *   'inActions':['inaction',..],
+   *   'csuf':cloneSuffix    // if cloneable, the instance portion of pidi
+   *                         // User requested:  +instanceCount       e.g. +1, +2, ...
+   *                         // Injected:        @injectionPidiChain  e.g. @2136@2135+1 
+   */
+  public static function getParsedParData($tid, $noteDate, $cid, $parId, $injectorPidi = null, $cloneix = null, &$icdDefCache = array()) {
+    logit('getParsedParData ' . $parId . 'injectorPidi=' . $injectorPidi);
+    $csuf = '';
+    if ($cloneix) {
+      $csuf .= '+' . $cloneix;
+    }
+    $injectorPref = null;
+    if ($injectorPidi) {
+      $csuf .= '@' . $injectorPidi;
+      $injectorPref = JsonDao::getPref($injectorPidi);
+    }
+    $pidi = $parId . $csuf;
+    $toCache = null;
+    $json = TemplateReaderDao::fetchParJson($parId);
+    if ($json == null) {
+      $par = JsonDao::buildJParInfo($tid, $parId, $noteDate, $icdDefCache, $icd10Cache);
+      $json = $par->out();
+      if ($par->cacheable) 
+        $toCache = $json;      
+    } 
+    // autoInj is cached as array of puids in TEMPLATE_PARJSON
+    // Convert these to pids 
+    $injections = array();
+    $a = explode("\"autoInj\":[", $json);
+    if (count($a) > 1) {
+      $a = explode("]", $a[1]);
+      $a = explode('"', $a[0]);
+      for ($i = 1; $i < count($a) - 1; $i = $i + 2) {
+        $puid = $a[$i];
+        $pid = JsonDao::toPid($puid, $tid, $noteDate);
+        $injector = (JsonDao::isCloneable($puid)) ? $pidi : null;
+        $injections[] = JsonDao::ppi($pid, null, $injector);
+      }
+    }
+//    if ($injectorPidi) {
+//      $json = substr($json, 0, -1) . "," . qq("injector", $injectorPidi) . "}";
+//    }
+    // Attach injector/cloneix/inActions to JSON
+    if ($csuf != "") {
+      $json = substr($json, 0, -1) . "," . qq("csuf", $csuf) . "}";
+    }
+    logit_r('getting inactions for ' . $cid);
+    if ($cid) {
+      $inActions = DataDao::actionsAsString(DataDao::inActionsForGetPar($parId, $injectorPref, $cid));
+      logit_r($inActions, "inActions for parsedParData $parId");
+      if ($inActions) {
+        $json = substr($json, 0, -1) . "," . qq("inActions", $inActions) . "}";
+      }
+    }
+    $r = array(
+        "pid" => $parId,
+        "pidi" => $pidi,
+        "json" => $json,
+        "injections" => $injections,
+        "toCache" => $toCache);
+    logit_r($r, "getParsedParData return");
+    return $r;
+  }
+  /**
+   * Build JParInfo for requested pid
+   * If IMPR par, ICD defaults will be assigned to options (if available)   
+   * @param int $tid
+   * @param int $pid
+   * @param string $noteDate 'yyyy-mm-dd'
+   * @param(opt) array $icdDefCache: cache for ICD default lookup, just pass an empty array to use
+   * @return JParInfo
+   */
+  public static function buildJParInfo($tid, $pid, $noteDate, &$icdDefCache = array(), &$icd10Cache = array()) {
+    logit("buildJParInfo($tid,$pid,$noteDate)");
+    $rowPar = fetch("SELECT p.uid, p.desc, p.section_id, p.sort_order, s.uid AS suid, p.no_break, p.in_data_table FROM template_pars p, template_sections s WHERE p.par_id=" . $pid . " AND s.section_id = p.section_id");
+    //logit_r($rowPar);
+    $jQuestionTemplates = array();
+    $jQuestions = array();
+    $autoInjects = array();
+    $questions = TemplateReaderDao::getQuestions($pid);
+    $suid = $rowPar['suid'];
+    $pref = $suid . "." . $rowPar["uid"];
+    if ($suid == 'impr' && count($questions) == 1) {
+      //logit_r($questions, 'defaulting icds');
+      $defaultIcds = true;
+      if (count($icdDefCache) == 0) 
+        $icdDefCache = JsonDao::getIcdDefaults();
+      if (count($icd10Cache) == 0) { 
+        $icd10Cache = JsonDao::getIcd10Defaults();
+        //logit_r($icd10Cache, 'here is the cache');
+      }
+    } else {
+      //logit_r($questions, 'not defaulting icds');
+      $defaultIcds = false;
+    }
+    foreach ($questions as &$q) {
+      $qref = $pref . "." . $q->uid;
+      $test = "";
+      $actions = "";
+      try {
+        $test = JsonDao::parseTest($q->test, $tid, $noteDate, false);
+        $pad = JsonDao::parseActions($qref, $q->actions, $tid, $noteDate, ($q->test != null), $pid);
+        if ($pad->autoInjects != null) {
+          $autoInjects = array_merge($autoInjects, $pad->autoInjects);
+        }
+      } catch (ParseException $e) {} // Nothing I can do about these now
+      if ($defaultIcds) {
+        $question = JsonDao::buildJQuestion($q, $suid, $icdDefCache, $icd10Cache);
+      } else {
+        $question = JsonDao::buildJQuestion($q, $suid);
+      }
+      $jQuestionTemplates[] = new JQuestionTemplate($q->id, $q->bt, $q->at, $q->btms, $q->atms, $q->btmu, $q->atmu, $q->listType, $q->break, $test, $pad->actions, false, $q->outData, $q->mix);
+      $jQuestions[] = $question;
+    }
+    $jParTemplate = new JParTemplate($pid, $rowPar["uid"], $rowPar["desc"], $rowPar["no_break"], $rowPar["sort_order"], $jQuestionTemplates, $rowPar['in_data_table']);
+    $info = new JParInfo($rowPar["section_id"], $suid, $jParTemplate, $jQuestions, $autoInjects);
+    $info->cacheable = ! $defaultIcds;
+    return $info;
+  }
+  /**
+   * Get ICD defaults for user group
+   * @return array(
+   *   'text'=>array('icd'=>$,'desc'=>$),..
+   *   )
+   */
+  private static function getIcdDefaults() {
+    global $login;
+    $sql = <<<eos
+SELECT a.text, a.icd, i.icd_desc AS `desc`, 1 as hipaa FROM
+(SELECT text, icd, count(*) AS ct
+FROM data_diagnoses
+WHERE user_group_id=$login->userGroupId AND icd IS NOT NULL AND session_id IS NULL
+GROUP BY text, icd
+ORDER BY ct desc) a
+INNER JOIN icd_codes5 i ON i.icd_code=a.icd
+GROUP BY a.text;
+eos;
+    return fetchArray($sql, 'text');
+  }
+  private static function getIcd10Defaults() {
+    global $login;
+    $sql = <<<eos
+SELECT a.text, a.icd10, i.icd_desc AS `desc`, i.hipaa FROM
+(SELECT text, icd10, count(*) AS ct
+FROM data_diagnoses
+WHERE user_group_id=$login->userGroupId AND icd10 IS NOT NULL AND session_id IS NULL
+GROUP BY text, icd10
+ORDER BY ct desc) a
+INNER JOIN icd10_codes i ON i.icd_code=a.icd10
+GROUP BY a.text;
+eos;
+    return fetchArray($sql, 'text');
+  }
+  /**
+   * @param Question $q
+   * $param(opt) array $icdDefaults ['text'=>['icd'=>$,'desc'=>$],..]; if passed, ICDs of options will be defaulted if text match found 
+   * @return JQuestion
+   */
+  public static function buildJQuestion($q, $suid = null, &$icdDefaults = null, &$icd10Cache = null) {
+    $jOptions = array();
+    $res = query("SELECT uid, `desc`, text, shape, coords, sync_id, cpt_code, track_cat FROM template_options WHERE question_id=$q->id ORDER BY sort_order");
+    $deficd = ($icdDefaults != null);
+    $trackable = null;
+    $uid1 = substr($q->uid, 0, 1);
+    $cbo = ($uid1 == "!" || $uid1 == "?");
+    $notog = ($uid1 == '^');
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+//      if ($row["icd_code"] != null && sizeof($jOptions) == $q->defix) {
+//        $deficd = $row["icd_code"];
+//      }
+      if ($cbo && sizeof($jOptions) == $q->mix) {
+        $jOptions[] = JOption::buildOther();  // For combo, add single other 
+        $q->mix++;
+      }
+      $opt = new JOption($row["uid"], $row["desc"], $row["text"], $row["shape"], $row["coords"], $row["sync_id"], $row["cpt_code"], $row["track_cat"]);
+      if ($suid == 'plan' && $opt->isTrackable() || ! empty($opt->coords)) {
+        $trackable = true;
+      }
+      if ($icdDefaults) {
+        if ($q->mix !== null && count($jOptions) >= $q->mix) {
+        } else {
+          $default = geta($icdDefaults, $opt->getText());
+          if ($default) {
+            $opt->icd = $default['icd'];
+            $opt->icdDesc = $default['desc'];
+          }     
+        }  
+      }
+      if ($icd10Cache) {
+        if ($q->mix !== null && count($jOptions) >= $q->mix) {
+        } else {
+          $default = geta($icd10Cache, $opt->getText());
+          logit_r($default, '11found default');
+          if ($default) {
+            $opt->icd10 = $default['icd10'];
+            $opt->icd10Desc = $default['desc'];
+            if ($default['hipaa'] == '0')
+              $opt->icd10Incomplete = 1;
+            logit_r($opt, '10cache assigned');
+          }     
+        }  
+      }
+      $jOptions[] = $opt;
+    }
+    $loix = count($jOptions) - 1;  // Add other checkbox
+    $unsel = null;  // If defaulted to a multi option, prepopulate the unselected array
+    if ($q->mix != null) {
+      $unsel = array();
+      for ($i = $q->mix; $i < count($jOptions); $i++) {
+        if ($i != $q->defix) {
+          $unsel[] = $i;
+        }
+      }
+    }
+    if ($loix > -1 && ($loix != 1 || $notog)) { 
+      $jOptions[] = JOption::buildOther();
+    }
+    $jq = new JQuestion($q->id, $q->uid, $q->desc, null, $unsel, array($q->defix), $q->mix, $q->mcap, $q->mix2, $q->mcap2, $q->img, $q->sync, $jOptions, $loix, $q->dsync, $deficd, $trackable);
+    //logit_r($jq, 'buildJQuestion' . $q->id);
+    
+    return $jq;
+  }
+  /*
+   * Build JParInfos (par + conditionless injects) for single par
+   * @param int $pid
+   * @return '[JParInfo,..]' (JSON string)
+   */
+  public static function getJParInfosByPid($pid) {
+    $tid = JsonDao::getTidFromPid($pid);
+    return JsonDao::getJParInfos($tid, null, null, array($pid));
+  }
+  /*
+   * @param string $pref 'suid.puid'
+   * @param int $tid
+   * @return '[JParInfo,..]' (JSON string)
+   */
+  public static function getJParInfosByRef($pref, $tid) {
+    $noteDate = nowNoQuotes();
+    $pid = JsonDao::prefToPid($pref, $tid, $noteDate);
+    return JsonDao::getJParInfos($tid, null, null, array($pid));
+  }
+  /*
+   * Par plus injector
+   * Returns [
+   *    "pid"=>pid,
+   *    "cix"=>cloneix
+   *    "inj"=>injectorPidi
+   *   ]
+   */
+  private static function ppi($pid, $cloneix, $injectorPidi) {
+    return array("pid" => $pid, "cix" => $cloneix, "inj" => $injectorPidi);  
+  }
+  /*
+   * Par plus injector array
+   * Returns [["pid"=>pid,"cix"=>cix,"inj"=>inj],..]
+   */
+  private static function ppis($pidis) {
+    $ppis = array();
+    foreach ($pidis as &$pidi) {  // for clones, pidi will be pid+cloneix, e.g. "502+1"
+      $a = explode("+", $pidi);   
+      $pid = $a[0];
+      $cloneix = (count($a) > 1) ? $a[1] : null;
+      $ppis[] = JsonDao::ppi($pid, $cloneix, null);
+    }
+    return $ppis;
+  }
+  public static function searchMeds($wildcard) {
+    $res = query("SELECT DISTINCT Drugname, Form, Dosage FROM meds WHERE Drugname LIKE '%" . $wildcard . "%' ORDER BY Drugname, Form, Dosage LIMIT 101");
+    $meds = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $s = str_replace(";", "; ", $row["Dosage"]);
+      $med = new JMed($row["Drugname"], $row["Form"], $s);
+      $meds[] = $med;
+    }
+    return new JMeds($meds);
+  }
+  public static function defaultNoteDate(&$noteDate) {
+    if ($noteDate == null) {
+      $noteDate = nowNoQuotes();
+    }
+  }
+  /*
+   * Returns "suid.puid" 
+   */
+  public static function getPref($pid) {
+    $a = explode("@", $pid);
+    $pid = $a[0];
+    $a = explode("+", $pid);
+    $pid = $a[0];
+    $sql = "SELECT CONCAT(s.uid,'.',p.uid) FROM template_pars p INNER JOIN template_sections s ON s.section_id=p.section_id WHERE p.par_id=$pid;";
+    return fetchField($sql);
+  }
+  /**
+   * @param int $pid
+   * @return int tid
+   */
+  public static function getTidFromPid($pid) {
+    $sql = <<<eos
+SELECT s.template_id 
+FROM template_sections s 
+INNER JOIN template_pars p ON p.section_id=s.section_id
+WHERE p.par_id=$pid
+eos;
+    return fetchField($sql);
+  }
+  
+  public static function buildDefaultMap($tid, $noteDate = null) {
+    logit_r($noteDate, 'note date for builddefaultmap');
+    $map = Templates_Map::get($tid, $noteDate);
+    return $map;
+  }
+  
+  public static function oldbuildJDefaultMap($templateId, $noteDate = null) {
+    JsonDao::defaultNoteDate($noteDate);
+    LoginDao::authenticateReadTemplateId($templateId);
+    $addToMap = LookupDao::getTemplateAddToMap($templateId);  // Get any "=XXX" pars specified in lookup
+    $sectionReorder = LookupDao::getTemplateSectionReorder($templateId);  // Get any section sortIndex overrides
+    $sRows = query("SELECT section_id, uid, name, `desc`, sort_order FROM template_sections WHERE template_id=" . $templateId . " AND uid NOT LIKE '@%' AND uid NOT LIKE '&%' ORDER BY sort_order");
+    $sections = array();
+    while ($sRow = mysql_fetch_array($sRows, MYSQL_ASSOC)) {
+      $suid = $sRow["uid"];
+      $pars = array();
+      $res = JsonDao::effectiveParsForSection($sRow["section_id"], $noteDate, true);
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+        $par = JsonDao::newJPar($row);
+        $pars['P' . $par->id] = $par;
+      }
+      if ($addToMap != null && isset($addToMap[$suid])) {  
+        foreach ($addToMap[$suid] as &$pref) {
+          $row = JsonDao::effectiveParByRef($pref, $templateId, $noteDate);
+          if ($row) {
+            $par = JsonDao::newJPar($row);
+            $pars['P' . $par->id] = $par;
+          }
+        }
+        uasort($pars, array("JPar", "cmp"));
+      }
+      $sortOrder= $sRow["sort_order"];
+      if ($sectionReorder != null && isset($sectionReorder[$suid])) {
+        $sortOrder = $sectionReorder[$suid];
+      }
+      $section = new JSection($sRow["section_id"], $sRow["uid"], $sRow["name"], $sRow["desc"], $pars, $sortOrder);
+      // TODO3 get rid of section if hidden
+      $sections[$section->uid] = $section;
+    }
+    if ($sectionReorder != null) {
+      uasort($sections, array("JSection", "cmp"));
+    }
+    // Apply template_map lookup (startSection setting, main overrides, auto includes)
+    $lm = LookupDao::getTemplateMap($templateId);
+    $startSection = null;
+    if ($lm != null) {
+      $startSection = $lm->startSection;
+      if ($lm->main != null) {
+        foreach ($sections as &$s) {
+          $m = get_object_vars($lm->main);
+          if (array_key_exists($s->uid, $m)) {
+            $lmpars = $m[$s->uid];
+            foreach ($s->pars as &$p) {
+              $p->major = in_array($p->uid, $lmpars);
+            }
+          }
+        }
+      }
+      if (isset($lm->auto) && $lm->auto != null) {
+        foreach ($sections as &$s) {
+          $a = get_object_vars($lm->auto);
+          if (array_key_exists($s->uid, $a)) {
+            $lapars = $a[$s->uid];
+            foreach ($s->pars as &$p) {
+              $p->auto = in_array($p->uid, $lapars);
+            }
+          }
+        }
+      }
+    }
+    return new JMap("Default", $sections, $startSection);
+  }
+ 
+  private static function newJPar($row) {
+    return new JPar($row["par_id"], $row["uid"], $row["desc"], $row["major"]);
+  }
+  
+  private static function effectiveParsForSection($sectionId, $noteDate, $orderByDesc = false, $autoIncludes = false) {
+    $sql = "SELECT uid, par_id, `desc`, major FROM (SELECT uid, par_id, `desc`, major, date_effective FROM template_pars where section_id=" . $sectionId 
+        . " AND date_effective<" . quote($noteDate);
+    if (! $autoIncludes) { 
+      $sql .= " AND inject_only<>1";
+    }
+    $sql .= " AND uid NOT LIKE '&%' AND uid NOT LIKE '=%' ORDER BY uid, date_effective DESC) a GROUP BY a.uid";
+    if ($orderByDesc) {
+      $sql .= " ORDER BY a.desc";
+    }
+    return query($sql);
+  }
+  
+  private static function effectiveParByRef($ref, $templateId, $noteDate) {
+    $pid = JsonDao::toPid($ref, $templateId, $noteDate);
+    if ($pid == null) {
+      return null;
+    } else {
+      $sql = "SELECT uid, par_id, `desc`, major FROM template_pars where par_id=" . $pid; 
+      return fetch($sql);
+    }
+  }
+
+  public static function buildJSession($sessionId, $withChildren = false, $keepPreviewHTML = false) {
+    global $login;
+    require_once "php/dao/FacesheetDao.php";
+    LoginDao::authenticateSessionId($sessionId);
+    $sql = "SELECT S.session_id, S.template_id, S.date_service, C.client_id, C.uid, C.first_name, C.last_name, C.sex, C.birth," 
+        . " C.cdata1, C.cdata2, C.cdata3, C.trial, C.living_will, C.poa, C.gest_weeks, C.middle_name, C.notes,"
+        . " S.closed, S.closed_by, s.date_closed, S.data, S.html, S.date_created, S.date_updated, S.note_date, S.send_to, S.assigned_to, S.title, S.standard, U.name, U.license_state, U.license, U.dea, U.npi, UG.name AS ug_name,"
+        . " A.addr1, A.addr2, A.city, A.state, A.zip, A.phone1,"
+        . " A2.addr1 AS caddr1, A2.addr2 AS caddr2, A2.city AS ccity, A2.state AS cstate, A2.zip AS czip, A2.phone1 AS cphone,"
+        . " U2.name AS created_by_name, U3.name AS updated_by_name, U4.name AS send_to_name, U5.name AS assigned_to_name, L.editor_name"
+        . " FROM (sessions S, clients C, users U, user_groups UG) "
+        . " LEFT OUTER JOIN addresses A ON (A.table_code='G' AND A.table_id=" . $login->userGroupId . ")"
+        . " LEFT OUTER JOIN addresses A2 ON (A2.table_code='C' AND A2.table_id=C.client_id)"
+        . " LEFT OUTER JOIN users U2 ON (U2.user_id=S.created_by)"
+        . " LEFT OUTER JOIN users U3 ON (U3.user_id=S.updated_by)"
+        . " LEFT OUTER JOIN users U4 ON (U4.user_id=S.send_to)"
+        . " LEFT OUTER JOIN users U5 ON (U5.user_id=S.assigned_to)"
+        . " LEFT OUTER JOIN session_locks L ON (L.session_id=S.session_id AND L.editor_user_id<>" . $login->userId . " AND L.last_update>=" . nowShort() . ")"
+        . " WHERE S.session_id=" . $sessionId 
+        . " AND U.user_id=" . $login->userId
+        . " AND U.user_group_id=UG.user_group_id"
+        . " AND C.client_id=S.client_id";
+    $row = fetch($sql);        
+    $name = decr($row["last_name"]) . ", " . decr($row["first_name"]);
+    if ($row['middle_name']) 
+      $name .= ' ' . decr($row['middle_name']);
+    $address = decr($row["addr1"]);
+    if ($row["addr2"] != null) {
+      $address .= " " . decr($row["addr2"]);
+    }
+    $uaddressonly = $address; 
+    $ucitystatezip = "";
+    if (decr($row["city"]) != null) {
+      $address .= " " . decr($row["city"]) . ", " . $row["state"] . " " . decr($row["zip"]);
+      $ucitystatezip = decr($row["city"]) . ", " . $row["state"] . " " . decr($row["zip"]);
+    }
+    $phone = decr($row["phone1"]);
+    $caddress = decr($row["caddr1"]);
+    if ($row["caddr2"] != null) {
+      $caddress .= " " . decr($row["caddr2"]);
+    }
+    $cphone = decr($row["cphone"]);
+    $ccitystatezip = "";
+    if ($row["ccity"] != null) {
+      $ccitystatezip = decr($row["ccity"]) . ", " . $row["cstate"] . " " . decr($row["czip"]);
+    }
+    $signature = "";
+    if ($row["closed"] == 1) {  // legacy style signing
+      $signerId = $row["closed_by"];
+      $signerName = $row["name"];
+      $signerUgName = $row["ug_name"];
+      if ($signerId != $login->userId) {
+        $signer = UserDao::getUser($signerId, true);
+        $signerName = $signer->name;
+        $signerUgName = $signer->userGroup->name;
+      }
+      $signature = "Digitally signed " . formatTimestamp(decr($row["date_closed"])) . " by " . $signerName;
+      if ($signerUgName != "") {
+        $signature .= " (" . $signerUgName . ")";
+      }
+    } else if ($row["closed"] == 0) {
+      if (! $keepPreviewHTML) {
+        $row["html"] = null;
+      }
+    }
+    // For support IDs, change uname to a physician
+    // TODO: TEMP FIX
+    if (! $login->User->isDoctor()) {
+      $users = UserDao::getDocsOfGroup($login->userGroupId);
+      $doc = array_shift($users);
+      $uname = $doc->name;
+    } else {
+      $uname = $row["name"];
+    }
+    $data = decr($row['data']);
+    $s = new JSession(
+        $row["session_id"], 
+        $row["template_id"], 
+        decr($row["date_service"]),
+        $row["client_id"], 
+        decr($row["uid"]), 
+        $name, 
+        $row["sex"], 
+        formatConsoleDate(decr($row["birth"])), 
+        decr($row["cdata1"]), 
+        decr($row["cdata2"]), 
+        decr($row["cdata3"]), 
+        $row["trial"], 
+        $row["living_will"], 
+        $row["poa"], 
+        $row["gest_weeks"], 
+        null, 
+        decr($row["notes"]), 
+        $data, 
+        stripslashes(decr($row["html"])), 
+        $uname, 
+        $row["ug_name"],
+        $address,
+        $phone,
+        $row["closed"],
+        $signature,
+        $row["license_state"], 
+        $row["license"], 
+        $row["dea"], 
+        $row["npi"],
+        decr($row["date_created"]),
+        $row["date_updated"],
+        $row["created_by_name"],
+        $row["updated_by_name"],
+        $row["send_to_name"],
+        $row["send_to"],
+        $row["assigned_to_name"],
+        $row["assigned_to"],
+        $uaddressonly,
+        $ucitystatezip,
+        $caddress,
+        $ccitystatezip,
+        decr($row["title"]),
+        $row["standard"],
+        $row["editor_name"],
+        decr($row["note_date"])
+        );
+    if ($withChildren) {
+      $s->template = JsonDao::buildJTemplate($s->templateId, $s->noteDate);
+      $s->map = JsonDao::buildDefaultMap($s->templateId, $s->noteDate);
+      $s->meds = FacesheetDao::getMedPickerHistory($s->clientId);
+    }
+    return $s;
+  }
+  
+  public static function buildJTemplate($templateId, $noteDate = null) {
+    JsonDao::defaultNoteDate($noteDate);
+    $autoInclude = LookupDao::getTemplateAutoInclude($templateId);
+    $tCustomJson = LookupDao::getTemplateCustomAsJson($templateId);
+    $headerPar = JsonDao::getDefaultHeaderPar($tCustomJson);
+    $sectionReorder = LookupDao::getTemplateSectionReorder($templateId);  // Get any section sortIndex overrides
+    LoginDao::authenticateReadTemplateId($templateId);
+    $rowTemplate = fetch("SELECT template_id, uid, name, title FROM templates WHERE template_id=" . $templateId);
+    $res = query("SELECT section_id, uid, title, sort_order FROM template_sections WHERE template_id=" . $templateId . " ORDER BY sort_order");
+    $sectionTemplates = array();
+    $autoParInfos = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      // TODO3 hide and noSyncIn
+      $hide = false;
+      $noSyncIn = false;
+      //if ($row["uid"] == "aller" || $row["uid"] == "meds") {
+      //  $hide = true;
+      //}
+      $sectionUid = $row["uid"];
+      $sortOrder = $row["sort_order"];
+      if ($sectionReorder != null && isset($sectionReorder[$sectionUid])) {
+        $sortOrder = $sectionReorder[$sectionUid];
+      }
+      $sectionTemplate = new JSectionTemplate($row["section_id"], $row["uid"], decr($row["title"]), $hide, $noSyncIn, $sortOrder);
+      $sectionTemplates['S' . $sectionTemplate->id] = $sectionTemplate;
+      $prefix = substr($sectionUid, 0, 1);
+      // AUto-sections
+      if ($prefix == "@" || ($prefix == "&" && $autoInclude->sections != null && in_array($row["uid"], $autoInclude->sections))) {  // include &section only if included in $autoInclude spec
+        $resAuto = JsonDao::effectiveParsForSection($row["section_id"], $noteDate, false, true);
+        //$resAuto = query("SELECT par_id FROM template_pars WHERE section_id=" . $row["section_id"]);
+        if ($sectionUid == "@header") {  // filter out a single header par from @header section 
+          $puid = $headerPar;
+        } else {
+          $puid = null;
+        }
+        while ($rowAuto = mysql_fetch_array($resAuto, MYSQL_ASSOC)) {
+          if ($puid != null && $rowAuto["uid"] != $puid) {  // filter
+          } else {
+            $parInfo = JsonDao::buildJParInfo($templateId, $rowAuto["par_id"], $noteDate);
+            $autoParInfos[] = $parInfo;
+          }
+        }
+//      } else {
+//        $resAuto = query("SELECT par_id FROM template_pars WHERE uid LIKE '&%' AND section_id=" . $row["section_id"]);
+//        while ($rowAuto = mysql_fetch_array($resAuto, MYSQL_ASSOC)) {
+//          $parInfo = JsonDao::buildJParInfo($templateId, $rowAuto["par_id"], $noteDate);
+//          $autoParInfos[] = $parInfo;
+//        }
+      }
+      if ($sectionReorder != null) {
+        uasort($sectionTemplates, array("JSectionTemplate", "cmp"));
+      }
+    }
+    // Autopars
+    foreach ($autoInclude->pars as &$p) {
+      $autoParInfos[] = JsonDao::buildJParInfo($templateId, JsonDao::prefToPid($p, $templateId, $noteDate), $noteDate);
+    }
+    $t = new JTemplate($rowTemplate["template_id"], $rowTemplate["uid"], $rowTemplate["name"], $rowTemplate["title"], $sectionTemplates, $autoParInfos);
+    $t->custom = $tCustomJson;
+    return $t;
+  }
+
+  // Default header par is always "h" unless overriden in T_TEMPLATE_CUSTOM
+  private static function getDefaultHeaderPar($tCustomJson) {
+    $tCustom = jsondecode($tCustomJson);
+    if (isset($tCustom->headerPar)) {
+      return $tCustom->headerPar;
+    } else {
+      return "h";
+    }
+  }
+
+  /**
+   * @param string $ref 'suid.puid'
+   * @param int $tid
+   * @param string $noteDate '1966-11-23 13:10:59'
+   * @return int pid
+   */
+  public static function prefToPid($ref, $tid, $noteDate) {
+    $a = explode(".", $ref);
+    $row = fetch("SELECT p.par_id FROM template_sections s INNER JOIN template_pars p ON s.section_id=p.section_id WHERE s.template_id=" . quote($tid) . " AND s.uid=" . quote($a[0]) . " AND p.uid=" . quote($a[1]) . " AND date_effective<" . quote($noteDate) . " ORDER BY date_effective DESC LIMIT 1");
+    return $row["par_id"];
+  }
+  
+  public static function buildJParTemplates($sectionId) {
+
+    LoginDao::authenticateReadSectionId($sectionId);
+    $res = query("SELECT par_id, uid, `desc`, no_break, sort_order FROM template_pars WHERE section_id=" . $sectionId . " AND inject_only < 2 ORDER BY sort_order");
+    $parTemplates = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $parTemplate = new JParTemplate($row["par_id"], $row["uid"], $row["desc"], $row["no_break"], $row["sort_order"], null, false);
+      $parTemplates[] = $parTemplate;
+    }
+    return $parTemplates;
+  }
+  
+  public static function buildJTemplates() {
+
+    $res = query("SELECT template_id, uid, name, title FROM templates ORDER BY template_id");
+    $jTemplates = array();
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $jTemplate = new JTemplate($row["template_id"], $row["uid"], $row["name"], decr($row["title"]), null, null);
+      $jTemplates[] = $jTemplate;
+    }
+    return $jTemplates;
+  }
+
+  // Deprecated
+  public static function oldBuildJParInfo($parId) {
+    $rowPar = fetch("SELECT s.template_id FROM template_pars p, template_sections s WHERE p.par_id=" . $parId . " AND s.section_id = p.section_id");
+    return JsonDao::buildJParInfo($rowPar["template_id"], $parId, nowNoQuotes());
+  }
+
+  private static function insertParJson($parId, $json) {
+    $sql = "INSERT INTO template_parjson VALUES($parId," . quote($json, true) . ", NULL)";
+    queryNoDie($sql);
+  }
+  private static function isCloneable($puid) {
+    return (strpos($puid, "+") !== false);
+  }
+  
+  // Converts "section.par" to pid appropriate for date of note 
+  public static function toPid($ref, $tid, $noteDate = null) {
+    JsonDao::defaultNoteDate($noteDate);
+    $a = explode(".", $ref);
+    $sql = "SELECT par_id FROM template_sections s, template_pars p WHERE s.template_id=" . $tid . " AND s.uid=" . quote($a[0]) . " AND p.section_id=s.section_id AND p.uid=" . quote($a[1]) . " AND date_effective<" . quote($noteDate) . " ORDER BY date_effective DESC LIMIT 1";
+    $row = fetch($sql);
+    if (! $row) {
+      logit("toPid error: cannot find " . $ref);
+      return null;
+    } else {
+      return $row["par_id"];
+    }
+  }
+    
+  // Transforms db-version of action (dot notation) to javascript eval
+  // Returns ParsedActionsData
+  // Throws ParseException
+  public static function parseActions($qref, $actions, $tid, $noteDate, $hasTest, $pid) {
+    if (isNull($actions)) {
+      return new ParsedActionsData(null, null);
+    }
+    $jActions = array();
+    $autoInjects = array();
+    $a = explode(";", $actions);
+    logit("parsing actions for $qref hastest=$hasTest");
+    for ($i = 0; $i < count($a); $i++) {
+      $b = split("[{}]", $a[$i]);
+      if (count($b) == 1) {
+        $then = JsonDao::parseThen($b[0], $qref, null, $tid, $noteDate, false);
+        //logit_r($then, "then");
+        if ($then->injectRef == null || $hasTest) {
+          $jActions[] = new JAction(null, $then->data);
+        } else {
+          $autoInjects[] = $then->injectRef;
+        }
+      } else {
+        $cond = JsonDao::parseTest($b[0], $tid, $noteDate, false);
+        $then = JsonDao::parseThen($b[1], $qref, $cond, $tid, $noteDate, false);
+        $jActions[] = new JAction($cond, $then->data);
+      }
+    }
+    return new ParsedActionsData($jActions, $autoInjects);
+  }
+  
+  // $questionId is the question containing action
+  // $cond is the parsed actionIf
+  // These are used to create arguments for the js inject method that
+  // form conditions for retaining the injected paragraph
+  // if $forValidation=true, option references evaluated and checked for validity
+  // Returns ParsedThemData
+  public static function parseThen($action, $qref, $cond, $tid, $noteDate, $forValidation) {
+
+    $a = split("[(;)]", $action);
+    if (count($a) < 3) {
+      throw new ParseException("Missing parenthesis");
+    }
+    $parsed = "";
+    $injRef = null;
+    $limit = count($a) - 1;
+    for ($i = 0; $i < $limit; $i++) {
+      $function = trim($a[$i++]);
+      if ($function == "inject") {
+        $parsed .= "inject(";
+        $parsed .= "'" . $qref . "',";
+        if (is_null($cond)) {
+          $parsed .= "null,";
+        } else {
+          $parsed .= "\"" . $cond . "\",";
+        }
+        $injRef = trim($a[$i++]);  // s.p
+        $parsed .= "'" . $injRef . "'," . JsonDao::PID_ARGS_NEEDED . ")";
+      } else if ($function == "setDefault") {
+        $ref = trim($a[$i++]);  // s.p.q.o
+        if ($forValidation) {
+          $parsed .= JsonDao::parseTestRef("setDefault", $ref, $tid, $noteDate);
+        } else {
+          $parsed .= JsonDao::splitOptRef("setDefault", $ref);
+        }
+      } else if ($function == "setText") {
+        $args = explode(",", trim($a[$i++]));  // s.p.q,'text'
+        if ($forValidation) {
+          JsonDao::validateQref($tid, $noteDate, $args[0]);
+        }
+        $parsed .= "setFreetext('" . $args[0] . "'," . $args[1] . ")";
+      } else if ($function == "setTextFromSel") {
+        $ref = trim($a[$i++]);  // s.p.q
+        if ($forValidation) {
+          JsonDao::validateQref($tid, $noteDate, $ref);
+        }
+        $parsed .= "setTextFromSel('" . $ref . "','" . $qref . "'," . JsonDao::PID_ARGS_NEEDED . ")";
+      } else if ($function == "pop") {
+        $ref = trim($a[$i++]);  // s.p.q
+        if ($forValidation) {
+          JsonDao::validateQref($tid, $noteDate, $ref);
+        }
+        $parsed .= "pop('" . $ref . "','" . $qref . "')";
+      } else if ($function == "setChecked") {
+        $ref = trim($a[$i++]);  // s.p.q.o
+        if ($forValidation) {
+          $parsed .= JsonDao::parseTestRef("setChecked", $ref, $tid, $noteDate);
+        } else {
+          $parsed .= JsonDao::splitOptRef("setChecked", $ref);
+        }
+      } else if ($function == "setUnchecked") {
+        $ref = trim($a[$i++]);  // s.p.q.o
+        if ($forValidation) {
+          $parsed .= JsonDao::parseTestRef("setUnchecked", $ref, $tid, $noteDate);
+        } else {
+          $parsed .= JsonDao::splitOptRef("setUnchecked", $ref);
+        }
+      } else if ($function == "calcBmi") {
+        $refs = explode(",", trim($a[$i++]));  // s.p.q1,s.p.q2,s.p.q3,s.p.q4,s.p.q5
+        if ($forValidation) {
+          for ($j = 0; $j < count($refs); $j++) {
+            JsonDao::validateQref($tid, $noteDate, $refs[$j]);
+          }
+        }
+        $parsed .= "calcBmi('" . implode("','", $refs) . "')";
+      } else if ($function == "syncOn") {
+        $ref = trim($a[$i++]);  // synccode
+        $parsed .= "syncOn('" . $ref . "')";
+      } else if ($function == 'hideTitle') {
+        $sref = explode('.', $qref, 2);
+        $parsed .= "hideTitle('" . $sref[0] . "')";
+        $i++;
+      } else {
+        throw new ParseException("Unknown function " . quote($function));
+      }
+      if ($i < $limit) {
+        $connector = trim($a[$i]);
+        if ($connector == "") {
+          $parsed .= "; ";
+        } else {
+          throw new ParseException("Invalid connector " . quote($connector));
+        }
+        if (($limit - $i) < 2) {
+          throw new ParseException("Cannot parse remainder after " . quote($connector));
+        }
+      }
+    }
+    return new ParsedThenData($parsed, $injRef);
+  }
+  
+  public static function splitOptRef($fn, $ref) {
+    $i = strrpos($ref, ".");
+    return $fn . "('" . substr($ref, 0, $i) . "','" . substr($ref, $i + 1) . "'," . JsonDao::PID_ARGS_NEEDED . ")";
+  }
+  
+  // Transforms db-version of test to javascript eval
+  // Throws ParseException
+  // If forValidation=true, evaluates question reference and throws ParseException if not valid
+  // If false, question reference is left in dot notation
+  public static function parseTest($test, $tid, $noteDate, $forValidation) {
+
+    if (isNull($test)) {
+      return null;
+    }
+    $a = split("[(:)]", $test);
+    if (count($a) < 3) {
+      throw new ParseException("Missing parenthesis");
+    }
+    $parsed = "";
+    $limit = count($a) - 1;
+    for ($i = 0; $i < $limit; $i++) {
+      $function = trim($a[$i++]);
+      if ($function != "isSel" && 
+          $function != "onSel" &&
+          $function != "ipc" &&
+          $function != "notSel" &&
+          $function != "isInjected" && 
+          $function != "isMale" && 
+          $function != "isFemale" && 
+          $function != "currentAge" && 
+          $function != "olderThan" && 
+          $function != "youngerThan" && 
+          $function != "isBirthdateSet" &&
+          $function != "always") {
+        throw new ParseException("Unknown function " . quote($function));
+      }
+      if ($function == "isSel" || $function == "notSel" || $function == 'onSel') {
+        $ref = trim($a[$i++]);
+        if ($forValidation) {
+          $parsed .= JsonDao::parseTestRef($function, $ref, $tid, $noteDate);
+        } else {
+          $parsed .= JsonDao::splitOptRef($function, $ref);
+        }
+      } else if ($function == "isInjected") {
+        $parsed .= $function . "('" . $a[$i++] . "')";
+      } else {
+        $parsed .= $function . "(" . $a[$i++] . ")";
+      }
+      if ($i < $limit) {
+        $connector = trim($a[$i]);
+        if ($connector == "or") {
+          $parsed .= " || ";
+        } else if ($connector == "and") {
+          $parsed .= " && ";
+        } else {
+          $a = split(" ", $connector);
+          if ($a[0] == "or" || $a[0] == "and") {
+            throw new ParseException("Missing colon in connector " . quote($connector));
+          }
+          throw new ParseException("Invalid connector " . quote($connector));
+        }
+        if (($limit - $i) < 2) {
+          throw new ParseException("Cannot parse remainder after " . quote($connector));
+        }
+      }
+    }
+    return $parsed;
+  }
+  
+  public static function parseTestRef($function, $ref, $tid, $noteDate) {
+
+    $a = explode(".", $ref);
+    if (count($a) != 4) {
+      throw new ParseException("Missing or incorrect dots in " . quote($ref));
+    }
+    $questionId = JsonDao::getQidFroMQref($tid, $noteDate, $a[0], $a[1], $a[2]); 
+    if ($questionId == null) {
+      throw new ParseException("Invalid reference " . quote($ref));
+    }
+    $res = query("SELECT uid FROM template_options WHERE question_id=" . $questionId . " ORDER BY sort_order");
+    $optionIndex = null;
+    for ($i = 0; $row = mysql_fetch_array($res, MYSQL_ASSOC); $i++) {
+      if ($row["uid"] == $a[3]) {
+        $optionIndex = $i;
+      }
+    }
+    if (is_null($optionIndex)) {
+      throw new ParseException("No such option in " . quote($ref));
+    }
+    return $function . "(questions[" . $questionId . "]," . $optionIndex . ")";
+  }
+
+  public static function validateQref($tid, $noteDate, $qref) {
+    JsonDao::defaultNoteDate($noteDate);
+    $a = explode(".", $qref);
+    $qid = JsonDao::getQidFromQref($tid, $noteDate, $a[0], $a[1], $a[2]); 
+    if ($qid == null) {
+      throw new ParseException("Invalid reference " . quote($qref));
+    }
+    return $qid;
+  }
+  
+  public static function getQidFromQref($tid, $noteDate, $suid, $puid, $quid) {  // returns questionId if valid, null if invalid
+    $row = fetch("SELECT q.question_id FROM template_sections s INNER JOIN template_pars p ON s.section_id=p.section_id INNER JOIN template_questions q ON q.par_id=p.par_id WHERE s.template_id=" 
+        . quote($tid) . " AND s.uid=" . quote($suid) . " AND p.uid=" . quote($puid) . " AND q.uid=" . quote($quid) . " AND date_effective<" . quote($noteDate) 
+        . " ORDER BY date_effective DESC LIMIT 1");
+    $questionId = $row["question_id"];
+    if (is_null($questionId)) {
+      return null;
+    }
+    return $questionId;
+  }
+}
+
+class parsedActionsData {
+
+  public $actions;  // array of JActions
+  public $autoInjects;  // array of conditionless injection refs
+
+  public function __construct($actions, $autoInjects) {
+    $this->actions = $actions;
+    $this->autoInjects = $autoInjects;
+  }
+}
+
+class parsedThenData {
+
+  public $data;
+  public $injectRef;  // e.g. "hpi.cough" if inject action
+  
+  public function __construct($data, $injectRef) {
+    $this->data = $data;
+    $this->injectRef = $injectRef;
+  }
+}
+//
+require_once "php/dao/_util.php";
+require_once "php/dao/_exceptions.php";
+require_once "php/dao/TemplateReaderDao.php";
+require_once "php/dao/UserDao.php";
+require_once "php/dao/DataDao.php";
+require_once "php/data/json/JAction.php";
+require_once "php/data/json/JMap.php";
+require_once "php/data/json/JMed.php";
+require_once "php/data/json/JMeds.php";
+require_once "php/data/json/JOption.php";
+require_once "php/data/json/JPar.php";
+require_once "php/data/json/JParInfo.php";
+require_once "php/data/json/JParInfos.php";
+require_once "php/data/json/JParTemplate.php";
+require_once "php/data/json/JQuestion.php";
+require_once "php/data/json/JQuestionTemplate.php";
+require_once "php/data/json/JSection.php";
+require_once "php/data/json/JSectionTemplate.php";
+require_once "php/data/json/JSession.php";
+require_once "php/data/json/JTemplate.php";
+require_once "php/data/rec/sql/Templates_Map.php";

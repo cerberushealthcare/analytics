@@ -1,0 +1,135 @@
+VisitSummaryPop = {
+  /*
+   * @arg VisitSummary rec 
+   */
+  pop:function(rec) {
+    return Html.Pop.singleton_pop.apply(VisitSummaryPop, arguments);
+  },
+  /*
+   * @arg int cid (to have popup retrieve Visit Summary)
+   */
+  pop_forCid:function(cid) {
+    return Html.Pop.singleton_pop.call(VisitSummaryPop, null, cid); 
+  },
+  //
+  create:function() {
+    var My = this;
+    return Html.Pop.create('Print Visit Summary').withFrame('Patient Instructions').extend(function(self) {
+      return {
+        //
+        init:function() {
+          self.Entry = My.Entry.create(self.frame).bubble('onresize', self.reposition);
+          self.Cmd = Html.CmdBar.create(self.content).print(self.print_onclick).cancel(self.close); 
+        },
+        onshow:function(rec, cid) {
+          if (rec) {
+            self.load(rec);
+          } else {
+            self.invisible();
+            VisitSummary.ajax().getPending(cid, function(rec) {
+              self.visible();
+              if (rec) { 
+                self.load(rec);
+              } else {
+                self.close();
+                Pop.Msg.showCritical('No visit summary information exists for this patient.');
+              }
+            })
+          }
+        },
+        load:function(rec) {
+          self.rec = rec;
+          self.Entry.load(rec.instructs);
+          self.reposition();
+        },
+        //
+        print_onclick:function() {
+          self.applyTo();
+          self.close();
+          self.rec.ajax().finalize();
+        },
+        applyTo:function() {
+          self.rec.instructs = self.Entry.getInstructs();
+        }
+      }
+    })
+  },
+  Entry:{
+    create:function(container) {
+      var My = this;
+      return Html.Tile.create(container).extend(function(self) {
+        return {
+          onresize:function() {},
+          //
+          reset:function() {
+            self.Lines = []; 
+            return self.clean();
+          },
+          load:function(instructs) {
+            self.reset();
+            self.instructs = instructs;
+            Array.each(self.instructs, function(text) {
+              self.Lines.push(My.Line.create(self, text));
+            })
+            self.addFree();
+          },
+          addFree:function() {
+            self.Lines.push(My.Line.create_asFree(self).bubble('oncheck', self.Line_oncheck));
+          },
+          getInstructs:function() {
+            var a = [];
+            self.Lines.each(function(Line) {
+              var text = Line.getText();
+              if (text) 
+                a.push(text)
+            })
+            return a;
+          },
+          //
+          Line_oncheck:function(Line) {
+            if (! Line._added) {
+              Line._added = true;
+              self.addFree();
+              self.onresize();
+            }
+          }
+        }
+      })
+    },
+    Line:{
+      create:function(container, text, unchecked) {
+        return Html.Tile.create(container).extend(function(self) {
+          return {
+            oncheck:function(self) {},
+            //
+            init:function() {
+              Html.TableCol.create(self, [
+                self.Check = Html.InputCheck.create().into(self).setCheck(! unchecked)
+                  .bubble('onclick', self.Check_onclick),
+                self.Input = Html.InputText.create().setSize(110).into(self).setValue(text)]);
+              self.toggleInput();
+            },
+            getText:function() {
+              if (self.Check.isChecked())
+                return self.Input.getValue();
+            },
+            //
+            Check_onclick:function() {
+              self.toggleInput();
+              if (self.Check.isChecked()) {
+                self.Input.setFocus();
+                self.oncheck(self);
+              }
+            },
+            toggleInput:function() {
+              self.Input.disabled = ! self.Check.isChecked();
+            }
+          }
+        })
+      },
+      create_asFree:function(container) {
+        return this.create(container, '', true);
+      }
+    }
+  }
+}

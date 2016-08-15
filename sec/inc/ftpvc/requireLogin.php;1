@@ -1,0 +1,18 @@
+<?php
+require_once "php/data/Version.php";
+require_once "php/dao/LoginDao.php";
+//
+logit($_SERVER["REQUEST_URI"]);
+if (isset($_GET['sess'])) {
+  session_id($_GET['sess']);
+}
+if (LoginDao::authenticateSession() < 0) {
+  header("Location: index.php");
+  exit;
+}
+if ($myLogin->pwExpired) {
+  header("Location: index.php?cp=1");
+}
+header('P3P:CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"');
+$myLogin->setPermissions();
+?>

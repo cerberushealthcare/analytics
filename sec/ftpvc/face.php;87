@@ -1,0 +1,363 @@
+<?
+require_once "php/data/LoginSession.php";
+require_once "inc/uiFunctions.php";
+require_once 'php/data/rec/ErxStatus.php';
+require_once 'php/data/rec/sql/OrderEntry.php';
+require_once 'php/data/rec/sql/Meds.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Documentation.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+require_once 'php/data/rec/sql/LookupAreas.php';
+require_once 'php/data/rec/sql/Procedures_Hm.php';
+require_once 'php/data/rec/sql/PortalUsers.php';
+//
+LoginSession::verify_forUser()->requires($login->Role->Patient->facesheet);
+//
+if (isset($_GET['id'])) 
+  $_GP = &$_GET;
+else 
+  $_GP = &$_POST; 
+$pop = isset($_GP['pop']);
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <? HEAD('Facesheet', 'FacesheetPage') ?>
+    <link rel="stylesheet" type="text/css" href="css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>" />
+    <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/libs/FaceUi.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pops/PatientSelector.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pops/FaceHx.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/old-ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
+    <? HEAD_UI('Facesheet') ?>
+    <style>
+DIV.EntryFolderList {
+  border:1px solid #c0c0c0;
+  height:200px;
+  background-color:white;
+  overflow-y:scroll;
+  padding:4px;
+  margin-top:10px;
+}
+    </style>
+  </head>
+  <body onload="start()" <? if ($pop) { ?>style='background-color:white'<? } ?>>
+    <div id="bodyContainer">
+      <div id="curtain"></div>
+      <? include "inc/header.php" ?>
+      <div id='bodyContent' class="content">
+        <table class='h'>
+          <tr>
+            <th>
+              <h1><span id="h1-name" class='tf-heading'></span>&nbsp;</h1>
+            </th>
+            <td>
+              <? if ($pop) { ?>
+                <a href="javascript:window.close()" class="icon big mt10">Close Window</a>
+              <? } else { ?>
+                <a href="javascript:page.pDownload()" class="icon download">Download/Print</a>
+                <span class='psearch'>
+                  &nbsp;
+                  <a href="javascript:PatientSelector.pop()" class="icon search">Search for patient</a>
+                </span>
+              <? } ?>
+            </td>
+          </tr>
+        </table>
+        <div id="fs-refresh" style="display:none">  <!-- refreshTile -->
+          <a href="javascript:page.pRefresh()">Facesheet has been updated. Click to refresh page.</a>
+        </div>
+        <? renderBoxStart("wide min-pad") ?>
+          <table class='w100'>
+            <tr>
+              <td class='vtop' style="padding-right:4px;width:75%">
+                <table class='w100'>
+                  <tr>
+                    <td class='vtop'>  
+                      <div id="portrait">  <!-- demoTile -->
+                        <table class='h'>
+                          <tr>
+                            <th style='padding:3px;width:85px;vertical-align:top'>
+                              <img id='photo' style='display:none' onclick="popUpload()" />
+                              <div id="empty-photo" style='visibility:hidden'>
+                                <a href='javascript:popUpload()' class='patient'>Upload</a>
+                              </div>
+                            </th>
+                            <th style='vertical-align:top'>
+                              <ul class="entry">
+                                <li>
+                                  <label>
+                                    ID:
+                                  </label>
+                                  <span id="dem-cid" class="ro" style="width:65px"></span>
+                                  <label class="spad">
+                                    DOB:
+                                  </label>
+                                  <span id="dem-dob" class="ro" style="width:90px"></span>
+                                  <label class="spad">
+                                    Age/Sex:
+                                  </label>
+                                  <span id="dem-age" class="ro">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                                </li>
+                              </ul>
+                              <ul id="ul-dem" class="entry ro" style='margin-top:5px'>
+                                <li>
+                                  <label id="dem-lbl-addr" class="first">
+                                  </label>
+                                  <span id="dem-addr" style='width:300px' class="ro"> 
+                                  </span>
+                                </li>
+                                <li>
+                                  <label id="dem-lbl-flags" class="first"></label>
+                                  <span id="dem-flags" class="ro red"></span>
+                                </li>
+                              </ul>
+                            </td>
+                            <td style='vertical-align:top;padding:3px 2px 0 0'>
+                              <a id='show-demo' class="fsedit demo" title="Open/edit this section" href="javascript:" onclick="page.pPopDemo()">Open</a>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td class='vtop' style="width:25%;">
+                <div id="notepad">  <!-- notepadTile -->
+                  <div id="notepad-empty">
+                    <a class="fsedit" href="javascript:" onclick="page.pPopNotepad()">Add Notes</a>
+                  </div>
+                  <a id="notepad-text" href="javascript:" onclick="page.pPopNotepad()" title="Edit this note">
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </table>
+          <table class='w100 mt10'>
+            <tr>
+              <td id="td-wf-1" class='vtop'>  <!-- workflowTile -->
+                <div class='fscap mb5'>Quick Links</div>
+                <table border="0" cellpadding="0" cellspacing="0">
+                  <tr> 
+                    <td>
+                      <div style='display:inline' id="wf-appt" class="qpanel">
+                      </div>
+                      <div style='display:inline' id="wf-vit" class="qpanel">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr><td class='h5'></td></tr>
+                  <tr>
+                    <td>
+                      <div class="qpanel">
+                        <ul id="wf-doc-ul">
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td id="td-wf-2" class="w5"></td>
+              <td id="td-all" class='nw'>  <!-- allerTile -->
+                <a href="javascript:" onclick="page.pPopAllergies()" title="Open this section" class="fscap">Active Allergies</a>
+                <div id="all-div" class="fstab noscroll">
+                  <table id="all-tbl" class="fsr" style="height:85px">
+                    <tbody id="all-tbody">
+                      <tr>
+                        <td>&nbsp;</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </table>
+        <? renderBoxEnd() ?>
+        <div class="mt5">
+          <table id='dia-med' class="w100">
+            <tr>
+              <td id='td-dia' class='vtop' style="width:38%;">  <!-- diagTile -->
+                <? renderBoxStart("wide min-pad", "", "dia-box", "dia-boxc") ?>
+                  <a href="javascript:" onclick="page.pPopDiagnoses()" title="Open this section" class="fscap">Diagnoses</a>
+                  <div id="DiagTile"></div>
+                <? renderBoxEnd() ?>
+              </td>
+              <td class='w5' nowrap='nowrap'></td>
+              <td id='td-med' class='vtop' style="width:62%;">  <!-- medTile -->
+                <? renderBoxStart("wide min-pad", "", "med-box") ?>
+                  <a href="javascript:" onclick="page.pPopMeds()" title="Open this section" class="fscap">Medications</a>
+                  <div id="MedTile"></div>
+                <? renderBoxEnd() ?>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div id="hx">  <!-- hxTile -->
+          <div class='screen'>
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td class='cj' style="width:36%">
+                  <? renderBoxStart("wide min-pad mt5", null, "medhx-box") ?>
+                    <a href="javascript:" onclick="page.pPopMedSurgHx()" title="Open this section" class="fscap">Medical / Surgical History</a>
+                    <table>
+                      <tr>
+                        <td><div id="fshx-sum" class="hxsum"></div></td>
+                      </tr>
+                    </table>
+                  <? renderBoxEnd() ?>
+                </td>
+                <td class='w5' nowrap='nowrap'></td>
+                <td class='cj' style="width:28%">
+                  <? renderBoxStart("wide min-pad mt5", null, "famhx-box") ?>
+                    <a href="javascript:" onclick="page.pPopFamHx()" title="Open this section" class="fscap">Family History</a>
+                    <table>
+                      <tr>
+                        <td><div id="famhx-sum" class="hxsum"></div></td>
+                      </tr>
+                    </table>
+                  <? renderBoxEnd() ?>
+                </td>
+                <td class='w5' nowrap='nowrap'></td>
+                <td class='cj' style="width:36%">
+                  <? renderBoxStart("wide min-pad mt5", null, "sochx-box") ?>
+                    <a href="javascript:" onclick="page.pPopSocHx()" class="fscap">Psycho-Social History</a>
+                    <table>
+                      <tr>
+                        <td><div id="sochx-sum" class="hxsum"></div></td>
+                      </tr>
+                    </table>
+                  <? renderBoxEnd() ?>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="mt5 screen">
+          <table class="w100">
+            <tr>
+              <td class='vtop' style="width:50%;">  
+                <? renderBoxStart("wide min-pad", "", "imm-box") ?>
+                  <a href="javascript:" onclick="page.pPopImmun()" class="fscap">Immunizations</a>
+                  <table>
+                    <tr>
+                      <td><div id="imm-sum" class="hxsum"></div></td>
+                    </tr>
+                  </table>
+                <? renderBoxEnd() ?>
+              </td>
+              <td class='w5' nowrap='nowrap'></td>
+              <td class='vtop' style="width:50%;">  
+                <? renderBoxStart("wide min-pad", "", "track-box") ?>
+                  <a href="javascript:" onclick="page.pPopTrack()" class="fscap">Order Entry & Tracking</a>
+                  <table>
+                    <tr>
+                      <td><div id="trk-sum" class="hxsum"></div></td>
+                    </tr>
+                  </table>
+                <? renderBoxEnd() ?>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div id="hm">  <!-- hmTile -->
+          <div class='screen'>
+            <? renderBoxStart("wide min-pad mt5", "", "hm-box") ?>
+              <a id="hmcap" href="javascript:" onclick="page.pPopHm()" class="fscap">Clinical Decision Support</a>
+              <div id="CdsTile"></div>
+            <? renderBoxEnd() ?>
+          </div>
+        </div>
+        <div class="screen">
+          <table class="w100 mt5">
+            <tr>
+              <td id="td-his-1" class='vtop' style="width:60%;">  <!-- docTile -->
+                <? renderBoxStart("wide min-pad", "", "his-box") ?>
+                  <a href="javascript:" onclick="page.pPopDocHx()" class="fscap">Clinical Data and Documentation</a>
+                  <div id="DocTile"></div>
+                <? renderBoxEnd() ?>
+              </td>
+              <td id="td-his-2" class='w5' nowrap='nowrap'></td>
+              <td id="td-vit" class='vtop' style="width:40%;">  <!-- vitalTile -->
+                <? renderBoxStart("wide min-pad", "", "vit-box", "vit-boxc") ?>
+                  <a href="javascript:" onclick="page.pPopVitals()" class="fscap">Vital Signs</a>
+                  <div id="vit-div" class="fstab doc-vit">
+                    <table id="vit-tbl" class="fsg">
+                      <tbody id="vit-tbody">
+                      </tbody>
+                    </table>
+                  </div>
+                <? renderBoxEnd() ?>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <table class="w100 mt5">
+          <tr>
+            <td class='vtop' style="width:30%;"> 
+              <? renderBoxStart("wide min-pad", "", "proc-box") ?>
+                <a href="javascript:" onclick="page.pPopProcs()" class="fscap">All Procedures / Results</a>
+                <div id="ProcTile"></div>
+              <? renderBoxEnd() ?>
+            </td>
+            <td class='w5' nowrap='nowrap'></td>
+            <td class='vtop' style="width:70%;"> 
+              <? renderBoxStart("wide min-pad", "", "portal-box") ?>
+                <a href="javascript:" onclick="page.pPopPortal()" class="fscap">Patient Portal Access</a>
+                <div id="PortalTile"></div>
+              <? renderBoxEnd() ?>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <div id="pop-cn" class="pop" style='width:600px'>
+      <div id="pop-cn-cap" class="pop-cap">
+        <div id="pop-cn-cap-text">
+          Clicktate - Patient Notepad
+        </div>
+        <a href="javascript:Pop.close()" class="pop-close"></a>
+      </div>
+      <div class="pop-content">
+        <textarea id="pop-cn-text" class="w100" rows="13"></textarea>
+        <div class="pop-cmd">
+          <a href="javascript:" onclick="NotepadTile.pSave()" class="cmd save">Save Changes</a>
+          <span id="cn-delete-span">
+            <span>&nbsp;</span>
+            <a href="javascript:" onclick="NotepadTile.pDelete()" class="cmd delete-red">Clear Note</a>
+          </span>
+          <span>&nbsp;</span>
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <? if (! $pop) { ?>
+      <? include "inc/footer.php" ?>
+    <? } else { ?>
+    <div id="page-includes"></div>
+    <? } ?>
+  </body>
+<? JsonConstants::write() ?>
+<? JsonConstants::writeGlobals(
+  'TrackItem',
+  'DocStub',
+  'PortalUser',
+  'ScanIndex',
+  'MsgInbox',
+  'MsgPost',
+  'MsgThread') ?>
+<script type="text/javascript">
+C_Docs = <?=UserGroups::getDocsJsonList()?>;
+C_Users = <?=UserGroups::getActiveUsersJsonList()?>;
+C_Lookups = <?=LookupRec::getJsonLists(LookupAreas::get())?>;
+function start() {
+  var query = <?=jsonencode($_GP)?>;
+  page.load(query);
+}
+function popUpload() {
+  FaceUploadPop.pop(page.fs).bubble('oncomplete', page.refreshFacesheet);
+}
+</script>      
+</html>

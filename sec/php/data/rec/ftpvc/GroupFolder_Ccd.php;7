@@ -1,0 +1,58 @@
+<?php
+require_once 'php/data/rec/GroupFolder.php';
+//
+/**
+ * GroupFolder_Ccd
+ * @author Warren Hornsby
+ */
+class GroupFolder_Ccd extends GroupFolder {
+  /**
+   * @param ClinicalDocument $ccd
+   * @param string $password for encryption (optional)
+   * @return GroupFile_Ccd
+   */
+  public function save($ccd, $password = null) {
+    $file = GroupFile_Ccd::asNew($ccd);
+    return $file->save($ccd->toXml(true), $password);
+  }
+  /**
+   * @param string $filename
+   */
+  public function download($filename) {
+    $file = GroupFile_Ccd::from($filename);
+    $file->download($filename, self::MIME_XML);
+  }
+  //
+  static function open() {
+    global $myLogin;
+    return parent::open($myLogin->userGroupId, 'ccd');
+  }
+}
+/**
+ * GroupFile_Ccd
+ */
+class GroupFile_Ccd extends GroupFile {
+  /**
+   * @param ClinicalDocument $ccd
+   * @return self
+   */
+  static function asNew($ccd) {
+    $client = $ccd->getClient();
+    $filename = $client->lastName . '_' . $client->uid . '_CCD.xml';
+    return self::from($filename);
+  }
+  /**
+   * @param string $filename
+   * @return self
+   */
+  static function from($filename) {
+    $me = new static();
+    $me->folder = static::openFolder();
+    $me->filename = $filename;
+    return $me;
+  }
+  //
+  protected static function openFolder() {
+    return GroupFolder_Ccd::open();
+  }
+}

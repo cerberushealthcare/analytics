@@ -1,0 +1,254 @@
+/**
+ * Pop ProcsPop
+ */
+ProcsPop = {
+  pop:function(fs) {
+    return this.create().pop(fs);
+  },
+  create:function() {
+    return ProcsPop = Html.Pop.create('Procedures', 0).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          var height = self.fullscreen() - 150;
+          self.table = ProcsTable.create(self.content, height).bubble('onupdate', self.table_onupdate);
+          self.cb = Html.CmdBar.create(self.content).add('Add Test/Procedure...', self.new_onclick).exit(self.close);
+        },
+        pop:function(fs) {
+          self.fs = fs;
+          self.updated = false;
+          self.show();
+          self.table.load(fs);
+          return self;
+        },
+        close:function() {
+          if (self.updated)
+            self.onupdate();
+          Pop.close();
+        },
+        //
+        table_onupdate:function() {
+          self.updated = true;
+        },
+        new_onclick:function() {
+          self.table.edit();
+        }
+      }
+    })
+  }
+}
+/**
+ * TableLoader ProcsTable
+ */
+ProcsTable = {
+  create:function(container, height) {
+    return Html.TableLoader.create(container, 'fsp').extend(this, function(self, parent) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          self.setHeight(height);
+          self.thead().trFixed().th('Date').w('10%').th('Category').w('10%').th('Name').w('20%').th('Results').w('60%');
+          self.setTopFilter();
+        },
+        edit:function(proc) {
+          proc = proc || Proc.asNew();
+          ProcEntry.pop(proc).bubble('onsave', self.update).bubble('ondelete', self.pop_onupdate);
+        },
+        load:function(fs) {
+          if (fs) {
+            self.cid = fs.clientId;
+            parent(Html.TableLoader).load(fs.procedures);
+          } else {
+            parent(Html.TableLoader).load();
+          }
+        },
+        //
+        fetch:function(callback_recs) {
+          Ajax.Facesheet.Procedures.getAll(self.cid, callback_recs);
+        },
+        filter:function(rec) {
+          var ipc = (rec.Ipc) ? rec.Ipc : {};
+          return {'Category':C_Ipc.CATS[ipc.cat],'Name':ipc.name};
+        },
+        rowKey:function(rec) {
+          return rec.procId;
+        },
+        drawRow:function(rec) {
+          rec._cat = C_Ipc.CATS[rec.Ipc.cat];
+          if (rec._results)
+            rec.__results = rec._results.join('; ');
+          self.tbody().tr(rec).td(rec.date, 'bold nw').td(rec._cat).select(AnchorProc).td(rec.__results);
+        },
+        onselect:function(rec) {
+          self.edit(rec);
+        },
+        pop_onupdate:function() {
+          self.onupdate();
+          self.load();
+        }
+      }
+    })
+  }
+}
+/**
+ * RecordEntryPop ProcEntry 
+ */
+ProcEntry = {
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    var My = this;
+    return ProcEntry = Html.RecordEntryDeletePop.create('Procedure Entry', 700).extend(function(self) {
+      return {
+        onsave:function(rec) {},
+        ondelete:function(id) {},
+        //
+        init:function() {
+          self.cmd.container().into(self.frame);
+          self.errorbox.into(self.frame);
+          self.tabletile = Html.Tile.create(self.content, 'mt10');
+          self.table = My.ResultTable.create(self.tabletile).bubble('onupdate', self.table_onupdate);
+        },
+        buildCmd:function(cb) {
+          if (self.rec.procId)
+            cb.save(self.save_onclick).del(self.del_onclick).cancel(self.cancel_onclick);
+          else
+            cb.save(self.save_onclick, 'Save and Exit').save(self.saveplus_onclick, 'Save and Add Result...').cancel(self.cancel_onclick);
+        },
+        buildForm:function(ef) {
+          ef.li('Name').picker(IpcPicker, 'ipc', 'Ipc');
+          ef.li('Type/Loc').textbox('location', 40);
+          ef.li('With').id('li-sched1').picker(ProviderPicker, 'providerId', 'Provider').lbl('Location').picker(FacilityPicker, 'addrFacility', 'Facility').endSpan();
+          ef.li('Date').qdate('date');
+          ef.li('Comments').textarea('comments');
+        }, 
+        onload:function(rec) {
+          self.resultsave = false;
+          self.table.reset();
+          self.cmd.reset();
+        },
+        onclose:function(saved) {
+          if (! saved && self.resultsave)
+            self.onsave(self.rec);
+        },
+        onshow:function(rec) {
+          self.table.set('proc', rec);
+          if (rec.procId) {
+            self.tabletile.show();
+            self.table.load(rec);
+          } else {
+            self.tabletile.hide();
+          }
+          self.form.focus('ipc');
+        },
+        save:function(proc, onsuccess, onerror) {
+          Ajax.Facesheet.Procedures.save(proc, onsuccess, onerror);
+        },
+        remove:function(proc, onsuccess) {
+          Ajax.Facesheet.Procedures.deleteProc(proc.procId, onsuccess);
+        },
+        table_onupdate:function() {
+          self.resultsave = true;
+        },
+        new_onclick:function() {
+          self.table.edit();
+        },
+        saveplus_onclick:function() {
+          self.save_onclick(function(rec, onsuccess, onerror) {
+            Ajax.Facesheet.Procedures.save(proc, function(rec) {
+              alert(1);
+              onsuccess(rec);
+            }, onerror);
+          })
+        }
+      }
+    })
+  },
+  ResultTable:{
+    create:function(container) {
+      return Html.TableLoader.create(container, 'fsgr single').extend(this, function(self, parent) {
+        return {
+          onupdate:function() {},
+          //
+          init:function() {
+            self.setHeight(200);
+            self.thead().trFixed().th('Result(s)').w('20%').th('Value').w('15%').th('Range').w('15%').th('Interpret').w('15%').th('Comments').w('35%');
+          },
+          load:function(proc) {
+            if (proc) {
+              self.proc = proc;
+              parent(Html.TableLoader).load(proc.ProcResults);
+            } else {
+              parent(Html.TableLoader).load();
+            }
+          },
+          fetch:function(callback_recs) {
+            if (self.recs) 
+              callback_recs(self.recs)
+            else
+              Ajax.Facesheet.Procedures.get(self.proc.procId, function(proc) {
+                self.proc = proc;
+                callback_recs(self.proc.ProcResults);
+              });
+          },
+          edit:function(rec) {
+            if (rec == null) 
+              rec = self.recs.newItem();
+            ProcResultEntry.pop(rec).bubble('onsave', self.pop_onupdate).bubble('ondelete', self.pop_onupdate);
+          },
+          rowKey:function(rec) {
+            return rec.procResultId;
+          },
+          add:function(rec, tr) {
+            tr.select(AnchorProc).td(String.denull(rec.value) + ' ' + String.denull(rec.valueUnit)).td(rec.range).td(C_ProcResult.INTERPRET_CODES[rec.interpretCode]).td(rec.comments);
+          },
+          ondraw:function() {
+            self.tbody().tr().td(Html.AnchorAction.asNew('Add Result...').bubble('onclick', self.onselect), 'cj').colspan(5);
+          },
+          onselect:function(rec) {
+            self.edit(rec);
+          },
+          pop_onupdate:function() {
+            self.onupdate();
+            self.load();
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * RecordEntryPop ProcResultEntry
+ */
+ProcResultEntry = {
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    return ProcResultEntry = Html.RecordEntryDeletePop.create('Results Entry', 600).extend(function(self) {
+      return {
+        onsave:function() {},
+        ondelete:function() {},
+        //
+        buildForm:function(ef) {
+          ef.li('Name').picker(IpcPicker, 'ipc', 'Ipc');
+          ef.li('Value', 'mt10').textbox('value', 5).lbl('Units').textbox('valueUnit', 5).lbl('Range').textbox('range', 20);
+          ef.li('Interpretation').select('interpretCode', C_ProcResult.INTERPRET_CODES, '');
+          ef.li('Comments').textarea('comments', 6);
+        }, 
+        onshow:function(rec) {
+          self.form.focus(rec.name ? 'value' : 'name');
+        },
+        save:function(rec, onsuccess, onerror) {
+          Ajax.Facesheet.Procedures.saveResult(rec._parent.procId, rec, onsuccess, onerror);
+        },
+        remove:function(rec, onsuccess) {
+          Ajax.Facesheet.Procedures.deleteResult(rec.procResultId, onsuccess); 
+        }
+      }
+    })
+  }
+}

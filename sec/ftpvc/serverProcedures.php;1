@@ -1,0 +1,62 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  Logger::debug(currentUrl());
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  Logger::debug(currentUrl());
+  Logger::debug_r($_POST, '$_POST');;
+}
+try {
+  switch ($action) {
+    //
+    case 'getAll':
+      $procs = Procedures::getAll($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($procs));
+      break;
+    case 'get':
+      $proc = Procedures::get($_GET['id']);
+      $m = new JAjaxMsg($action, jsonencode($proc));
+      break;
+    case 'save':
+      $rec = Procedures::save($obj);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'delete':
+      $id = Procedures::delete($_GET['id']);
+      $m = new JAjaxMsg($action, $id);
+      break;
+    case 'saveResult':
+      $rec = Procedures::saveResult($obj->procId, $obj->result);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'deleteResult':
+      $id = Procedures::deleteResult($_GET['id']);
+      $m = new JAjaxMsg($action, $id);
+      break;
+    case 'getResultHistory':
+      $recs = Procedures::getResultHistory($obj);
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+} 
+if ($m != null) 
+  echo $m->out();

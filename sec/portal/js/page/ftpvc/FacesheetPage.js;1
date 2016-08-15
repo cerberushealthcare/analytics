@@ -1,0 +1,142 @@
+/**
+ * Page FacesheetPage
+ */
+FacesheetPage = Html.Page.extend(function(self) {
+  return {
+    onbodyload:function() {
+      self.tile = FacesheetTile.create(_$('page'));
+      self.tile.load();
+    }
+  }
+})
+FacesheetTile = {
+  create:function(container) {
+    var My = this;
+    container.clean();
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        load:function() {
+          self.setHeight(200).working(true);
+          Ajax.Facesheet.get(function(fs) {
+            self.setHeight().working(false);
+            self.fs = fs;
+            self.draw();
+          });
+        },
+        draw:function() {
+          self.clean();
+          Html.H1.create(me.Client.name).into(self);
+          My.DataTile.asAllergies(self).load(self.fs);
+          My.DataTile.asMeds(self).load(self.fs);
+          My.DataTile.asProcs(self).load(self.fs);
+          My.DataTile.asImmuns(self).load(self.fs);
+          My.DataTile.asVitals(self).load(self.fs);
+          My.DataTile.asDiagnoses(self).load(self.fs);
+        }
+      }
+    })
+  },
+  DataTile:{
+    create:function(container) {
+      return Html.Tile.create(container).extend(function(self) {
+        return {
+          init:function() {
+            self.head = Html.H2.create().into(self);
+            self.list = Html.Ul.create().into(self);
+          },
+          load:function(fs) {
+            self.recs = self.getRecs(fs);
+            self.head.setText(self.getHead());
+            self.recs.forEach(function(rec) {
+              self.loadItem(self.list.li(), rec);
+            })
+          },
+          getHead:function() {},
+          getRecs:function(fs) {},
+          loadItem:function(li, rec) {}
+        }
+      })
+    },
+    asAllergies:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Allergies';
+        },
+        getRecs:function(fs) {
+          return fs.Allergies;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.agent));
+        }
+      })
+    },
+    asMeds:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Medications';
+        },
+        getRecs:function(fs) {
+          return fs.Meds;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.name)).add(Html.Span.create('pad', rec.text));
+        }
+      })
+    },
+    asProcs:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Procedures/Results';
+        },
+        getRecs:function(fs) {
+          return fs.Procs;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.Ipc.name)).add(Html.Span.create('pad', rec.date));
+          if (rec._results)
+            li.add(Html.Br.create()).add(Html.Span.create(null, 'Results: ' + rec._results));
+        }
+      })
+    },
+    asImmuns:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Immunizations';
+        },
+        getRecs:function(fs) {
+          return fs.Immuns;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.name));
+          li.add(Html.Span.create('pad', rec.dateGiven));
+        }
+      })
+    },
+    asVitals:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Vital Signs';
+        },
+        getRecs:function(fs) {
+          return fs.Vitals;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.date));
+        }
+      })
+    },
+    asDiagnoses:function(container) {
+      return this.create(container).aug({
+        getHead:function() {
+          return 'Diagnoses';
+        },
+        getRecs:function(fs) {
+          return fs.Diagnoses;
+        },
+        loadItem:function(li, rec) {
+          li.add(Html.Span.create('fs', rec.text)).add(Html.Span.create('pad', rec._status));
+        }
+      })
+    }
+  }
+}

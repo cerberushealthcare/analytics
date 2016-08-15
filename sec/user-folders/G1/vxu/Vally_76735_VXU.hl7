@@ -1,0 +1,9 @@
+MSH|^~\&|Clicktate|X68||LCD|20141215184110||VXU^V04^VXU_V04|1-3818-20141215184110|P|2.5.1|||NE|NE
+PID|1||3818^^^1^MR~184-36-9200^^^MAA^SS||Vally^Nitika^^^^^L||19410813|F|||^^^^^^L||~^NET^^nvally@fastmail.com
+ORC|RE||257^LCD|||||||||257-O^Radon^Nicholas^^^^^^Clicktate^L
+RXA|0|1|20120814233801||52^Vaqta (Adult)^CVX|1|mL^milliliter^UCUM||00^New immunization record^NIP001|257-P^^(select)^^^^^^Clicktate^L|^^^G1||||I90FV|20121214|MSD^Merck and Co., Inc^MVX|||CP|A
+RXR|IM^IM^HL70162|RA^Right Arm^HL70163
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V01^Not VFC Eligible^HL70064||||||F|||20120814233801|||VXC40^Eligibility captured at the immunization level^CDCPHINVS
+OBX|2|CE|30956-7^Vaccine type^LN|2|85^HepA^CVX||||||F
+OBX|3|TS|29768-9^Date vaccine information statement published^LN|2|20111025||||||F
+OBX|4|TS|29769-7^Date vaccine information statement presented^LN|2|20120814233801||||||F

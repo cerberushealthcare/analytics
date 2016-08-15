@@ -1,0 +1,19 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Facesheet Data Record Base Classes
+ * @author Warren Hornsby 
+ */
+/**
+ * Data Record
+ */
+abstract class FsDataRec extends SqlRec {
+  //
+  public function getAuditLabel() {
+    return $this->getKeyValue();
+  }
+  public function formatActive() {
+    return ($this->active) ? 'Active' : 'Not Active';
+  }
+  /**
+   * Override with natural ke

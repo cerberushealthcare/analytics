@@ -1,0 +1,40 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/cms/CmsReports.php';
+require_once 'php/data/rec/GroupFolder_Pqri.php';
+require_once 'php/data/xml/pqri/PQRI.php';
+//
+try { 
+  LoginSession::verify_forServer()->requires($login->Role->Report->pqri);
+  switch ($action) {
+    //
+    case 'report':
+      $id = str_replace(' ', '', $id);
+      $method = "get$id";
+      $from = '2011-01-01';
+      $to = '2012-01-01';
+      $report = CmsReports::$method($from, $to);
+      $m = new JAjaxMsg($action, jsonencode($report));
+      break;
+    case 'get':
+      $id = str_replace(' ', '', $id);
+      $method = "get$id";
+      $from = '2011-01-01';
+      $to = '2012-01-01';
+      $report = CmsReports::$method($from, $to);
+      $xml = PQRI::from($report);
+      $folder = GroupFolder_Pqri::open();
+      $file = $folder->save($xml);
+      $m = new JAjaxMsg($action, jsonencode($file));
+      break;
+    case 'download':
+      $folder = GroupFolder_Pqri::open();
+      $folder->download($id);
+      exit;
+  }
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError($e);
+}
+if ($m != null) 
+  echo $m->out();
+  

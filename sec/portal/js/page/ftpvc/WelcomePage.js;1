@@ -1,0 +1,11 @@
+/**
+ * Page WelcomePage
+ */
+WelcomePage = Html.Page.extend(function(self) {
+  return {
+    init:function() {
+      self.tile = Html.Tile.create(_$('page'));
+      Html.H1.create('Welcome, ' + me.Client.firstName).into(self.tile);
+    }
+  }
+})

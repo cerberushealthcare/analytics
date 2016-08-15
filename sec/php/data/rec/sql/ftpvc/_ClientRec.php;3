@@ -1,0 +1,53 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Client Base Class
+ * @author Warren Hornsby
+ */
+abstract class ClientRec extends SqlRec {
+  /*  
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $maiden;
+  public $prefix;
+  public $suffix;
+  public $middleName;
+  public $notes;
+  public $dateUpdated;
+  */
+  const SEX_MALE = 'M';
+  const SEX_FEMALE = 'F';
+  public static $SEXES = array(
+    self::SEX_MALE => 'Male',
+    self::SEX_FEMALE => "Female");
+  //
+  public function getSqlTable() {
+    return 'clients';
+  }
+  //
+  public function getFullName() {
+    $name = "$this->lastName, $this->firstName";
+    if ($this->middleName) 
+      $name .= " $this->middleName";
+    return trim($name);
+  }  
+  public function getMiddleInitial() {
+    if ($this->middleName) 
+      return substr($this->middleName, 0, 1);
+  }
+  public function setBirth($date) {
+    $this->birth = formatFromDate($date);
+  }
+}

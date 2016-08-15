@@ -1,0 +1,74 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xml:base="http://apps.nlm.nih.gov/medlineplus/services/" xml:lang="en" xmlns="http://www.w3.org/2005/Atom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <title type="text">MedlinePlus Connect</title>
+  <subtitle type="text">MedlinePlus Connect results for ICD-9-CM 250.33</subtitle>
+  <author>
+    <name>U.S. National Library of Medicine</name>
+    <uri>http://www.nlm.nih.gov</uri>
+  </author>
+  <updated>2014-10-11T14:10:29Z</updated>
+  <category scheme="mainSearchCriteria.v.c" term="250.33" />
+  <category scheme="mainSearchCriteria.v.cs" term="2.16.840.1.113883.6.103" />
+  <category scheme="mainSearchCriteria.v.dn" term="" />
+  <category scheme="informationRecipient" term="PAT" />
+  <id></id>
+  <entry>
+    <title>Coma</title>
+    <link href="http://www.nlm.nih.gov/medlineplus/coma.html" rel="alternate" />
+    <id>tag: nlm.nih.gov, 2014-11-10:/medlineplus/coma.html</id>
+    <updated>2014-10-11T14:10:29Z</updated>
+    <summary type="html">&lt;p&gt;A coma is a deep state of unconsciousness. An individual in a coma is alive but unable to move or respond to his or her environment. Coma may occur as a complication of an underlying illness, or as a result of injuries,
+      such as &lt;a href="http://www.nlm.nih.gov/medlineplus/traumaticbraininjury.html"&gt;brain injury&lt;/a&gt;.&lt;/p&gt;
+
+      &lt;p&gt;A coma rarely lasts more than 2 to 4 weeks. The outcome for coma depends on the cause, severity, and site of the damage. People may come out of a coma with physical, intellectual, and psychological problems. Some people may remain in a coma for years or
+      even decades. For those people, the most common cause of death is infection, such as pneumonia.&lt;/p&gt;
+
+      &lt;p class="NLMattribution"&gt; NIH: National Institute of Neurological Disorders and Stroke&lt;/p&gt; &lt;p class="NLMrelatedLinks"&gt;&lt;ul&gt;&lt;li&gt;&lt;a
+      href="http://www.nlm.nih.gov/medlineplus/ency/article/003931.htm"&gt;EEG&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/p&gt;</summary>
+  </entry>
+  <entry>
+    <title>Diabetes Type 1</title>
+    <link href="http://www.nlm.nih.gov/medlineplus/diabetestype1.html" rel="alternate" />
+    <id>tag: nlm.nih.gov, 2014-11-10:/medlineplus/diabetestype1.html</id>
+    <updated>2014-10-11T14:10:29Z</updated>
+    <summary type="html">
+      &lt;p class="NLMalsoCalled"&gt;Also called: Insulin-dependent diabetes, Juvenile diabetes&lt;/p&gt;
+      &lt;p&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/diabetes.html"&gt;Diabetes&lt;/a&gt; means your blood glucose, or &lt;a
+      href="http://www.nlm.nih.gov/medlineplus/bloodsugar.html"&gt;blood sugar&lt;/a&gt;, levels are too
+      high. With type 1 diabetes, your pancreas does not make insulin. Insulin is a hormone that
+      helps glucose get into your cells to give them energy. Without insulin, too much glucose
+      stays in your blood. Over time, high blood glucose can lead to &lt;a href="http://www.nlm.nih.gov/medlineplus/diabetescomplications.html"&gt;serious problems&lt;/a&gt; with your
+      &lt;a href="http://www.nlm.nih.gov/medlineplus/diabeticheartdisease.html"&gt;heart&lt;/a&gt;, &lt;a href="http://www.nlm.nih.gov/medlineplus/diabeticeyeproblems.html"&gt;eyes&lt;/a&gt;, &lt;a
+      href="http://www.nlm.nih.gov/medlineplus/diabetickidneyproblems.html"&gt;kidneys&lt;/a&gt;, &lt;a href="http://www.nlm.nih.gov/medlineplus/diabeticnerveproblems.html"&gt;nerves&lt;/a&gt;, and gums and teeth. &lt;/p&gt;
+
+      &lt;p&gt;Type 1 diabetes happens most often in &lt;a href="http://www.nlm.nih.gov/medlineplus/diabetesinchildrenandteens.html"&gt;children&lt;/a&gt; and young adults but can appear at any
+      age. Symptoms may include&lt;/p&gt;
+      &lt;ul&gt;
+      &lt;li&gt; Being very thirsty &lt;/li&gt;
+      &lt;li&gt; Urinating often &lt;/li&gt;
+      &lt;li&gt; Feeling very hungry or tired &lt;/li&gt;
+      &lt;li&gt; Losing weight without trying &lt;/li&gt;
+      &lt;li&gt; Having sores that heal slowly &lt;/li&gt;
+      &lt;li&gt; Having dry, itchy skin &lt;/li&gt;
+      &lt;li&gt; Losing the feeling in your feet or having tingling in your feet &lt;/li&gt;
+      &lt;li&gt; Having blurry eyesight &lt;/li&gt;
+      &lt;/ul&gt;
+
+      &lt;p&gt;A blood test can show if you have diabetes. If you do, you will need to take &lt;a href="http://www.nlm.nih.gov/medlineplus/diabetesmedicines.html"&gt;insulin&lt;/a&gt; for
+      the rest of your life.&lt;/p&gt;
+
+      &lt;p class="NLMattribution"&gt; NIH: National Institute of Diabetes and Digestive and Kidney Diseases&lt;/p&gt; &lt;p class="NLMrelatedLinks"&gt;&lt;ul&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/article/003640.htm"&gt;A1c
+      test&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/patientinstructions/000085.htm"&gt;Diabetes - low blood sugar - self-care&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a
+      href="http://www.nlm.nih.gov/medlineplus/ency/patientinstructions/000082.htm"&gt;Diabetes - tests and checkups&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/patientinstructions/000079.htm"&gt;Diabetes - when you
+      are sick&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/patientinstructions/000083.htm"&gt;Diabetes and exercise&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a
+      href="http://www.nlm.nih.gov/medlineplus/ency/article/000320.htm"&gt;Diabetic ketoacidosis&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/patientinstructions/000660.htm"&gt;Giving an insulin
+      injection&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/article/003466.htm"&gt;Glucose tolerance test&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="http://www.nlm.nih.gov/medlineplus/ency/article/000305.htm"&gt;Type 1
+      diabetes&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/p&gt;</summary>
+  </entry>
+</feed>
+ 
+
+
+
+

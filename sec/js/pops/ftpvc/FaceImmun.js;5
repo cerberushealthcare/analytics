@@ -1,0 +1,273 @@
+/**
+ * Facesheet Immunizations
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceImmun = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-imm',
+  pop:function(fs, zoom, callback) {
+    var self = this;
+    Page.work(function() {
+      self.fs = fs;
+      self.changed = false;
+      self._scb = Ajax.buildScopedCallback(denull(callback, 'immunChangedCallback'));
+      Includer.get([Includer.HTML_FACE_IMMUN, Includer.LIB_FACE_UI, Includer.AP_CALENDAR, Includer.AP_WORKING_CONFIRM], function() {
+        setCaption('fsp-imm-cap-text', fs.client.name + ' - Immunizations');
+        setCaption('pop-imme-cap-text', fs.client.name + ' - Immunization Entry');
+        setCaption('pop-immc-cap-text', fs.client.name + ' - Immunization Chart');
+        self._load();
+        Page.work();
+        if (zoom) {
+          zoomPop(FaceImmun._POP);  
+        } else {
+          showOverlayPop(FaceImmun._POP);
+        }
+      });
+    });
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.immuns = fs.immuns;
+    this.changed = true;
+    this._load();    
+  },
+  fpEdit:function(id) {
+    FaceImmunEntry.pop(id);
+  },
+  fpChart:function() {
+    FaceImmunChart.pop();
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  //
+  _load:function() {
+    var fs = this.fs;
+    var tp = new TableLoader('fsp-immh-tbody', 'off', 'fsp-immh-div');
+    if (fs.immuns) {
+      fs.immunsById = {};
+      for (var i = 0; i < fs.immuns.length; i++) {
+        var immun = fs.immuns[i];
+        fs.immunsById[immun.id] = immun;
+        var href = 'javascript:FaceImmun.fpEdit(' + immun.id + ')';
+        tp.createTrTd('main');
+        tp.append(createAnchor(null, href, 'fs vital', immun.dateText));
+        tp.createTd(null, immun.name);
+        tp.createTd(null, null, bulletJoin([immun.manufac, immun.lot], true));
+        tp.createTd(null, null, bulletJoin([immun.dose, immun.route], true));
+      }
+    }
+  }
+}
+/**
+ * Immunization Entry
+ */
+FaceImmunEntry = {
+  parent:null,
+  fs:null,
+  tui:null,
+  /*
+   * - id: DATA_IMMUN_ID, null for add
+   * - parent: optional (assumes FaceImmun)
+   */
+  pop:function(id, parent) {
+    var fs = FaceUi.setParentage(denull(parent, FaceImmun), this);
+    var self = this;
+    Page.work(function() {
+      Includer.get([Includer.C_TEMPLATE_UI, Includer.AP_TEMPLATE_POPS, Includer.JS_TEMPLATE_POPS], function() {
+        if (self.tui == null) {
+          self.tui = new TemplateUi($('imme-tui'), fs, null, fs.immunPid, TemplateUi.FORMAT_ENTRY_FORM, function() {
+            self._pop(id);
+          });
+        } else {
+          self.tui.reset();
+          self.tui.getParInfo(fs.immunPid, function() {
+            self._pop(id);
+          });  
+        }
+      });
+    });    
+  },
+  _pop:function(id) {
+    if (id) {
+      var imm = this.fs.immunsById[id];
+      var rec = this._buildRec(imm);
+      this.tui.setRecord(rec);
+      setValue('imme-date', imm.dateCal);
+      show('imme-delete-span');
+    } else {
+      setValue('imme-date', calToday());
+      hide('imme-delete-span');
+    }
+    Page.work();
+    showOverlayPop('pop-imme');      
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var rec = this.tui.getRecord('imm.');
+    rec.cid = this.fs.client.id;
+    rec.dateGiven = value('imme-date');
+    rec.dateExp = formatDate(rec.dateExp);
+    rec.dateVis = formatDate(rec.dateVis);
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveImmun', rec, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.parent.update(fs);
+        closeOverlayPop();
+      });
+  },
+  _formatDate:function(text) {
+    return (text) ? 
+      calFormatShortDate(calParse(text, CAL_FMT_SENTENCE)) : 
+      null;
+  },
+  _buildRec:function(imm) {  
+    return {
+      'id':imm.id,
+      'imm.name':imm.name,
+      'imm.lot':imm.lot,
+      'imm.dateExp':imm.dateExp,
+      'imm.tradeName':imm.tradeName,
+      'imm.manufac':imm.manufac,
+      'imm.dose':imm.dose,
+      'imm.route':imm.route,
+      'imm.site':imm.site,
+      'imm.dateVis':imm.dateVis};
+  }
+};
+FaceImmunChart = {
+  fs:null,
+  parent:null,
+  _chart:null,
+  _DATE_COLS:6,
+  pop:function(fs) {
+    var fs = FaceUi.setParentage(FaceImmun, this);
+    var self = this;
+    Page.work(function() {
+      Lookup.getVacChart(
+        function(chart) {
+          self._chart = chart;
+          self._load(fs);
+          Page.work();
+          showOverlayPop('pop-immc');
+        });
+    });
+  },
+  fpEdit:function(id) {
+    FaceImmunEntry.pop(id, FaceImmunChart);
+  },
+  fpPrint:function() {
+    Page.pop(Page.PAGE_PRINT_POP, {
+      'pop':'FaceImmun',
+      'obj':'FaceImmunChart',
+      'arg':this.fs.client.id,
+      'title':this.fs.client.name + ' - Immunization Chart - DOB: ' + this.fs.client.birth});
+  },
+  print:function(id) {
+    var self = this;
+    Lookup.getVacChart(
+      function(chart) {
+        self._chart = chart;
+        Ajax.get(Ajax.SVR_POP, 'getFacesheet', id, 
+          function(fs) {  
+            self._load(fs);
+            printout('immc-tbl');
+          });
+      });
+  },
+  update:function(fs) {
+    this._load(fs);
+    this.parent.update(fs);
+  },
+  _load:function(fs) {
+    this.fs = fs;
+    if (fs.immuns) {
+      var chart = this._buildChart();
+      var t = new TableLoader('immc-tbody', 'off', 'immc-div');
+      for (var cat in chart) {
+        if (chart[cat].active) {
+          t.createTr(0);
+          t.createTd('immcat', cat);
+          t.td.colSpan = this._DATE_COLS + 1; 
+          var vacs = chart[cat].vacs;
+          for (var vac in vacs) {
+            t.createTr(1);
+            t.createTd('immname', vac);
+            t.td.style.width = '25%';
+            var immuns = vacs[vac];
+            for (var i = 0; i < this._DATE_COLS; i++) {
+              if (i < immuns.length) {
+                var a = createAnchor(null, 'javascript:FaceImmunChart.fpEdit(' + immuns[i].id + ')', null, immuns[i].dateCal);
+                t.createTdAppend('nowrap', a);
+              } else {
+                t.createTd(null, null, '&nbsp;');
+              }
+              t.td.style.width = '66px';
+            }
+          }
+        }
+      }
+    }
+  },
+  /*
+   * Returns {
+   *   category:{
+   *     'active':!,     
+   *     'vacs':{
+   *       vac:[immun,..],..
+   *       },..
+   *     },..
+   *   }
+   */
+  _buildChart:function() {
+    var fs = this.fs;
+    var chart = {};
+    var catByVac = {};
+    for (var cat in this._chart) {
+      chart[cat] = {
+        'active':0,
+        'vacs':{}
+        };
+      var vacs = this._chart[cat];
+      for (var i = 0; i < vacs.length; i++) {
+        catByVac[vacs[i]] = chart[cat];
+      }
+    }
+    var other = {
+      'active':0,
+      'vacs':{}
+      };
+    chart['Other'] = other;
+    for (var i = 0; i < fs.immuns.length; i++) {
+      var immun = fs.immuns[i];
+      var vacs = this._getVacs(immun.name);
+      for (var j = 0; j < vacs.length; j++) {
+        var vac = vacs[j];
+        var cat = denull(catByVac[vac], other);
+        cat.active = true;
+        unshiftInto(cat.vacs, vac, immun);
+      }
+    }
+    return chart;
+  },
+  _xrefChartVacs:function(chart) {
+  },
+  _getVacs:function(name) {
+    var vacs;
+    var a = name.split('- ');
+    if (a.length == 1) {
+      vacs = [name];
+    } else {
+      vacs = a[1].split('/');
+    }
+    return vacs;
+  }
+};
+  

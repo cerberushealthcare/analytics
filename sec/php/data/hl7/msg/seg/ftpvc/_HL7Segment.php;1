@@ -1,0 +1,34 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Values.php';
+/**
+ * HL7 Segment  
+ * @author Warren Hornsby
+ */
+abstract class HL7Segment extends HL7Rec {
+  //
+  public $_segId;
+  public $_msg;
+  //
+  /**
+   * @param HL7Message $msg
+   */
+  public function __construct($msg) {
+    if ($msg) {
+      $this->_msg = $msg;
+      $this->_rec = $msg->current();
+      $this->setValues($msg->pop());
+    }
+  }
+  public function getCompDelim() {
+    return $this->_msg->Header->encodingChars->compDelim;
+  }
+  //
+  protected function setValues($values) {
+    $this->_segId = current($values);
+    next($values);
+    parent::setValues($values);
+  }
+  protected static function isFid($var, $c1) {
+    return parent::isFid($var, $c1) && ! self::isUpper($c1);
+  }
+}

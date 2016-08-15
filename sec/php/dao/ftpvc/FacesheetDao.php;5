@@ -1,0 +1,1123 @@
+<?php
+require_once "php/dao/_util.php";
+require_once "php/dao/LoginDao.php";
+require_once "php/dao/SchedDao.php";
+require_once "php/dao/AuditDao.php";
+require_once "php/data/json/JFacesheet.php";
+require_once "php/data/json/JDataMed.php";
+require_once "php/data/json/JDataAllergy.php";
+require_once "php/data/json/JDataVital.php";
+require_once "php/data/json/JDataDiagnosis.php";
+require_once "php/data/json/JDataHm.php";
+require_once "php/data/json/JHistCat.php";
+require_once "php/data/json/JWorkflow.php";
+require_once "php/data/json/JDataValidator.php";
+require_once "php/data/json/JDataSyncGroup.php";
+require_once "php/data/json/JDataSyncProcGroup.php";
+require_once "php/data/json/JDataSyncFamGroup.php";
+//
+class FacesheetDao {
+  //
+  const NO_AUDIT = false;
+  const NO_HISTORY = false;
+  const INCLUDE_DEFS = true;
+  const INTERNAL_ONLY = true;
+  //
+  const TID_IMMUN = 12;  // Messaging template
+  //
+  /**
+   * Assemble entire facesheet
+   * Returns JFacesheet
+   */
+  public static function getFacesheet($clientId, $audit = true) {
+    if ($audit) {
+      AuditDao::logReview($clientId, AuditDao::ENTITY_FACESHEET);
+    }
+    LoginDao::authenticateClientId($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_ALL);
+    FacesheetDao::loadDocs($fs);
+    FacesheetDao::loadClient($fs, $clientId);
+    FacesheetDao::loadAllergies($fs, $clientId);
+    FacesheetDao::loadMeds($fs, $clientId, FacesheetDao::NO_HISTORY);
+    FacesheetDao::loadDiagnoses($fs, $clientId);
+    FacesheetDao::loadVitals($fs, $clientId);
+    FacesheetDao::loadHm($fs, $fs->client);
+    FacesheetDao::loadMedhx($fs, $clientId);
+    FacesheetDao::loadSurghx($fs, $clientId);
+    FacesheetDao::loadFamhx($fs, $clientId, FacesheetDao::INCLUDE_DEFS);
+    FacesheetDao::loadSochx($fs, $clientId);
+    FacesheetDao::loadImmuns($fs, $clientId);
+    return $fs;
+  }
+  /**
+   * Returns minimal JFacesheet for messaging
+   */
+  public static function getMsgFacesheet($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_MSG);
+    FacesheetDao::loadClient($fs, $clientId, FacesheetDao::NO_HISTORY);
+    FacesheetDao::loadAllergies($fs, $clientId, FacesheetDao::NO_HISTORY);
+    FacesheetDao::loadMeds($fs, $clientId, FacesheetDao::NO_HISTORY);
+    FacesheetDao::loadVitals($fs, $clientId);
+    return $fs;
+  }
+  /**
+   * Get vitals with chronological age
+   * @param JClient $client
+   * @return [JDataVital,..]
+   */
+  public static function getGraphingVitals($client) {
+    $vitals = JDataVital::getFacesheetVitals($client->id);
+    foreach ($vitals as &$vital) {
+      $cage = chronAge($client->birth, $vital->date);
+      $vital->cagey = $cage['y'] + ($cage['m'] / 12);
+      $vital->cagem = $cage['m'] + (12 * $cage['y']);
+    }
+    return array_values($vitals);
+  }
+  /**
+   * Get client with meds 
+   * @param int $clientId
+   * @return JFacesheet
+   */
+  public static function getMedClientHistory($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_CLIENT);
+    FacesheetDao::loadClient($fs, $clientId, true);
+    FacesheetDao::loadMeds($fs, $clientId, true);
+    return $fs;
+  }
+  /**
+   * Get client with active med/allergies (no history)
+   * @param int $clientId
+   * @param bool $internalOnly: true to return only active source=internal 
+   * @param JFacesheet
+   */
+  public static function getClientActiveMedsAllergies($clientId, $internalOnly = false) {
+    LoginDao::authenticateClientId($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_CLIENT);
+    FacesheetDao::loadClient($fs, $clientId, false);
+    FacesheetDao::loadMeds($fs, $clientId, false);
+    FacesheetDao::loadAllergies($fs, $clientId, false);
+    if ($internalOnly) {
+      $legacyMeds = array();
+      foreach ($fs->activeMeds as $med) 
+        if ($med->source == JDataMed::SOURCE_LEGACY) 
+          $legacyMeds[] = $med;
+      $fs->activeMeds = $legacyMeds;
+      foreach ($fs->allergies as $allergy) 
+        if ($allergy->source == JDataAllergy::SOURCE_NEWCROP) {
+          $fs->allergies= null;
+          break;
+        }
+    }
+    return $fs;
+  }
+  /**
+   * Refresh active meds/allergies returned from NewCrop  
+   * @param int $clientId
+   * @param string $clientUid
+   * @return JFacesheet    
+   */
+  public static function refreshFromNewCrop($clientId, $clientUid) {
+    LoginDao::authenticateClientId($clientId);
+    $newcrop = new NewCrop();
+    $current = $newcrop->pullCurrentMedAllergy($clientUid);
+    FacesheetDao::rebuildNewCropMeds($clientId, $current);
+    FacesheetDao::rebuildNewCropAllergies($clientId, $current);
+    return FacesheetDao::getClientActiveMedsAllergies($clientId);
+  }
+  private static function rebuildNewCropMeds($clientId, $current) {
+    global $myLogin;
+    $meds = JDataMed::fromNewCropMeds($myLogin->userGroupId, $clientId, $current['med']);
+    $faceRecs = JDataMed::getActiveNewCropMeds($clientId);
+    foreach ($meds as $name => $med) {
+      if (isset($faceRecs[$name])) {
+        $face = $faceRecs[$name];
+        if ($med->date != $face->date) {
+          $med->quid = JDataMed::QUID_NC_RX;
+          JDataMed::save($med, true, FacesheetDao::NO_AUDIT);
+          $face = JDataMed::copyAsFace($med, $face->id);
+          JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+        }
+      } else {
+        $med->quid = JDataMed::QUID_NC_ADD;
+        JDataMed::save($med, true, FacesheetDao::NO_AUDIT);
+        $face = JDataMed::copyAsFace($med);
+        JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    $now = nowNoQuotes();
+    foreach ($faceRecs as $name => $face) {
+      if (! isset($meds[$name])) {
+        $med = JDataMed::copyAsNcAudit($face, JDataMed::QUID_NC_DC, $now);
+        JDataMed::save($med);
+        $face->active = false;
+        JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    JDataMed::updateLegacySource($clientId);
+  } 
+  private static function rebuildNewCropAllergies($clientId, $current) {
+    global $myLogin;
+    $allergies = JDataAllergy::fromNewCropAllergies($myLogin->userGroupId, $clientId, $current['allergy']);
+    // JDataAllergy::deleteActiveAllergies($clientId);
+    foreach ($allergies as $allergy) {
+      JDataAllergy::save($allergy, true);
+    }
+  }
+  
+  // Return facesheet loaded with med history
+  public static function getMedHistory($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_MEDS);
+    FacesheetDao::loadMeds($fs, $clientId);
+    return $fs;
+  }
+
+  // Return just med history
+  public static function getMedPickerHistory($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    return FacesheetDao::getMeds($clientId);
+  }
+
+  // Return facesheet loaded with health maint only
+  public static function getFacesheetHm($clientId) {
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_HM);
+    FacesheetDao::loadHm($fs, SchedDao::getJClient($clientId));
+    return $fs;
+  }
+  
+  // Return facesheet loaded with medical history only
+  public static function getFacesheetHist($clientId, $getHistProcs = false) {
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_HIST);
+    FacesheetDao::loadHist($fs, $clientId, $getHistProcs); 
+    return $fs;
+  }
+  
+  // Returns requested single JQuestion (e.g. an HM results question)
+  public static function getQuestion($quid) {
+    $puid = FacesheetDao::puidFromQuid($quid);
+    $questions = FacesheetDao::getQuestionsForPuid($puid);
+    $q = $questions[$quid];
+    $q->quid = $quid;
+    return $q;
+  }
+  private static function puidFromQuid($quid) {
+    return substr($quid, 0, strrpos($quid, "."));
+  }
+  private static function getQuestionsForPuid($puid) {
+    return SessionDao::fetchQuestionsForPuid(1, nowNoQuotes(), $puid);
+  }
+  
+  // Return array of JQuestions for building UI properties, associated by property name
+  public static function getQuestions($quids) {  // $quids=[prop=>quid]
+    $pars = array();
+    $qs = array();
+    foreach ($quids as $prop => &$quid) {
+      $puid = FacesheetDao::puidFromQuid($quid);
+      if (! isset($pars[$puid])) {
+        $pars[$puid] = FacesheetDao::getQuestionsForPuid($puid); 
+      }
+      $qs[$prop] = $pars[$puid][$quid];
+      $qs[$prop]->quid = $quid;
+    }
+    return $qs;
+  }
+
+  // Return array of JQuestions for building JDataVital properties, associated by property name
+  public static function getVitalQuestions() {
+    $vqs = array();
+    $questions = DataDao::fetchQuestionsForTable(1, nowNoQuotes(), "vitals");
+    foreach (JDataVital::$propsToQuid as $prop => $quid) {
+      $vqs[$prop] = $questions[$quid];
+    }
+    return $vqs;
+  }
+  /*
+   * Returns [dsync=>JQuestion]
+   */
+  public static function getHxQuestions($cat) {
+    return DataDao::fetchQuestionsForPartialDataSync(1, "$cat.");
+  }
+  /*
+   * Returns [dsync=>JQuestion]
+   */
+  public static function getSochxQuestions() {
+    return DataDao::fetchQuestionsForPartialDataSync(1, 'sochx.');
+  }
+  /*
+   * Returns [
+   *    puid=>[field=>JQuestion]  // where puid is dsync prefix and field is dsync suffix, e.g. "+male"=>["status"=>JQuestion,"deathAge"=>JQuestion,..]
+   *   ]
+   */
+  public static function getFamhxQuestions() {
+    $m = DataDao::fetchQuestionsForPartialDataSync(1, '+male.', true);  
+    $f = DataDao::fetchQuestionsForPartialDataSync(1, '+female.', true);  
+    return array(
+        '+male' => $m,
+        '+female' => $f);
+  }
+  
+  // Return single JQuestion for building allergy
+  public static function getAllergyQuestion() {
+    $questions = DataDao::fetchQuestionsForTable(1, nowNoQuotes(), "allergies");
+    return $questions[JDataAllergy::QUID];
+  }
+
+  // Facesheet UI actions
+  public static function saveVital($v) {
+    global $myLogin;
+    if ($v->id == null) {
+      $v->userGroupId = $myLogin->userGroupId;
+    }
+    JDataVital::save($v);
+    $fs = new JFacesheet($v->clientId, JFacesheet::CONTAINS_VITALS);
+    FacesheetDao::loadVitals($fs, $v->clientId);
+    return $fs;
+  }
+  
+  public static function saveSochx($cid, $dsyncs) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::saveDataSyncs($cid, $dsyncs);
+    AuditDao::log($cid, AuditDao::ENTITY_FACESHEET, null, AuditDao::ACTION_UPDATE);
+    $fs = new JFacesheet($cid, JFacesheet::CONTAINS_SOCHX);
+    FacesheetDao::loadSochx($fs, $cid);
+    $nonNullRecs = $fs->sochx->nonNullRecs;
+    DataDao::saveDataSync($cid, "sochx", jsonencode($nonNullRecs));  // save the records with values to sochx datasync (psHx.*psHx include question)
+    if (in_array("Drug Use", $nonNullRecs)) {
+      DataDao::saveDataSync($cid, "detDrugHx", '["LIMITED DRUG HISTORY"]');  
+    }
+    return $fs;
+  }
+
+  public static function saveHx($cid, $cat, $rec, $returnFs = true) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::saveDataSyncs($cid, $rec);
+    if ($returnFs) {
+      return FacesheetDao::rebuildFsForHxCat($cid, $cat);
+    }
+  }
+  
+  public static function saveFamhx($cid, $rec) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::saveDataSyncs($cid, $rec);
+    $fs = new JFacesheet($cid, JFacesheet::CONTAINS_FAMHX);
+    FacesheetDao::loadFamhx($fs, $cid);
+    return $fs;
+  }
+  
+  public static function removeFamhx($cid, $puid) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::removeDataSyncFamPuid($cid, JDataSyncFamGroup::SUID_FAM, $puid);
+    $fs = new JFacesheet($cid, JFacesheet::CONTAINS_FAMHX);
+    FacesheetDao::loadFamhx($fs, $cid);
+    return $fs;
+  }
+  
+  private static function rebuildFsForHxCat($cid, $cat) {
+    AuditDao::log($cid, AuditDao::ENTITY_FACESHEET, null, AuditDao::ACTION_UPDATE);
+    if ($cat == JDataSyncProcGroup::CAT_MED) {
+      $fs = new JFacesheet($cid, JFacesheet::CONTAINS_MEDHX);
+      FacesheetDao::loadMedhx($fs, $cid);
+    } else {
+      $fs = new JFacesheet($cid, JFacesheet::CONTAINS_SURGHX);
+      FacesheetDao::loadSurghx($fs, $cid);
+    }
+    return $fs;
+  }
+  
+  public static function saveHxs($cid, $cat, $recs) {
+    $j = count($recs) - 1;
+    for ($i = 0; $i <= $j; $i++) {
+      $fs = FacesheetDao::saveHx($cid, $cat, $recs[$i], $i == $j);
+    }
+    return $fs;
+  }
+
+  public static function saveHxProcs($cid, $cat, $procs) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::saveDataSyncs($cid, array($cat => $procs));
+    return FacesheetDao::rebuildFsForHxCat($cid, $cat);
+  }
+  /*
+   * Assign family HX relatives (selected options of SUID question)  
+   */
+  public static function saveFamHxSopts($cid, $suid, $sopts) {
+    LoginDao::authenticateClientId($cid);
+    DataDao::saveDataSync($cid, $suid, $sopts);
+    $fs = new JFacesheet($cid, JFacesheet::CONTAINS_FAMHX);
+    FacesheetDao::loadFamhx($fs, $cid);
+    return $fs;
+  }
+  
+  public static function saveDiagnosis($d) {
+    global $myLogin;
+    if (get($d, "id") != null) {
+      $diag = JDataDiagnosis::getDiagnosis($d->id);
+      $diag->date = nowShortNoQuotes();
+      $diag->icd = $d->icd;
+      $diag->text = $d->text;
+      $diag->active = true;
+    } else {
+      $diag = new JDataDiagnosis(null,
+          $myLogin->userGroupId,
+          $d->clientId,
+          null,
+          nowShortNoQUotes(),
+          null,
+          $d->text,
+          null,
+          $d->icd,
+          true,
+          null);
+    }
+    JDataDiagnosis::save($diag, true);
+    $fs = new JFacesheet($diag->clientId, JFacesheet::CONTAINS_DIAGNOSES);
+    FacesheetDao::loadDiagnoses($fs, $diag->clientId);
+    return $fs;
+  }
+   
+  public static function saveHmInt($h) {
+    $hm = JDataHm::getHm($h->id);
+    $hm->interval = $h->int;
+    $hm->every = $h->every;
+    JDataHm::save($hm, true);
+    return FacesheetDao::getFacesheetHm($hm->clientId);
+  }
+
+  public static function saveHm($h) {
+    global $myLogin;
+    if ($h->id != null) {
+      $hm = JDataHm::getHm($h->id);
+      if ($hm->sessionId == null) {  // updating facesheet item
+        $hm->nextText = $h->nextText;
+        $hm->nextTimestamp = strtotime($h->nextSort);
+      } else {  // updating history item
+        $hm->dateText = $h->dateText;
+        $hm->dateSort = $h->dateSort;
+        $hm->results = $h->results;
+      }
+    } else {
+      LoginDao::authenticateClientId($h->clientId);
+      $hm = new JDataHm(null,
+          $myLogin->userGroupId,
+          $h->clientId,
+          0,
+          $h->type,
+          $h->procId,
+          $h->proc,
+          $h->dateText,
+          $h->dateSort,
+          $h->results,
+          null,
+          null,
+          true,
+          null,
+          null,
+          null);
+    }
+    JDataHm::save($hm, true);
+    return FacesheetDao::getFacesheetHm($hm->clientId);
+  }
+
+  public static function addFacesheetHm($h) {
+    LoginDao::authenticateClientId($h->clientId);
+    FacesheetDao::saveBlankFacesheetHm($h->clientId, $h->proc);
+    return FacesheetDao::getFacesheetHm($h->clientId);
+  }
+
+  public static function deactivateHm($id, $returnFs = true) {
+    $hm = JDataHm::getHm($id);
+    $hm->active = false;
+    JDataHm::save($hm, true);
+    if ($returnFs) {
+      return FacesheetDao::getFacesheetHm($hm->clientId);
+    }
+  }
+
+  public static function deactivateHms($a) {
+    for ($i = 0; $i < count($a); $i++) {
+      $fs = FacesheetDao::deactivateHm($a[$i], $i == (count($a) - 1));
+    }
+    return $fs;
+  }
+
+  public static function deactivateDiagnosis($id, $returnFs = true) {
+    $d = JDataDiagnosis::getDiagnosis($id);
+    $d->active = false;
+    JDataDiagnosis::save($d, true);
+    if ($returnFs) {
+      $fs = new JFacesheet($d->clientId, JFacesheet::CONTAINS_DIAGNOSES);
+      FacesheetDao::loadDiagnoses($fs, $d->clientId);
+      return $fs;
+    }
+  }
+
+  public static function deactivateDiagnoses($a) {
+    for ($i = 0; $i < count($a); $i++) {
+      $fs = FacesheetDao::deactivateDiagnosis($a[$i], $i == (count($a) - 1));
+    }
+    return $fs;
+  }
+
+  public static function saveAllergy($a) {
+    global $myLogin;
+    if ($a->id == null) {
+      $a->id = JDataAllergy::getClientAllergyByAgent($a->clientId, $a->agent);  // see if we are really doing a replace
+    }
+    if ($a->id != null) {
+      $allergy = JDataAllergy::getAllergy($a->id);
+      $allergy->date = nowShortNoQuotes();
+      $allergy->index = $a->index;
+      $allergy->agent = $a->agent;
+      $allergy->reactions = $a->reactions;
+      $allergy->active = true;
+    } else {
+      LoginDao::authenticateClientId($a->clientId);
+      $allergy = new JDataAllergy(null,
+          $myLogin->userGroupId,
+          $a->clientId,
+          null,
+          nowShortNoQuotes(),
+          $a->index,
+          $a->agent,
+          $a->reactions,
+          true,
+          null,
+          null);
+    }
+    JDataAllergy::save($allergy, true);
+    $fs = new JFacesheet($a->clientId, JFacesheet::CONTAINS_ALLERGIES);
+    FacesheetDao::loadAllergies($fs, $a->clientId);
+    return $fs;
+  }
+
+  public static function deactivateAllergy($id, $returnFs = true) {
+    $allergy = JDataAllergy::getAllergy($id);
+    $allergy->date = nowShortNoQuotes();
+    $allergy->active = false;
+    JDataAllergy::save($allergy, true);
+    if ($returnFs) {
+      $fs = new JFacesheet($allergy->clientId, JFacesheet::CONTAINS_ALLERGIES);
+      FacesheetDao::loadAllergies($fs, $allergy->clientId);
+      return $fs;
+    }
+  }
+
+  public static function deactivateAllergies($a) {
+    for ($i = 0; $i < count($a); $i++) {
+      $fs = FacesheetDao::deactivateAllergy($a[$i], $i == (count($a) - 1));
+    }
+    return $fs;
+  }
+
+  public static function saveMed($m) {
+    global $myLogin;
+    $addAsReplace = false;
+    $now = nowShortNoQuotes();
+    if ($m->id == null) {
+      $m->id = JDataMed::getClientMedByName($m->clientId, $m->name);  // see if we are really doing a replace
+      $addAsReplace = true;
+    }
+    if ($m->id != null) {
+      $med = JDataMed::getMed($m->id);
+      $c = JDataMed::compareMedNames($med->name, $m->name);
+      if ($c == 0) {  // med names different, keep old and add new
+        $m->id = null;
+      } else if ($c == 1) {  // med names same/dosage different, deactivate old and add new
+        FacesheetDao::deactivateMed($m->id, false);
+        $m->id = null;
+      } else {  // med names identical
+        JDataMed::createMedAuditCopy($med, $addAsReplace ? JDataMed::QUID_FS_ADD : JDataMed::QUID_FS_CHANGE);
+        $med->date = $now;
+        $med->name = $m->name;
+        $med->amt = $m->amt;
+        $med->freq = $m->freq;
+        $med->route = $m->route;
+        $med->length = $m->length;
+        $med->asNeed = $m->asNeeded;
+        $med->meals = $m->meals;
+        $med->disp = $m->disp;
+        $med->text = $m->text;
+        $med->rx = null;
+        $med->active = true;
+        $med->setExpires();
+        JDataMed::save($med, true);
+      }
+    }
+    if ($m->id == null) {
+      LoginDao::authenticateClientId($m->clientId);
+      $med = new JDataMed(null,
+          $myLogin->userGroupId,
+          $m->clientId,
+          null,
+          $now,
+          null,
+          null,
+          $m->name,
+          $m->amt,
+          $m->freq,
+          $m->asNeeded,
+          $m->meals,
+          $m->route,
+          $m->length,
+          $m->disp,
+          $m->text,
+          null,
+          true,
+          null,
+          null,
+          null);
+      $med->setExpires();
+      $med = JDataMed::save($med, true);
+      JDataMed::createMedAuditCopy($med, JDataMed::QUID_ADD);
+    }
+    $fs = new JFacesheet($m->clientId, JFacesheet::CONTAINS_MEDS);
+    FacesheetDao::loadMeds($fs, $m->clientId);
+    $fs->updatedMed = $med->name;
+    return $fs;
+  }
+
+  public static function printRxForMeds($meds) {
+    foreach ($meds as &$m) {
+      $med = JDataMed::getMed($m->id);
+      JDataMed::createMedAuditCopy($med, JDataMed::QUID_FS_RX, $m->rx);
+      $med->date = nowShortNoQuotes();
+      $med->active = true;
+      JDataMed::save($med, true);
+    }
+    $fs = new JFacesheet($m->clientId, JFacesheet::CONTAINS_MEDS);
+    FacesheetDao::loadMeds($fs, $m->clientId);
+    $fs->updatedMed = $med->name;
+    return $fs;
+  }
+
+  public static function deleteVital($id) {
+    $v = FacesheetDao::getVital($id);
+    JDataVital::delete($v, $id);
+    $fs = new JFacesheet($v->clientId, JFacesheet::CONTAINS_VITALS);
+    FacesheetDao::loadVitals($fs, $v->clientId);
+    return $fs;
+  }
+  /**
+   * Deactivate legacy meds
+   * @param int $clientId
+   * @return JFacesheet
+   */
+  public static function deleteLegacyMeds($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    JDataMed::deactivateLegacy($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_MEDS);
+    FacesheetDao::loadMeds($fs, $clientId);
+    return $fs;
+  }
+  /**
+   * Deactivate legacy allergies
+   * @param int $clientId
+   * @return JFacesheet
+   */
+  public static function deleteLegacyAllergies($clientId) {
+    LoginDao::authenticateClientId($clientId);
+    JDataAllergy::deactivateLegacy($clientId);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_ALLERGIES);
+    FacesheetDao::loadAllergies($fs, $clientId);
+    return $fs;
+  }
+  
+  public static function deactivateMed($id, $returnFs = true) {
+    $med = JDataMed::getMed($id);
+    JDataMed::createMedAuditCopy($med, JDataMed::QUID_FS_DEACTIVATE);
+    $med->date = nowShortNoQuotes();
+    $med->active = false;
+    JDataMed::save($med, true);
+    if ($returnFs) {
+      $fs = new JFacesheet($med->clientId, JFacesheet::CONTAINS_MEDS);
+      FacesheetDao::loadMeds($fs, $med->clientId);
+      $fs->updatedMed = $med->name;
+      return $fs;
+    }
+  }
+
+  public static function deactivateMeds($a) {
+    for ($i = 0; $i < count($a); $i++) {
+      $fs = FacesheetDao::deactivateMed($a[$i], $i == (count($a) - 1));
+    }
+    return $fs;
+  }
+
+  // Docs of practice
+  private static function loadDocs(&$fs) {
+    global $myLogin;
+    $fs->docs = UserDao::getDocsOfGroup($myLogin->userGroupId);
+  }
+
+  // Client and history
+  private static function loadClient(&$fs, $clientId, $includeHistory = true) {
+    $fs->client = SchedDao::getJClient($clientId);
+    if ($includeHistory) {
+      $fs->clientHistory = SchedDao::getJClientHistory($clientId);
+      $hist = $fs->clientHistory;
+      $fs->workflow->appt = null;
+      $fs->workflow->docs = array();
+      $iDocs = 0;
+      foreach ($hist->all as &$a) {
+        if ($a->type == JHistoryRef::TYPE_APPT) {
+          if (isTodayOrFuture($a->date)) {
+            $fs->workflow->appt = $hist->appts[$a->id];
+          }
+        } else if ($a->type == JHistoryRef::TYPE_SESSION) {
+          $s = $hist->sessions[$a->id];
+          if (! $s->closed && $iDocs < 3) {
+            $fs->workflow->docs[] = $s;
+            $iDocs++;
+          }
+        }
+        if ($fs->workflow->appt != null && $iDocs == 3) {
+          return;
+        }
+      }
+    }
+  }
+
+  public static function saveClientNotes($clientId, $note) {
+    SchedDao::updateClientNotes($clientId, $note);
+    $fs = new JFacesheet($clientId, JFacesheet::CONTAINS_CLIENT);
+    FacesheetDao::loadClient($fs, $clientId);
+    return $fs;
+  }
+
+  // Meds
+  private static function loadMeds(&$fs, $clientId, $includeHistory = true) {
+    global $myLogin;
+    $meds = FacesheetDao::getMeds($clientId);
+    $fs->meds = $meds;
+    $fs->activeMeds = FacesheetDao::filterInactive($meds);
+    if ($includeHistory) {
+      FacesheetDao::loadMedHistory($fs, $clientId, $meds);
+    }
+  }
+
+  private static function loadMedHistory(&$fs, $clientId, $meds = null) {
+    global $myLogin;
+    if ($meds == null) {
+      $meds = FacesheetDao::getMeds($clientId);
+    }
+    $fs->medsHistByMed = JDataMed::getMedsHistory($clientId, "name, date DESC, `index` DESC");
+    $fs->medsHistByDate = JDataMed::getMedsHistory($clientId, "date DESC, `index`, name");
+    if (! $myLogin->isErx()) {
+      $fs->medsHistByMed = FacesheetDao::syncActive($fs->medsHistByMed, $meds, "name");
+      $fs->medsHistByDate = FacesheetDao::syncActive($fs->medsHistByDate, $meds, "name");
+    }
+  }
+
+  // Sync history records with active setting of facesheet records
+  private static function syncActive($histRecs, $faceRecs, $keyField) {  // faceRec association key field
+    foreach ($histRecs as &$histRec) {
+      $histRec->active = $faceRecs[$histRec->$keyField]->active;
+    }
+    return $histRecs;
+  }
+
+  private static function getMeds($clientId) {
+    global $myLogin;
+    if ($myLogin->isErx()) {
+      $recs = JDataMed::getActiveFacesheetMeds($clientId);
+    } else {
+      $recs = FacesheetDao::rebuildFacesheetMeds($clientId);
+    }
+    uasort($recs, array("JDataMed", "cmp"));
+    return $recs;
+  }
+
+  // Rebuild facesheet records from session history and existing facesheet records
+  // If history rec not in facesheet, it will be added
+  // If history rec is in facesheet, it will be replaced if history rec is newer
+  private static function rebuildFacesheetMeds($clientId) {
+    $sessRecs = JDataMed::getSessionMeds($clientId);
+    $faceRecs = JDataMed::getFacesheetMeds($clientId);
+    $now = nowNoQuotes();
+    foreach ($sessRecs as $name => $sess) {
+      $discontinued = JDataMed::isDiscontinued($sess->quid);
+      if (isset($faceRecs[$name])) {
+        $face = $faceRecs[$name];
+        if (FacesheetDao::isSessNewer($sess, $face)) {
+          $face->date = $now;
+          if ($discontinued) {
+            $face->active = false;
+          } else {
+            $face->amt = FacesheetDao::overrideIfNotBlank($face->amt, $sess->amt);
+            $face->freq = FacesheetDao::overrideIfNotBlank($face->freq, $sess->freq);
+            $face->asNeeded = FacesheetDao::overrideIfNotBlank($face->asNeeded, $sess->asNeeded);
+            $face->meals = FacesheetDao::overrideIfNotBlank($face->meals, $sess->meals);
+            $face->route = FacesheetDao::overrideIfNotBlank($face->route, $sess->route);
+            $face->length = FacesheetDao::overrideIfNotBlank($face->length, $sess->length);
+            $face->disp = FacesheetDao::overrideIfNotBlank($face->disp, $sess->disp);
+            $face->text = FacesheetDao::overrideIfNotBlank($face->text, $sess->text);
+            $face->active = true;
+            if ($sess->quid == JDataMed::QUID_ADD) {
+              $face->setExpires($sess->date);
+            }
+          }
+          $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+        } else {
+          if ($face->isExpired()) {
+            $face->active = false;
+            $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+          }
+        }
+      } else {
+        $face = JDataMed::copy($sess);
+        $face->sessionId = null;
+        $face->quid = null;
+        $face->index = null;
+        $face->date = $now;
+        $face->rx = null;
+        $face->active = ! $discontinued;
+        $face->setExpires($sess->date);
+        $faceRecs[$face->name] = JDataMed::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    return $faceRecs;
+  }
+
+  private function overrideIfNotBlank($a, $b) {
+    return (isBlank($b)) ? $a : $b;
+  }
+
+  // Allergies
+  private static function loadAllergies(&$fs, $clientId, $includeHistory = true) {
+    $fs->allergies = FacesheetDao::filterInactive(FacesheetDao::getAllergies($clientId));
+    if ($includeHistory) {
+      $fs->allergiesHistory = JDataAllergy::getAllergiesHistory($clientId);
+    }
+  }
+
+  private static function getAllergies($clientId) {
+    return FacesheetDao::rebuildFacesheetAllergies($clientId);
+  }
+
+  // Rebuild facesheet records from session history and existing facesheet records
+  // If history rec not in facesheet, it will be addded
+  // If history rec is in facesheet, it will be replaced if history rec is newer
+  private static function rebuildFacesheetAllergies($clientId) {
+    $sessRecs = JDataAllergy::getSessionAllergies($clientId);
+    $faceRecs = JDataAllergy::getFacesheetAllergies($clientId);
+    $now = nowShortNoQuotes();
+    foreach ($sessRecs as $agent => $sess) {
+      if (isset($faceRecs[$agent])) {  // facesheet rec exists
+        $face = $faceRecs[$agent];
+        if (FacesheetDao::isSessNewer($sess, $face)) {
+          $face->date = $now;
+          $face->reactions = $sess->reactions;
+          $face->active = true;
+          $faceRecs[$face->agent] = JDataAllergy::save($face, true, FacesheetDao::NO_AUDIT);
+        }
+      } else {  // facesheet rec doesn't exist
+        $face = JDataAllergy::copy($sess);
+        $face->sessionId = null;
+        $face->index = null;
+        $face->date = $now;
+        $face->active = true;
+        $faceRecs[$face->agent] = JDataAllergy::save($face, true, FacesheetDao::NO_AUDIT);
+      }
+    }
+    return $faceRecs;
+  }
+
+  // Diagnoses
+  private static function loadDiagnoses(&$fs, $clientId) {
+    $fs->diagnoses = FacesheetDao::getDiagnoses($clientId);
+    $fs->diagnosesHistory = JDataDiagnosis::getDiagnosesHistory($clientId);
+  }
+
+  private static function getDiagnoses($clientId) {
+    FacesheetDao::addFacesheetDiagnoses($clientId);
+    return JDataDiagnosis::getActiveFacesheetDiagnoses($clientId);
+  }
+
+  // Create new facesheet records from unread session history
+  private static function addFacesheetDiagnoses($clientId) {
+    $faceRecs = JDataDiagnosis::getActiveFacesheetDiagnoses($clientId);
+    $sessRecs = JDataDiagnosis::getUnreadSessionDiagnoses($clientId);
+    $now = nowShortNoQuotes();
+    foreach ($sessRecs as &$sess) {
+      $a = explode("<br>", $sess->text);  // explode out multiple selected diagnoses
+      foreach ($a as &$text) {
+        $text = trim($text);
+        if (strlen($text) > 0) {
+          if (substr($text, -1) == ".") {
+            $text = substr($text, 0, -1);
+          }
+          if (isset($faceRecs[$text])) {  
+            $face = $faceRecs[$text];
+            if (compareDates($sess->updated, $face->updated) > 0) {  // session is newer
+              $face->icd = $sess->icd;
+              $face->active = true;
+              JDataDiagnosis::save($face, true, FacesheetDao::NO_AUDIT);
+            }
+          } else {
+            $face = JDataDiagnosis::copy($sess);
+            $face->text = $text;
+            $face->sessionId = null;
+            $face->date = $now;
+            $face->active = true;
+            $faceRecs[$text] = JDataDiagnosis::save($face, true, FacesheetDao::NO_AUDIT);
+          }
+          $sess->active = false;
+          JDataDiagnosis::save($sess, true, FacesheetDao::NO_AUDIT);
+        }
+      }
+    }
+  }
+
+  // Social History
+  private static function loadSochx(&$fs, $clientId) {
+    $fs->sochx = DataDao::fetchDataSyncGroup(JDataSyncGroup::GROUP_SOCHX, $clientId);
+  }
+  
+  // Med/Surg/Fam History
+  private static function loadMedhx(&$fs, $clientId) {
+    $fs->medhx = DataDao::fetchDataSyncProcGroup(JDataSyncProcGroup::CAT_MED, $clientId);
+  }
+  private static function loadSurghx(&$fs, $clientId) {
+    $fs->surghx = DataDao::fetchDataSyncProcGroup(JDataSyncProcGroup::CAT_SURG, $clientId);
+  }
+  private static function loadFamhx(&$fs, $clientId, $includeDefs = false) {
+    $fs->famhx = DataDao::fetchDataSyncFamGroup(JDataSyncFamGroup::SUID_FAM, $clientId, $includeDefs);
+  }
+  
+  /*
+   * Return JQuestion for requested category's proc list definition 
+   */
+  public static function getProcQuestion($cat) {
+    return DataDao::fetchDataSyncQuestion($cat, 1);
+  }
+  public static function getSuidQuestion($suid) {
+    return DataDao::fetchDataSyncQuestion($suid, 1);  
+  }
+  
+  private static function loadHist(&$fs, $clientId, $needProcs = true) {
+    $fs->histCats = array();
+    FacesheetDao::addHistCat($fs->histCats, JDataSyncProcGroup::CAT_MED, $clientId, $needProcs);
+    FacesheetDao::addHistCat($fs->histCats, JDataSyncProcGroup::CAT_SURG, $clientId, $needProcs);
+  }
+  
+  private static function addHistCat(&$histCats, $cat, $clientId, $needProcs) {
+    // $procs = ($needProcs) ? FacesheetDao::buildHistProcs($cat) : null;
+    $pq = ($needProcs) ? DataDao::fetchDataSyncQuestion($cat, 1) : null;
+    $recs = DataDao::fetchDataSyncProcGroup($cat, $clientId);
+    $histCats[$cat] = new JHistCat($cat, $recs, $pq);
+  }
+
+  // Health Maintenance
+  private static function loadHm(&$fs, $client) {
+    $fs->hmProcs = FacesheetDao::buildHmProcs($client);
+    $fs->hms = FacesheetDao::filterInactive(FacesheetDao::rebuildFacesheetHms($client->id, $fs->hmProcs));
+    $fs->hmsHistory = JDataHm::getHmsHistory($client->id);
+  }
+
+  // Build facesheet records for health maintenance
+  private static function rebuildFacesheetHms($clientId, $procs) {
+    FacesheetDao::buildHmsHistory($clientId, $procs);
+    $histRecs = JDataHm::getHistHmsByProc($clientId);
+    $faceRecs = JDataHm::getFacesheetHms($clientId);
+    //logit_r($procs, 'before procs');
+    foreach ($procs as $procId => $proc) {
+      $face = (isset($faceRecs[$proc->name])) ? $faceRecs[$proc->name] : null;
+      $hist = (isset($histRecs[$proc->name])) ? $histRecs[$proc->name] : null;
+      if ($hist != null) {
+        if ($face == null) {
+          $face = JDataHm::copy($hist);
+          $face->sessionId = null;
+          $face->active = true;
+          $face->setHmNextDate($proc);
+          $faceRecs[$face->proc] = JDataHm::save($face, true, FacesheetDao::NO_AUDIT);
+        } else {
+          if (compareDates($hist->updated, $face->updated) > 0 ||  // hist is newer
+              JDataHm::areDifferent($face, $hist)) {  // needs to be refreshed
+            $face->setDate($hist->dateText, $hist->dateSort);
+            $face->dateSort = $hist->dateSort;
+            $face->results = $hist->results;
+            $face->active = true;
+            $face->setHmNextDate($proc);
+            $faceRecs[$face->proc] = JDataHm::save($face, true, FacesheetDao::NO_AUDIT);
+          }
+        }
+      } else {
+        if ($proc->apply) {
+          if ($face == null) {
+            $faceRecs[$proc->name] = FacesheetDao::saveBlankFacesheetHm($clientId, $proc, FacesheetDao::NO_AUDIT);
+            $face = $faceRecs[$proc->name]; 
+          }
+          $face->setHmDueNow();
+          $faceRecs[$face->proc] = JDataHm::save($face, true, FacesheetDao::NO_AUDIT);
+        } else {
+          if ($face != null && $face->dateText) {  // history was removed, clear out facesheet rec  
+            $face->setDate(null, null);
+            $face->results = null;
+            $faceRecs[$face->proc] = JDataHm::save($face, true, FacesheetDao::NO_AUDIT);
+          }
+        }
+      }
+    }
+    //logit_r($faceRecs, 'after procs');
+    return $faceRecs;
+  }
+
+  private static function saveBlankFacesheetHm($clientId, $proc, $audit = true) {
+    global $myLogin;
+    //logit("saveblank");
+    //logit_r($proc);
+    $face = new JDataHm(null,
+        $myLogin->userGroupId,
+        $clientId,
+        null,
+        1,  // TODO: type
+        $proc->id,
+        $proc->name,
+        null,
+        null,
+        null,
+        null,
+        null,
+        true,
+        null,
+        null,
+        null);
+    return JDataHm::save($face, null, $audit);
+  }
+
+  // Build health maintenance history with session=0 recs
+  private static function buildHmsHistory($clientId, $procs) {
+    $sessRecs = JDataHm::getUnreadSessionHms($clientId);     // session>0 + active=null
+    $histRecs = JDataHm::getHistHmsByProcDateKey($clientId); // session=0
+    $lastKey = null;
+    //logit_r($sessRecs);
+    foreach ($sessRecs as &$sess) {
+      if ($sess->proc == null && $sess->procId) {  // assign proc name if null
+        $sess->proc = $procs[$sess->procId]->name;
+      }
+      $key = $sess->buildProcDateKey();  // "procId,dateSort"
+      if ($key != $lastKey) {
+        $lastKey = $key;
+        if (isset($histRecs[$key])) {
+          $hist = $histRecs[$key];
+          if (compareDates($sess->updated, $hist->updated) > 0) {  // session is newer
+            $hist->setDate($sess->dateText, $sess->dateSort);
+            $hist->results = $sess->results;
+            $hist->active = true;
+            JDataHm::save($hist, true, FacesheetDao::NO_AUDIT);
+          }
+        } else {
+          $hist = JDataHm::copy($sess);
+          $hist->sessionId = 0;
+          $hist->active = true;
+          JDataHm::save($hist, true, FacesheetDao::NO_AUDIT);
+        }
+      }
+      $sess->active = false;
+      JDataHm::save($sess, true, FacesheetDao::NO_AUDIT);
+    }
+  }
+
+  /*
+   * Builds procs from multi-options of data sync question
+   * Returns [proc,..]
+   */
+  private static function buildHistProcs($cat) {
+    $qid = DataDao::fetchDataSyncQid($cat, 1);
+    $q = TemplateReaderDao::getQuestion($qid, true);
+    $procs = array();
+    for ($i = $q->mix; $i < count($q->options); $i++) {
+      $procs[] = TemplateReaderDao::pvOptText($q->options[$i]);
+    }
+    return $procs;
+  }
+
+  private static function buildHmProcs($client) {
+    $procs = LookupDao::getDataHmProcs($client->id);
+    $icds = JDataDiagnosis::getActiveDiagnosesIcd($client->id);
+    foreach ($procs as &$proc) {
+      $proc->apply = JDataHm::shouldApply($proc, $client, $icds);
+    }
+    return $procs;
+  }
+
+  /**
+   * Immunizations
+   */
+  private static function loadImmuns(&$fs, $clientId) {
+    $fs->immuns = FacesheetDao::rebuildFacesheetImmuns($clientId);
+    $fs->immunPid = JsonDao::toPid('immCert.+immunRecord', FacesheetDao::TID_IMMUN);
+  }
+  private static function rebuildFacesheetImmuns($clientId) {
+    return JDataImmun::getFacesheetImmuns($clientId);
+    // TODO : build DATA_IMMUN_VACS
+  }
+  /**
+   * @param $rec: data object from facesheet 
+   * @return JFacesheet populated with only immunizations
+   */
+  public static function saveImmun($rec) {
+    global $myLogin;
+    $immun = JDataImmun::fromFacesheet($rec, $myLogin->userGroupId);
+    JDataImmun::save($immun);
+    $fs = new JFacesheet($immun->clientId, JFacesheet::CONTAINS_IMMUN);
+    FacesheetDao::loadImmuns($fs, $immun->clientId);
+    return $fs;
+  }
+  
+  /*
+   * Vitals
+   */
+  private static function loadVitals(&$fs, $clientId) {
+    $fs->vitals = FacesheetDao::rebuildFacesheetVitals($clientId);
+    if ($fs->workflow) {
+      $fs->workflow->vital = null;
+      foreach ($fs->vitals as &$v) {
+        if (trim($v->dateText) == "Today") {
+          $fs->workflow->vital = $v;
+          return;
+        }
+      }
+    }
+  }
+
+  private static function rebuildFacesheetVitals($clientId) {
+    $sessRecs = JDataVital::getSessionVitals($clientId);
+    $faceRecs = JDataVital::getFacesheetVitals($clientId);
+    foreach ($sessRecs as $date => $sess) {
+      if ($sess->anyDataSet()) {
+        if (isset($faceRecs[$date])) {  // facesheet exists, update if session newer
+          $face = $faceRecs[$date];
+          if (compareDates($sess->updated, $face->updated) > 0) {  // session is newer
+            $face->copySetData($sess);
+            $faceRecs[$date] = JDataVital::save($face, FacesheetDao::NO_AUDIT);
+          }
+        } else {  // no facesheet rec, build it from session
+          $face = JDataVital::copy($sess);
+          $face->sessionId = null;
+          $faceRecs[$face->date] = JDataVital::save($face, FacesheetDao::NO_AUDIT);
+        }
+      }
+    }
+    return $faceRecs;
+  }
+
+  private static function filterInactive($recs) {
+    foreach ($recs as $key => $rec) {
+      if (! $rec->active) {
+        unset($recs[$key]);
+      }
+    }
+    return $recs;
+  }
+
+  private static function isSessNewer($sess, $face) {  // true if session record is newer than facesheet record
+    $cd1 = compareDates($sess->date, $face->date, true);  // DOS
+    $cd2 = compareDates($sess->updated, $face->updated);
+    return ($cd1 > 0 || ($cd1 == 0 && $cd2 > 0));  // only compare update dates if DOS are same
+  }
+}
+?>

@@ -1,0 +1,540 @@
+/**
+ * Pop DocStubPreviewPop
+ */
+DocStubPreviewPop = {
+  /*
+   * @arg DocStub rec to draw first
+   * @arg DocStub[] recs (optional, to implement nav bar)
+   */
+  pop:function(rec, recs) {
+    if (! Array.is(recs))
+      recs = null;
+    return Html.Pop.singleton_pop.apply(DocStubPreviewPop, arguments);
+  },
+  create:function() {
+    var My = this;
+    return Html.Pop.create('Documentation Preview', 800).extend(function(self) {
+      return {
+        onupdate:function() {},  // fired on close
+        //
+        init:function() {
+          var height = self.fullscreen(1000, 600) - 20;
+          self.content.addClass('dsp');
+          self.navbar = My.NavBar.create(self.content).bubble('onselect', self.navbar_onselect).bubble('onfacepop', self.navbar_onfacepop);
+          self.viewer = My.Viewer.create(self.content, height).bubble('onexit', self.close).bubble('onupdate', self.viewer_onupdate);
+        },
+        reset:function() {
+          self.updated = false;
+          self.viewer.reset();
+          self.navbar.reset();
+        },
+        pop:function(rec, recs) {
+          self.reset();
+          self.show();
+          async(function() {
+            self.navbar.load(recs, rec);
+          })
+          return self;
+        },
+        onclose:function() {
+          if (self.updated) 
+            self.onupdate();
+        },
+        //
+        navbar_onselect:function(rec) {
+          self.viewer.load(rec);
+        },
+        navbar_onfacepop:function() {
+          self.viewer.reload();
+        },
+        viewer_onupdate:function(rec) {
+          self.navbar.refresh();
+          self.updated = true;
+        }
+      }
+    })
+  },
+  Viewer:{
+    create:function(container, height) {
+      var self = Html.Tile.create(container, 'Viewer');
+      return self.aug({
+        onexit:function() {},
+        onupdate:function() {},
+        //
+        init:function() {
+          self.spacer = DocView.asSpacer(self, height);
+        },
+        load:function(rec) {
+          self.reset();
+          self.rec = rec;
+          self.draw();
+        },
+        //
+        reset:function() {
+          if (self.viewing)
+            self.viewing.hide();
+          self.viewing = null;
+          self.spacer.show();
+        },
+        draw:function() {
+          var view = DocView.from(self.rec);
+          self.spacer.hide();
+          self.viewing = view.create(self, self.rec).setHeight(height).show().bubble('onexit', self).bubble('onupdate', self);
+        },
+        reload:function() {
+          if (self.viewing && self.viewing.reload)
+            self.viewing.reload();
+        }
+      })
+    }
+  },
+  NavBar:{
+    create:function(container) {
+      var My = this;
+      var self = Html.Tile.create(container, 'NavBar');
+      return self.aug({
+        onselect:function(rec) {},
+        onfacepop:function() {},
+        //
+        init:function() {
+          self.prevbox = My.LinkBox.asPrev().set('onnav', self.draw);
+          self.onbox = My.OnBox.create(self).bubble('onfacepop', self);
+          self.nextbox = My.LinkBox.asNext().set('onnav', self.draw);
+          Html.Table.create(self, 'w100').tbody().tr().td(self.prevbox).w(100).td(self.onbox).w(700).td(self.nextbox).w(100);
+        },
+        load:function(recs, rec) {
+          self.recs = recs;
+          self._navify(recs);
+          self.draw(rec);
+        },
+        reset:function() {
+          self.prevbox.hide();
+          self.nextbox.hide();
+          self.onbox.reset();
+        },
+        refresh:function() {
+          var old = self.rec;
+          old.ajax().refetch(function(rec) {
+            if (old._next) {
+              rec._next = old._next;
+              old._prev = rec;
+            }
+            if (old._prev) {
+              rec._prev = old._prev;
+              old._next = rec;
+            }
+            self.rec = rec;
+            self.onbox.load(rec);
+          })
+        },
+        //
+        draw:function(rec) {
+          self.working(function() {
+            self.rec = rec;
+            self.prevbox.load(rec._next).show();
+            self.nextbox.load(rec._prev).show();
+            self.onbox.load(rec);
+            self.onselect(rec);
+            self.working(false);
+          })
+        },
+        _navify:function(recs) {
+          var last;
+          Array.forEach(recs, function(rec) {
+            if (last) {
+              last._prev = rec;
+              rec._next = last;
+            } else {
+              rec._next = null;
+            }
+            last = rec;
+          });
+        }
+      });
+    },
+    OnBox:{
+      create:function(container) {
+        var self = Html.Div.create('onbox').into(container);
+        return self.aug({
+          onfacepop:function() {},
+          //
+          load:function(rec) {
+            self.reset();
+            Html.H2.create(self.getHeader(rec)).into(self);
+            Html.Tile.create(self, 'bold').setText(rec.name);
+            Html.Tile.create(self).setText(rec.desc); 
+            if (rec.Client) {  
+              Html.Tile.create(self).add(AnchorClient_FacesheetPop.create(rec.Client, function(){
+                self.onfacepop();
+              }))
+            }
+          },
+          reset:function() {
+            self.clean();
+          },
+          getHeader:function(rec) {
+            return rec.date + ' - ' + rec._type;
+          }
+        });
+      }
+    },
+    LinkBox:{
+      create:function(cls) {
+        var self = Html.Div.create(cls);
+        return self.aug({
+          onnav:function(rec) {},
+          //
+          load:function(rec) {
+            self.clean();
+            self.rec = rec;
+            self.anchor = self.createAnchor();
+            self.addClassIf('empty', self.anchor == null);
+            return self;
+          },
+          //
+          onclick:function() {
+            if (self.rec) 
+              self.onnav(self.rec);
+          },
+          ondblclick:function() {
+            self.onclick();
+          },
+          onmouseover:function() {
+            if (self.anchor) 
+              self.addClass('hover');
+          },
+          onmouseout:function() {
+            self.removeClass('hover');
+          },
+          createAnchor:function() {
+            if (self.rec) {
+              return AnchorDocStub.create(self.rec, self.onnav).addClass('linkbox').noFocus().into(self);
+            }
+          }
+        });
+      },
+      asPrev:function() {
+        return this.create('linkbox prevbox');
+      },
+      asNext:function() {
+        return this.create('linkbox nextbox');
+      }
+    }
+  }
+}
+/**
+ * DocView
+ */
+DocView = {
+  create:function(container, stub, noCmdBar) {
+    return Html.Tile.create(container).extend(function(self) {
+      return {
+        onexit:function() {},
+        onupdate:function() {},
+        draw:function() {},
+        reset:function() {},
+        //
+        init:function() {
+          self.view = Html.Tile.create(self, 'View');
+          if (! noCmdBar) {
+            self.table = Html.Table2Col.create(self);
+            Html.CmdBar.create(self.table.right).exit(self.exit);
+            self.table.left.setWidth('100%');
+          }
+          self.hide();
+          // extenders call self.load(stub)
+        },
+        //
+        load:function(stub, callback_rec) {
+          self.stub = stub;
+          self.view.clean();
+          self.reset();
+          stub.ajax().fetchPreview(function(rec) {
+            if (rec) {
+              self.rec = rec;
+              self.draw();
+              if (callback_rec)
+                callback_rec(rec);
+            } else {
+              self.exit();
+              self.onupdate();
+            }
+          })
+        },
+        reload:function() {
+          self.stub.resetPreview();
+          self.load(self.stub, function(rec) {
+            self.onupdate(rec);
+          })
+        },
+        noPreview:function() {
+          self.view.setText('Preview is not available for this item.');
+        },
+        exit:function() {
+          self.onexit();
+        },
+        setHeight:function(i) {
+          self.view.setHeight(i);
+          return self;
+        }
+      }
+    })
+  },
+  from:function(stub) {
+    switch (stub.type) {
+      case C_DocStub.TYPE_SESSION:
+        return DocViewSession;
+      case C_DocStub.TYPE_MSG:
+        return DocViewMsg;
+      case C_DocStub.TYPE_APPT:
+        return DocViewNa;  //DocViewAppt;
+      case C_DocStub.TYPE_ORDER:
+        return DocViewNa;  //DocViewOrder;
+      case C_DocStub.TYPE_SCAN:
+        return DocViewScan;
+      case C_DocStub.TYPE_SCAN_XML:
+        return DocViewScanXml;
+      case C_DocStub.TYPE_RESULT:
+        return DocViewResult;
+    }
+  },
+  asSpacer:function(container, height) {
+    return this.create(container).setHeight(height).show();
+  }
+}
+DocViewNa = {
+  create:function(container, stub, noCmdBar) {
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      //
+    })
+  }
+}
+DocViewSession = {
+  create:function(container, stub, noCmdBar) {
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewSession');
+          if (self.table) {
+            self.cb = Html.CmdBar.create(self.table.left).button('Open in Console', self.open_onclick, 'note').button('Replicate...', self.replicate_onclick, 'copy-note').print(self.print_onclick);
+            self.print = self.cb.get('Print').hide();
+          }
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+          else
+            self.noPreview();
+          if (self.print)
+            self.print.showIf(stub.signed);
+        },
+        open_onclick:function() {
+          Page.popConsole(self.rec.sessionId, self.reload);
+        },
+        print_onclick:function() {
+          self.rec.html = self.rec._html;
+          HtmlPdf_Session.fromClosed(self.rec).download();
+        },
+        replicate_onclick:function() {
+          self.rec.cid = self.rec.clientId;
+          self.rec.tid = self.rec.templateId;
+          self.rec.id = self.rec.sessionId;
+          Includer.getDocOpener_replicate(self.rec, self.reload);
+        }
+      }
+    })
+  }
+}
+DocViewMsg = {
+  create:function(container, stub, noCmdBar) {
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewMsg');
+          if (self.table)
+            Html.CmdBar.create(self.table.left).button('Open in Message Editor', self.open_onclick, 'note');
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+          else
+            self.noPreview();
+        },
+        open_onclick:function() {
+          Page.Nav.goMessage(self.rec.threadId);
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+DocViewScan = {
+  create:function(container, stub, noCmdBar) {
+    var My = this;
+    var maxWidth = container.getWidth() - 40;
+    var maxHeight = container.getHeight() - 80; 
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewScan');
+          if (self.table) { 
+            self.cb = Html.CmdBar.create(self.table.left).button('Edit Scan(s)...', self.open_onclick, 'button-edit').button('Record as Reviewed', self.record_onclick, 'approve', 'approve');
+            self.label = self.cb.outer.label(null, 'pl5');
+          }
+          self.load(stub);
+        },
+        reset:function() {
+          if (self.table) {
+            self.cb.disable('approve');
+            self.label.setText('');
+          }
+        },
+        draw:function() {
+          self.rec.ScanFiles.forEach(function(file) {
+            if (file.isPdf())
+              My.Pdf.create(file, maxWidth, maxHeight).into(self.view);
+            else
+              My.Image.create(file, maxWidth).into(self.view);
+          })
+          if (self.table) {
+            self.cb.disable('approve', ! self.rec.needsReview());
+            self.label.setText(self.rec.getReviewedLabel());
+          }
+        },
+        open_onclick:function() {
+          self.view.invisible();
+          EntryFolderPop.pop(self.rec).bubble('onupdate', self.pop_onupdate).bubble('onclose', self.pop_onclose);
+        },
+        pop_onupdate:function() {
+          self.view.visible();
+          self.reload();
+        },
+        pop_onclose:function() {
+          self.view.visible();
+        },
+        record_onclick:function() {
+          self.rec.ajax().reviewed(function() {
+            self.reload();
+            Polling.Review.refresh();
+          })
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  },
+  Image:{
+    create:function(file, maxWidth) {
+      var self = Html.Div.create('ScanImage');
+      Html.Image.create('ScanImage', file.src).setSizeWithin(file.height, file.width, null, maxWidth).into(self);
+      Html.Label.create(null, file._uploaded).into(self);
+      return self;
+    }
+  },
+  Pdf:{
+    create:function(file, maxWidth, maxHeight) {
+      var iframe = Html.IFrame.create(null, file.pdfsrc).setHeight(maxHeight).setWidth(maxWidth);
+      return iframe;
+    }
+  }
+}
+DocViewScanXml = {
+  create:function(container, stub, noCmdBar) {
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewXml');
+          //if (self.table)
+            //Html.CmdBar.create(self.table.left).print(self.print_onclick);
+          self.load(stub);
+        },
+        draw:function() {
+          if (self.rec._html)
+            self.view.html(self.rec._html);
+        },
+        print_onclick:function() {
+        }
+      }
+    })
+  }
+}
+DocViewResult = {
+  create:function(container, stub, noCmdBar) {
+    var maxWidth = container.getWidth() - 40;
+    var maxHeight = container.getHeight() - 80; 
+    return DocView.create(container, stub, noCmdBar).extend(function(self) {
+      return {
+        init:function() {
+          self.view.addClass('ViewResult');
+          if (self.table) {
+            self.cb = Html.CmdBar.create(self.table.left).button('Edit Procedure/Results', self.open_onclick, 'note').button('Record as Reviewed', self.record_onclick, 'approve', 'approve');
+            self.label = self.cb.outer.label(null, 'pl5');
+          }
+          self.load(stub);
+        },
+        draw:function() {
+          Html.H3.create(self.rec.Ipc.name + " (" + self.rec.date + ")").into(self.view);
+          self.drawChart();
+          if (self.rec.ScanFiles)
+            self.drawScans();
+          if (self.table) {
+            self.cb.disable('approve', ! self.rec.needsReview());
+            self.label.setText(self.rec.getReviewedLabel());
+          }
+        },
+        drawChart:function() {
+          var t = Html.Table.create(self.view);
+          t.thead().tr().th().w('25%').th('Value').w('10%').th('Range').w('10%').th('Interpret').w('5%').th('Comments').w('50%');
+          if (self.rec.ProcResults)
+            self.rec.ProcResults.forEach(function(result) {
+              var edit = Html.Anchor.create(null, result.Ipc.name, self.select_onclick.curry(result)); 
+              t.tbody().trToggle().th(edit).td(result._value, result.interpretCode).td(result.range).td(result._interpretCode).td(result.comments);
+            })
+          else
+            t.tbody().trToggle().th().td('(No Results)').colspan(4);
+        },
+        drawScans:function() {
+          self.rec.ScanFiles.forEach(function(file) {
+            if (file.isPdf())
+              DocViewScan.Pdf.create(file, maxWidth, maxHeight).into(self.view);
+            else
+              DocViewScan.Image.create(file, maxWidth).into(self.view);
+          })
+        },
+        open_onclick:function() {
+          self.working(true);
+          Proc.fetch(self.rec.procId, function(proc) {
+            self.working(false);
+            ProcEntry.pop(proc).bubble('onsave', self.reload).bubble('onresultsave', self.reload).bubble('ondelete', function() {
+              self.exit();
+              self.onupdate();
+            })
+          })
+        },
+        record_onclick:function() {
+          self.rec.ajax().reviewed(function() {
+            self.reload();
+            Polling.Review.refresh();
+          })
+        },
+        print_onclick:function() {
+        },
+        select_onclick:function(result) {
+          ResultHistoryPop.pop(result);
+        }
+      }
+    })
+  }
+}
+/**
+ * AnchorDocStub_Preview
+ */
+AnchorDocStub_Preview = {
+  create:function(rec) {
+    if (rec)
+      return AnchorDocStub.create(rec, DocStubPreviewPop.pop.bind(DocStubPreview));
+  }
+}

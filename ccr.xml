@@ -1,0 +1,6454 @@
+<?xml-stylesheet type='text/xsl' href='http://www.allscripts.com/resources/tools/STYLES/ALLSCRIPTS_CCRV1_0_STYLE.XSL'?>
+<ContinuityOfCareRecord xmlns="urn:astm-org:CCR" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CCRDocumentObjectID>1.3.6.1.4.1.22812.3.7420101.3.74077912</CCRDocumentObjectID>
+  <Language>
+    <Text>English</Text>
+  </Language>
+  <Version>V1.0</Version>
+  <DateTime>
+    <Type>
+      <Text>CCR Creation DateTime</Text>
+    </Type>
+    <ExactDateTime>2013-08-14T12:54:57.8662998-04:00</ExactDateTime>
+  </DateTime>
+  <Patient>
+    <ActorID>Patient.ZZZAHS02</ActorID>
+  </Patient>
+  <From>
+    <ActorLink>
+      <ActorID>Person.35222</ActorID>
+      <ActorRole>
+        <Text>Provider</Text>
+      </ActorRole>
+    </ActorLink>
+    <ActorLink>
+      <ActorID>Site</ActorID>
+      <ActorRole>
+        <Text>Organization</Text>
+      </ActorRole>
+    </ActorLink>
+    <ActorLink>
+      <ActorID>Enterprise EHR</ActorID>
+      <ActorRole>
+        <Text>InformationSystem</Text>
+      </ActorRole>
+    </ActorLink>
+  </From>
+  <Body>
+    <Problems>
+      <Problem>
+        <CCRDataObjectID>PR.10284900003</CCRDataObjectID>
+        <IDs>
+          <ID>10284900003</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Vitamin D Deficiency (268.9); </Text>
+          <Code>
+            <Value>268.9</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.66875400001</CCRDataObjectID>
+        <IDs>
+          <ID>66875400001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Menopause (627.2); </Text>
+          <Code>
+            <Value>627.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <ReferenceID>314159</ReferenceID>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.13054900005</CCRDataObjectID>
+        <IDs>
+          <ID>13054900005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Sore Throat (462); </Text>
+          <Code>
+            <Value>462</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.147699300025</CCRDataObjectID>
+        <IDs>
+          <ID>147699300025</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Joint Pain, Localized In The Wrist (719.43); </Text>
+          <Code>
+            <Value>719.43</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.183650200055</CCRDataObjectID>
+        <IDs>
+          <ID>183650200055</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Attention-Deficit Hyperactivity Disorder (314.01); </Text>
+          <Code>
+            <Value>314.01</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.183650200081</CCRDataObjectID>
+        <IDs>
+          <ID>183650200081</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Bronchiectasis Without Acute Exacerbation (494.0); </Text>
+          <Code>
+            <Value>494.0</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.126594900009</CCRDataObjectID>
+        <IDs>
+          <ID>126594900009</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Bronchiectasis (494.0); </Text>
+          <Code>
+            <Value>494.0</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.13046800005</CCRDataObjectID>
+        <IDs>
+          <ID>13046800005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Lower Back Pain (724.2); </Text>
+          <Code>
+            <Value>724.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.105492500005</CCRDataObjectID>
+        <IDs>
+          <ID>105492500005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Arthritis (716.90); </Text>
+          <Code>
+            <Value>716.90</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.47106700001</CCRDataObjectID>
+        <IDs>
+          <ID>47106700001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Esophageal Reflux (530.81); </Text>
+          <Code>
+            <Value>530.81</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.240239500001</CCRDataObjectID>
+        <IDs>
+          <ID>240239500001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Stroke Syndrome (436); </Text>
+          <Code>
+            <Value>436</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.28562200025</CCRDataObjectID>
+        <IDs>
+          <ID>28562200025</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Benign Essential Hypertension (401.1); </Text>
+          <Code>
+            <Value>401.1</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.104625600039</CCRDataObjectID>
+        <IDs>
+          <ID>104625600039</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Hyperlipidemia (272.4); </Text>
+          <Code>
+            <Value>272.4</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.100920400007</CCRDataObjectID>
+        <IDs>
+          <ID>100920400007</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Anxiety (Symptom) (300.00); </Text>
+          <Code>
+            <Value>300.00</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.47106700019</CCRDataObjectID>
+        <IDs>
+          <ID>47106700019</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Acute Sore Throat (462); </Text>
+          <Code>
+            <Value>462</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.296924700003</CCRDataObjectID>
+        <IDs>
+          <ID>296924700003</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Limb Pain (729.5); </Text>
+          <Code>
+            <Value>729.5</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.304505900011</CCRDataObjectID>
+        <IDs>
+          <ID>304505900011</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Vaginal Pap Smear (V76.47); </Text>
+          <Code>
+            <Value>V76.47</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.312951600005</CCRDataObjectID>
+        <IDs>
+          <ID>312951600005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Hypogonadism (257.2); </Text>
+          <Code>
+            <Value>257.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.320462000121</CCRDataObjectID>
+        <IDs>
+          <ID>320462000121</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Imaging Studies Nonspecific Abnormal Findings Lung Field 793.19 (793.1); </Text>
+          <Code>
+            <Value>793.1</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.320462000123</CCRDataObjectID>
+        <IDs>
+          <ID>320462000123</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Lung Cancer (162.9); </Text>
+          <Code>
+            <Value>162.9</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.320462000125</CCRDataObjectID>
+        <IDs>
+          <ID>320462000125</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Chest X-Ray (V72.5); </Text>
+          <Code>
+            <Value>V72.5</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.320462000127</CCRDataObjectID>
+        <IDs>
+          <ID>320462000127</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Ct Lung Infiltrate (518.3); </Text>
+          <Code>
+            <Value>518.3</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.324585500011</CCRDataObjectID>
+        <IDs>
+          <ID>324585500011</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Aortic Aneurysm Comments: 3.2 (441.9); </Text>
+          <Code>
+            <Value>441.9</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.333657900015</CCRDataObjectID>
+        <IDs>
+          <ID>333657900015</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Joint Pain, Localized In The Knee (719.46); </Text>
+          <Code>
+            <Value>719.46</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.333853800007</CCRDataObjectID>
+        <IDs>
+          <ID>333853800007</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Hypogonadism (257.2); </Text>
+          <Code>
+            <Value>257.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.343570400001</CCRDataObjectID>
+        <IDs>
+          <ID>343570400001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Emphysema (492.8); </Text>
+          <Code>
+            <Value>492.8</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.354865400001</CCRDataObjectID>
+        <IDs>
+          <ID>354865400001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Visit For: Preoperative Exam (V72.84); </Text>
+          <Code>
+            <Value>V72.84</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.428651400003</CCRDataObjectID>
+        <IDs>
+          <ID>428651400003</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Fever (Symptom) (780.60); </Text>
+          <Code>
+            <Value>780.60</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.20061900029</CCRDataObjectID>
+        <IDs>
+          <ID>20061900029</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Coronary Artery Disease (414.00); </Text>
+          <Code>
+            <Value>414.00</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.469188000001</CCRDataObjectID>
+        <IDs>
+          <ID>469188000001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Joint Pain, Localized In The Left Shoulder (719.41); </Text>
+          <Code>
+            <Value>719.41</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.474603000061</CCRDataObjectID>
+        <IDs>
+          <ID>474603000061</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Earache (Symptom) (388.70); </Text>
+          <Code>
+            <Value>388.70</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.474603000067</CCRDataObjectID>
+        <IDs>
+          <ID>474603000067</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Type 1 Diabetes Mellitus (250.01); </Text>
+          <Code>
+            <Value>250.01</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.251403500001</CCRDataObjectID>
+        <IDs>
+          <ID>251403500001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Alzheimer'S Disease (331.0); </Text>
+          <Code>
+            <Value>331.0</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.47106700049</CCRDataObjectID>
+        <IDs>
+          <ID>47106700049</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Asthma (493.90); </Text>
+          <Code>
+            <Value>493.90</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.607106600005</CCRDataObjectID>
+        <IDs>
+          <ID>607106600005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Shortness Of Breath (786.05); </Text>
+          <Code>
+            <Value>786.05</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.47106700067</CCRDataObjectID>
+        <IDs>
+          <ID>47106700067</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Type 2 Diabetes Mellitus (250.00); </Text>
+          <Code>
+            <Value>250.00</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.110501700011</CCRDataObjectID>
+        <IDs>
+          <ID>110501700011</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Acute Pharyngitis (462); </Text>
+          <Code>
+            <Value>462</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.304505900001</CCRDataObjectID>
+        <IDs>
+          <ID>304505900001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Abnormal Pap Smear Of Cervix (795.09); </Text>
+          <Code>
+            <Value>795.09</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.183650200047</CCRDataObjectID>
+        <IDs>
+          <ID>183650200047</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Abnormality Of Walk Comments: shortness of breath (781.2); </Text>
+          <Code>
+            <Value>781.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.104625600005</CCRDataObjectID>
+        <IDs>
+          <ID>104625600005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Allergic Rhinitis Comments: Drink plenty of fluids. Rest.
+            Claritin-D 5 mg twice a day as needed.
+            If unable to tolerate Tylenol please take Advil gelcaps 200 mg 2 tablets 3 times a day Return to clinic if it is worse. (477.9); </Text>
+          <Code>
+            <Value>477.9</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.28446600027</CCRDataObjectID>
+        <IDs>
+          <ID>28446600027</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Diabetes Mellitus (250.00); </Text>
+          <Code>
+            <Value>250.00</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.642086200017</CCRDataObjectID>
+        <IDs>
+          <ID>642086200017</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Red Blood In Bowel Movement (Hematochezia) (578.1); </Text>
+          <Code>
+            <Value>578.1</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.147699300001</CCRDataObjectID>
+        <IDs>
+          <ID>147699300001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Abdominal Pain (789.00); </Text>
+          <Code>
+            <Value>789.00</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.649032800001</CCRDataObjectID>
+        <IDs>
+          <ID>649032800001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Chest Pain Over The Right Fifth Rib</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.60869000095</CCRDataObjectID>
+        <IDs>
+          <ID>60869000095</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Hypertension (401.9); </Text>
+          <Code>
+            <Value>401.9</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.10138100000</CCRDataObjectID>
+        <IDs>
+          <ID>10138100000</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Normal Routine History And Physical Adult (V70.0); </Text>
+          <Code>
+            <Value>V70.0</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+      <Problem>
+        <CCRDataObjectID>PR.100815300235</CCRDataObjectID>
+        <IDs>
+          <ID>100815300235</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Chronic Bronchitis With Acute Exacerbation (491.21); </Text>
+          <Code>
+            <Value>491.21</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Problem>
+    </Problems>
+    <FamilyHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300107</CCRDataObjectID>
+          <IDs>
+            <ID>100815300107</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Paternal grandfather's history of Alcoholism</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300109</CCRDataObjectID>
+          <IDs>
+            <ID>100815300109</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Paternal grandfather's history of Aneurysm Of The Abdominal Aorta</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300111</CCRDataObjectID>
+          <IDs>
+            <ID>100815300111</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Paternal grandfather's history of Arthritis (V17.7); </Text>
+            <Code>
+              <Value>V17.7</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300113</CCRDataObjectID>
+          <IDs>
+            <ID>100815300113</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Paternal history of Bipolar Disorder</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300115</CCRDataObjectID>
+          <IDs>
+            <ID>100815300115</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Breast Cancer (V16.3); </Text>
+            <Code>
+              <Value>V16.3</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300117</CCRDataObjectID>
+          <IDs>
+            <ID>100815300117</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Chronic Liver Disease</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300119</CCRDataObjectID>
+          <IDs>
+            <ID>100815300119</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Maternal aunt's history of Brain Cancer (V16.8); </Text>
+            <Code>
+              <Value>V16.8</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300121</CCRDataObjectID>
+          <IDs>
+            <ID>100815300121</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Fraternal history of Anemia (V18.2); </Text>
+            <Code>
+              <Value>V18.2</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300123</CCRDataObjectID>
+          <IDs>
+            <ID>100815300123</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Fraternal history of Asthma (V17.5); </Text>
+            <Code>
+              <Value>V17.5</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.100815300125</CCRDataObjectID>
+          <IDs>
+            <ID>100815300125</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Sororal history of Anemia (V18.2); </Text>
+            <Code>
+              <Value>V18.2</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.320462000049</CCRDataObjectID>
+          <IDs>
+            <ID>320462000049</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Fraternal history of Stroke SyndromePartial; (V17.1); </Text>
+            <ObjectAttribute>
+              <Attribute>Severity</Attribute>
+              <AttributeValue>
+                <Value>Partial</Value>
+              </AttributeValue>
+            </ObjectAttribute>
+            <Code>
+              <Value>V17.1</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.320462000053</CCRDataObjectID>
+          <IDs>
+            <ID>320462000053</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Aneurysm Of The Abdominal Aorta</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.320462000055</CCRDataObjectID>
+          <IDs>
+            <ID>320462000055</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Aneurysm Of The Suprarenal Abdominal Aorta</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.320462000057</CCRDataObjectID>
+          <IDs>
+            <ID>320462000057</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Endovascular Repair Of Abdominal Aorta</Text>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.343806000015</CCRDataObjectID>
+          <IDs>
+            <ID>343806000015</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Family history of Hypertension (V17.49); </Text>
+            <Code>
+              <Value>V17.49</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.343806000017</CCRDataObjectID>
+          <IDs>
+            <ID>343806000017</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>No Family history of Stroke Syndrome</Text>
+          </Description>
+          <Status>
+            <Text>Denied</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.343806000019</CCRDataObjectID>
+          <IDs>
+            <ID>343806000019</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>No Family history of Hyperlysinemia</Text>
+          </Description>
+          <Status>
+            <Text>Denied</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.474603000073</CCRDataObjectID>
+          <IDs>
+            <ID>474603000073</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Paternal history of Diabetes Mellitus (V18.0); </Text>
+            <Code>
+              <Value>V18.0</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.474603000075</CCRDataObjectID>
+          <IDs>
+            <ID>474603000075</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Diagnosis</Text>
+          </Type>
+          <Description>
+            <Text>Maternal history of Arthritis (V17.7); </Text>
+            <Code>
+              <Value>V17.7</Value>
+              <CodingSystem>ICD9-CM</CodingSystem>
+            </Code>
+          </Description>
+          <Status>
+            <Text>Active</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+      <FamilyProblemHistory>
+        <Problem>
+          <CCRDataObjectID>PR.320462000051</CCRDataObjectID>
+          <IDs>
+            <ID>320462000051</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Problem</Text>
+          </Type>
+          <Description>
+            <Text>No Maternal history of Cervical Cancer</Text>
+          </Description>
+          <Status>
+            <Text>Denied</Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </Problem>
+      </FamilyProblemHistory>
+    </FamilyHistory>
+    <SocialHistory>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300107</CCRDataObjectID>
+        <IDs>
+          <ID>100815300107</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Paternal grandfather's history of Alcoholism</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300109</CCRDataObjectID>
+        <IDs>
+          <ID>100815300109</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Paternal grandfather's history of Aneurysm Of The Abdominal Aorta</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300111</CCRDataObjectID>
+        <IDs>
+          <ID>100815300111</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Paternal grandfather's history of Arthritis (V17.7); </Text>
+          <Code>
+            <Value>V17.7</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300113</CCRDataObjectID>
+        <IDs>
+          <ID>100815300113</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Paternal history of Bipolar Disorder</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300115</CCRDataObjectID>
+        <IDs>
+          <ID>100815300115</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Breast Cancer (V16.3); </Text>
+          <Code>
+            <Value>V16.3</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300117</CCRDataObjectID>
+        <IDs>
+          <ID>100815300117</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Chronic Liver Disease</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300119</CCRDataObjectID>
+        <IDs>
+          <ID>100815300119</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Maternal aunt's history of Brain Cancer (V16.8); </Text>
+          <Code>
+            <Value>V16.8</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300121</CCRDataObjectID>
+        <IDs>
+          <ID>100815300121</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Fraternal history of Anemia (V18.2); </Text>
+          <Code>
+            <Value>V18.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300123</CCRDataObjectID>
+        <IDs>
+          <ID>100815300123</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Fraternal history of Asthma (V17.5); </Text>
+          <Code>
+            <Value>V17.5</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.100815300125</CCRDataObjectID>
+        <IDs>
+          <ID>100815300125</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Sororal history of Anemia (V18.2); </Text>
+          <Code>
+            <Value>V18.2</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.320462000049</CCRDataObjectID>
+        <IDs>
+          <ID>320462000049</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Fraternal history of Stroke SyndromePartial; (V17.1); </Text>
+          <ObjectAttribute>
+            <Attribute>Severity</Attribute>
+            <AttributeValue>
+              <Value>Partial</Value>
+            </AttributeValue>
+          </ObjectAttribute>
+          <Code>
+            <Value>V17.1</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.320462000053</CCRDataObjectID>
+        <IDs>
+          <ID>320462000053</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Aneurysm Of The Abdominal Aorta</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.320462000055</CCRDataObjectID>
+        <IDs>
+          <ID>320462000055</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Aneurysm Of The Suprarenal Abdominal Aorta</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.320462000057</CCRDataObjectID>
+        <IDs>
+          <ID>320462000057</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Endovascular Repair Of Abdominal Aorta</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.343806000015</CCRDataObjectID>
+        <IDs>
+          <ID>343806000015</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Family history of Hypertension (V17.49); </Text>
+          <Code>
+            <Value>V17.49</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.343806000017</CCRDataObjectID>
+        <IDs>
+          <ID>343806000017</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>No Family history of Stroke Syndrome</Text>
+        </Description>
+        <Status>
+          <Text>Denied</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.343806000019</CCRDataObjectID>
+        <IDs>
+          <ID>343806000019</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>No Family history of Hyperlysinemia</Text>
+        </Description>
+        <Status>
+          <Text>Denied</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.474603000073</CCRDataObjectID>
+        <IDs>
+          <ID>474603000073</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Paternal history of Diabetes Mellitus (V18.0); </Text>
+          <Code>
+            <Value>V18.0</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.474603000075</CCRDataObjectID>
+        <IDs>
+          <ID>474603000075</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Maternal history of Arthritis (V17.7); </Text>
+          <Code>
+            <Value>V17.7</Value>
+            <CodingSystem>ICD9-CM</CodingSystem>
+          </Code>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+      <SocialHistoryElement>
+        <CCRDataObjectID>PR.320462000051</CCRDataObjectID>
+        <IDs>
+          <ID>320462000051</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>No Maternal history of Cervical Cancer</Text>
+        </Description>
+        <Status>
+          <Text>Denied</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </SocialHistoryElement>
+    </SocialHistory>
+    <Alerts>
+      <Alert>
+        <CCRDataObjectID>AL.46275400005</CCRDataObjectID>
+        <IDs>
+          <ID>46275400005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Crestor TABS</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.46275400005.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Crestor TABS</Text>
+                <Code>
+                  <Value>859426</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Crestor TABS</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.60869000123</CCRDataObjectID>
+        <IDs>
+          <ID>60869000123</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Benicar TABS</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.60869000123.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Benicar TABS</Text>
+                <Code>
+                  <Value>352201</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Benicar TABS</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.100815300173</CCRDataObjectID>
+        <IDs>
+          <ID>100815300173</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Betadine SOLN; Rash; Other</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.100815300173.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Betadine SOLN</Text>
+                <Code>
+                  <Value>211108</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Betadine SOLN</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+        <Reaction>
+          <Description>
+            <Text>Rash</Text>
+          </Description>
+        </Reaction>
+        <Reaction>
+          <Description>
+            <Text>Other</Text>
+          </Description>
+        </Reaction>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.146609600009</CCRDataObjectID>
+        <IDs>
+          <ID>146609600009</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Latex Gloves MISC</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.146609600009.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Latex Gloves MISC</Text>
+                <Code>
+                  <Value>49614099771</Value>
+                  <CodingSystem>NDC</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Latex Gloves MISC</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.175114300001</CCRDataObjectID>
+        <IDs>
+          <ID>175114300001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Adrenalin SOLN</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.175114300001.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Adrenalin SOLN</Text>
+                <Code>
+                  <Value>42023010301</Value>
+                  <CodingSystem>NDC</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Adrenalin SOLN</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.175114300005</CCRDataObjectID>
+        <IDs>
+          <ID>175114300005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Penicillins; Seizures</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.175114300005.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Penicillins</Text>
+                <Code>
+                  <Value>70</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Penicillins</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+        <Reaction>
+          <Description>
+            <Text>Seizures</Text>
+          </Description>
+        </Reaction>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.175114300023</CCRDataObjectID>
+        <IDs>
+          <ID>175114300023</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Adhesive Tape TAPE</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.175114300023.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Adhesive Tape TAPE</Text>
+                <Code>
+                  <Value>87701085022</Value>
+                  <CodingSystem>NDC</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Adhesive Tape TAPE</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.175114300025</CCRDataObjectID>
+        <IDs>
+          <ID>175114300025</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Aspirin TABS</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.175114300025.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Aspirin TABS</Text>
+                <Code>
+                  <Value>243670</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Aspirin TABS</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.175114300027</CCRDataObjectID>
+        <IDs>
+          <ID>175114300027</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Cardura TABS</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.175114300027.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Cardura TABS</Text>
+                <Code>
+                  <Value>205544</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Cardura TABS</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.183650200049</CCRDataObjectID>
+        <IDs>
+          <ID>183650200049</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>food allergy</Text>
+        </Type>
+        <Description>
+          <Text>Other; Other</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <EnvironmentalAgents>
+            <EnvironmentalAgent>
+              <CCRDataObjectID>PR.183650200049.1</CCRDataObjectID>
+              <Type>
+                <Text>non-medication</Text>
+              </Type>
+              <Description>
+                <Text>Other</Text>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+            </EnvironmentalAgent>
+          </EnvironmentalAgents>
+        </Agent>
+        <Reaction>
+          <Description>
+            <Text>Other</Text>
+          </Description>
+        </Reaction>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.320462000091</CCRDataObjectID>
+        <IDs>
+          <ID>320462000091</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>allergy to substance</Text>
+        </Type>
+        <Description>
+          <Text>Bee sting</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.320462000091.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Bee sting</Text>
+                <Code>
+                  <Value>76013O881M</Value>
+                  <CodingSystem>NDC</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Bee sting</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.343806000023</CCRDataObjectID>
+        <IDs>
+          <ID>343806000023</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Bicillin L-A SUSP</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.343806000023.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Bicillin L-A SUSP</Text>
+                <Code>
+                  <Value>731573</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Bicillin L-A SUSP</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.428627300003</CCRDataObjectID>
+        <IDs>
+          <ID>428627300003</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>drug allergy</Text>
+        </Type>
+        <Description>
+          <Text>Sulfa Drugs; Shortness of breath; Hives</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.428627300003.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Sulfa Drugs</Text>
+                <Code>
+                  <Value>87</Value>
+                  <CodingSystem>Medispan PAR ID</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Sulfa Drugs</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+        <Reaction>
+          <Description>
+            <Text>Shortness of breath</Text>
+          </Description>
+        </Reaction>
+        <Reaction>
+          <Description>
+            <Text>Hives</Text>
+          </Description>
+        </Reaction>
+      </Alert>
+      <Alert>
+        <CCRDataObjectID>AL.474603000093</CCRDataObjectID>
+        <IDs>
+          <ID>474603000093</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>food allergy</Text>
+        </Type>
+        <Description>
+          <Text>Seafood; Anaphylaxis</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Agent>
+          <Products>
+            <Product>
+              <CCRDataObjectID>PR.474603000093.1</CCRDataObjectID>
+              <Type>
+                <Text>Medication</Text>
+              </Type>
+              <Description>
+                <Text>Seafood</Text>
+                <Code>
+                  <Value>1G4F72G3PH</Value>
+                  <CodingSystem>NDC</CodingSystem>
+                </Code>
+              </Description>
+              <Source>
+                <Actor>
+                  <ActorID>Enterprise EHR</ActorID>
+                </Actor>
+              </Source>
+              <Product>
+                <ProductName>
+                  <Text>Seafood</Text>
+                </ProductName>
+              </Product>
+            </Product>
+          </Products>
+        </Agent>
+        <Reaction>
+          <Description>
+            <Text>Anaphylaxis</Text>
+          </Description>
+        </Reaction>
+      </Alert>
+    </Alerts>
+    <Medications>
+      <Medication>
+        <CCRDataObjectID>ME.27115300005</CCRDataObjectID>
+        <IDs>
+          <ID>27115300005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Combivent 18-103 MCG/ACT Inhalation Aerosol; INHALE 2 PUFFS 3 TIMES DAILY. (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Combivent 18-103 MCG/ACT Inhalation Aerosol</Text>
+            <Code>
+              <Value>68258896501</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Combivent</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>INHALE 2 PUFFS 3 TIMES DAILY.</Text>
+            </Description>
+            <Dose>
+              <Value>3</Value>
+            </Dose>
+            <Frequency>
+              <Description>
+                <Text>tid</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.60869000113</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-10-22</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>60869000113</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Bystolic 2.5 MG Oral Tablet; TAKE 2 TABLET After meals; Start Date: 10/22/2012 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Bystolic 2.5 MG Oral Tablet</Text>
+            <Code>
+              <Value>68258696403</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Bystolic</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 2 TABLET After meals</Text>
+            </Description>
+            <Dose>
+              <Value>3</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2012-10-22T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.60869000117</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-10-22</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>60869000117</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Lyrica 100 MG Oral Capsule; TAKE 1 CAPSULE AT BEDTIME.; Start Date: 10/22/2012 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Lyrica 100 MG Oral Capsule</Text>
+            <Code>
+              <Value>68387066290</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Lyrica</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 CAPSULE AT BEDTIME.</Text>
+            </Description>
+            <Dose>
+              <Value>1</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2012-10-22T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+            <Frequency>
+              <Description>
+                <Text>hs</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.74257700011</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-11-12</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>74257700011</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Lantus 100 UNIT/ML Subcutaneous Solution; INJECT SUBCUTANEOUSLY AS DIRECTED.; Start Date: 11/12/2012 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Lantus 100 UNIT/ML Subcutaneous Solution</Text>
+            <Code>
+              <Value>55045368501</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Lantus</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>INJECT SUBCUTANEOUSLY AS DIRECTED.</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2012-11-12T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.90125300029</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-12-05</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>90125300029</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Zithromax 250 MG Oral Tablet; TAKE 2 TABLETS ON DAY 1 THEN TAKE 1 TABLET A DAY FOR 4 DAYS.; Start Date: 12/05/2012 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Zithromax 250 MG Oral Tablet</Text>
+            <Code>
+              <Value>66267092806</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Zithromax</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 2 TABLETS ON DAY 1 THEN TAKE 1 TABLET A DAY FOR 4 DAYS.</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2012-12-05T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.100815300213</CCRDataObjectID>
+        <IDs>
+          <ID>100815300213</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Tamoxifen Citrate 10 MG Oral Tablet; TAKE 1 TABLET TWICE DAILY. (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Tamoxifen Citrate 10 MG Oral Tablet</Text>
+            <Code>
+              <Value>68258596006</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Tamoxifen Citrate</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET TWICE DAILY.</Text>
+            </Description>
+            <Dose>
+              <Value>2</Value>
+            </Dose>
+            <Frequency>
+              <Description>
+                <Text>bid</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.117643300009</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-01-14</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>117643300009</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Hydrochlorothiazide 25 MG Oral Tablet; TAKE 1 TABLET DAILY AS DIRECTED.; Start Date: 01/14/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Hydrochlorothiazide 25 MG Oral Tablet</Text>
+            <Code>
+              <Value>68387053730</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Hydrochlorothiazide</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET DAILY AS DIRECTED.</Text>
+            </Description>
+            <Dose>
+              <Value>1</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-01-14T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+            <Frequency>
+              <Description>
+                <Text>qd</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.100815300209</CCRDataObjectID>
+        <IDs>
+          <ID>100815300209</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Venlafaxine HCl ER 150 MG Oral Capsule Extended Release 24 Hour; TAKE 2 CAPSULES DAILY. (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Venlafaxine HCl ER 150 MG Oral Capsule Extended Release 24 Hour</Text>
+            <Code>
+              <Value>68382003616</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Venlafaxine HCl ER</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 2 CAPSULES DAILY.</Text>
+            </Description>
+            <Dose>
+              <Value>1</Value>
+            </Dose>
+            <Frequency>
+              <Description>
+                <Text>qd</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.100920400019</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-12-19</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>100920400019</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Avandia 4 MG Oral Tablet; TAKE 1 TABLET TWICE DAILY, WITH MORNING AND EVENING MEAL; Start Date: 12/19/2012 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Avandia 4 MG Oral Tablet</Text>
+            <Code>
+              <Value>68258600703</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Avandia</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET TWICE DAILY, WITH MORNING AND EVENING MEAL</Text>
+            </Description>
+            <Dose>
+              <Value>2</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2012-12-19T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+            <Frequency>
+              <Description>
+                <Text>bid</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.131857300029</CCRDataObjectID>
+        <IDs>
+          <ID>131857300029</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Lasix 20 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Lasix 20 MG Oral Tablet</Text>
+            <Code>
+              <Value>00039006710</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Lasix</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.150147000001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-02-18 - 1900-01-01</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>150147000001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Depo-Provera 400 MG/ML Intramuscular Suspension; INJECT INTRAMUSCULARLY AS DIRECTED.; Start Date: 02/18/2013; End Date: 01/01/1900 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Depo-Provera 400 MG/ML Intramuscular Suspension</Text>
+            <Code>
+              <Value>54868334801</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Depo-Provera</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>INJECT INTRAMUSCULARLY AS DIRECTED.</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-02-18T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+            <AdministrationTiming>
+              <Type>
+                <Text>End</Text>
+              </Type>
+              <ExactDateTime>1900-01-01T00:00:00-05:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.175114300045</CCRDataObjectID>
+        <IDs>
+          <ID>175114300045</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Amaryl 1 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Amaryl 1 MG Oral Tablet</Text>
+            <Code>
+              <Value>00039022110</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Amaryl</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.183381200001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-03-11</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>183381200001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Oysco 500+D 500-200 MG-UNIT Oral Tablet; Start Date: 03/11/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Oysco 500+D 500-200 MG-UNIT Oral Tablet</Text>
+            <Code>
+              <Value>00536781710</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Oysco 500+D</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-03-11T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.231702300001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-04-03</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>231702300001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Amylase-A POWD; test test; Start Date: 04/03/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Amylase-A POWD</Text>
+            <Code>
+              <Value>51552074805</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Amylase-A</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>test test</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-04-03T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.290125800001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-04-24</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>290125800001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Lortab 10-500 MG Oral Tablet; TAKE 1 TABLET 4 TIMES DAILY.; Start Date: 04/24/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Lortab 10-500 MG Oral Tablet</Text>
+            <Code>
+              <Value>67544037980</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Lortab</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET 4 TIMES DAILY.</Text>
+            </Description>
+            <Dose>
+              <Value>4</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-04-24T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+            <Frequency>
+              <Description>
+                <Text>qid</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.320462000097</CCRDataObjectID>
+        <IDs>
+          <ID>320462000097</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Lisinopril 10 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Lisinopril 10 MG Oral Tablet</Text>
+            <Code>
+              <Value>68387054330</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Lisinopril</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.320462000101</CCRDataObjectID>
+        <IDs>
+          <ID>320462000101</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Aspirin 81 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Aspirin 81 MG Oral Tablet</Text>
+            <Code>
+              <Value>49999035930</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Aspirin</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.320462000105</CCRDataObjectID>
+        <IDs>
+          <ID>320462000105</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>MetFORMIN HCl 500 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>MetFORMIN HCl 500 MG Oral Tablet</Text>
+            <Code>
+              <Value>68645029059</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>MetFORMIN HCl</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.343806000045</CCRDataObjectID>
+        <IDs>
+          <ID>343806000045</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Plavix 75 MG Oral Tablet (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Plavix 75 MG Oral Tablet</Text>
+            <Code>
+              <Value>68258600603</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Plavix</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text></Text>
+            </Description>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.344440800001</CCRDataObjectID>
+        <IDs>
+          <ID>344440800001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Amlodipine-Atorvastatin 5-10 MG Oral Tablet; TAKE 3 TABLET Daily (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Amlodipine-Atorvastatin 5-10 MG Oral Tablet</Text>
+            <Code>
+              <Value>63304058730</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Amlodipine-Atorvastatin</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 3 TABLET Daily</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.439070200001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-06-06</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>439070200001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>TraMADol HCl 50 MG Oral Tablet; TAKE 1 TABLET 3 TIMES DAILY AS NEEDED.; Start Date: 06/06/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>TraMADol HCl 50 MG Oral Tablet</Text>
+            <Code>
+              <Value>68387090090</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>TraMADol HCl</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET 3 TIMES DAILY AS NEEDED.</Text>
+            </Description>
+            <Dose>
+              <Value>3</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-06-06T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.474603000135</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-06-14</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>474603000135</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>Levothroid 100 MCG TABS; TAKE 1 TABLET DAILY.; Start Date: 06/14/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Levothroid 100 MCG TABS</Text>
+            <Code>
+              <Value>66116028330</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>Levothroid</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>TAKE 1 TABLET DAILY.</Text>
+            </Description>
+            <Dose>
+              <Value>1</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-06-14T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+            <Frequency>
+              <Description>
+                <Text>qd</Text>
+              </Description>
+            </Frequency>
+          </Direction>
+        </Directions>
+      </Medication>
+      <Medication>
+        <CCRDataObjectID>ME.608204100083</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-07-17</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>608204100083</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Medication</Text>
+        </Type>
+        <Description>
+          <Text>HumaLOG 100 UNIT/ML Subcutaneous Solution; USE AS DIRECTED.; Start Date: 07/17/2013 (Active)</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>HumaLOG 100 UNIT/ML Subcutaneous Solution</Text>
+            <Code>
+              <Value>55045360201</Value>
+              <CodingSystem>NDC</CodingSystem>
+            </Code>
+          </ProductName>
+          <BrandName>
+            <Text>HumaLOG</Text>
+          </BrandName>
+        </Product>
+        <Directions>
+          <Direction>
+            <Description>
+              <Text>USE AS DIRECTED.</Text>
+            </Description>
+            <Dose>
+              <Value>0</Value>
+            </Dose>
+            <AdministrationTiming>
+              <Type>
+                <Text>Start</Text>
+              </Type>
+              <ExactDateTime>2013-07-17T00:00:00-04:00</ExactDateTime>
+            </AdministrationTiming>
+          </Direction>
+        </Directions>
+      </Medication>
+    </Medications>
+    <Immunizations>
+      <Immunization>
+        <CCRDataObjectID>IM.46275400017</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-09-01T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>46275400017</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Influenza - Administered on: 09/01/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Influenza</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.46275400019</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-09-01T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>46275400019</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Influenza (Whole) - Administered on: 09/01/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Influenza (Whole)</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.46275400021</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-09-01T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>46275400021</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Pneumo (Pneumovax) - Administered on: 09/01/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Pneumo (Pneumovax)</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.46275400039</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-11-06T10:28:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>46275400039</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Hepatitis A (Lot #: fgsdfgsdfgsdfgdf) - Administered on: 11/06/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Hepatitis A</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.100815300223</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>0001-01-01T00:00:00-05:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>100815300223</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Influenza - Administered on: 01/01/0001</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Influenza</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.100815300225</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>0001-01-01T00:00:00-05:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>100815300225</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Tdap (Adacel) - Administered on: 01/01/0001</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Tdap (Adacel)</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.100920400061</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-12-19T11:47:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>100920400061</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Hepatitis B (Lot #: pl1021) - Administered on: 12/19/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Hepatitis B</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.120514800005</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-01-17T14:54:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>120514800005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>PPD (Lot #: jgiiahg-778) - Administered on: 01/17/2013</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>PPD</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.149545300055</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-02-17T14:21:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>149545300055</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>DTaP; #1 (Lot #: 111111111) - Administered on: 02/17/2013</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>DTaP</Text>
+          </ProductName>
+        </Product>
+        <SeriesNumber>1</SeriesNumber>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.164645800011</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2012-02-26T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>164645800011</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Zostavax 19400 UNT/0.65ML Subcutaneous Solution Reconstituted - Administered on: 02/26/2012</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Zostavax 19400 UNT/0.65ML Subcutaneous Solution Reconstituted</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.183650200065</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>0001-01-01T00:00:00-05:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>183650200065</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Pneumo (Pneumovax) - Administered on: 01/01/0001</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Pneumo (Pneumovax)</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.183650200067</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>0001-01-01T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>183650200067</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>Pneumo (Pneumovax) - Administered on: 01/01/0001</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>Pneumo (Pneumovax)</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.241936000005</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-04-08T16:24:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>241936000005</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>PPD (Lot #: 293227) - Administered on: 04/08/2013</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>PPD</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+      <Immunization>
+        <CCRDataObjectID>IM.740505900001</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>2013-08-14T12:01:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>740505900001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Immunization</Text>
+        </Type>
+        <Description>
+          <Text>PPD (Lot #: C4283AA) - Administered on: 08/14/2013</Text>
+        </Description>
+        <Status>
+          <Text>Active</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Product>
+          <ProductName>
+            <Text>PPD</Text>
+          </ProductName>
+        </Product>
+      </Immunization>
+    </Immunizations>
+    <Results>
+      <Result>
+        <CCRDataObjectID>RS.1</CCRDataObjectID>
+        <DateTime>
+          <ApproximateDateTime>
+            <Text>13 Aug 2012 12:00 AM</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <Type>
+          <Text>Result</Text>
+        </Type>
+        <Description>
+          <Text>PT with INR</Text>
+        </Description>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <Test>
+          <CCRDataObjectID>RS.732613000023</CCRDataObjectID>
+          <IDs>
+            <ID>732613000023</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Result</Text>
+          </Type>
+          <Description>
+            <Text>INR</Text>
+          </Description>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+          <TestResult>
+            <Value>5</Value>
+          </TestResult>
+        </Test>
+        <Test>
+          <CCRDataObjectID>RS.732613000019</CCRDataObjectID>
+          <IDs>
+            <ID>732613000019</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Result</Text>
+          </Type>
+          <Description>
+            <Text>Prothrombin Time</Text>
+          </Description>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+          <TestResult>
+            <Value>5</Value>
+          </TestResult>
+        </Test>
+        <Test>
+          <CCRDataObjectID>RS.732613000015</CCRDataObjectID>
+          <IDs>
+            <ID>732613000015</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Result</Text>
+          </Type>
+          <Description>
+            <Text>Protime</Text>
+          </Description>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+          <TestResult>
+            <Value>5</Value>
+          </TestResult>
+        </Test>
+        <Test>
+          <CCRDataObjectID>RS.732613000009</CCRDataObjectID>
+          <IDs>
+            <ID>732613000009</ID>
+            <Source>
+              <Actor>
+                <ActorID>Enterprise EHR</ActorID>
+              </Actor>
+            </Source>
+          </IDs>
+          <Type>
+            <Text>Result</Text>
+          </Type>
+          <Description>
+            <Text>INR</Text>
+          </Description>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+          <TestResult>
+            <Value>5</Value>
+          </TestResult>
+        </Test>
+      </Result>
+    </Results>
+    <Procedures>
+      <Procedure>
+        <CCRDataObjectID>PR.28446600015</CCRDataObjectID>
+        <IDs>
+          <ID>28446600015</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Knee Surgery</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.60869000103</CCRDataObjectID>
+        <IDs>
+          <ID>60869000103</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Shoulder Surgery</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.100815300101</CCRDataObjectID>
+        <IDs>
+          <ID>100815300101</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Gastric Surgery For Morbid Obesity Bypass With Roux-En-Y</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.100815300103</CCRDataObjectID>
+        <IDs>
+          <ID>100815300103</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Tubal Ligation</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.100815300105</CCRDataObjectID>
+        <IDs>
+          <ID>100815300105</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Appendectomy</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.110208800001</CCRDataObjectID>
+        <IDs>
+          <ID>110208800001</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Tonsillectomy</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.320462000047</CCRDataObjectID>
+        <IDs>
+          <ID>320462000047</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Coronary Artery Bypass Graft (Cabg)</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.343806000013</CCRDataObjectID>
+        <IDs>
+          <ID>343806000013</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Diagnosis</Text>
+        </Type>
+        <Description>
+          <Text>Coronary Artery Bypass Graft (Cabg)</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.474603000069</CCRDataObjectID>
+        <IDs>
+          <ID>474603000069</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Lower Back Surgery</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.474603000071</CCRDataObjectID>
+        <IDs>
+          <ID>474603000071</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Craniotomy Tumor Removal - Complete</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.474603000129</CCRDataObjectID>
+        <IDs>
+          <ID>474603000129</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Appendectomy</Text>
+        </Description>
+        <Status>
+          <Text>Resolved</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+      <Procedure>
+        <CCRDataObjectID>PR.691442900003</CCRDataObjectID>
+        <IDs>
+          <ID>691442900003</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Problem</Text>
+        </Type>
+        <Description>
+          <Text>Recent Surgery</Text>
+        </Description>
+        <Status>
+          <Text>Denied</Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </Procedure>
+    </Procedures>
+    <PlanOfCare>
+      <Plan>
+        <CCRDataObjectID>PL.1</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-02-26T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>1</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Physical Therapy Referral</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.1</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-02-26T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Physical Therapy Referral</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.2</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-08T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>2</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>In Office Dilation of Urethral Stricture, by Sound or Dilator, Male, Initial - 53600</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.2</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-08T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>In Office Dilation of Urethral Stricture, by Sound or Dilator, Male, Initial - 53600</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.3</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-08T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>3</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>In Office EKG w / Interpret / Report ( req w / G0402 ) - G0403</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.3</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-08T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>In Office EKG w / Interpret / Report ( req w / G0402 ) - G0403</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.4</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-19T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>4</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>In Office Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.4</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-19T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>In Office Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.5</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-16T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>5</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Cardiology Referral</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.5</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-16T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Cardiology Referral</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.6</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-19T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>6</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.6</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-19T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.7</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-24T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>7</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Diarrhea diet</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.7</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-24T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Diarrhea diet</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.8</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-04-24T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>8</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Diarrhea diet</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.8</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-04-24T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Diarrhea diet</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.9</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-06-10T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>9</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Physical Therapy Referral</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.9</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-06-10T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Physical Therapy Referral</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.10</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-05-10T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>10</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Wellness Visit Follow up</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.10</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-05-10T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Wellness Visit Follow up</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.11</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-06-20T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>11</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.11</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-06-20T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Obtaining Screen Pap Smear; Prep/Convey To Lab - Q0091</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.12</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-07-23T00:00:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>12</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>BMP - Basic Metabolic Panel</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.12</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-07-23T00:00:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>BMP - Basic Metabolic Panel</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.13</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-08-14T12:54:59.9689196-04:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>13</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>MM DIGITAL MAMMO SCREENING - G0202</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.13</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-08-14T12:54:59.9689196-04:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>MM DIGITAL MAMMO SCREENING - G0202</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+      <Plan>
+        <CCRDataObjectID>PL.14</CCRDataObjectID>
+        <DateTime>
+          <Type>
+            <Text>Request</Text>
+          </Type>
+          <ApproximateDateTime>
+            <Text>2013-08-14T12:54:59.9689196-04:00</Text>
+          </ApproximateDateTime>
+        </DateTime>
+        <IDs>
+          <ID>14</ID>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </IDs>
+        <Type>
+          <Text>Order</Text>
+        </Type>
+        <Description>
+          <Text>Colonoscopy Screen order - 45378</Text>
+        </Description>
+        <Status>
+          <Text></Text>
+        </Status>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+        <OrderRequest>
+          <CCRDataObjectID>PLO.14</CCRDataObjectID>
+          <DateTime>
+            <Type>
+              <Text>Request</Text>
+            </Type>
+            <ApproximateDateTime>
+              <Text>2013-08-14T12:54:59.9689196-04:00</Text>
+            </ApproximateDateTime>
+          </DateTime>
+          <Type>
+            <Text>Order</Text>
+          </Type>
+          <Description>
+            <Text>Colonoscopy Screen order - 45378</Text>
+          </Description>
+          <Status>
+            <Text></Text>
+          </Status>
+          <Source>
+            <Actor>
+              <ActorID>Enterprise EHR</ActorID>
+            </Actor>
+          </Source>
+        </OrderRequest>
+      </Plan>
+    </PlanOfCare>
+  </Body>
+  <Actors>
+    <Actor>
+      <ActorObjectID>Patient.ZZZAHS02</ActorObjectID>
+      <Person>
+        <Name>
+          <CurrentName>
+            <Given>Allison</Given>
+            <Family>Allscripts</Family>
+          </CurrentName>
+          <DisplayName>Allison Allscripts</DisplayName>
+        </Name>
+        <DateOfBirth>
+          <ApproximateDateTime>
+            <Text>1977-05-06</Text>
+          </ApproximateDateTime>
+        </DateOfBirth>
+        <Gender>
+          <Text>Female</Text>
+        </Gender>
+      </Person>
+      <IDs>
+        <Type>
+          <Text>Patient ID</Text>
+        </Type>
+        <ID>ZZZAHS02</ID>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+            <ActorRole>
+              <Text>EHR</Text>
+            </ActorRole>
+          </Actor>
+        </Source>
+      </IDs>
+      <Address>
+        <Type>
+          <Text>Mail</Text>
+        </Type>
+        <Line1>34 Smith Mt. Road.</Line1>
+        <City>Morrisville</City>
+        <State>VT</State>
+        <PostalCode>12346</PostalCode>
+      </Address>
+      <Telephone>
+        <Value>(802)555-1112</Value>
+        <Type>
+          <Text>Primary</Text>
+        </Type>
+      </Telephone>
+      <Source>
+        <Actor>
+          <ActorID>Enterprise EHR</ActorID>
+        </Actor>
+      </Source>
+    </Actor>
+    <Actor>
+      <ActorObjectID>Person.35222</ActorObjectID>
+      <Person>
+        <Name>
+          <CurrentName>
+            <Given>Michael</Given>
+            <Family>McKinney</Family>
+          </CurrentName>
+        </Name>
+      </Person>
+      <IDs>
+        <ID>35222</ID>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </IDs>
+      <Specialty>
+        <Text>Internal Medicine</Text>
+      </Specialty>
+      <Address>
+        <Type>
+          <Text>Mail</Text>
+        </Type>
+      </Address>
+      <Telephone>
+        <Value>(859)260-5370</Value>
+        <Type>
+          <Text>Primary</Text>
+        </Type>
+      </Telephone>
+      <EMail>
+        <Value>mmckinne@bhsi.com</Value>
+      </EMail>
+      <Source>
+        <Actor>
+          <ActorID>Enterprise EHR</ActorID>
+        </Actor>
+      </Source>
+    </Actor>
+    <Actor>
+      <ActorObjectID>Person.3142</ActorObjectID>
+      <Person>
+        <Name>
+          <CurrentName>
+            <Given>Julie</Given>
+            <Family>Gandee</Family>
+          </CurrentName>
+        </Name>
+      </Person>
+      <IDs>
+        <ID>3142</ID>
+        <Source>
+          <Actor>
+            <ActorID>Enterprise EHR</ActorID>
+          </Actor>
+        </Source>
+      </IDs>
+      <Specialty>
+        <Text>Family Medicine</Text>
+      </Specialty>
+      <Address>
+        <Type>
+          <Text>Mail</Text>
+        </Type>
+      </Address>
+      <Telephone>
+        <Value>(859)624-6366</Value>
+        <Type>
+          <Text>Primary</Text>
+        </Type>
+      </Telephone>
+      <EMail>
+        <Value>julie.gandee@bhsi.com</Value>
+      </EMail>
+      <Source>
+        <Actor>
+          <ActorID>Enterprise EHR</ActorID>
+        </Actor>
+      </Source>
+    </Actor>
+    <Actor>
+      <ActorObjectID>Site</ActorObjectID>
+      <Organization>
+        <Name>Baptist Internal Medicine and Pediatrics at Brannon Crossing</Name>
+      </Organization>
+      <Address>
+        <Type>
+          <Text>Mail</Text>
+        </Type>
+        <Line1>100 Providence Way</Line1>
+        <Line2>Suite 200</Line2>
+        <City>Nicholasville</City>
+        <State>KY</State>
+        <PostalCode>40356</PostalCode>
+      </Address>
+      <Telephone>
+        <Value>(859)260-5370</Value>
+        <Type>
+          <Text>Primary</Text>
+        </Type>
+      </Telephone>
+      <Source>
+        <Actor>
+          <ActorID>Enterprise EHR</ActorID>
+        </Actor>
+      </Source>
+    </Actor>
+    <Actor>
+      <ActorObjectID>Enterprise EHR</ActorObjectID>
+      <InformationSystem>
+        <Name>Enterprise EHR</Name>
+        <Type>EHR</Type>
+        <Version>11.202.4344.12730</Version>
+      </InformationSystem>
+      <Source>
+        <Actor>
+          <ActorID>Enterprise EHR</ActorID>
+        </Actor>
+      </Source>
+    </Actor>
+  </Actors>
+</ContinuityOfCareRecord>

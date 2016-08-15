@@ -1,0 +1,274 @@
+/**
+ * Facesheet Meds
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceMeds = {
+  fs:null,
+  changed:null,
+  //
+  _q:null,
+  _scb:null,
+  _filter:null,
+  _zoom:null,  
+  /*
+   * callback(facesheet) if anything changed (calls page.medsChangedCallback by default)
+   */
+  pop:function(fs, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.fs.FaceMeds = this;
+    this._zoom = zoom;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'medsChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_MEDS, Includer.LIB_FACE_UI, Includer.AP_TEMPLATE_POPS, Includer.JS_TEMPLATE_POPS], function() {
+      self._q = newMedQuestion(); 
+      new TabBar('fsp-med', ['Current Medications', 'History'], ['Current', 'Medication History']);
+      if (fs.client) {
+        setCaption('fsp-med-cap-text', fs.client.name + ' - Medications');
+      }
+      if (fs.medsHistByMed) {
+        self._pop();
+      } else {
+        Ajax.get(Ajax.SVR_POP, 'getMedClientHist', fs.client.id, function(f) {
+          fs.medsHistByMed = f.medsHistByMed;
+          fs.medsHistByDate = f.medsHistByDate;
+          fs.clientHistory = f.clientHistory;
+          self._pop();
+        });
+      }
+    });
+  },
+  _pop:function() {
+    this._load();
+    if (this._zoom) {
+      zoomPop('fsp-med');
+    } else {
+      showOverlayPop('fsp-med');
+    }
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.meds = fs.meds;
+    this.fs.activeMeds = fs.activeMeds;
+    this.fs.medsHistByMed = fs.medsHistByMed;
+    this.fs.medsHistByDate = fs.medsHistByDate;
+    this.changed = true;
+    this._load();
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpDeleteLegacy:function() {
+    var fs = this.fs;
+    var self = this;
+    confirm('Remove legacy medications from active list?', function() {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'deleteLegacyMeds', fs.client.id, [self.update, self]); 
+    });
+  },
+  fpDeleteMeds:function() {
+    if (getCheckedValues('sel-med', 'fsp-med-tbody').length > 0) {
+      var self = this;
+      showConfirmChecked('remove', function(confirm) {
+        if (confirm) {
+          self._deactivateMedChecks();
+        }
+      });  
+    } else {
+      showCritical('Nothing was selected.');
+    }
+  },
+  fpPrint:function() {
+    var fs = this.fs;
+    var checkedIds = getCheckedValues('sel-med', 'fsp-med-tbody');
+    for (var i = 0; i < fs.activeMeds.length; i++) {
+      fs.activeMeds[i].checked = null;
+    }
+    for (var i = 0; i < checkedIds.length; i++) {
+      fs.activeMedsById[checkedIds[i]].checked = true;
+    }
+    var rx = {
+      'date':calToday2(),
+      'me':me,
+      'docs':fs.docs,
+      'client':fs.client,
+      'meds':fs.activeMeds,
+      'showMedList':true};
+    var self = this;
+    showRx(rx, function(meds){self._rxCallback(meds)});
+  },
+  fpAddMed:function() {
+    this._q.id = null;
+    this._q.med = null;
+    this._showMedQuestion();
+  },
+  fpShowMed:function(id, name, amt, freq, asNeeded, meals, route, length, disp) {
+    var med = {
+      'id':id,
+      'name':name,
+      'amt':amt,
+      'freq':freq,
+      'asNeeded':asNeeded,
+      'meals':meals,
+      'route':route,
+      'length':length,
+      'disp':disp};
+    this._q.id = id;
+    this._q.med = med;
+    this._showMedQuestion();
+  },
+  fpShowMedRx:function(id) {
+    var med = this.fs.rxById[id];
+    var text = (med.text) ? med.text + '<br/>' : '';
+    var h = '<b>' + med.name + '</b><br/>' + text + med.rx;
+    showMsg(h);
+  },
+  deactivateMeds:function(ids) {
+    overlayWorking(true);
+    Ajax.post(Ajax.SVR_POP, 'deactivateMeds', ids, [this.update, this]);
+  },
+  saveMed:function(med) {
+    overlayWorking(true);
+    med.clientId = this.fs.client.id;
+    Ajax.post(Ajax.SVR_POP, 'saveMed', med, [this.update, this]);
+  },
+  //
+  _load:function() {
+    this._loadCurrent(me.perm.er);
+    this._loadHist();
+    if (me.perm.er) {
+      Page.show($('med-cmd-erx'), true);
+      Page.show($('med-cmd'), false);
+    }
+    overlayWorking(false);
+  },
+  _deactivateMedChecks:function() {
+    this.deactivateMeds(getCheckedValues('sel-med', 'fsp-med-tbody'));
+  },
+  _showMedQuestion:function() {
+    var self = this;
+    showMedByQuestion(this._q, function(q){self._showMedQuestionCallback(q)});
+  },
+  _showMedQuestionCallback:function(q) {
+    if (q.med == null) {
+      if (q.id) {
+        this.deactivateMeds([q.id]);
+      }
+    } else {
+      this.saveMed(q.med);
+    }
+  },
+  _rxCallback:function(meds) {
+    overlayWorking(true);
+    Ajax.post(Ajax.SVR_POP, 'printMeds', meds, [this.update, this]);
+  },
+  _loadCurrent:function(erx) {
+    var fs = this.fs;
+    var tp = new TableLoader('fsp-med-tbody', 'off', 'fsp-med-div');
+    fs.activeMedsById = {};
+    fs.rxById = {};
+    if (fs.activeMeds) {
+      var self = this;
+      for (var i = 0; i < fs.activeMeds.length; i++) {
+        var med = fs.activeMeds[i];
+        fs.activeMedsById[med.id] = med;
+        tp.createTr();
+        var name = (! med.expires) ? med.name : bulletJoin([med.name,' <span>' + med.expireText + '</span>']);
+        if (erx) {
+          if (med.source != SOURCE_NEWCROP) {
+            tp.createTd('fs legacy', null, '[LEGACY] ' + name);
+            showIf(fs.activeErx, 'med-dleg');
+          } else {
+            tp.createTd('fs', null, name);
+          }
+        } else {
+          tp.createTd('check');
+          tp.append(createCheckbox('sel-med', med.id));
+          var href = 'javascript:FaceMeds.fpShowMed' + argJoin([med.id, med.name, med.amt, med.freq, med.asNeeded, med.meals, med.route, med.length, med.disp]);
+          tp.createTd('nowrap');
+          tp.append(createAnchor('med-a-' + med.id, href, 'fs', null, name));
+        }
+        tp.append(createSpan('lpad', med.text));
+      }
+    } else {
+      tp.createTrTd(null, null, '&nbsp;');
+    }
+  },
+  _loadHist:function() {
+    var fs = this.fs;
+    var self = this;
+    var t = new TableLoader('fsp-medh-tbody-1', 'off', 'fsp-medh-div-1');
+    if (fs.medsHistByDate) {
+      t.batchLoad(fs.medsHistByDate, function(tl, med){self._renderMedsHistByDateRow(tl, med)});
+    }
+    t = new TableLoader('fsp-medh-tbody-2', 'off', 'fsp-medh-div-2');
+    t.defineFilter(this._medHistFilter(), function(tl){self._filterCallback(tl)});
+    if (fs.medsHistByMed) {
+      t.batchLoad(fs.medsHistByMed, function(tl, med){self._renderMedsHistByMedRow(tl, med)}, TableLoader.EOF_CALLBACK);
+    } 
+  },
+  _renderMedsHistByDateRow:function(t, med) {
+    var fs = this.fs;
+    if (med.rx) {
+      fs.rxById[med.id] = med;
+    } 
+    t.createTr(med.date, [med.date, med.name, med.rx]);
+    t.createTd('histbreak', med.date);
+    t.createTd(null, null, med.quid + ': <b>' + med.name + '</b>');
+    this._appendRxAnchor(t, med);  
+    t.createTdAppend(null, FaceUi.createSessionAnchor(fs, med.sessionId));
+  },
+  _renderMedsHistByMedRow:function(t, med) {
+    var fs = this.fs;
+    if (med) {
+      var date = med.date;
+      t.createTr(med.name, [med.name, med.date, med.quid, med.rx], this._medHistFilter(med));
+      var c;
+      if (med.active) {
+        c = 'histbreak active';
+      } else {
+        c = 'histbreak inactive';
+      }
+      t.createTd(c, null, med.name);
+      t.createTd('nowrap', date);
+      t.createTd(null, med.quid);
+      this._appendRxAnchor(t, med);
+      t.createTd();
+      t.append(FaceUi.createSessionAnchor(fs, med.sessionId));
+    } else {
+      //t.loadFilterSidebar('medh-filter-ul', TableLoader.NO_FILTER_COUNT);
+      t.loadFilterTopbar('medh-filter-ul');
+      t.applyFilter(null);
+    }
+  },
+  _filterCallback:function(t) {
+    if (t.allFilterValuesNull()) {  
+      showHide('fsp-medh-div-1','fsp-medh-div-2');
+    } else {
+      showHide('fsp-medh-div-2','fsp-medh-div-1');
+    }
+  },
+  _medHistFilter:function(med) {
+    return {
+      'Show':(med) ? justMedName(med.name) : null
+      };
+  },
+  _appendRxAnchor:function(t, med) {
+    t.createTd();
+    if (med.rx) {
+      var click = 'FaceMeds.fpShowMedRx(' + med.id + ')';
+      var text = '&nbsp;';
+      var s = med.rx.split('Disp:');
+      if (s.length > 1)
+        text = 'Disp:' + s[1];
+      var a = createAnchor(null, null, 'rx', null, text, click);
+      t.append(a);
+      a.title = med.rx;
+    }
+  }
+};

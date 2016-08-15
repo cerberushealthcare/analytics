@@ -1,0 +1,21 @@
+<?php 
+function getSecurePrefix() {
+	$host = substr($_SERVER['HTTP_HOST'], 0, 5);
+	if ($host == "local" || $host == "test.") {
+		return "sec/";
+	} else {
+		return "https://www.clicktate.com/sec/";
+	}
+}
+function getLoginLabel() {
+  switch (substr($_SERVER['HTTP_HOST'], 0, 5)) {
+    case 'local':
+      return "<span style='color:red'>Local Login</span> ";
+    case 'test.':
+      return "<span style='color:orange'>Test Login</span> ";
+    default:
+      return 'Clicktate Login';
+  }
+  return ' ';
+}
+?>

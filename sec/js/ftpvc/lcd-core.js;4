@@ -1,0 +1,503 @@
+/** 
+ * LCD FRAMEWORK: CORE FUNCTIONS
+ * Copyright 2010 by LCD, Inc.
+ * Author: Warren Hornsby
+ * 
+ * - Global functions: Getters and testers
+ * - New static classes: Dom, Map
+ * - Static extensions: Array, Function, Math, String 
+ */
+//
+/** 
+ * Global element getters/class functions
+ */
+/*
+ * getElementById
+ */
+function $(id) {
+  return document.getElementById(id);
+}
+/*
+ * getElementsById
+ * - parent, tagName: optional
+ */
+function $$(id, parent, tagName) {  
+  if (parent == null && tagName == null) 
+    return Array.from(document.all[id]);
+  if (parent == null) 
+    parent = document;
+  if (tagName == null) 
+    tagName = '*';
+  var e = parent.getElementsByTagName(tagName);
+  var r = [];
+  for (var i = 0; i < e.length; i++) 
+    if (id == e[i].id) 
+      r.push(e[i]);
+  return r;
+}
+/*
+ * getElementsByClass
+ * - parent, tagName: optional
+ * - startsWith: true for partial match, default false
+ */
+function $$$(className, parent, tagName, startsWith) {  
+  if (parent == null) 
+    parent = document;
+  if (tagName == null) 
+    tagName = '*';
+  var all = parent.getElementsByTagName(tagName);
+  var r = [];
+  var e;
+  for (var i = 0; (e = all[i]) != null; i++) 
+    if (hasClass(e, className, startsWith)) 
+      r.push(e);
+  return r;
+}
+/*
+ * Set class for element having ID
+ */
+function setClass(id, className) {
+  var e = $(id);
+  $(id).className = className;
+  return e;
+}
+/*
+ * Determine if element uses supplied class name
+ * - startsWith: optional; default false, true to allow partial match
+ */
+function hasClass(e, className, startsWith) {  // true if e specifies className, startsWith optional boolean
+  var extra = (startsWith) ? '*' : '(?:$|\\s)';  
+  var hasClassName = new RegExp('(?:^|\\s)' + className + extra);
+  var ec = e.className;
+  if (ec && ec.indexOf(className) != -1 && hasClassName.test(ec)) 
+    return true; 
+}
+/*
+ * Add a class to element
+ */
+function addClass(e, className) {
+  if (! hasClass(e, className)) 
+    e.className = trim(e.className + ' ' + className);
+  return e;
+}
+/*
+ * Remove a class from element
+ */
+function removeClass(e, className) {
+  e.className = trim(e.className.replace(className, ''));
+}
+/*
+ * Returns deep clone of supplied object
+ * - preserveHtmlRefs: optional, default false
+ *   If false, HTML element refs of original object will be removed in clone
+ *   If true, HTML element refs of original object will be preserved (i.e., will point to same element; the HTML element will not be cloned)
+ */
+function clone(o, preserveHtmlRefs) {
+  var n = (o.constructor == Array) ? [] : {};
+  for (var i in o) 
+    if (isObjectOrArray(o[i])) 
+      if (isHtmlElement(o[i])) 
+        n[i] = (preserveHtmlRefs) ? o[i] : null;
+      else 
+        n[i] = clone(o[i]);
+    else
+      n[i] = o[i];
+  return n;
+}
+/**
+ * Global testers
+ */
+function isUndefined(e) {
+  var u; 
+  return e === u;
+}
+function isString(e) {
+  return typeof e == "string";
+}
+function isArray(e) {
+  return e != null && e.constructor == Array;
+}
+function isFunction(e) {
+   try {  
+     return /^\s*\bfunction\b/.test(e);  
+   } catch (e) {
+     return false;  
+   }    
+}
+function isObject(e) {
+  return e && typeof e === "object" && (! isArray(e));
+}
+function isObjectOrArray(e) {
+  return e && typeof e === "object"; 
+}
+function isHtmlElement(e) {
+  return e && e.nodeName != null; 
+}
+function denull(e, value) {
+  return (e == null) ? value : e;
+}
+/**
+ * DOM static class
+ */
+var Dom = {
+  appendAndRef:function(parent, child, prop) {
+    parent.appendChild(child);
+    parent[prop] = child;
+  },
+  insertAfter:function(refNode, newNode) {
+    if (refNode.nextSibling) 
+      refNode.parentElement.insertBefore(newNode, refNode.nextSibling);
+    else 
+      refNode.parentElement.appendChild(newNode);
+  },
+  clear:function(e) {
+    while (e.hasChildNodes()) 
+      e.removeChild(e.lastChild);
+    return e;
+  },
+  create:function(tagName, id, className, innerText, innerHtml) {
+    var e = document.createElement(tagName);
+    if (id != null) 
+      e.id = id;
+    if (className != null) 
+      e.className = className;
+    if (innerText != null) 
+      e.innerText = innerText;
+    if (innerHtml != null) 
+      e.innerHTML = innerHtml;
+    return e;
+  },
+  createAnchor:function(id, className, innerText, onClick) {
+    var a = Dom.create('a', id, className, innerText);
+    if (onClick) 
+      a.onclick = Function.from(onClick);
+    return a;  
+  },
+  createDiv:function(id, className, innerText, innerHtml) {
+    return Dom.create('div', id, className, innerText, innerHtml);
+  },
+  createDivAppend:function(id, className, e) {
+    var div = Dom.createDiv(id, className);
+    if (e) 
+      div.appendChild(e);
+    return div;
+  },
+  createSpan:function(id, className, innerText, innerHtml) {
+    return Dom.create('span', id, className, innerText, innerHtml);
+  },
+  createSpanAppend:function(id, className, e) {
+    var span = Dom.createSpan(id, className);
+    if (e)
+      span.appendChild(e);
+    return span;
+  },
+  createUl:function(id, className) {
+  },
+  createLi:function(id, className) {
+  },
+  createTextInput:function(id, className, value) {
+  },
+  createTextArea:function(id, className, value) {
+  },
+  createCheckbox:function(id, className, value, onClick) {
+  },
+  createSelect:function(id, className, map, selMapKey, blankText) {
+  },
+  /*
+   * Returns true if e and direct ancestors are visible
+   */
+  isRendered:function(e) {
+    if (e.parentElement) {
+      do {
+        if (e.tagName == 'BODY') 
+          return true;
+        if (e.currentStyle.display == 'none' || e.currentStyle.visibility == "hidden") 
+          return false;
+      } while (e = e.parentElement);
+    }
+    return false;
+  },
+  /*
+   * Returns absolute position {'left':#,'top':#} 
+   */
+  getPos:function(e) {
+    var cl = 0;
+    var ct = 0;
+    if (e.offsetParent) 
+      do {
+        cl += e.offsetLeft;
+        ct += e.offsetTop;
+      } while (e = e.offsetParent);
+    return {
+      'left':cl,
+      'top':ct
+      };
+  },
+  /*
+   * Attach event handler to element
+   * - event: string event name without 'on', e.g. 'mousedown'
+   * - fn: function to call on event
+   */
+  attachEventHandler:function(e, event, fn) {
+    e.attachEvent('on' + event, fn);
+  },
+  /*
+   * Recursively seek a direct ancestor containing given property value
+   * Returns element if found, else null   
+   */
+  findAncestorWith:function(e, propName, propValue) {
+    if (e[propName] == propValue) 
+      return e;
+    if (e.parentElement.tagName == 'BODY') 
+      return null;
+    return findAncestorWith(e.parentElement, propName, propValue);
+  }, 
+  findEventAncestorWith:function(propName, propValue) {
+    if (event && event.srcElement) 
+      return findAncestorWith(event.srcElement, propName, propValue);
+  }
+  // TODO
+}; 
+/**
+ * Map (associated array) static class
+ */
+var Map = {
+  /*
+   * Empty tester
+   */
+  isEmpty:function(map) {
+    if (map == null) 
+      return null;
+    for (var e in map) 
+      return false;
+    return true;
+  },
+  /*
+   * Replace null with map
+   */
+  denull:function(e) {
+    return (e) ? e : {};  
+  },
+  /*
+   * Given [1,2,3] return map [1:1,2:2,3:3]
+   */
+  fromArray:function(a) {
+    var map = {};
+    if (a.length) 
+      for (var i = 0, l = a.length; i < l; i++) 
+        map[a[i]] = a[i];
+    return map;
+  },
+  /*
+   * Merge into map items from another 
+   */
+  merge:function(map, from) {
+  for (var i in from) 
+    map[i] = from[i];
+  },
+  /*
+   * Returns rec[field] if rec exists, null if rec doesn't
+   */
+  get:function(map, field) {
+    return (map) ? map[field] : null;
+  },
+  /*
+   * Push item into array @ map[index]
+   */
+  pushInto:function(map, index, item) {
+    if (map[index] == null)
+      map[index] = [];
+    map[index].push(item);
+  }
+};
+/**
+ * Array extensions
+ */
+/*
+ * Empty tester
+ */
+Array.isEmpty = function(array) {
+  return array == null || array.length == 0;
+}
+/*
+ * Replace null with array
+ */
+Array.denull = function(e) {
+  return (e) ? e : [];
+}
+/*
+ * Create from single element or array
+ * Always returns at least an empty array 
+ */
+Array.from = function(e) {
+  return (isArray(e)) ? e : ((e == null) ? [] : [e]);  
+}
+/*
+ * Create from array excluding null elements (optionally, empty strings as well)
+ */
+Array.RETAIN_EMPTY_STRINGS = true;
+Array.removeNulls = function(array, retainEmptyStrings) {
+  if (array != null) {
+    var b = [];
+    var ins = ! retainEmptyStrings;
+    for (var i = 0, l = array.length; i < l; i++) 
+      if (! (array[i] == null || (ins && array[i] == ''))) 
+        b.push(a[i]);
+    return b;
+  }
+  return null;
+};
+/*
+ * Given ['alpha','beta'], glue='+', return 'alpha+beta' 
+ */
+Array.joinWith = function(array, glue) {
+  return (array) ? array.join(glue) : '';
+}
+/*
+ * Perform action upon each element
+ */
+Array.forEach = function(array, fn) {
+  for (var i = 0, l = array.length; i < l; i++) 
+    fn(array[i]);
+};
+/*
+ * Append element/array
+ */
+Array.append = function(array, e) {
+  if (isArray(e)) 
+    Array.forEach(e, 
+      function(item) {
+        array.push(item);
+      });
+  else 
+    array.push(e);
+};
+/*
+ * Append item if not null
+ */
+Array.pushIfNotNull = function(array, item) {
+  if (item != null) 
+    array.push(item);
+};
+/*
+ * Returns index position of item, if found; -1 if not
+ */
+Array.find = function(array, item) {
+  for (var i = 0, l = array.length; i < l; i++) 
+    if (array[i] == item) 
+      return i;
+  return -1;
+};
+/*
+ * Returns true if item exists anywhere
+ */
+Array.has = function(array, item) {
+  return (Array.find(array, item) > -1);
+};
+/**
+ * Function extensions
+ */
+/*
+ * Create from string or function 
+ */
+Function.from = function(e) {
+  return (isFunction(e)) ? e : new Function(e);
+}
+/**
+ * Math extensions
+ */
+Math.sgn = function(x) {
+  return (x > 0) | -(x < 0);
+};
+Math.larger = function(x1, x2) {
+  return (x1 > x2) ? x1 : x2;
+};
+Math.largest = function(array) {
+  var max;
+  Array.forEach(array,
+    function(x) {
+      if (max == null || x > max) 
+        max = x;
+    });
+  return max;
+};
+Math.smaller = function(x1, x2) {
+  return -Math.larger(-x1, -x2);
+}
+Math.smallest = function(array) {
+  var min;
+  Array.forEach(array,
+    function(x) {
+      if (min == null || x < min) 
+        min = x;
+    });
+  return min;
+};
+/**
+ * String extensions
+ */
+/*
+ * Returns string with leading and trailing spaces removed
+ */
+String.trim = function(e) {
+  return (e != null) ? e.replace('\xa0',' ').replace(/^\s+|\s+$/g, "") : null;
+};
+/*
+ * Returns true if element is null or empty string
+ */
+String.isBlank = function(e) {
+  return e == null || String.trim(e).length == 0;
+};
+/*
+ * Returns string (empty string if null)
+ */
+String.denull = function(e) {
+  return (e == null) ? '' : e + '';
+};
+/*
+ * Returns string or null
+ */
+String.nullify = function(e) {
+  return (e == null) ? null : (trim(e + '') == '') ? null : e;
+};
+/*
+ * Returns '1 noun' or '2 nouns'
+ */
+String.plural = function(amt, noun) {
+  if (amt == 1) 
+    return amt + ' ' + noun;
+  else 
+    return amt + ' ' + noun + 's';
+};
+/*
+ * Escape singlequotes (for use inside an outer pair of singlequotes)
+ */
+String.escape = function(e) {
+  return (e != null) ? e.replace(/\'/g, "\\'") : null;
+};
+/*
+ * Encodes doublequotes (for use inside an outer pair of doublequotes)
+ */
+String.addslashes = function(str) {
+  return (str + '').replace(/([\\"'])/g, "\\$1").replace(/\0/g, "\\0");
+};
+/*
+ * String to numerics
+ */
+String.ZERO_IF_NAN = true;
+String.toInt = function(str, zeroIfNan) {
+  if (zeroIfNan && isNan(str))
+    return 0;
+  return parseInt(str, 10);
+};
+String.toFloat = function(str, zeroIfNan) {
+  if (zeroIfNan && isNan(str))
+    return 0;
+  return parseFloat(str);
+};
+/*
+ * Make a two-digit number by leftpadding single digit with '0'
+ */
+String.lpad = function(num) {
+  return (num < 10) ? '0' + num : num;
+};

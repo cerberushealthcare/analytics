@@ -1,0 +1,38 @@
+/**
+ * Face Tracking 
+ * Static pop controller
+ */
+var FaceTrack = {
+  fs:null,
+  changed:null,
+  recs:null,
+  table:null,
+  _scb:null,
+  _POP:'fsp-trk',
+  //
+  pop:function(fs, zoom, callback) {
+    var self = this;
+    Page.work(function() {
+      self.fs = fs;
+      self.changed = false;
+      self._scb = Ajax.buildScopedCallback(denull(callback, 'trkChangedCallback'));
+      setCaption('fsp-trk-cap-text', fs.client.name + ' - Tracking Sheet');
+      TrackingTable.load('tracking-table-tile', fs.client.id, '350px', function() {
+        Page.work();
+        if (zoom) {
+          zoomPop(FaceTrack._POP);  
+        } else {
+          showOverlayPop(FaceTrack._POP);
+        }
+      });
+    });
+  },
+  fpAdd:function() {
+    TrackingTable.popTrackingAdd(this.fs);
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) 
+      Ajax.callScopedCallback(this._scb, this.fs);
+  }
+};

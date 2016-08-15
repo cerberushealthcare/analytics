@@ -1,0 +1,55 @@
+<?php
+require_once "inc/tags.php";
+set_include_path('../');
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/rec/sql/PortalUsers_Session.php';
+if (isset($_GET['logout'])) {
+  @session_start();
+  session_destroy();        
+  session_unset();     
+  session_regenerate_id();
+}
+?>
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <? PHEAD('Patient Portal', 'login.css') ?>
+    <? PHEAD_DATA('PortalSession') ?>
+  </head>
+  <body>
+    <div id='page'>
+      <div id='loginc'>
+        <div id='login'>
+          <h1>Patient Login</h1>
+          <? BOX() ?>
+            <div>
+              <label>User ID</label>
+              <input type='text' size='20' id='id' name='id' />
+            </div>
+            <div>
+              <label>Password</label>
+              <input type='password' size='20' id='pw' name='pw' />
+            </div>
+            <div>
+              <a class='big' id='alog' href="javascript:login_onclick()">Login ></a>
+            </div>
+          <? _BOX() ?>
+          <div id='links'>
+            <div style='display:none'>
+              Forgot your <a href='.'>login ID</a> or <a href='.'>password</a>?
+             </div>
+          </div>
+        </div>
+        <div id='auth' style='display:none'>
+          <h1>Patient Portal</h1>
+          <p id='auth-msg'>To continue with your login, please answer the following security questions.</p>
+          <? BOX() ?>
+            <div id='auth-tile'></div>
+          <? _BOX() ?>
+        </div>
+      </div>
+    </div>
+  </body>
+  <? JsonConstants::writeGlobals('PortalUser') ?>
+  <? PPAGE('LoginPage') ?>
+</html>

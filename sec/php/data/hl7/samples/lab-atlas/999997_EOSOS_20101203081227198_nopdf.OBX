@@ -1,0 +1,16 @@
+MSH|^~\&||||999997|201012030812||ORU^R01|002056206358347213|P|2.3
+PID||PF111|||TEST^PATIENTBILL||19870419|M|||20 MAIN ST^^NEW YORK^NY^10021^||(212)555-1212|||||||
+PV1|1||||||^^^^^^^PHYID||||||||U||||||||||||||||||||||||
+ORC|RE||||F
+OBR|1|LE09999970000049||18282^HIV-1 Ab Screen|||201011152242|||||||201011181351||^Account^Test^||||||201011181355|||F
+OBX|1||18282^HIV-1 Ab Screen by ELISA||Negative||Negative - Negative||||F||||SHIEL
+NTE|1||PVHase Note:"This information has been disclosed to you from confidential records which are protected by state law.
+NTE|2||State law prohibits you from making any further disclosure of this information without specific written consent of the
+NTE|3||person to whom it pertains, or as otherwise permitted by law.
+NTE|4||Any unauthorized further disclosure in violation of state law may  result in a fine or a jail sentence or both.
+NTE|5||A general authorization for the reVHase of medical or  other information is not, except in limited circumstances set forth
+NTE|6||in this part, sufficient authorization for further disclosure.
+NTE|7||Disclosure of confidential HIV information that occurs as the result of a general autorization for the reVHase of  medical
+NTE|8||or other information will be in violation of the state law and may result in a fine or a jail sentence or both."
+NTE|9||Part 63 of 10 NYCRR section 63.5(b)
+FTS|1|End Of File

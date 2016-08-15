@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <!-- Copyright (c)2010 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>
+      Clicktate - Terms of Service
+    </title>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta name="keywords" content="dictate, dictation, medical note, document generation, note generation, medical office notes, medical transcription, emr, ehr, medical documentation, progress notes, medical progress notes, soap notes, medical soap notes, medical note generation, medical notes, medical dictation, medical transcription, family practice notes, internal medicine notes, pediatric notes, urgent care notes, urgent care documentation, internal medicine documentation, pediatric documentation, family practice documentation, small office emr, small office ehr" />
+    <meta name="description" content="Automated document generation." />
+    <link rel="stylesheet" type="text/css" href="css/home.css" media="screen" />
+<!--[if lte IE 6]>    
+    <link rel="stylesheet" type="text/css" href="css/home-ie6.css" media="screen" />
+<![endif]-->    
+  </head>
+  <body>
+    <? include "inc/hheader.php" ?>
+    <div id="body" style="background:white">
+      <div class="content center">
+        <h1>Terms of Service</h1>
+      </div>
+      <div class="wm">      
+<p>The information from or to this site is provided "as-is" and "as-available" and all warranties, expressed or implied, are disclaimed (including but not limited to the disclaimer of any implied warranties or merchantability and fitness for a particular purpose). The information may contain errors, problems, or other limitations. Our sole and entire maximum liability for any inaccurate information, for any reason, and users sole and exclusive remedy for any cause whatsoever, shall be limited to the amount paid by the customer for the information received (if any). We are not liable for any indirect, special, incidental, or consequential damages (including damages for loss of business, loss of profits, litigation, or the like), whether based on breach of contract, breach of warranty, tort (including negligence), product liability, or otherwise, even if advised of the possibility of such damage. The limitations of damages set forth above are fundamental elements of the basis of the bargain between LCD Solutions, Inc. and clicktate.com and you. We would not provide this site and information without such limitations. No representations, warranties or guarantees whatsoever are made as to the accuracy, adequacy, reliability, currentness, completeness, suitability or applicability of the information to a particular situation.</p>
+<p>All responsibility and liability for any damages caused by viruses contained within the electronic files of this site are disclaimed.</p>
+<p>Clicktate.com is a medical documentation and management tool only. It is designed to assist the user with the creation of medical office notes, the creation and maintenance of patient records, the facilitation of processes that a medical provider would use to administer patient care on a day to day basis, and certain administrative functions that are part of the normal running of a medical practice. It is not meant to replace the knowledge, experience, sound clinical judgment, and expertise of a medical provider. It is not a diagnostic tool, nor is it meant to suggest a diagnosis based upon default settings which may appear in notes. It is not a tool to assist in or suggest a course of therapy.</p>  
+<p>Prescriptions written utilizing the clicktate.com prescription writing module are at the sole discretion of the provider, and it is the responsibility of the prescribing provider to be aware of the use and indications for the medications prescribed, the possible drug interactions of each prescribed medication, and the particular patients’ profiles for whom medications are prescribed, included but not limited to the possibility of pre-existing medication allergies and prior adverse medication  reactions.</p>  
+<p>LCD Solutions, Inc. and clicktate.com are not liable for any injury, damage, omission, or loss which occurs directly or indirectly from the use of this system. In addition, LCD Solutions, Inc. and clicktate.com are not responsible for any errors or omissions which may be perceived to be a part of the system.</p> 
+<p>As with any printed material or computer program or system, sound clinical judgment by a licensed and competent provider of medical care should be the ultimate guide to patient care, diagnosis, and therapy. This product is not designed to replace this care.</p>
+      </div>
+    </div>
+    <? include "inc/hfooter.php" ?>
+  </body>
+</html>

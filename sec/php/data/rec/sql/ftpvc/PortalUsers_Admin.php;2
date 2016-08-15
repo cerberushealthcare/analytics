@@ -1,0 +1,83 @@
+<?php
+require_once 'php/data/rec/sql/PortalUsers_Session.php';
+require_once 'php/data/rec/sql/Clients.php';
+//
+/**
+ * Patient Portal Users Administration
+ * @author Warren Hornsby 
+ */
+class PortalUsers_Admin {
+  /**
+   * @return array(PortalUser_A,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = PortalUser_A::fetchAll($myLogin->userGroupId);
+    return $recs;
+  }
+  /**
+   * @param stdClass $json PortalUser
+   * @return PortalUser_A
+   */
+  static function create($json) {
+    global $myLogin;
+    $rec = PortalUser_A::fromUiAsCreate($json, $myLogin->userGroupId, $myLogin->userId);
+    $rec->save();
+    return $rec;
+  }
+}
+/**
+ * PortalUser PortalUser_A
+ */
+class PortalUser_A extends PortalUserRec {
+  //
+  public $portalUserId;
+  public $userGroupId;
+  public $clientId;
+  public $uid;
+  public $pw;  // encrypted
+  public $active;
+  public $status;
+  public $createdBy;
+  public $dateCreated;
+  public $pwSet;
+  public $cq1;
+  public $ca1;
+  public $cq2;
+  public $ca2;
+  public $cq3;
+  public $ca3;
+  public /*Client*/ $Client;
+  //
+  static function fromUiAsCreate($json, $ugid, $userId) {
+    $rec = self::fromUi($json, $ugid);
+    $rec->setPassword($json->pw);
+    $rec->active = true;
+    $rec->status = self::STATUS_RESET;
+    $rec->createdBy = $userId;
+    $rec->dateCreated = nowNoQuotes();
+    $rec->pwSet = null;
+    return $rec;
+  }
+  static function fromUi($json, $ugid) {
+    $rec = new self($json);
+    $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  static function fetch($id) {
+    $c = self::asCriteria(null);
+    $c->portalUserId = $id;
+    return self::fetchOneBy($c);
+  }
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return SqlRec::fetchAllBy($c);
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->userGroupId = $ugid;
+    $c->Client = new Client();
+    return $c;
+  }
+} 
+?>

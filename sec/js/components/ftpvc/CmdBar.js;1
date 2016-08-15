@@ -1,0 +1,48 @@
+/**
+ * Command Bar
+ * UI Component
+ */
+/*
+ * Command Bar
+ * @arg <e> parent
+ * @arg int type (optional)
+ * @arg context (optional, controller instance) 
+ */
+function CmdBar(parent, type, context) {
+  this.context = context;
+  this.div = createDivIn('pop-cmd', parent);
+}
+//
+CmdBar.prototype = {
+  div:null,  // parent <div>
+  context:null,
+  /*
+   * Button builders
+   */
+  button:function(caption, className, fn) {
+    if (caption.length <= 3)
+      caption = '&nbsp;&nbsp;&nbsp;' + caption + '&nbsp;&nbsp;&nbsp;';
+    className = denull(className, 'none');
+    this._append(className, caption, fn);
+  },
+  save:function(fn) {
+    this._append('save', 'Save Changes', fn);
+  },
+  cancel:function(fn) {
+    this._append('none', 'Cancel', fn);
+  },
+  saveCancel:function(saveFn, cancelFn) {
+    this.save(saveFn);
+    this.cancel(cancelFn);
+  },
+  exit:function(fn) {
+    this._append('none', '&nbsp;&nbsp;Exit&nbsp;&nbsp;', fn);
+  },
+  //
+  _append:function(cls, cap, fn) {
+    if (this.div.children)
+      this.div.appendChild(createSpan(null, null, null, '&nbsp;&nbsp;'));
+    var context = this.context;
+    this.div.appendChild(createAnchor(null, null, 'cmd ' + cls, null, cap, fn, context));
+  }
+}

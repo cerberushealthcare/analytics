@@ -1,0 +1,129 @@
+/**
+ * Tracking Page
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var TrackingPage = {
+  lists:null,
+  recs:null,  // {id:TrackItem,..}
+  /*
+   * Loader
+   */
+  load:function(query, lists) {
+    Page.setEvents();
+    this.lists = lists;
+    CriteriaTile.load(lists);
+  },
+  pEdit:function(trackItemId) {
+    var rec = this.recs[trackItemId];
+    Includer.getTrackingEntry_pop(rec, this.lists, function() {
+      alert('done');
+    });
+  }
+};
+/**
+ * Criteria Tile
+ */
+var CriteriaTile = {
+  form:null,
+  //
+  load:function(lists) {
+    var criteria = this._loadCriteriaForm(lists);
+    ResultsTile.load(criteria);
+  },
+  onChange:function(criteria) {
+    ResultsTile.load(criteria);
+  },
+  /*
+   * Build criteria entry form
+   * Returns {'cat':$,'cid':$} 
+   */
+  _loadCriteriaForm:function(lists) {
+    var form = new EntryForm($('criteria-ul'));
+    //var form = new EntryForm($('results-filter-other'));
+    this.form = form;
+    form.addLi();
+    form.appendField('cat', createSelect(null, null, lists.cats, null, '[All Categories]'), 'Category');
+    var a = createAnchor(null, null, 'client', '[All Patients]');
+    form.appendClientPicker('cid', a, 'Patient');
+    var self = this;
+    form.setOnDirty(function(record){self.onChange(record)});
+    return form.getRecord();
+  }
+}
+/**
+ * Results Tile
+ */
+var ResultsTile = {
+  table:null,
+  load:function(criteria) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl', 'results-head');
+    t.defineFilter(this.getFilter());
+    overlayWorking(true, $('box'));
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'getTracking', criteria,
+      function(recs) {
+        TrackingPage.recs = {};
+        var lastCat = null;
+        for (var i = 0, j = recs.length; i < j; i++) {
+          var rec = recs[i];
+          TrackingPage.recs[rec.trackItemId] = rec;
+          var client = rec.Client;
+          var session = rec.Session;
+          var cat = TrackingPage.lists.cats[rec.trackCat];
+          if (cat != lastCat) {
+            t.createTr(true, null, self.getFilter(cat));
+            t.createTd('histbreak', cat);
+            t.td.colSpan = 6;
+            lastCat = cat;
+          }
+          t.createTr(false, null, self.getFilter(cat, rec.User_OrderBy.name, ClientUi.formatName(client)));
+          t.createTdAppend(null, ResultsTile.createTrackingAnchor(rec, rec.trackDesc));
+          t.createTdAppend('nowrap', ClientUi.createClientAnchor(client));
+          t.createTdAppend('nowrap', DocUi.createPreviewAnchor(client.clientId, session));
+          t.createTd('nowrap', null, self.buildStatusText(rec));
+          //t.createTd('nowrap', rec.schedDateUi);
+          //t.createTd(null, rec.closedDateUi);
+        }
+        overlayWorking(false);
+        t.loadFilterSidebar('results-filter-ul', TableLoader.NO_FILTER_COUNT);
+      }
+    );
+    this.table = t;
+  },
+  getFilter:function(cat, orderedBy, patient) {
+    return {
+      'Categories':cat,
+      'Ordered By':orderedBy,
+      'Patient':patient
+      };
+  },
+  buildStatusText:function(rec) {
+    var h = [];
+    switch (rec.status) {
+    case C_OT.STATUS_ORDERED:
+      h.push(this.formatDoneBy('Ordered', rec._orderDate, rec.User_OrderBy.name));
+      break;
+    case C_OT.STATUS_SCHED:
+      break;
+    case C_OT.STATUS_CLOSED:
+      break;
+    }
+    return h.join('');
+  },
+  formatDoneBy:function(job, date, by) {
+    return '<b>' + job + '</b> ' + date + ' by ' + by;
+  },
+  createTrackingAnchor:function(rec, text) {
+    var href = 'javascript:TrackingPage.pEdit(' + rec.trackItemId + ')';
+    var a = createAnchor(null, href, 'action track', text);
+    if (rec.priority == C_OT.PRIORITY_STAT)
+      a.style.color = 'red';
+    return a;
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = TrackingPage;  

@@ -1,0 +1,72 @@
+/**
+ * Command Bar
+ * UI Component
+ */
+/*
+ * Command Bar
+ * @arg <e> parent
+ * @arg int type (optional)
+ * @arg context (optional, controller instance) 
+ */
+function CmdBar(parent, type, context) {
+  this.context = context;
+  this.div = createDivIn(parent, 'pop-cmd');
+}
+//
+CmdBar.prototype = {
+  div:null,  // parent <div>
+  context:null,
+  /*
+   * Button builders
+   */
+  button:function(caption, className, fn) {
+    if (caption.length <= 3)
+      caption = '&nbsp;&nbsp;&nbsp;' + caption + '&nbsp;&nbsp;&nbsp;';
+    className = denull(className, 'none');
+    return this._append(className, caption, fn);
+  },
+  save:function(fn) {
+    return this._append('save', 'Save Changes', fn);
+  },
+  cancel:function(fn) {
+    return this._append('none', 'Cancel', fn);
+  },
+  del:function(fn) {
+    this._del = this._append('delete', 'Delete', fn);
+    return this._del;
+  },
+  showDelIf:function(test) {
+    var s = (test) ? '' : 'none';
+    this._del.style.display = s;
+    if (this._del.spacer)
+      this._del.spacer.style.display = s;
+  },
+  saveCancel:function(saveFn, cancelFn) {
+    return [this.save(saveFn), this.cancel(cancelFn)];
+  },
+  saveDelCancel:function(saveFn, delFn, cancelFn) {
+    return [this.save(saveFn), this.del(delFn), this.cancel(cancelFn)];
+  },
+  exit:function(fn) {
+    return this._append('none', '&nbsp;&nbsp;Exit&nbsp;&nbsp;', fn);
+  },
+  ok:function(fn) {
+    return this._append('none', '&nbsp;&nbsp;&nbsp;OK&nbsp;&nbsp;&nbsp;', fn);
+  },
+  okCancel:function(okFn, cancelFn) {
+    return [this.ok(okFn), this.cancel(cancelFn)];
+  },
+  add:function(caption, fn) {
+    return this._append('new', caption, fn);
+  },
+  //
+  _append:function(cls, cap, fn) {
+    var context = this.context;
+    var a = createAnchor(null, null, 'cmd ' + cls, null, cap, fn, context);
+    if (this.div.children && this.div.children.length) {
+      a.spacer = createSpan(null, null, null, '&nbsp;&nbsp;');
+      this.div.appendChild(a.spacer);
+    }
+    return appendInto(this.div, a);
+  }
+}

@@ -1,0 +1,47 @@
+<?php
+require_once 'php/data/rec/sql/_SqlLevelRec.php';
+/**
+ * Internal Proc Code
+ */
+abstract class IpcRec extends SqlLevelRec {
+  /*
+  public $ipc;
+  public $userGroupId;
+  public $name;
+  public $desc;
+  public $cat;
+  public $code;  
+  public $codeSystem;
+  */
+  const CAT_LAB = '1';
+  const CAT_NUCLEAR = '2';
+  const CAT_RADIO = '3';
+  const CAT_TEST = '5';
+  const CAT_PROC = '6';
+  const CAT_SURG = '10';
+  const CAT_ADMIN = '20';
+  const CAT_OTHER = '99';
+  static $CATS = array(
+    self::CAT_LAB => 'Labs',
+    self::CAT_NUCLEAR => 'Nuclear Medicine',
+    self::CAT_RADIO => 'Radiology',
+    self::CAT_TEST => 'Tests',
+    self::CAT_PROC => 'Procedures',  // diagnostic
+    self::CAT_SURG => 'Surgical',
+    self::CAT_ADMIN => 'Administrative',  
+    self::CAT_OTHER => '(Other)');
+  //
+  const CS_ICD9 = 'I9';
+  const CS_SNOMED = 'S';
+  const CS_LOINC = 'L';
+  const CS_CPT4 = 'C4';
+  //
+  public function getSqlTable() {
+    return 'iproc_codes';
+  }
+  //
+  static function getStaticJson() {
+    return parent::getStaticJson(__CLASS__);
+  }
+}
+?>

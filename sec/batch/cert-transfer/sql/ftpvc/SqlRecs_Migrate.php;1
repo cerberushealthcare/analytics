@@ -1,0 +1,174 @@
+<?php
+//
+abstract class SqlRec_Migrate extends SqlRec {
+  //
+  static function fromRows($rows) {
+    $mes = array();
+    foreach ($rows as $row)
+      $mes[] = static::fromRow($row);
+    return $mes;
+  }
+  static function fromRow($row) {
+    $me = new static($row);
+    return $me;
+  }
+  static function appendSqlInserts(&$lines, $recs) {
+    foreach ($recs as $rec)  
+      static::appendSqlInsert($lines, $rec);
+  }
+  static function appendSqlInsert(&$lines, $rec) {
+    $lines[] = $rec->getSqlInsert();
+  }
+}
+class UserGroup_Migrate extends SqlRec_Migrate implements ReadOnly {
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  public $sessionTimeout;
+  //
+  public function getSqlTable() {
+    return 'user_groups';
+  }
+  //
+  static function migrate(&$lines, $ugid) {
+    $row = Dao_Migrate::fetchRow("SELECT * FROM user_groups WHERE user_group_id=$ugid");
+    static::appendSqlInsert($lines, static::fromRow($row));
+  }
+  static function fromRow($row) {
+    $me = parent::fromRow($row);
+    $me->sessionTimeout = 60;
+    return $me;
+  }
+}
+class User_Migrate extends SqlRec_Migrate implements ReadOnly {
+  public $userId;
+  public $uid;
+  public $pw;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $dateCreated;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  static function migrate(&$lines, $ugid) {
+    $rows = Dao_Migrate::fetchRows("SELECT * FROM users WHERE user_group_id=$ugid");
+    static::appendSqlInserts($lines, static::fromRows($rows));
+  }
+}
+class Client_Migrate extends SqlRec_Migrate implements ReadOnly {
+  public $clientId;
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $cdata5;  // living will
+  public $cdata6;  // power of attorney
+  public $cdata7;
+  public $middleName;
+  public $notes;
+  public $dateUpdated;
+  public $race;
+  public $ethnicity;
+  public $deceased;
+  public $language;
+  public $familyRelease;
+  public $primaryPhys;
+  public $releasePref;
+  public $release;
+  public $userRestricts;
+  public /*Address_Migrate*/ $Addresses;
+  //
+  public function getSqlTable() {
+    return 'clients';
+  }
+  //
+  static function migrate(&$lines, $ugid) {
+    $rows = Dao_Migrate::fetchRows("SELECT * FROM clients WHERE user_group_id=$ugid");
+    static::appendSqlInserts($lines, static::fromRows($rows));
+  }
+  static function appendSqlInsert(&$lines, $rec) {
+    parent::appendSqlInsert($lines, $rec);
+    Address_Migrate::migrate($lines, $rec->clientId);
+  }
+  static function fromRow($row) {
+    $me = parent::fromRow($row);
+    $me->deceased = false;
+    return $me;
+  }
+} 
+class Address_Migrate extends SqlRec_Migrate implements ReadOnly {
+  public $addressId;
+  public $tableCode;
+  public $tableId;
+  public $type;
+  public $addr1;
+  public $addr2;
+  public $addr3;
+  public $city;
+  public $state;
+  public $zip;
+  public $country;
+  public $phone1;
+  public $phone1Type;
+  public $phone2;
+  public $phone2Type;
+  public $phone3;
+  public $phone3Type;
+  public $email1;
+  public $email2;
+  public $name;
+  //
+  public function getSqlTable() {
+    return 'addresses';
+  }
+  //
+  static function migrate(&$lines, $cid) {
+    $rows = Dao_Migrate::fetchRows("SELECT * FROM addresses WHERE table_code='C' AND table_id=$cid");
+    static::appendSqlInserts($lines, static::fromRows($rows));
+  }
+}
+class Dao_Migrate extends Dao {
+  static $DB;
+  //
+  static function setDb($db) {
+    static::$DB = $db;
+  }
+  protected static function getDbFromEnv() {
+    return static::$DB;
+  }
+  protected static function getCredFromEnv() {
+    static $cred;
+    if ($cred == null) {
+      $cred = new stdClass();
+      $cred->server = 'localhost';
+      $cred->user = 'webuser';
+      $cred->pw = 'click01';
+    }
+    return $cred;
+  }
+}

@@ -1,0 +1,44 @@
+/**
+ * RecArray Procedures
+ */
+Procedures = Object.RecArray.extend({
+  getItemProto:function() {
+    return Proc;
+  }
+})
+/**
+ * Rec Proc
+ *   RecArray Results
+ */
+Proc = Object.Rec.extend({
+  onload:function() {
+    this.ProcResults = ProcResults.create(this).revive(this.ProcResults, ProcResult.create(this));
+  },
+  asNew:function(clientId) {
+    return this.revive({'clientId':clientId});
+  }
+})
+/**
+ * RecArray ProcResults
+ */
+ProcResults = Object.RecArray.extend({
+  newItem:function() {
+    return this.itemProto.asNew();
+  }
+})
+/**
+ * Rec ProcResult
+ */
+ProcResult = Object.Rec.extend({
+  onload:function() {
+    if (this.ipc == null) {
+      this.ipc = this._parent.ipc;
+      this.Ipc = this._parent.Ipc;
+    }
+    if (this.clientId == null)
+      this.clientId = this._parent.clientId;
+  },
+  asNew:function() {
+    return this.revive();
+  }
+})

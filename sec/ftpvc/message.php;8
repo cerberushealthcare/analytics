@@ -1,0 +1,201 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/dao/MsgDao.php';
+require_once 'php/data/rec/sql/MsgInbox.php';
+//
+if ($myLogin->permissions->accessPatients == Permissions::ACCESS_NONE) {
+  header('Location: welcome.php');
+}
+$id = geta($_GET, 'id');
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('Message Center') ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/page.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/AnchorTab.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TemplateUi.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TabBar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/message.css?<?=Version::getUrlSuffix() ?>' />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == '6') { ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop-font.css?<?=Version::getUrlSuffix() ?>' />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel='stylesheet' type='text/css' href='css/data-tables-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop-ie6.css?<?=Version::getUrlSuffix() ?>' />
+<![endif]-->    
+    <? if ($myLogin->isPapyrus()) { ?>
+    <link rel="stylesheet" type="text/css" href="css/papyrus.css?<?=Version::getUrlSuffix() ?>" />
+    <? } ?>
+    <script language='JavaScript1.2' src='js/pages/MessagePage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/libs/AddressUi.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language='JavaScript1.2' src='js/pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ajax.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/json.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pops/DocDownloader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/ProfileLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/AnchorTab.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TabBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TemplateUi.js?<?=Version::getUrlSuffix() ?>'></script>
+  </head>
+  <body onload='start()' onmousedown='closePopByControlBox()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div class='content'>
+        <table border='0' cellpadding='0' cellspacing='0' style='width:100%'>
+          <tr>
+            <td>
+              <h1>Message Center</h1>
+            </td>
+            <td style='text-align:right; padding-right:5px; vertical-align:bottom;'>
+              <a href='messages.php' class='icon big back'>Back to Inbox</a>
+            </td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, 'box') ?>
+          <div id='message-working'>&nbsp;</div>  <!-- workingTile -->
+          <div id='thread' style='display:none'>  <!-- pageTile -->
+            <table id='thread-cols'>
+              <tr>
+                <td id='td-posts'>
+                  <div id='thread-head'>
+                    <table style='width:100%'>
+                      <tr>
+                        <td>
+                          <h2 id='h2' class='thread'></h2>
+                        </td>
+                        <td style='text-align:right'>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                  <div id='thread-head-tag'></div>
+                  <div id='new-thread'>  <!-- newThreadTile -->
+                    <ul id='new-thread-ul'>
+                    </ul>
+                  </div>
+                  <div id='new-post'>  <!-- newPostTile -->
+                    <div id='templates'>
+                      <div id='tchooser'>
+                        <label>Choose a Template:</label>
+                        <span id='tchooser-atabs'>
+                        </span>
+                      </div>
+                      <div id='tuis'>
+                      </div>
+                    </div>
+                    <div id='post-freetext' class='post-entry'>
+                      <div class='pcap'>
+                        <table><tr><th>Free Text Area</th></tr></table>
+                      </div>
+                      <div class='pfree'>
+                        <textarea id='post-free' onkeydown='taAutosize(this)' onkeyup='taAutosize(this)' onkeypress='taAutosize(this)'></textarea>
+                      </div>
+                    </div>
+                    <div class='pop-cmd'>
+                      <a href='javascript:' onclick='page.pSend()' class='cmd send'>Send To:</a>
+                      <span style='font-size:9pt;display:inline-block;padding-top:6px'><a class='recips' href='javascript:'>Nurse Nellie</a></span>
+                      <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      <a href='javascript:' onclick='page.pComplete()' class='cmd lock'>Save and Mark Complete</a>
+                    </div>
+                    <div id='new-post-reply'>  
+                      <h2 id='new-post-reply-h2' class='reply'>New Post</h2>
+                    </div>
+                    <ul id='new-post-ul'>
+                    </ul>
+                    <div class='pop-cmd' style='display:none'>
+                      <a id='cmd-send' href='javascript:' onclick='page.pSend()' class='cmd send'>Send Message</a><a id='cmd-save-complete' href='javascript:' onclick='page.pComplete()' class='cmd lock'>Save a Complete</a>
+                      <span>&nbsp;</span>
+                      <a href='javascript:' onclick='page.pCancel()' class='cmd none'>Cancel</a>
+                    </div>
+                  </div>
+                  <div id='send-post'>  <!-- sendingTile -->
+                  </div>
+                  <div id='post-reply' class='pop-cmd'>  <!-- replyTile -->
+                    <a id='cmd-new-post' href='javascript:' onclick='page.pNewPost()' class='cmd note'>Add a Post...</a>
+                    <!-- 
+                    <span>&nbsp;</span>
+                    <a id='cmd-new-complete' href='javascript:' onclick='page.pNewComplete()' class='cmd lock'>Post Complete...</a>
+                    -->
+                  </div>
+                  <div id='posts'>  <!-- postsTile -->
+                  </div>
+                </td>
+                <td id='td-client' nowrap='nowrap'>  <!-- clientTile -->
+                  <div id='client-clear'>
+                    <a id='client-clear-a' class='x' href='javascript:page.pClearClient()'>X</a>
+                    <a id='client-edit-a' class='pencil' href='javascript:page.pEditClient()'>Edit</a>
+                  </div>
+                  <div id='client-add'>
+                    <ul id='client-add-ul'>
+                    </ul>
+                  </div>
+                  <div id='client-existing'>
+                    <h2 id='h2-client'></h2>
+                    <div style='margin-bottom:5px'>
+                      <label>ID:</label> <span id='client-uid'></span><br/>
+                      <label>DOB:</label> <a id='client-dob' href='javascript:page.pEditClient(1)'></a>
+                    </div>
+                    <div id='client-info'>
+                      <h3>Contact</h3>
+                      <div>
+                        <a id='client-contact' href='javascript:page.pEditClient(2)'></a>
+                      </div>
+                      <h3>Emergency</h3>
+                      <div>
+                        <a id='client-emer' href='javascript:page.pEditClient(6)'></a>
+                      </div>
+                      <h3>Allergies</h3>
+                      <div id='allergies'></div>
+                      <h3>Current Medications</h3>
+                      <div id='meds'>
+                      </div>
+                      <h3>Pharmacy</h3>
+                      <div>
+                        <a id='client-rx' href='javascript:page.pEditClient(7)'></a>
+                      </div>
+                      <h3 id='h3-vitals'>Vitals</h3>
+                      <div id='vitals'></div>
+                    </div>
+                    <div id='client-links' style='padding-top:1em'>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+    </div>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <? include 'inc/footer.php' ?>
+  </body>
+<script>
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  var dao = <?=MsgDao::jsonLists() ?>;
+  var cInbox = <?=MsgInbox::getStaticJson() ?>;
+  var cThread = <?=MsgThread::getStaticJson() ?>;
+  var cPost = <?=MsgPost::getStaticJson() ?>; 
+  page.load(query, dao, cInbox, cThread, cPost);
+}
+</script>
+</html>

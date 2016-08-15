@@ -1,0 +1,510 @@
+<?php
+require_once 'php/data/hl7/msg/ORUMessage.php';
+require_once 'php/data/rec/sql/Clients.php';
+require_once 'php/data/rec/sql/Procedures.php';
+require_once 'php/data/rec/sql/OrderEntry.php';
+//
+/**
+ * ORU_Lab
+ * Segments include:
+ * - associated SqlRecs for reconciliation (e.g. $Observation->Proc_)
+ * - error if recon needs manual entry (e.g. $Observation->error_ = 'Test/Procedure required')
+ * @author Warren Hornsby
+ */
+abstract class ORU_Lab extends ORUMessage {
+  //
+  public $PatientId = 'PID_Lab';
+  public $_reconciled;
+  //
+  abstract public function getUgid();  // returns int
+  //
+  /**
+   * Reconcile segments by creating new SqlRec properties (Client_, Proc_, ProcResult_, TrackItem_)
+   * @param int $cid
+   * @return bool true if all valid (e.g. no manual entry required)
+   */
+  public function reconcile($cid = null) {  // returns bool true if all valid (e.g. no manual entry required)
+    $this->_reconciled = $this->PatientId->reconcile($cid, $this->getMap());
+    return $this->_reconciled;
+  }
+  /**
+   * Reconcile after applying UI updates
+   * @param int cid
+   * @param stdClass $json ORU_Lab with UI updates (e.g. Proc_, ProcResult_, TrackItem_)
+   * @return bool true if all valid (e.g. no manual entry required)
+   */
+  public function reconcile_afterUpdates($cid, $json) {
+    $this->PatientId->apply($json, $this->getUgid());
+    return $this->reconcile($cid);
+  }
+  /**
+   * @param string $notes for order receipt
+   * @param int $reconciler USER_ID or null if auto-reconciled
+   * @param int $inboxId
+   */
+  public function saveIntoChart($notes, $reconciler, $inboxId) {
+    if ($this->getClientId() == null)
+      throw new HL7Exception('Cannot save message without a patient assignment');
+    $this->PatientId->save($notes, $reconciler, $inboxId, $this->getMap());
+  }
+  /**
+   * @return int
+   */
+  public function getClientId() {
+    return getr($this, 'PatientId.Client_.clientId');
+  }
+  //
+  protected function getMap() {
+    static $map;
+    if ($map == null)
+      $map = LabXrefMap::byId($this->_labId);
+    return $map;
+  }
+  //
+  static function fromHL7(/*string*/$data, /*Lab*/$lab) {
+    $buffer = HL7Buffer::fromHL7($data);
+    return static::from($buffer, $lab, $data);
+  }
+  static function /*ORU_Lab[]*/fromFtpFile(/*FtpFile*/$file, /*Lab*/$lab) {
+    $buffers = HL7Buffer::fromFtpFile($file);
+    $us = array();
+    foreach ($buffers as $buffer)
+      $us[] = static::from($buffer, $lab, $buffer->toString());
+    return $us;
+  }
+  //
+  protected static function from($buffer, $lab, $data) {
+    $header = MSH::fromBuffer($buffer);
+    $me = static::fromHeader($header, $lab);
+    $me->_data = $data;
+    $me->_lab = $lab;
+    $me->_labId = $lab->labId;
+    $me->setSegments($buffer, $me->getEncoding());
+    return $me;
+  }
+  //
+  protected static function fromHeader($header, $lab) {
+    $uid = $lab->uid;
+    $class = $header->msgType->type . "_$uid";
+    $path = "php/data/hl7/msg/labs/$uid/$class.php";
+    @include_once $path;
+    if (! class_exists($class, false))
+      throw new HL7ClassNotFoundEx($path);
+    return new $class($header);
+  }
+}
+class PID_Lab extends PID {
+  //
+  public $CommonOrder = 'ORC_Lab';
+  public $ObsRequest = 'OBR_Lab[]';
+  //
+  public /*Client_Recon*/ $Client_;
+  public /*Client[]*/ $Matches_;  // if Client_Recon cannot be established, possible matches go here
+  public $error_;
+  //
+  public function reconcile($cid, $map) {
+    $valid = true;
+    if ($cid == null) {
+      $matches = $this->fetchMatches();
+      if (count($matches) == 1)
+        $cid = key($matches);
+      else
+        $this->Matches = $matches;
+    }
+    if ($cid) {
+      if (! isset($this->_applied))
+        $this->Client_ = Client_Recon::fetch($cid);
+      $valid = OBR_Lab::reconcileAll($this->getObsRequests(), $this->Client_, $map) && $valid;
+    } else {
+      $this->error_ = 'Patient required';
+      $valid = false;
+    }
+    return $valid;
+  }
+  public function apply($json, $ugid) {
+    $j_obrs = arrayify($json->PatientId->ObsRequest);
+    $this->Client_ = $json->PatientId->Client_;
+    $this->_applied = true;
+    OBR_Lab::applyAll($this->getObsRequests(), $j_obrs, $ugid);
+  }
+  public function save($notes, $reconciler, $inboxId, $map) {
+    $procs = OBR_Lab::saveAll($this->getObsRequests(), $notes, $reconciler, $inboxId, $map);
+    $sendTo = $this->Client_->reviewer_;
+    if ($sendTo)
+      Messaging_DocStubReview::createThreads_fromProcs($procs, $sendTo);
+  }
+  //
+  protected function asClientSearch() {
+    $c = new ClientSearch();
+    $c->last = $this->name->last;
+    $c->first = $this->name->first;
+    $c->dob = $this->birthDate->asSqlValue();
+    $c->sex = $this->gender;
+    return $c;
+  }
+  protected function fetchMatches() {
+    $c = static::asClientSearch();
+    return $c->search();
+  }
+}
+//
+class ORC_Lab extends ORC {
+  //
+}
+//
+class OBR_Lab extends OBR {
+  //
+  public $Observation = 'OBX_Lab[]';
+  //
+  public /*Proc_Recon*/ $Proc_;
+  public /*TrackItem_Recon*/ $TrackItem_;
+  public $error_;
+  //
+  public function reconcile($client, $map) {
+    $valid = true;
+    if (! isset($this->_applied)) {
+      $this->Proc_ = $this->asProc($client, $map);
+      if ($this->Proc_->ipc)
+        $this->TrackItem_ = TrackItem_Recon::find($client->TrackItems, $this->Proc_->ipc);
+    }
+    if (empty($this->Proc_) || $this->Proc_->ipc == null) {
+      $this->error_ = 'Test/Procedure required';
+      $valid = false;
+    }
+    $valid = OBX_Lab::reconcileAll($this->getObservations(), $this->Proc_, $map) && $valid;
+    return $valid;
+  }
+  public function apply($j_obr, $ugid) {
+    $this->Proc_ = Proc_Recon::revive(get($j_obr, 'Proc_'), $ugid);
+    $this->TrackItem_ = TrackItem_Recon::revive(get($j_obr, 'TrackItem_'));
+    $this->_applied = true;
+    $j_obxs = arrayify($j_obr->Observation);
+    OBX_Lab::applyAll($this->getObservations(), $j_obxs, $ugid);
+  }
+  public function save($notes, $reconciler, $inboxId, $map) {
+    if ($this->TrackItem_)
+      $this->TrackItem_->saveAsReceived($notes, $reconciler);
+    if ($this->Proc_) {
+      $this->Proc_->hl7InboxId = $inboxId;
+      $this->Proc_->save();
+      $map->save_fromObr($this, $this->Proc_->ipc);
+      OBX_Lab::saveAll($this->getObservations(), $this->Proc_, $map);
+      return $this->Proc_;
+    } else {
+      throw new HL7Exception('Pending procedure missing from OBR segment');
+    }
+  }
+  //
+  protected function asProc($client, $map) {
+    return Proc_Recon::from($this, $client, $map);
+  }
+  //
+  static function reconcileAll($recs, $client, $map) {  // returns true if no errors
+    $valid = true;
+    foreach ($recs as &$rec)
+      $valid = $rec->reconcile($client, $map) && $valid;
+    return $valid;
+  }
+  static function applyAll($recs, $j_obrs, $ugid) {
+    reset($j_obrs);
+    foreach ($recs as &$rec) {
+      $rec->apply(current($j_obrs), $ugid);
+      next($j_obrs);
+    }
+  }
+  static function saveAll($recs, $notes, $reconciler, $inboxId, $map) {
+    $procs = array();
+    foreach ($recs as &$rec)
+      $procs[] = $rec->save($notes, $reconciler, $inboxId, $map);
+    return $procs;
+  }
+}
+//
+class OBX_Lab extends OBX {
+  //
+  public /*ProcResult_Recon*/ $ProcResult_;
+  public $error_;
+  //
+  public function reconcile($proc, $index, $map) {
+    $valid = true;
+    if (! isset($this->_applied))
+      $this->ProcResult_ = $this->asProcResult($proc, $index, $map);
+    if (empty($this->ProcResult_) || $this->ProcResult_->ipc == null) {
+      $this->error_ = 'Test/Procedure required';
+      $valid = false;
+    }
+    return $valid;
+  }
+  public function apply($j_obx, $ugid) {
+    $this->ProcResult_ = ProcResult_Recon::revive(get($j_obx, 'ProcResult_'), $ugid);
+    $this->_applied = true;
+  }
+  public function save($proc, $map) {
+    if ($this->ProcResult_) {
+      $this->ProcResult_->save($proc);
+      $map->save_fromObx($this, $this->ProcResult_->ipc);
+    } else {
+      throw new HL7Exception('Pending procedure result missing from OBX segment');
+    }
+  }
+  //
+  protected function asProcResult($proc, $index, $map) {
+    return ProcResult_Recon::from($this, $proc, $index, $map);
+  }
+  //
+  static function reconcileAll($recs, $proc, $map) {
+    $valid = true;
+    $recs = arrayify($recs);
+    foreach ($recs as $index => &$rec)
+      $valid = $rec->reconcile($proc, $index, $map) && $valid;
+    return $valid;
+  }
+  static function applyAll($recs, $j_obxs, $ugid) {
+    reset($j_obxs);
+    foreach ($recs as &$rec) {
+      $rec->apply(current($j_obxs), $ugid);
+      next($j_obxs);
+    }
+  }
+  static function saveAll($recs, $proc, $map) {
+    foreach ($recs as &$rec)
+      $rec->save($proc, $map);
+  }
+}
+//
+class LabXrefMap {
+  //
+  public $labId;
+  public /*LabXref[]*/ $xrefs;
+  //
+  public function __construct($labId) {
+    $this->labId = $labId;
+  }
+  //
+  public function get_fromObr($obr) {
+    $fid = $this->getKeyFid();
+    return $this->get($obr->serviceId->$fid);
+  }
+  public function get_fromObx($obs) {
+    $fid = $this->getKeyFid();
+    return $this->get($obs->obsId->$fid);
+  }
+  public function get($key) {  // return ipc
+    $rec = geta($this->xrefs, $key);
+    if ($rec)
+      return $rec->toId;
+  }
+  //
+  public function save_fromObr($obr, $ipc) {
+    $fid = $this->getKeyFid();
+    $this->save($obr->serviceId->id, $obr->serviceId->text, $obr->serviceId->$fid, $ipc);
+  }
+  public function save_fromObx($obx, $ipc) {
+    $fid = $this->getKeyFid();
+    $this->save($obx->obsId->id, $obx->obsId->text, $obx->obsId->$fid, $ipc);
+  }
+  public function save($id, $text, $key, $ipc) {
+    $rec = geta($this->xrefs, $key);
+    if ($rec && $rec->toId == $ipc)  // no need to save if already there
+      return;
+    if ($rec == null)
+      $rec = LabXref::asNew($this->labId, $id, $text, $ipc);
+    else
+      $rec->toId = $ipc;
+    $rec->save();
+    $this->xrefs[$key] = $rec;
+  }
+  //
+  protected function getKeyFid() {
+    return ($this->_byId) ? 'id' : 'text';
+  }
+  //
+  static function byId($labId) {
+    $me = new static($labId);
+    $me->_byId = true;
+    $me->xrefs = LabXref::fetchMap_byId($labId);
+    return $me;
+  }
+  static function byText($labId) {
+    $me = new static($labId);
+    $me->_byId = false;
+    $me->xrefs = LabXref::fetchMap_byText($labId);
+    return $me;
+  }
+}
+/*
+ * SqlRecs
+ */
+class LabXref extends SqlRec {
+  //
+  public $labXrefId;
+  public $labId;
+  public $type;
+  public $fromId;
+  public $fromText;
+  public $toId;  // ipc
+  //
+  const TYPE_PROC = 'P';
+  //
+  public function getSqlTable() {
+    return 'lab_xref';
+  }
+  //
+  static function asNew($labId, $fromId, $fromText, $toId) {
+    $me = new static();
+    $me->labId = $labId;
+    $me->type = static::TYPE_PROC;
+    $me->fromId = $fromId;
+    $me->fromText = $fromText;
+    $me->toId = $toId;
+    return $me;
+  }
+  static function fetchAll($labId, $keyFid = null) {
+    $c = new static();
+    $c->labId = $labId;
+    $c->type = static::TYPE_PROC;
+    return static::fetchAllBy($c, null, null, $keyFid);
+  }
+  static function fetchMap_byId($labId) {
+    return static::fetchAll($labId, 'fromId');
+  }
+  static function fetchMap_byText($labId) {
+    return static::fetchAll($labId, 'fromText');
+  }
+}
+class Client_Recon extends Client {
+  //
+  static function fetch($cid) {
+    $me = parent::fetch($cid);
+    $me->Address_Home = ClientAddress::fetchHome($cid);
+    $ugid = $me->userGroupId;
+    $me->TrackItems = TrackItem_Recon::fetchAllOpen($ugid, $cid);
+    if ($me->primaryPhys)
+      $me->reviewer_ = $me->primaryPhys;
+    else
+      $me->reviewer_ = UserGroups::getFirstDoc()->userId;  // TODO
+    return $me;
+  }
+}
+class TrackItem_Recon extends TrackItem {
+  //
+  public function saveAsReceived($notes, $closedBy) {
+    if ($this->trackItemId) {
+      $rec = static::fetch($this->trackItemId);
+      if ($rec) {
+        $rec->status = self::STATUS_CLOSED;
+        $rec->closedFor = self::CLOSED_FOR_RECEIVED;
+        $rec->closedBy = $closedBy;
+        $rec->closedDate = nowNoQuotes();
+        $rec->closedNotes = $notes;
+        $rec->save();
+      }
+    }
+  }
+  //
+  /**
+   * @param TrackItem[] $recs
+   * @param int $ipc
+   * @return TrackItem if IPC found (and not already found on a prior call)
+   */
+  static function find(&$recs, $ipc) {
+    if (! empty($recs) && $ipc) {
+      foreach ($recs as &$rec) {
+        if ($rec->cptCode == $ipc && ! isset($rec->_found)) {
+          $rec->_found = true;
+          return $rec;
+        }
+      }
+    }
+  }
+  static function fetchAllOpen($ugid, $cid) {
+    $c = new static();
+    $c->userGroupId = $ugid;
+    $c->clientId = $cid;
+    $c->status = CriteriaValue::lessThanNumeric(self::STATUS_CLOSED);
+    $recs = self::fetchAllBy($c);
+    return $recs;
+  }
+  static function fetch($id) {
+    $c = new static($id);
+    return SqlRec::fetchOneBy($c);
+  }
+  static function revive($json) {
+    if (! empty($json)) {
+      return new static($json);
+    }
+  }
+}
+class Proc_Recon extends Proc {
+  //
+  static function from($obr, $client, $map) {
+    $me = new static();
+    $me->Ipc = Ipc_Recon::fromObr($obr, $client->userGroupId, $map);
+    $me->ipc = get($me->Ipc, 'ipc');
+    $me->userGroupId = $client->userGroupId;
+    $me->clientId = $client->clientId;
+    $me->date = $obr->obsDateTime->asSqlValue();
+    return $me;
+  }
+  static function revive($json, $ugid) {
+    if (! empty($json)) {
+      $me = new static($json);
+      if ($me->ipc)
+        $me->Ipc = Ipc::fetchTopLevel($me->ipc, $ugid);
+      return $me;
+    }
+  }
+}
+class ProcResult_Recon extends ProcResult {
+  //
+  function save($proc) {
+    $this->procId = $proc->procId;
+    parent::save();
+  }
+  //
+  static function from($obx, $proc, $index, $map) {
+    $me = new static();
+    $me->clientId = $proc->clientId;
+    $me->seq = $index;
+    //$me->date = $proc->date;
+    $me->Ipc = Ipc_Recon::fromObx($obx, $proc->userGroupId, $map);
+    $me->ipc = get($me->Ipc, 'ipc');
+    $me->value = $obx->get('value');
+    $me->valueUnit = $obx->get('units.id');
+    $me->range = $obx->get('range');
+    $me->interpretCode = self::makeInterpretCode($obx);
+    $me->comments = self::makeComments($obx);
+    return $me;
+  }
+  static function revive($json, $ugid) {
+    if (! empty($json)) {
+      $me = new static($json);
+      if ($me->ipc)
+        $me->Ipc = Ipc::fetchTopLevel($me->ipc, $ugid);
+      return $me;
+    }
+  }
+  //
+  protected static function makeInterpretCode($obx) {
+    return $obx->get('abnormal');
+  }
+  protected static function makeComments($obx) {
+    return implode('<br>', $obx->getComments());
+  }
+}
+class Ipc_Recon extends Ipc {
+  //
+  static function fromObr($obr, $ugid, $map) {
+    return static::from($map->get_fromObr($obr), $ugid, $obr->serviceId->text);
+  }
+  static function fromObx($obx, $ugid, $map) {
+    return static::from($map->get_fromObx($obx), $ugid, $obx->obsId->text);
+  }
+  static function from($ipc, $ugid, $name) {
+    logit_r('Ipc_Recon::from(' . $ipc . ',' . $ugid . ',' . $name . ')');
+    if ($ipc)
+      return static::fetchTopLevel($ipc, $ugid);
+    else if ($name)
+      return static::fetchByName($ugid, $name);
+  }
+}

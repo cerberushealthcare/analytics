@@ -1,0 +1,191 @@
+<?
+require_once 'inc/requireLogin.php';
+require_once 'inc/uiFunctions.php';
+require_once 'php/data/rec/ErxPharm.php';
+//
+if (! $myLogin->isErx()) {
+  header('Location: welcome.php');
+}
+?>
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
+<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
+  <head>
+    <? renderHead('ERX Status Review') ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/page.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/message.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TabBar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TableLoader.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/TemplateUi.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/Calendar.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop.css?<?=Version::getUrlSuffix() ?>' />
+    <? if (! $myLogin->vistaFonts || $myLogin->ie == '6') { ?>
+    <link rel='stylesheet' type='text/css' href='css/clicktate-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/pop-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/data-tables-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/facesheet-font.css?<?=Version::getUrlSuffix() ?>' />
+    <link rel='stylesheet' type='text/css' href='css/template-pops-font.css?<?=Version::getUrlSuffix() ?>' />
+    <? } ?>
+<!--[if lte IE 6]>    
+    <link rel='stylesheet' type='text/css' href='css/pop-ie6.css?<?=Version::getUrlSuffix() ?>' />
+<![endif]-->    
+    <script language='JavaScript1.2' src='js/pops/DocDownloader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/ErxPharmPage.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/libs/ClientUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/ProfileLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language='JavaScript1.2' src='js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/yahoo-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/event-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/yui/connection-min.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/pop.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/TabBar.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/components/DateInput.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/libs/AddressUi.js?<?=Version::getUrlSuffix() ?>"></script>
+  </head>
+  <body onload='start()'>
+    <div id='bodyContainer'>
+      <div id='curtain'></div>
+      <? include 'inc/header.php' ?>
+      <div id='bodyContent' class='content'>
+        <table class='h'>
+          <tr>
+            <th><h1>ERX Pharmacy Requests</h1></th>
+            <td></td>
+          </tr>
+        </table>
+        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+          <div id='topbar' class='mb5'>
+            <ul id='topbar-filter' class='topfilter'></ul>
+          </div>
+          <div id='results' class='fstab' style='height:450px'>  <!-- ResultsTile -->
+            <table id='results-tbl' class='fsb'>
+              <thead>
+                <tr id='results-head' class='fixed head'>
+                  <th style='15%'>Patient</th>
+                  <th style=''>Received</th>
+                  <th style='40%'>Medication</th>
+                  <th style=''>Doctor</th>
+                <tr>
+              </thead>
+              <tbody id='results-tbody'>
+              </tbody>
+            </table>
+          </div>
+        <? renderBoxEnd() ?>
+      </div>
+      <div id='bottom'><img src='img/brb.png' /></div>
+    </div>      
+    <div id="pop-ep" class="pop" style='width:620px'>
+      <div id="pop-ep-cap" class="pop-cap">
+        <div id="pop-ep-cap-text">
+          Pharmacy Request - Clicktate
+        </div>
+        <a href="javascript:closeOverlayPop()" class="pop-close"></a>
+      </div>
+      <div class="pop-content">
+        <table class='w100'>
+          <tr>
+            <td class='vtop'>
+              <div id='rx-request'>
+                <div style='height:20px'>
+                  <label>Received <span id='rx-rcv'></span>
+                  <span>&nbsp;from&nbsp;</span></label>
+                  <span id='rx-from' class='bold'></span>
+                </div>
+                <div style='height:90px'>
+                  <h2><span id='rx-patient'></span></h2>
+                  <label>DOB:</label> <span id='rx-dob' class='bold'></span>
+                  <span>&nbsp;&bull;&nbsp;</span>
+                  <label>Gender:</label> <span id='rx-sex' class='bold'></span>
+                  <br/>
+                  <label>Medication:</label> <span id='rx-med' class='bold'></span>
+                  <br/>
+                  <label>Qty:</label> <span id='rx-qty' class='bold'></span>
+                  <span>&nbsp;&bull;&nbsp;</span>
+                  <label>Sig:</label> <span id='rx-sig' class='bold'></span>
+                </div>
+              </div>
+              <div id='matches' class='fstab' style='height:257px'>  
+                <table id='matches-tbl' class='fsgr'>
+                  <thead>
+                    <tr id='matches-head' class='fixed head'>
+                      <th style='50%'>Possible Match</th>
+                      <th style=''>Birth</th>
+                      <th style=''>ID</th>
+                    <tr>
+                  </thead>
+                  <tbody id='matches-tbody'>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+            <td style='width:5px'></td>
+            <td id='td-client2' nowrap='nowrap'>  <!-- clientTile -->
+              <div style='height:17px;text-align:center'>
+                <a id='client-clear-a' href='javascript:ClientTile.clearClient()' class='action dele'>Clear</a>
+              </div>
+              <div id='div-client' style='height:350px;overflow-y:scroll;'>
+                <div id='client-add' style='padding:100px 20px;margin:0'>
+                  Possible matches for this pharmacy request are listed to the left.
+                  <br/><br/>
+                  Click one of these (or search for another) to view facesheet information here.
+                </div>
+                <div id='client-existing' style='margin:0;'>
+                  <h2 id='h2-client'></h2>
+                  <div style='margin-bottom:5px'>
+                    <label>ID:</label> <span id='client-uid'></span><br/>
+                    <label>DOB:</label> <a id='client-dob' href='javascript:ClientTile.editClient(1)'></a>
+                  </div>
+                  <div id='client-info'>
+                    <h3>Contact</h3>
+                    <div>
+                      <a id='client-contact' href='javascript:ClientTile.editClient(2)'></a>
+                    </div>
+                    <!-- 
+                    <h3>Emergency</h3>
+                    <div>
+                      <a id='client-emer' href='javascript:ClientTile.editClient(6)'></a>
+                    </div>
+                     -->
+                    <h3>Allergies</h3>
+                    <div id='allergies'></div>
+                    <h3>Current Medications</h3>
+                    <div id='meds'>
+                    </div>
+                    <h3>Pharmacy</h3>
+                    <div>
+                      <a id='client-rx' href='javascript:ClientTile.editClient(7)'></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="pop-cmd">
+          <a id='cmd-erx' href='javascript:page.pNewCrop()' class="cmd erx">Respond to Request...</a>
+          <span>&nbsp;</span>
+          <a href="javascript:closeOverlayPop()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <? include 'inc/footer.php' ?>
+  </body>
+<script>
+function start() {
+  var query = <?=jsonencode($_GET) ?>;
+  var cErxPharm = <?=ErxPharm::getStaticJson() ?>; 
+  ErxPharmPage.load(query, cErxPharm);
+}
+</script>
+</html>

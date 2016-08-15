@@ -1,0 +1,307 @@
+<?php
+require_once 'php/data/rec/sql/_UserRec.php';
+require_once 'php/data/rec/sql/_UserGroupRec.php';
+require_once 'php/data/rec/sql/_BillInfoRec.php';
+require_once 'php/data/rec/sql/_NcUserRec.php';
+require_once 'php/data/rec/sql/_AddressRec.php';
+//
+/**
+ * User Logins DAO
+ * @author Warren Hornsby 
+ */
+class UserLogins {
+  //
+  /**
+   * @param string $uid
+   * @throws UserNotFoundException
+   * @return UserLogin
+   */
+  static function resetPassword($uid) {
+    $user = UserLogin::fetchByUid($uid);
+    if ($user == null)
+      throw new UserNotFoundException();
+    $user->resetPassword();
+    return $user;
+  }
+}
+/**
+ * User Login
+ */
+class UserLogin extends UserRec implements NoAuthenticate {
+  //
+  public $userId;
+  public $uid;
+  public $pw;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  public $pwExpires;
+  public $tosAccepted;
+  public $roleType;
+  public $mixins;
+  public /*UserGroup_Login*/ $UserGroup;
+  public /*BillInfo_Login*/ $BillInfo;
+  public /*NcUser_Login*/ $NcUser;
+  //
+  const SUBSCRIPTION_TRIAL = 0;
+  const SUBSCRIPTION_CREDITCARD = 1;
+  const SUBSCRIPTION_FREE = 2;
+  const SUBSCRIPTION_INVOICE = 3;
+  static $SUBSCRIPTIONS = array(
+    self::SUBSCRIPTION_TRIAL => 'Trial',
+    self::SUBSCRIPTION_CREDITCARD => 'Paying',
+    self::SUBSCRIPTION_FREE => 'Free',
+    self::SUBSCRIPTION_INVOICE => 'Invoice');
+  //
+  const EXPIRE_USER_CANCELLED = 1;  
+  const EXPIRE_BILLING_PLAN = 2;  
+  const EXPIRE_SUPPORT_ACCT_DEACTIVATED = 3;
+  const EXPIRE_MISSING_BILLINFO = 4;
+  const EXPIRE_CARD_EXPIRED = 5;  
+  const EXPIRE_CARD_DECLINED = 6;  
+  const EXPIRE_INVALID_REGISTRATION = 7;  
+  const EXPIRE_TRIAL_OVER = 8;
+  static $EXPIRE_REASONS = array(
+    self::EXPIRE_USER_CANCELLED => 'This account was cancelled by user request.',
+    self::EXPIRE_BILLING_PLAN => 'The billing plan for this account has expired.',
+    self::EXPIRE_SUPPORT_ACCT_DEACTIVATED => "This support account has been deactived by the group's administrator.",
+    self::EXPIRE_MISSING_BILLINFO => 'Billing information is missing for this account and must be supplied.',
+    self::EXPIRE_CARD_EXPIRED => 'The billing source on file for this account has expired.',
+    self::EXPIRE_CARD_DECLINED => 'The billing source on file for this account could not be charged.',
+    self::EXPIRE_INVALID_REGISTRATION => 'The registration information was invalid.',
+    self::EXPIRE_TRIAL_OVER => 'The trial period for this account has expired.');
+  //
+  public function toJsonObject(&$o) {
+    unset($o->uid);
+    unset($o->pw);
+    unset($o->admin);
+    unset($o->subscription);
+    unset($o->regId);
+    unset($o->trialExpdt);
+    unset($o->userGroupId);
+    unset($o->tosAccepted);
+    unset($o->BillInfo);
+  }
+  public function isLoginDisallowed() {
+    if (! $this->active && $this->isSupport())
+      return true;
+    if ($this->expireReason) {
+      switch ($this->expireReason) {
+        case static::EXPIRE_SUPPORT_ACCT_DEACTIVATED:
+        case static::EXPIRE_INVALID_REGISTRATION:
+          return true;
+      }
+    }
+  }
+  public function isPasswordCorrect($ptpw) {
+    $pw = static::generateHash($ptpw, $this->pw);
+    return ($this->pw == $pw); 
+  }
+  public function isPasswordExpired() {
+    if ($this->pwExpires)
+      return isTodayOrPast(dateToString($this->pwExpires));
+  }
+  public function haveTermsExpired() {
+    if (! $this->isAdmin())
+      return $this->tosAccepted < '2012-07-10';
+  }
+  public function isTrialFirstLogin() {
+    if ($this->isOnTrial())
+      return $this->tosAccepted == null;
+  }
+  public function canErx() {
+    return isset($this->NcUser);
+  }
+  public function isOnTrial() {
+    return $this->subscription == UserLogin::SUBSCRIPTION_TRIAL;
+  }
+  public function hasTrialExpired() {
+    return isTodayOrPast($this->trialExpdt);
+  }
+  public function getTrialDaysLeft() {
+    if ($this->isOnTrial())
+      return intval((strtotime($this->trialExpdt) - strtotime(date("Y-m-d"))) / 86400); 
+  }
+  public function isPaying() {
+    return ! $this->isOnTrial();
+  }
+  public function isDoctor() {
+    return $this->userType == UserLogin::TYPE_DOCTOR;
+  }
+  public function isSupport() {
+    return $this->userType > UserLogin::TYPE_DOCTOR;
+  }
+  public function isAdmin() {
+    return $this->admin == '1';
+  }
+  public function needsNewBilling() {
+    if (! $this->active) {
+      switch ($this->expireReason) {
+        case static::EXPIRE_MISSING_BILLINFO:
+        case static::EXPIRE_CARD_EXPIRED;
+        case static::EXPIRE_CARD_DECLINED;
+          return true;
+      }
+    }
+  }
+  public function acceptTerms() {
+    $this->tosAccepted = nowNoQuotes();
+    $this->save();
+  }
+  /**
+   * @param UserLogin.EXPIRE $reason
+   * @return string 
+   */
+  public function deactivate($reason) {
+    $this->active = false;
+    $this->expireReason = $reason;
+    $this->save();
+    return static::$EXPIRE_REASONS[$reason];
+  }
+  /**
+   * @param string $old plaintext
+   * @param string $new plaintext
+   * @throws UserPasswordException
+   */
+  public function changePassword($old, $new) {
+    if (! $this->isPasswordCorrect($old)) 
+      throw new UserPasswordException("The current password supplied is incorrect.");
+    if ($new == $old) 
+      throw new UserPasswordException("The new password must be different from the old password.");
+    if (strlen($new) < 6) 
+      throw new UserPasswordException("The new password must be at least six characters long.");
+    $this->savePassword($new);
+  }
+  /**
+   * @return User with ptpw prop assigned 
+   */
+  public function resetPassword($pw = null) {
+    if ($pw == null)
+      $pw = "t" . mt_rand(10000, 99999);
+    $expires = nowShortNoQuotes();
+    $this->savePassword($pw, $expires);
+    return $this;
+  }
+  protected function savePassword($ptpw, $expires = null) {
+    $this->pwExpires = $expires;
+    $this->pw = static::generateHash($ptpw);
+    $this->_ptpw = $ptpw;
+    $this->save();
+  }
+  //
+  static function fetchByUid($uid) {
+    $c = static::asCriteria($uid);
+    $me = static::fetchOneBy($c);
+    return $me;
+  }
+  static function asCriteria($uid) {
+    if ($uid == null) 
+      throw new UserLoginException('UserLogin criteria required');
+    $c = new static();
+    $c->uid = $uid;
+    $c->UserGroup = UserGroup_Login::asJoin();
+    $c->BillInfo = new BillInfo_Login();
+    $c->NcUser = new NcUser_Login();
+    return $c;
+  }
+  //
+  protected static function generateHash($plainText, $salt = null) {
+    if ($salt === null) {
+      $salt = substr(md5(uniqid(rand(), true)), 0, 9);
+    } else {
+      $salt = substr($salt, 0, 9);
+    }
+    return $salt . sha1($salt . $plainText);
+  }
+}
+class UserLogin_Batch extends UserLogin implements NoAuthenticate {
+  //
+  const USER_ID_BATCH = 0;
+  //
+  static function create($ugid, $label) {
+    $me = new static();
+    $me->userId = static::USER_ID_BATCH;
+    $me->name = "BATCH $label";
+    $me->subscription = static::SUBSCRIPTION_FREE;
+    $me->active = true;
+    $me->userGroupId = $ugid;
+    $me->userType = static::TYPE_DOCTOR;
+    $me->UserGroup = UserGroup_Login::fetch($ugid);
+    return $me;
+  }
+}
+class UserGroup_Login extends UserGroupRec implements NoAuthenticate {
+  //
+  public $userGroupId;
+  public $name;
+  public $usageLevel;
+  public $estTzAdj;
+  public $sessionTimeout;
+  public $Address;
+  //
+  public function setTimeout($min) {
+    $min = intval($min);
+    if ($min < 10 || $min > 60)
+      $min = 60;
+    $this->sessionTimeout = $min;
+    $this->save();
+  }
+  //
+  static function asJoin() {
+    $c = new static();
+    $c->Address = AddressUserGroup_Login::asJoin();
+    return CriteriaJoin::requires($c);
+  }
+}
+class AddressUserGroup_Login extends Address implements ReadOnly {
+  //
+  public function toJsonObject(&$o) {
+    parent::toJsonObject($o);
+    unset($o->tableCode);
+    unset($o->tableId);
+  }
+  static function asJoin() {
+    $c = new static();
+    $c->tableCode = static::TABLE_USER_GROUPS;
+    $c->type = static::TYPE_SHIP;
+    return CriteriaJoin::requires($c, 'tableId');
+  }
+}
+class BillInfo_Login extends BillInfoRec implements ReadOnly {
+  //
+  public $userId;
+  public $expMonth;
+  public $expYear;
+  public $lastBillStatus;
+}
+class NcUser_Login extends NcUserRec {
+  //
+  public $userId;
+  public $userType;
+  public $roleType;
+  public $partnerId;
+  public $nameLast;
+  public $nameFirst;
+  public $nameMiddle;
+  public $namePrefix;
+  public $nameSuffix;
+  public $freeformCred;
+} 
+/**
+ * Exceptions
+ */
+class UserNotFoundException extends Exception {}
+class UserLoginException extends Exception {}
+class UserPasswordException extends DisplayableException {}

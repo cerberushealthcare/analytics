@@ -1,0 +1,194 @@
+/**
+ * Admin Drug Class Page
+ * @author Warren Hornsby
+ */
+AdminDrugClassPage = page = {
+  //
+  load:function(query) {
+    Page.setEvents();
+    DrugClassTile.create(_$('tile'));
+  }
+};
+/** 
+ * Tile DrugClassTile
+ *   TableLoader table
+ *   CmdBar cmd
+ */
+DrugClassTile = {
+  create:function(parent, callback) {
+    parent.clean();
+    var self = Html.Tile.create(parent);
+    return self.aug({
+      init:function() {
+        self.table = DrugClassTile.Table.create(self);
+        self.cmd = Html.CmdBar.create(self).add('New Drug Class...', self.add_onclick);
+      },
+      add_onclick:function() {
+        self.table.edit();
+      },
+      del_onclick:function() {
+        var checks = self.table.getCheckValues();
+        if (checks.length) {
+          Pop.Confirm.showDeleteChecked("delete", function(confirm) {
+            if (confirm) {
+              Ajax.post('AdminIpc', 'deleteMany', checks, function() {
+                self.refresh(checks);
+              });
+            }
+          });  
+        } else {
+          Pop.Msg.showCritical('Nothing was selected.');
+        }
+      }
+    });
+  },
+  Table:{
+    create:function(parent) {
+      var self = Html.TableLoader.create(parent);
+      return self.aug({
+        init:function() {
+          self.setHeight(540);
+          self.thead().tr('fixed head').th(null, 'check').th('Name');
+          self.load();
+        },
+        edit:function(rec) {
+          DrugClassEntry.pop(rec).bubble('onsave', self.update).bubble('ondelete', self.update);
+        },
+        fetch:function(callback_recs) {
+          Ajax.get('AdminDrugClass', 'getAll', null, callback_recs);
+        },
+        rowKey:function(rec) {
+          return rec.rid;
+        },
+        add:function(rec, tr) {
+          tr.check().select(rec.name);
+          Array.forEach(rec.DrugSubclasses, function(sub) {
+            sub.DrugClass = rec;
+            self.tbody().tr(sub).check().select(sub.name, sub, self.sub_onselect, 'c2');;
+            Array.forEach(sub.DrugNames, function(drug) {
+              drug.DrugSubclass = sub;
+              self.tbody().tr(drug).check().select(drug.name, drug, self.drug_onselect, 'c3');
+            })
+            self.tbody().tr().check().td(Html.AnchorAction.asNew('Add a drug...').set('onclick', function(){self.drug_onadd(sub)}), 'c3');
+          })
+          self.tbody().tr().check().td(Html.AnchorAction.asNew('Add a subclass...').set('onclick', function(){self.sub_onadd(rec)}), 'c2');
+        },
+        onselect:function(rec) {
+          self.edit(rec);
+        },
+        sub_onselect:function(rec) {
+          DrugSubclassEntry.pop(rec).bubble('onsave', self.update).bubble('ondelete', self.load);
+        },
+        sub_onadd:function(rec) {
+          rec = {'classId':rec.classId};
+          self.sub_onselect(rec);
+        },
+        drug_onselect:function(rec) {
+          DrugNameEntry.pop(rec).bubble('onsave', self.update).bubble('ondelete', self.load);
+        },
+        drug_onadd:function(rec) {
+          rec = {'subclassId':rec.subclassId};
+          self.drug_onselect(rec);
+        },
+        update:function(rec) {
+          self.key = self.rowKey(rec);
+          var tr = self.loader().getRowByKey(self.key);
+          if (tr)
+            Html.Animator.highlight(tr);
+          self.load();
+        },
+        ondraw:function() {
+          if (self.key) {
+            var tr = self.loader().getRowByKey(self.key);
+            if (tr) {
+              self.scrollTo(tr);
+              Html.Animator.fade(tr);
+            }
+            self.key = null;
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * RecordEntryDeletePop DrugClassEntry
+ */
+DrugClassEntry = {
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    var self = DrugClassEntry = Html.RecordEntryDeletePop.create('Drug Class Entry');
+    return self.aug({
+      onsave:function(rec) {},
+      ondelete:function(id) {},
+      //
+      onshow:function(rec) {
+        self.form.focus('name');
+      },
+      buildForm:function(ef) {
+        ef.li('Name').textbox('name', 30);
+        ef.getField('name').bubble('onkeypresscr', self.save_onclick);
+      },
+      save:function(rec, callback_rec) {
+        Ajax.post('AdminDrugClass', 'saveClass', rec, callback_rec);
+      },
+      remove:function(rec, callback_id) {
+        Ajax.post('AdminDrugClass', 'deleteClass', rec, callback_id);
+      }
+    });
+  }
+}
+DrugSubclassEntry = {
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    var self = DrugSubclassEntry = Html.RecordEntryDeletePop.create('Drug Subclass Entry');
+    return self.aug({
+      onsave:function(rec) {},
+      ondelete:function(id) {},
+      //
+      onshow:function(rec) {
+        self.form.focus('name');
+      },
+      buildForm:function(ef) {
+        ef.li('Name').textbox('name', 30);
+        ef.getField('name').bubble('onkeypresscr', self.save_onclick);
+      },
+      save:function(rec, callback_rec) {
+        Ajax.post('AdminDrugClass', 'saveSubclass', rec, callback_rec);
+      },
+      remove:function(rec, callback_id) {
+        Ajax.post('AdminDrugClass', 'deleteSubclass', rec, callback_id);
+      }
+    });
+  }
+}
+DrugNameEntry = {
+  pop:function(rec) {
+    return this.create().pop(rec);
+  },
+  create:function() {
+    var self = DrugNameEntry = Html.RecordEntryDeletePop.create('Drug Entry');
+    return self.aug({
+      onsave:function(rec) {},
+      ondelete:function(id) {},
+      //
+      onshow:function(rec) {
+        self.form.focus('name');
+      },
+      buildForm:function(ef) {
+        ef.li('Name').textbox('name', 30);
+        ef.getField('name').bubble('onkeypresscr', self.save_onclick);
+      },
+      save:function(rec, callback_rec) {
+        Ajax.post('AdminDrugClass', 'saveDrug', rec, callback_rec);
+      },
+      remove:function(rec, callback_id) {
+        Ajax.post('AdminDrugClass', 'deleteDrug', rec, callback_id);
+      }
+    });
+  }
+}

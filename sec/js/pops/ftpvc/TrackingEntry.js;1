@@ -1,0 +1,56 @@
+/**
+ * Tracking Item Entry
+ * Static pop controller
+ */
+var TrackingEntry = {
+  form:null,
+  /*
+   * Edit tracking item
+   * - item: TrackItem
+   * - lists: TrackingItemDao control lists 
+   */
+  pop:function(item, lists) {
+    overlayWorking(true);
+    var self = this;
+    Includer.get([Includer.HTML_TRACKING_ENTRY, Includer.AP_CALENDAR], function() {
+      self._load(item, lists);
+      showOverlayPop('pop-tie');
+      overlayWorking(false);
+    });
+  },
+  _load:function(item, lists) {
+    var ef = new EntryForm($('tie-form'), 'first2');
+    ef.addLi();
+    ef.appendTextbox('trackDesc', 40, 'Item');
+    ef.appendSelect('priority', lists.priorities, 'Priority');
+    ef.addLi();
+    ef.append(createSpan('rof', item._orderDate + ' by ' + item.User_OrderBy.name), 'Ordered');
+    ef.addLi();
+    ef.append(createSpan('rof rota', item.orderNotes), 'Notes');
+    ef.addLi(null,'mt10');
+    ef.appendCalendar('schedDate', 'Scheduled');
+    ef.addLi();
+    ef.appendTextbox('schedWith', 18, 'With');
+    ef.appendTextbox('schedLoc', 35, 'Location');
+    ef.addLi();
+    ef.appendTextArea('schedNotes', 'Notes');
+    ef.setRecord(item);
+    ef.addLi(null,'mt10');
+    ef.appendCalendar('closedDate', 'Closed');
+    ef.addLi();
+    ef.appendTextArea('closedNotes', 'Notes');
+    this.form = ef;
+  },
+  pClose:function() {
+    closeOverlayPop();
+  },
+  pSave:function() {
+    overlayWorking(true);
+    var rec = this.form.getRecord();
+    Ajax.post(Ajax.SVR_POP, 'updateTrack', rec,
+      function() {
+        overlayWorking(false);
+        closeOverlayPop();
+      });
+  }
+};

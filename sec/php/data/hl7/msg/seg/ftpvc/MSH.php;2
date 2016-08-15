@@ -1,0 +1,64 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+/**
+ * Message Header
+ * @author Warren Hornsby	
+ */
+class MSH extends HL7Segment {
+  //
+  public $encodingChars = 'ST_EncodingChars';  // Encoding Characters (ST)
+  public $sendApp;  // Sending Application (HD) 
+  public $sendFacility;  // Sending Facility (HD)
+  public $rcvApp;  // Receiving Application (HD)
+  public $rcvFacility;  // Receiving Facility (HD)
+  public $timestamp = 'TS';  // Date/Time Of Message (TS)
+  public $security;  // Security (ST)
+  public $msgType = 'CM_MsgType';  // Message Type (MSG)   
+  public $msgControlId;  // Message Control ID (ST)
+  public $processId;  // Processing ID (PT)
+  public $versionId;  // Version ID (VID)
+  public $seq;  // Sequence Number (NM)
+  public $continuation;  // Continuation Pointer (ST)
+  public $acceptAckType;  // Accept Acknowledgment Type (ID)
+  public $appAckType;  // Application Acknowledgment Type (ID)  
+  public $countryCode;  // Country Code (ID)
+  public $charSet;  // Character Set (ID)
+  public $primaryLanguage = 'CE';  // Principal Language Of Message (CE)
+  public $altCharSet;  // Alternate Character Set Handling Scheme (ID)
+  public $msgProfileId;  // Message Profile Identifier (EI)
+  //
+  public $_fieldDelim;
+  //
+  public function __construct() {
+  }
+  //
+  static function from($rec) {
+    $fieldDelim = substr($rec, 3, 1);
+    $encoding = new ST_EncodingChars(substr($rec, 4, 4));
+    $me = new self();
+    $me->setValues(explode($fieldDelim, $rec), $encoding);
+    $me->_fieldDelim = $fieldDelim;
+    return $me;
+  }
+}
+class ST_EncodingChars extends HL7Value {
+  //
+  public $compDelim;
+  public $repeatDelim;
+  public $escapeChar;
+  public $subDelim;
+  //
+  public function __construct($value) {
+    $this->_value = $value;
+    $this->compDelim = substr($value, 0, 1);
+    $this->repeatDelim = substr($value, 1, 1);
+    $this->escapeChar = substr($value, 2, 1);
+    $this->subDelim = substr($value, 3, 1);
+  }
+}
+class CM_MsgType extends HL7CompValue {
+  //
+  public $type;
+  public $trigger;
+}

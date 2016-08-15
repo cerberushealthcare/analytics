@@ -1,0 +1,144 @@
+<?php
+require_once 'php/data/json/_util.php';
+
+/*
+ * Health Maintenance
+ * Facesheet Data Record
+ *  
+ * Organization:  
+ *   ugid, cid, type=1,..
+ *     sid>0, proc             // built from closed note (active=NULL not yet processed by Facesheet DAO, active=0 processed)
+ *     sid=0, proc, date_sort  // facesheet proc results history
+ *     sid=NULL, proc          // facesheet summary record (last result and next due info)     
+ */
+class JDataHm {
+
+  public $id;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $type;          // currently only '1' 
+  public $procId;        // lookup instance if selected from lookup table, else null for freetext
+  public $proc;          // supplied from proc list if selected, else freetexted
+  public $results;       // ['adenomatous polyps','dysplasitic polyps'] or ['free text']
+  public $dateText;      // 'in December of 2008'
+  public $dateSort;      // 1/1/2008 (approximation of dateText)
+  public $nextText;      // 'in December of 2008'
+  public $nextTimestamp; // for fs record, UNIX timestamp when proc should be done next
+  public $updated;
+  public $active;
+  public $interval;      // for facesheet rec, to override proc int/every
+  public $every;         // for facesheet rec, to override proc int/every
+  
+  // Derived
+  public $dateShort;  // 'Dec 2008' or '12-Dec-2008'
+  public $nextShort;  // 'Dec 2010' or '2010'
+  public $nextExpireText;   
+  
+  const TYPE_HM_PROC = 1;
+  
+  const SQL_FIELDS = 'data_hm_id, user_group_id, client_id, session_id, type, proc_id, proc, date_text, date_sort, results, next_text, next_timestamp, active, date_updated, cint, cevery';
+  
+  public function __construct($id, $userGroupId, $clientId, $sessionId, $type, $procId, $proc, $dateText, $dateSort, $results, $nextText, $nextTimestamp, $active, $updated, $interval, $every) {
+    $this->id = $id;
+    $this->userGroupId = $userGroupId;
+    $this->clientId = $clientId;
+    $this->sessionId = $sessionId;
+    $this->type = $type;
+    $this->procId = $procId;
+    $this->proc = $proc;
+    $this->setDate($dateText, $dateSort);
+    $this->results = JDataHm::arrayify($results);
+    $this->setNext($nextText, $nextTimestamp);
+    $this->active = $active;
+    $this->updated = $updated;
+    $this->interval = $interval;
+    $this->every = $every;
+  }
+  public function setNext($text, $timestamp) {
+    $this->nextText = $text;
+    $this->nextShort = calcShortDate($text);
+    $this->nextTimestamp = $timestamp;
+    if ($timestamp != null) {
+      $this->nextExpireText = $this->calcExpires();
+    } else {
+      $this->nextExpireText = null;
+    }
+  }
+  private function arrayify($s) {
+    if ($s != null) {
+      if (substr($s, 0, 1) != '[') {
+        $s = "['$s']";
+      }
+    }
+    return $s;
+  }
+  private function calcExpires() {
+    $now = nowUnix();
+    $ynow = date('Y', $now);
+    $y = date('Y', $this->nextTimestamp);
+    if ($ynow > $y) return 'past due';
+    if ($ynow < $y) return null;
+    if (strlen($this->nextText) == 7) {  // year only
+      return 'due now';
+    }
+    $mnow = date('n', $now);
+    $m = date('n', $this->nextTimestamp);
+    if ($mnow > $m) return 'past due';
+    if ($mnow == $m) return 'due now';
+    return null;
+  }
+  public function setDate($text, $date) {
+    $this->dateText = $text;
+    $this->dateShort = calcShortDate($text);
+    $this->dateSort = $date;
+  }
+  public function out() {
+    $out = '';
+    $out = nqq($out, 'id', $this->id);
+    $out = nqq($out, 'clientId', $this->clientId);
+    $out = nqq($out, 'sessionId', $this->sessionId);
+    $out = nqq($out, 'type', $this->type);
+    $out = nqq($out, 'procId', $this->procId);
+    $out = nqq($out, 'proc', $this->proc);
+    $out = nqq($out, 'dateText', $this->dateText);
+    $out = nqq($out, 'dateShort', $this->dateShort);
+    $out = nqqo($out, 'results', $this->results);
+    $out = nqq($out, 'nextText', $this->nextText);
+    $out = nqq($out, 'nextShort', $this->nextShort);
+    $out = nqq($out, 'nextExpireText', $this->nextExpireText);
+    $out = nqqo($out, 'int', $this->interval);
+    $out = nqqo($out, 'every', $this->every);
+    return cb($out);
+  }
+  public function buildProcDateKey() {
+    return "$this->procId,$this->dateSort";
+  }
+  
+	// Static functions
+	public static function copy($dto) {
+	  return new JDataHm(
+	     null,
+       $dto->userGroupId,
+       $dto->clientId,
+       $dto->sessionId,
+       $dto->type,
+       $dto->procId,
+       $dto->proc,
+       $dto->dateText,
+       $dto->dateSort,
+       $dto->results,
+       $dto->nextText,
+       $dto->nextTimestamp,
+       $dto->active,
+       $dto->updated,
+       $dto->interval,
+       $dto->every
+	     );
+	}
+	public static function areDifferent($hm1, $hm2) {  
+	  return $hm1->dateText != $hm2->dateText 
+	      || $hm1->results != $hm2->results;
+	}
+}
+?>

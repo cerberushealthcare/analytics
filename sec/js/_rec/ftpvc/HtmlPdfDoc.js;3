@@ -1,0 +1,37 @@
+HtmlPdfDoc = Object.Rec.extend({
+  //
+  body:null,
+  head:null,
+  filename:null,
+  author:null,
+  title:null,
+  //
+  download:function() {
+    Html.Form.create('serverPdf.php', this).submit();
+  }
+})
+HtmlPdf_Session = HtmlPdfDoc.extend({
+  //
+  fromClosed:function(session) {
+    var body, head, h = session.html.split('<HR/>');
+    if (h.length > 1) {
+      head = h.shift(); 
+      body = h.join('');
+    } else {
+      head = '';
+      body = html;
+    }
+    return this.from(session, body, head);
+  },
+  from:function(session, body, head) {
+    var rec = {
+      body:body,
+      head:head,
+      filename:session.cname + "_" + session.id + '.pdf',
+      author:session.assignedTo || session.createdBy,
+      title:session.title};
+    if (session.cname == null)
+      rec.filename = 'Note_' + session.sessionId + '.pdf';
+    return this.revive(rec);
+  }
+})

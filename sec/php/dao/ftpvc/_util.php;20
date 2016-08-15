@@ -1,0 +1,718 @@
+<?php
+require_once "php/dao/_exceptions.php";
+require_once "php/data/Services_JSON.php";
+
+// TEMP
+function jsondecode($data) {
+  $json = new Services_JSON();
+  return $json->decode($data);
+}
+function jsonencode($data) {
+  
+  $json = new Services_JSON();
+  return $json->encode($data);
+}
+
+if(!function_exists('get_called_class')) {
+    class class_tools {
+        static $i = 0;
+        static $fl = null;
+
+        static function get_called_class() {
+            $bt = debug_backtrace();
+
+            if(self::$fl == $bt[2]['file'].$bt[2]['line']) {
+                self::$i++;
+            } else {
+                self::$i = 0;
+                self::$fl = $bt[2]['file'].$bt[2]['line'];
+            }
+
+            $lines = file($bt[2]['file']);
+
+            preg_match_all('
+                /([a-zA-Z0-9\_]+)::'.$bt[2]['function'].'/',
+                $lines[$bt[2]['line']-1],
+                $matches
+            );
+
+            return $matches[1][self::$i];
+        }
+    }
+
+    function get_called_class() {
+        return class_tools::get_called_class();
+    }
+}
+/**
+ * StdClass getter: if $prop no found, returns $default instead of throwing error
+ * Usage: get($address, 'country') instead of $address->country
+ * @param object $obj
+ * @param string $prop
+ * @param(opt) mixed $default (null by default)
+ * @return mixed
+ */
+function get($obj, $prop, $default = null) {
+  return isset($obj->$prop) ? $obj->$prop : $default;
+}
+/**
+ * Supports $props of form 'obj->obj->prop'  
+ */
+function get_recursive($obj, $prop, $default = null) {
+  if (strpos($prop, '->') !== false) {
+    $props = explode('->', $prop, 2);
+    $o = get($obj, $props[0]);
+    if ($o === null)
+      return $default;
+    else 
+      return get_recursive($o, $props[1]);
+  } else {
+    return get($obj, $prop, $default);
+  }
+}
+/**
+ * Array getter: if $key not found, returns $default instead of throwing error
+ * Usage: geta($array, $key) instead of $array[$key]
+ * @param array $arr
+ * @param string $key
+ * @param(opt) mixed $default (null by default)
+ * @return mixed 
+ */
+function geta(&$arr, $key, $default = null) {
+  return isset($arr[$key]) ? $arr[$key] : $default;
+}
+/**
+ * @param mixed $e1
+ * @param mixed $e2
+ * @return int
+ */
+function icmp($e1, $e2) {
+  if ($e1 != null && $e2 != null) 
+    return ($e1 == $e2) ? 0 : (($e1 > $e2) ? 1 : -1);
+  else
+    return ($e1 == null && $e2 == null) ? 0 : (($e2 == null) ? 1 : -1);
+}
+/**
+ * Convert $e to an array, if it isn't already
+ * @param string/array $e
+ * @return array
+ */
+function arrayify(&$e) {
+  if (! is_array($e)) 
+    $e = array($e);
+}
+/**
+ * Push element into an inner array defined at $map[$key]
+ * If $map[$key] undefined, this location will be auto-initialized  
+ * @param array $arr
+ * @param string $key
+ * @param mixed $e
+ */
+function push(&$arr, $key, &$e) {
+  if (isset($arr[$key])) {
+    $arr[$key][] = $e;
+  } else {
+    $arr[$key] = array($e);
+  }
+}
+/**
+ * Denullify string
+ * @param string $s
+ * @return string (not null)
+ */
+function denull($s) {
+  return isNull($s) ? "" : $s;
+}
+/**
+ * True if array is associated {'key':value,..} not simple [value,..]
+ * @param array $array
+ * @return bool 
+ */
+function is_assoc($array) {
+  return (is_array($array) && 0 !== count(array_diff_key($array, array_keys(array_keys($array)))));
+}
+/*
+ * Given: $glue=',' 
+ *        $pieces=['a'=>'apple','b'=>'bear']
+ *        $glueKeyValue='=' 
+ * Return "a=apple,b=bear"
+ */
+function implode_with_keys($glue, $pieces, $glueKeyValue = "=", $excludeNullValues = false) {
+  $a = array();
+  foreach ($pieces as $key => $value) {
+    if ($excludeNullValues && $value == null) {
+    } else {
+      $a[] = $key . $glueKeyValue . $value;
+    }
+  }
+  return implode($glue, $a);
+}
+/*
+ * Given: ['a','x','a','z']
+ * Return ['a','x','z']
+ * For simple arrays only; keys of original array not preserved 
+ */
+function array_distinct($arr) {
+  return array_keys(array_flip($arr));
+}
+/*
+ * Fetch single row 
+ * If nothing found, returns false
+ * Returns [   
+ *    colName=>value,..
+ *   ]  
+ */
+function fetch($sql, $logging = true) {
+  $res = query($sql, $logging);
+  if (mysql_num_rows($res) < 1) {
+    return false;
+  }
+  return mysql_fetch_array($res, MYSQL_ASSOC);
+}
+/*
+ * Fetch single field
+ * Assumes the first SELECT field, but can be overridden by either field position or name
+ * If nothing found, returns false, else returns requested field's value
+ */
+function fetchField($sql, $field = 0, $logging = true) {   
+  $res = query($sql, $logging);
+  if (mysql_num_rows($res) < 1) {
+    return false;
+  }
+  $row = mysql_fetch_array($res, MYSQL_BOTH);
+  return $row[$field]; 
+}
+/*
+ * If key field supplied, returns [
+ *    keyValue=>[field=>value,..],   // rec 1
+ *    keyValue=>[field=>value,..],.. // rec 2
+ *   ]
+ * If key field not supplied, returns [
+ *    [field=>value,..],  // rec 1
+ *    [field=>value,..],  // rec 2
+ *   ]
+ */
+function fetchArray($sql, $keyField = null, $logging = true) {  
+  $rows = array();
+  $res = query($sql, $logging);
+  if (isnull($keyField)) {
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $rows[] = $row;  
+    }
+  } else {
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $rows[$row[$keyField]] = $row;  
+    }
+  }
+  return $rows;
+}
+/*
+ * If key field supplied:     returns [key=>value,key=>value,..]
+ * If key field not supplied: returns [value,value,..]     
+ */
+function fetchSimpleArray($sql, $valueField = 0, $keyField = null) {
+  $a = array();
+  $res = query($sql);
+  if (isnull($keyField)) {
+    if ($valueField == 0) {
+      while ($row = mysql_fetch_array($res, MYSQL_NUM)) 
+        $a[] = $row[0];  
+    } else { 
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) 
+        $a[] = $row[$valueField];
+    }  
+  } else {
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) 
+      $a[$row[$keyField]] = $row[$valueField];  
+  }
+  return $a;
+}
+/*
+ * Cast fields from MySql default string 
+ */
+function castAsInt(&$row, $fields) {
+  foreach ($fields as &$field) {
+    $row[$field] = intval($row[$field]);
+  }
+  return $row;
+}
+function castRowsAsInt(&$rows, $fields) {
+  foreach ($rows as &$row) { 
+    castAsInt($row, $fields);
+  }
+  return $rows;
+}
+function castAsInformalTime(&$row, $fields) {
+  foreach ($fields as &$field) {
+    $row[$field] = formatInformalTime($row[$field]);
+  }
+  return $row;
+}
+function castRowsAsInformalTime(&$rows, $fields) {
+  foreach ($rows as &$row) { 
+    castAsInformalTime($row, $fields);
+  }
+  return $rows;
+}  
+function castAsDate(&$row, $fields) {
+  foreach ($fields as &$field) {
+    $row[$field] = formatDate($row[$field]);
+  }
+  return $row;
+}
+function castRowsAsDate(&$rows, $fields) {
+  foreach ($rows as &$row) { 
+    castAsDate($row, $fields);
+  }
+  return $rows;
+}  
+// Returns resource
+function query($sql, $logging = true) {
+  if ($logging) logit($sql);
+  $conn = open();
+  $res = mysql_query($sql) or die("Query failure: " . mysql_error());
+  return $res;
+}
+function queryNoDie($sql) {
+  logit($sql);
+  $conn = open();
+  $res = mysql_query($sql);
+  close($conn);
+  return $res;
+}
+function batchopen() {  // returns $conn
+  return open();  
+}
+function batchquery($sql) {  // returns $res
+  return query($sql);  //, IN_BATCH);
+}
+function batchfetch($sql) {
+  return fetch($sql);  //, IN_BATCH);
+}
+function batchclose($conn) {
+  close($conn);
+}
+
+// Returns number of affected rows
+function update($sql) {
+  logit($sql);
+  $conn = open();
+  $res = mysql_query($sql) or die("Query failure: " . mysql_error());
+  $rows = mysql_affected_rows();
+  close($conn);
+  return $rows;
+}
+
+// Returns last inserted ID
+function insert($sql) {
+  logit($sql);
+  $conn = open();
+  $res = mysql_query($sql);
+  if (! $res) {
+    throwSqlException(mysql_error(), mysql_errno($conn));
+  }
+  $id = mysql_insert_id();
+  return $id;
+}
+
+function throwSqlException($msg, $code) {
+  switch ($code) {
+  case 1062:
+    throw new DuplicateInsertException($msg, $code);
+    break;
+  }
+  throw new SqlException($msg, $code);
+}
+
+
+function quote($field, $escape = false) {
+  $field = str_replace(array("\r", "\n"), " ", $field);
+  $value = ($escape) ? addslashes($field) : $field;
+  return (isNull($field)) ?  "null" : "'" . $value . "'";
+}
+function gquote($obj, $prop, $escape = false) {
+  return quote(get($obj, $prop), $escape);
+}
+function dquote($s) {
+  return "\"" . $s . "\"";
+}
+function squote($s) {
+  return "'" . $s . "'";
+}
+
+function asBool($field) {
+  return ($field == '1');
+}
+
+// Converts boolean to SQL tinyint
+function toBoolInt($field) {
+  return ($field) ? 1 : 0;
+}
+
+// Returns '1966-11-23 13:23:22' (SQL format)
+function now() {
+  return quote(date("Y-m-d H:i:s"));
+}
+function nowNoQuotes() {
+  return date("Y-m-d H:i:s");
+}
+function nowShort() {
+  return quote(date("Y-m-d"));
+}
+function nowShortNoQuotes() {
+  return date("Y-m-d");
+}
+function nowTime() {
+  return date("H:i:s");
+}
+
+// Returns 23-Nov-1966 01:23PM 
+function nowTimestamp() {
+  return date("d-M-Y, g:iA");
+}
+
+function quoteDate($date) {
+  return (isNull($date)) ? "null" : quote(dateToString($date));
+}
+
+// Returns 1966-11-23 (SQL format)
+function dateToString($date) {
+  return date("Y-m-d", strtotime($date));
+}
+function datetimeToString($date) {
+  return date("Y-m-d H:i:s", strtotime($date));
+}
+
+// Date comparison routines
+function isTodayOrFuture($date) {
+  return (compareDates($date, date("Y-m-d")) >= 0);
+}
+function isTodayOrPast($date) {
+  return (compareDates($date, date("Y-m-d")) <= 0);
+}
+function isPast($date) {
+  return (compareDates($date, date("Y-m-d")) < 0);
+}
+function isToday($date) {
+  return (compareDates($date, date("Y-m-d"), true) == 0);
+}
+function daysUntil($date) {
+  $dt0 = strtotime(date("Y-m-d"));
+  $dt1 = strtotime(dateToString($date));
+  return round(($dt1 - $dt0) / 86400);
+}
+function compareDates($date1, $date2, $ignoreTime = false) {  // -1, 0, +1
+  if ($ignoreTime) {
+    $date1 = dateToString($date1);
+    $date2 = dateToString($date2);
+  }
+  $d1 = strtotime($date1);
+  $d2 = strtotime($date2);
+  if ($d1 < $d2) { 
+    return -1;
+  } else if ($d1 > $d2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+/**
+ * Return future date
+ * @param int $days in the future
+ * @param 'Y-m-d' $date default now
+ * @returns 'Y-m-d'
+ */
+function futureDate($days, $date = null) {
+  if ($date == null) 
+    $date = date("Y-m-d");
+  $dt = strtotime($date);
+  $dt = mktime(0, 0, 0, date("n", $dt), date("j", $dt) + $days, date("Y", $dt));
+  return date("Y-m-d", $dt); 
+}
+
+// Adjust time for user's timezone (apply EST adjustment assigned to user group)
+function strtotimeAdjusted($date) {
+  global $myLogin;
+  $dt = strtotime($date);
+  if ($myLogin->estAdjust != 0) {
+    $dt = mktime(date("H", $dt) + $myLogin->estAdjust, date("i", $dt), date("s", $dt), date("n", $dt), date("j", $dt), date("Y", $dt));
+  }
+  return $dt;
+}
+/**
+ * Calculate chronological age
+ * @param string $birth
+ * @param-opt string $from (default to current date)
+ * @return [
+ *    'y'=>years,
+ *    'm'=>months,
+ *    'd'=>days
+ *   ]
+ */
+function chronAge($birth, $from = 'now') {
+  $n = ymd(strtotime($from));
+  $b = ymd(strtotime($birth));
+  if ($n['d'] < $b['d']) {
+    $n['d'] += 30;
+    $n['m']--;
+  }
+  if ($n['m'] < $b['m']) {
+    $n['m'] += 12;
+    $n['y']--;
+  }
+  return array(
+    'y' => $n['y'] - $b['y'],  
+    'm' => $n['m'] - $b['m'],  
+    'd' => $n['d'] - $b['d']  
+    );
+}
+function ymd($time) {
+  return array(
+    'y' => date('Y', $time),
+    'm' => date('n', $time),
+    'd' => date('j', $time)
+    );
+}
+
+// Returns 23-Nov-1966
+function formatDate($date) {
+  if (is_null($date)) {
+    return null;
+  }
+  return date("d-M-Y", strtotime($date));
+}
+/**
+ * @param string $date '23-Nov-1996'
+ * @return string '1996-11-23' (SQL format)
+ */
+function formatFromDate($date) {
+  if (empty($date)) 
+    return null;
+  else
+    return dateToString($date); 
+}
+function formatUnixTimestamp($ts) {
+  return date("d-M-Y", $ts);
+}
+function nowUnix() {
+  return strToTime(nowShortNoQuotes());
+}
+function calcShortDate($text) {
+  if ($text == null) {
+    return null;
+  }
+  if ($text == "on an unknown date") {
+    return "unknown";
+  }
+  if (substr($text, 0, 3) == "on ") {
+    return formatDate(substr($text, 3));
+  }
+  if (substr($text, 0, 3) == "in ") {
+    if (strlen($text) == 7) {
+      return substr($text, 3);
+    }
+    return substr($text, 3, 3) . " " . substr($text, -4);
+  }
+}
+
+// Returns "Today" or "23-Nov-2009"
+function formatInformalDate($date) {
+  $d = formatDate($date);
+  $today = date("d-M-Y");
+  $yester = date("d-M-Y", mktime(0, 0, 0, date("n"), date("j") - 1, date("Y")));
+  if ($today == $d) {
+    return "Today";
+  } else if ($yester == $d) {
+    return "Yesterday";
+  } else {
+    return $d;
+  }
+}
+
+// Returns "Today, 2:30PM"
+function formatInformalTime($date) {
+  return formatInformalDate($date) . date(", g:iA", strtotimeAdjusted($date));
+}
+/**
+ * Format approximate date based upon time setting
+ * @param string $datetime from SQL
+ * @return '23-Nov-2010' from '2010-11-23 00:00:00'
+ * @return 'Nov 2010'    from '2010-11-01 01:00:00'
+ * @return '2010'        from '2010-01'01 02:00:00'
+ */
+function formatApproxDate($datetime) {
+  $ts = strtotime($datetime);
+  $time = date('H:i:s', $ts);
+  if ($time == '01:00:00')
+    return date('M Y', $ts);
+  if ($time == '02:00:00') 
+    return date('Y', $ts);
+  return date("d-M-Y", $ts);
+}
+/**
+ * @param string $s 
+ * @return '2010-11-23 00:00:00' from '23-Nov-2010'
+ * @return '2010-11-01 01:00:00' from 'Nov 2010'
+ * @return '2010-01'01 02:00:00' from '2010'
+ */
+function formatFromApproxDate($s) {
+  if (empty($s)) 
+    return null; 
+  switch (strlen($s)) {
+    case 4:
+      $s = "01-01-$s 02:00:00";
+      break;
+    case 8:
+      $s = "$s 01:00:00";
+      break;
+    default:
+      $s = "$s 00:00:00";
+  }
+  $ts = strtotime($s);
+  return date("Y-m-d H:i:s", $ts);
+}
+/**
+ * Extract time from SQL date, if not default 00:00:00
+ * @param string $date
+ * @return string '01:30PM' (or '' if 00:00:00)
+ */
+function formatTime($date) {
+  $time = date('H:i:s', strtotime($date));
+  if ($time != '00:00:00') 
+    return date('g:i A', strtotimeAdjusted($date));
+}
+
+// Returns 23-Nov-1966, 01:23PM 
+function formatNowTimestamp() {
+  return date("d-M-Y, g:iA", strtotimeAdjusted(nowTimestamp()));
+}
+
+// Returns 23-Nov-1966, 01:23PM (SQL format)
+function formatTimestamp($date) {
+  if ($date) return date("d-M-Y, g:iA", strtotimeAdjusted($date));
+}
+
+// Returns 09/30, 10:22PM
+function formatShortTimestamp($date) {
+  if ($date) {
+    return formatShortDate($date) . ", " . date("g:iA", strtotime($date));  // don't need to strtotimeAdjust here because it was already adjusted in the JSON via formatTimestamp 
+  }
+}
+
+// Returns 23-Nov-1966 01:23PM (if time provided)
+function formatTimestampOptional($date) {
+  $dt = date("H:i:s", strtotime($date));
+  if ($dt == "00:00:00") {
+     return formatDate($date);
+  } else {
+    return formatTimestamp($date);
+  }
+}
+
+function formatShortDate($date) {
+  if ($date) {
+    $ts = strtotime($date);
+    $d = date("m/d", $ts);
+    if ($d == date("m/d")) {
+      $d = "Today";
+    }
+    return $d;
+  }
+}
+// Returns 11/23/1966, original console format for DOB
+function formatConsoleDate($date) {
+  if ($date)
+    return date("m/d/Y", strtotime($date));
+}
+
+// Returns Thursday, 23-Nov-1966
+function formatFullDate($date) {
+  return date("l, d-M-Y", strtotime($date));
+}
+
+function isNull($field) {
+  return (trim($field) == "");
+}
+
+// Return database based on current environment
+function dbFromEnv() {
+  static $db;
+  if ($db == null) {
+    switch (LoginResult::getEnv()) {
+      case LoginResult::ENV_PRODUCTION:
+        $db = 'emr';
+        break;
+      case LoginResult::ENV_LOCAL:
+      case LoginResult::ENV_TEST:
+      case LoginResult::ENV_PAPYRUS_LOCAL:
+      case LoginResult::ENV_PAPYRUS_LOCAL:
+        $db = 'emrtest';
+        break;
+      case LoginResult::ENV_PAPYRUS_TEST:
+      case LoginResult::ENV_PAPYRUS_PROD:
+        $db = 'clicktate';
+        break;
+    }
+  }
+  return $db;
+}
+function dbCredFromEnv() {
+  static $cred;
+  if ($cred == null) {
+    $cred = new stdClass();
+    switch (LoginResult::getEnv()) {
+      case LoginResult::ENV_PRODUCTION:
+      case LoginResult::ENV_LOCAL:
+      case LoginResult::ENV_TEST:
+        $cred->server = 'localhost';
+        $cred->user = 'webuser';
+        $cred->pw = 'click01';
+        break;
+      case LoginResult::ENV_PAPYRUS_TEST:
+        $cred->server = '10.10.20.54:5000';
+        $cred->user = 'clicktate';
+        $cred->pw = 'clicktate';
+        break;
+      case LoginResult::ENV_PAPYRUS_PROD:
+        // todo
+        break;
+    }
+  }
+  return $cred;
+}
+function open() {
+  $cred = dbCredFromEnv();
+  $conn = mysql_connect($cred->server, $cred->user, $cred->pw) or die("Connection failure: " . mysql_error());
+  mysql_select_db(dbFromEnv()) or die("Database select failure: " . mysql_error());
+  return $conn;
+}
+
+function close($conn) {
+  //mysql_close($conn);  // per http://www.php.net/manual/en/function.mysql-close.php: Using mysql_close() isn't usually necessary, as non-persistent open links are automatically closed at the end of the script's execution. See also freeing resources.
+}
+
+function logit($msg) {
+  static $lastts = null;
+  $blank = "                   ";
+  global $myHost;
+  if (! isset($_SERVER['HTTP_HOST'])) return;
+  if ($_SERVER['HTTP_HOST'] == "localhost" || $_SERVER['HTTP_HOST'] == "test.clicktate.com") {
+    $ts = nowNoQuotes();
+    if ($lastts == $ts) {
+      $ts = $blank;
+    } else {
+      $lastts = $ts;
+    }
+    $fp = @fopen("log.txt", "a");
+    if ($fp) { 
+      $msg = join("\n    $blank", explode("\n", $msg));
+      fputs($fp, $ts . " " . $msg . "\n");
+      fclose($fp);
+    }
+  }
+}
+
+function logit_r($o, $caption = null) {
+  logit((($caption) ? "=== $caption === " : '') . print_r($o, true) . (($caption) ? "=== /$caption ===" : ''));
+}
+?>

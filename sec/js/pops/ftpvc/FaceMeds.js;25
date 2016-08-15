@@ -1,0 +1,520 @@
+/**
+ * Facesheet Meds
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceMeds = {
+  fs:null,
+  changed:null,
+  //
+  _q:null,
+  _scb:null,
+  _filter:null,
+  _zoom:null,  
+  /*
+   * callback(facesheet) if anything changed (calls page.medsChangedCallback by default)
+   */
+  pop:function(fs, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this._zoom = zoom;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'medsChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_MEDS, Includer.AP_TEMPLATE_POPS], function() {
+      self._q = newMedQuestion(); 
+      self.tabbar = new TabBar('fsp-med', ['Current Medications', 'Medication History'], ['Current', 'History']);
+      if (fs.client) 
+        Pop.setCaption('fsp-med-cap-text', fs.client.name + ' - Medications');
+      if (fs.medsHistByDate) {
+        self._pop();
+      } else {
+        Ajax.Facesheet.Meds.getHist(fs.client.clientId, 
+          function(f) {
+            fs.medsHistByDate = f.medsHistByDate;
+            fs.clientHistory = f.clientHistory;
+            self._pop();
+          });
+      }
+    });
+  },
+  _pop:function() {
+    this._load();
+    Pop.show('fsp-med');
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.meds = fs.meds;
+    this.fs.activeMeds = fs.activeMeds;
+    this.fs.medsHistByMed = fs.medsHistByMed;
+    this.fs.medsHistByDate = fs.medsHistByDate;
+    this.fs.medsLastReview = fs.medsLastReview;
+    this.changed = true;
+    this._load();
+  },
+  fpReconcile:function() {
+    var self = this;
+    FaceMedsReconcile.pop(this.fs, function(fs) {
+      self.tabbar.select(0);
+      self.update(fs);
+    })
+  },
+  fpClose:function() {
+    this.tabbar.select(0);
+    Pop.close();
+    if (this.changed) 
+      Ajax.callScopedCallback(this._scb, this.fs);
+  },
+  fpNewCrop:function() {
+    page.pNewCrop_compose(this.update.bind(this));
+  },
+  fpDeleteLegacy:function() {
+    var fs = this.fs;
+    var cap = 'Remove legacy medications from active list?';
+    if (! fs.activeErx)
+      cap += '<br><br>Warning: These have not yet been transferred to NewCrop as current medications.';
+    var self = this;
+    Pop.Confirm.showYesNo(cap, function() {
+      overlayWorking(true);
+      Ajax.Facesheet.Meds.deleteLegacy(fs.client.clientId,
+        function(fs) {
+          hide('med-dleg');
+          self.update(fs);
+        });
+    });
+  },
+  fpDeleteMeds:function() {
+    if (getCheckedValues('sel-med', 'fsp-med-tbody').length > 0) {
+      var self = this;
+      Pop.Confirm.showDeleteChecked('remove', function(confirm) {
+        if (confirm)
+          self._deactivateMedChecks();
+      });  
+    } else {
+      Pop.Msg.showCritical('Nothing was selected.');
+    }
+  },
+  fpNone:function() {
+    if (this.fs.activeMeds) 
+      Pop.Confirm.showImportant('This will deactivate all active meds and replace with "None Active". Proceed?', null, null, null, null, null, this.setToNone.bind(this))
+    else
+      this.setToNone();
+  },
+  setToNone:function() {
+    var self = this;
+    overlayWorking(true);
+    Ajax.Facesheet.Meds.setNone(this.fs.clientId, function(fs) {
+      self.update(fs);
+      overlayWorking(false);
+    });
+  },
+  fpPrint:function() {
+    var fs = this.fs;
+    var checkedIds = getCheckedValues('sel-med', 'fsp-med-tbody');
+    for (var i = 0; i < fs.activeMeds.length; i++) 
+      fs.activeMeds[i].checked = null;
+    for (var i = 0; i < checkedIds.length; i++) 
+      fs.activeMedsById[checkedIds[i]].checked = true;
+    var rx = {
+      'date':DateUi.getToday(1),
+      'me':me,
+      'docs':fs.docs,
+      'client':fs.client,
+      'meds':fs.activeMeds,
+      'showMedList':true};
+    var self = this;
+    showRx(rx, function(meds){self._rxCallback(meds)});
+  },
+  fpAddMed:function() {
+    this._q.id = null;
+    this._q.med = null;
+    this._showMedQuestion();
+  },
+  fpShowMed:function(id) {
+    var m = this.fs.activeMedsById[id];
+    var med = {
+        'id':m.dataMedId,
+        'name':m.name,
+        'amt':m.amt,
+        'freq':m.freq,
+        'asNeeded':m.asNeeded,
+        'meals':m.meals,
+        'route':m.route,
+        'length':m.length,
+        'disp':m.disp};
+    this._q.id = id;
+    this._q.med = med;
+    this._showMedQuestion();
+  },
+  fpShowMedRx:function(id) {
+    var med = this.fs.rxById[id];
+    var text = (med.text) ? med.text + '<br/>' : '';
+    var h = '<b>' + med.name + '</b><br/>' + text + med.rx;
+    Pop.Msg.showInfo(h);
+  },
+  deactivateMeds:function(ids) {
+    overlayWorking(true);
+    Ajax.Facesheet.Meds.deactivateMany(ids, [this.update, this]);
+  },
+  saveMed:function(med) {
+    overlayWorking(true);
+    med.clientId = this.fs.client.clientId;
+    Ajax.Facesheet.Meds.save(med, [this.update, this]);
+  },
+  //
+  _load:function() {
+    this._loadCurrent(me.perm.er);
+    this._loadHist();
+    this._loadLastReview();
+    if (me.perm.er) {
+      Page.show($('med-cmd-erx'), true);
+      Page.show($('med-cmd'), false);
+    }
+    overlayWorking(false);
+  },
+  _deactivateMedChecks:function() {
+    this.deactivateMeds(getCheckedValues('sel-med', 'fsp-med-tbody'));
+  },
+  _showMedQuestion:function() {
+    var self = this;
+    showMedByQuestion(this._q, function(q){self._showMedQuestionCallback(q)});
+  },
+  _showMedQuestionCallback:function(q) {
+    if (q.med)
+      this.saveMed(q.med);
+    else if (q.id)
+      this.deactivateMeds([q.id]);
+  },
+  _rxCallback:function(meds) {
+    overlayWorking(true);
+    Ajax.Facesheet.Meds.printRx(meds, [this.update, this]);
+  },
+  _loadLastReview:function() {
+    var span = _$('reviewed_span');
+    var rec = Map.first(this.fs.medsLastReview);
+    if (rec) {
+      var s = rec.dateUpdated + ' by ' + rec.User.name;
+      span.setText(s);
+    } else {
+      span.setText('[Not recorded]');
+    }
+  },
+  _loadCurrent:function(erx) {
+    var fs = this.fs;
+    var tp = new TableLoader('fsp-med-tbody', 'off', 'fsp-med-div');
+    fs.activeMedsById = {};
+    fs.rxById = {};
+    if (fs.activeMeds) {
+      var self = this;
+      for (var i = 0; i < fs.activeMeds.length; i++) {
+        var med = fs.activeMeds[i];
+        fs.activeMedsById[med.dataMedId] = med;
+        tp.createTr();
+        var name = (! med.expires) ? med.name : bulletJoin([med.name,' <span>' + med.expireText + '</span>']);
+        if (med._none) {
+          _$('med-none').hide();
+          tp.createTd('fsb', med._name);
+        } else {
+          if (erx) {
+            if (med.source != SOURCE_NEWCROP) {
+              tp.createTd('fs legacy', null, '[LEGACY] ' + name);
+              show('med-dleg');
+            } else {
+              tp.createTd();
+              tp.append(createSpan('sfs', name));
+            }
+            tp.append(createSpan('lpad2', med.text));
+          } else {
+            tp.createTd('check');
+            tp.append(createCheckbox('sel-med', med.dataMedId));
+            var href = 'javascript:FaceMeds.fpShowMed' + argJoin([med.dataMedId]);
+            tp.createTd('nowrap');
+            tp.append(createAnchor('med-a-' + med.dataMedId, href, 'fs', null, name));
+            tp.append(createSpan('lpad', med.text));
+          }
+        }
+      }
+    } else {
+      tp.createTrTd(null, null, '&nbsp;');
+    }
+  },
+  _medHistFilter:function(med) {
+    return {
+      'Show':(med) ? justMedName(med.name) : null};
+  },
+  _loadHist:function() {
+    var fs = this.fs;
+    var self = this;
+    var t = new TableLoader('fsp-medh-tbody-1', 'off', 'fsp-medh-div-1');
+    if (fs.medsHistByDate) 
+      t.batchLoad(fs.medsHistByDate, function(tl, med){self._renderMedsHistByDateRow(tl, med)});
+    t = new TableLoader('fsp-medh-tbody-2', 'off', 'fsp-medh-div-2', 'fsp-medh-head-2');
+    fs.tl_hist = t;
+    t.defineFilter(this._medHistFilter(), 
+      function(t) {
+        if (t.allFilterValuesNull()) 
+          showHide('fsp-medh-div-1','fsp-medh-div-2');
+        else
+          showHide('fsp-medh-div-2','fsp-medh-div-1');
+      });
+    if (fs.medsHistByMed)
+      t.batchLoad(fs.medsHistByMed, function(tl, med){self._renderMedsHistByMedRow(tl, med)}, TableLoader.EOF_CALLBACK);
+  },
+  _renderMedsHistByDateRow:function(t, med) {
+    var fs = this.fs;
+    if (med) {
+      var brk = med.date + med.quid + med.name + med.rx + med.sessionId;
+      if (brk != fs.medHistByDateBrk) {
+        if (med.rx) 
+          fs.rxById[med.dataMedId] = med;
+        t.createTr(med.date, [med.date, med.quid + med.name, med.rx], this._medHistFilter(med));
+        t.createTd('histbreak', med.date);
+        t.createTd(null, null, med.quid + ': <b>' + med.name + '</b>');
+        this._appendRxAnchor(t, med);  
+        t.createTdAppend(null, FaceUi.createSessionAnchor(fs, med.sessionId, false, med.source));
+      }
+      fs.medHistByDateBrk = brk;
+    } else {
+      fs.medHistByDateBrk = null;
+    }
+  },
+  _renderMedsHistByMedRow:function(t, med) {
+    var fs = this.fs;
+    if (med) {
+      var brk = med.name + med.date + med.quid + med.rx + med.sessionId;
+      if (brk != fs.medHistByMedBrk) {
+        if (med.rx) 
+          fs.rxById[med.dataMedId] = med;
+        var date = med.date;
+        t.createTr(med.name, [med.name, med.date, med.quid, med.rx], this._medHistFilter(med));
+        var c = (med.active) ? 'histbreak active' : 'histbreak inactive';
+        t.createTd(c, null, med.name);
+        t.createTd('nowrap', date);
+        t.createTd(null, med.quid);
+        this._appendRxAnchor(t, med);
+        t.createTd();
+        t.append(FaceUi.createSessionAnchor(fs, med.sessionId, false, med.source));
+      }
+      fs.medHistByMedBrk = brk;
+    } else {
+      //t.loadFilterSidebar('medh-filter-ul', TableLoader.NO_FILTER_COUNT);
+      t.loadFilterTopbar('medh-filter-ul');
+      t.applyFilter(null);
+      t.flicker();
+      fs.medHistByMedBrk = null;
+    }
+  },
+  _appendRxAnchor:function(t, med) {
+    t.createTd();
+    if (med.rx) {
+      var click = 'FaceMeds.fpShowMedRx(' + med.dataMedId + ')';
+      var text = '&nbsp;';
+      var s = med.rx.split('Disp:');
+      if (s.length > 1)
+        text = 'Disp:' + s[1];
+      if (text.substr(text.length - 1) == ')')
+        text = text.substr(0, text.length - 1);
+      var a = createAnchor(null, null, 'rx', null, text, click);
+      t.append(a);
+      a.title = med.rx;
+    }
+  }
+};
+/**
+ * Pop FaceMedsReconcile
+ */
+FaceMedsReconcile = {
+  /*
+   * @arg Facesheet fs
+   * @arg fn(fs) onupdate
+   */
+  pop:function(fs, onupdate) {
+    return this.create().pop(fs, onupdate);
+  },
+  create:function(container) {
+    var My = this;
+    return Html.Pop.create('Medication Check', 750).extend(function(self) {
+      return {
+        init:function() {
+          self.content.addClass('MedReconPop');
+          Html.Table2Col.create(self.content, 
+            self.checktile = My.CheckTile.create().bubble('oncheck', self.checktile_oncheck),
+            self.recontile = My.ReconTile.create());
+          self.cb = Html.SplitCmdBar.create(self.content).spacer().button('Update List...', self.erx_onclick, 'erx').split().save(self.record_onclick, 'Record as Reviewed/Reconciled', 'save').cancel(self.close).spacer();
+        },
+        reset:function() {
+          self.updated = false;
+        },
+        onshow:function(fs, onupdate) {
+          self.reset();
+          self.callback = onupdate;
+          self.load(fs);
+        },
+        load:function(fs) {
+          self.fs = fs;
+          fs.activeMeds.forEach(function(med) {
+            if (fs.medsLastReview[med.name])
+              med._reviewed = fs.medsLastReview[med.name];
+          })
+          self.checktile.load(fs.activeMeds);
+          self.recontile.load(fs);
+          self.cb.disable('save');
+        },
+        record_onclick:function() {
+          Ajax.Facesheet.Meds.saveReviewed(self.fs.cid, self.checktile.getCheckedMeds(), function(fs) {
+            self.fs = fs;
+            self.updated = true;
+            self.close();
+          })
+        },
+        erx_onclick:function() {
+          var names = self.checktile.getCheckedNames();
+          page.pNewCrop_compose(function(fs) {
+            self.work(function() {
+              self.updated = true;
+              self.load(fs);
+              self.checktile.setChecked(names);
+            })
+          })
+        },
+        checktile_oncheck:function(isAllChecked) {
+          self.cb.disable('save', ! isAllChecked);
+        },
+        onclose:function() {
+          if (self.updated)
+            self.callback.async(self.fs);
+        }
+      }
+    })
+  },
+  CheckTile:{
+    create:function() {
+      var My = this;
+      return Html.Div.create('MedChecklist').extend(function(self) {
+        return {
+          oncheck:function(isAllChecked) {},
+          //
+          init:function() {
+            var frame = Html.Pop.Frame.create(self, 'Current Medication(s)', Html.Anchor.create('icheck', 'Check All', self.checkall_onclick));
+            self.list = My.CheckList.create(frame).bubble('oncheck', self);
+          },
+          load:function(recs) {
+            self.list.load(recs);
+          },
+          isAllChecked:function() {
+            return self.list.isAllChecked();
+          },
+          getCheckedNames:function() {
+            return self.list.getCheckedNames();
+          },
+          getCheckedMeds:function() {
+            return self.list.getChecked();
+          },
+          setChecked:function(names) {
+            self.list.setChecked(names);
+            self.oncheck(self.isAllChecked());
+          },
+          //
+          checkall_onclick:function() {
+            self.list.checkAll();
+            self.oncheck(true);
+          }
+        }
+      })
+    },
+    CheckList:{
+      create:function(container) {
+        var My = this;
+        return Html.Tile.create(container).extend(function(self) {
+          return {
+            oncheck:function(isAllChecked) {},
+            //
+            reset:function() {
+              self.clean();
+            },
+            load:function(recs) {
+              self.reset();
+              self.recs = recs;
+              self.recs.forEach(function(rec) {
+                rec.divcheck = Html.DivCheck.create(rec.name).setText(rec.text).into(self).bubble('oncheck', self.dc_oncheck);
+                if (rec._reviewed) 
+                  rec.divcheck.setContent('Last Reviewed: ' + rec._reviewed.dateUpdated + ' by ' + rec._reviewed.User.name);
+              })
+            },
+            checkAll:function() {
+              self.recs.forEach(function(rec) {
+                rec.divcheck.setChecked(true);
+              })
+            },
+            isAllChecked:function() {
+              return self.getChecked().length == self.recs.length;
+            },
+            isAnyChecked:function() {
+              return self.getChecked().length > 0;
+            },
+            getCheckedNames:function() {
+              var names = [];
+              self.getChecked().forEach(function(rec) {
+                names.push(rec.name);
+              })
+              return names;
+            },
+            setChecked:function(names) {
+              self.recs.forEach(function(rec) {
+                rec.divcheck.setChecked(names.has(rec.name));
+              })
+            },
+            getChecked:function() {  // returns [Med,..]
+              var checked = [];
+              self.recs.forEach(function(rec) {
+                if (rec.divcheck.isChecked())
+                  checked.push(rec);
+              })
+              return checked;
+            },
+            //
+            dc_oncheck:function(b) {
+              if (b)
+                self.oncheck(self.isAllChecked());
+              else
+                self.oncheck(false);
+            }
+          }
+        })
+      }
+    }
+  },
+  ReconTile:{
+    create:function() {
+      return Html.Div.create('MedRecon').extend(function(self) {
+        return {
+          init:function() {
+            self.frame = Html.Pop.Frame.create(self, '', Html.Anchor.create(null, 'Clear', self.reset));
+            self.frame.cap.invisible();
+            self.empty = Html.Tile.create(self.frame, 'Empty').add(Html.Anchor.create(null, 'Select document...', self.select_onclick).noFocus());
+          },
+          load:function(fs) {
+            self.fs = fs;
+          },
+          reset:function() {
+            if (self.viewing) 
+              self.viewing.hide();
+            self.viewing = null;
+            self.empty.show();
+          },
+          //
+          select_onclick:function() {
+            DocHistoryPop.pop(self.fs, null, self.preview);
+          },
+          preview:function(rec) {
+            self.empty.hide();
+            var view = DocView.from(rec);
+            if (self.viewing)
+              self.viewing.hide();
+            self.viewing = view.create(self.frame, rec, true).show();
+          }
+        }
+      })
+    }
+  }
+}

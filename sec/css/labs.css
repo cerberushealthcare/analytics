@@ -1,0 +1,100 @@
+DIV.ScrollTile {
+  border:1px solid #c0c0c0;
+  padding:10px;
+  background:white;
+  overflow-y:scroll;
+}
+H2 {
+  margin:0;
+}
+H3 {
+  color:black;
+  margin:13px 0 0 1em;
+}
+PRE {
+  padding:0;
+  margin:0;
+}
+UL.eform LABEL.first {
+  width:60px;
+}
+TABLE.h TD {
+  padding-right:20px;
+  padding-bottom:1px;
+  vertical-align:bottom; 
+}
+DIV.Comment {
+  margin:0 0 5px 13px;
+}
+SPAN.rof {
+  font-size:10pt;
+  padding:1px 4px;
+  border:1px solid #e0e0e0;
+}
+DIV.MatchAnchor {
+  padding:10px;
+  text-align:center;
+}
+DIV.seg {
+  margin-bottom:1em;
+}
+DIV.cap {
+  background-color:#E2E7AD;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:8pt;
+  color:#004B52;
+}
+TABLE.t2c TH {
+  padding-right:5px;
+}
+TABLE.t2c TD {
+  width:450px;
+}
+TABLE.t2c TD LABEL.first {
+  width:200px;
+  margin-right:5px;
+}
+DIV.obxs {
+  background-color:white;
+  border:1px solid #e0e0e0;
+  padding:0 0 5px 20px;
+  margin-top:10px;
+}
+DIV.obxs DIV.seg {
+  margin-top:5px;
+  border-bottom:1px dashed #e0e0e0; 
+}
+DIV.obxs H2 {
+  font-size:1em;
+}
+SPAN.warning2 {
+  color:red;
+}
+LABEL.abnormal {
+}
+DIV.hs {
+  padding:0 9px;
+}
+DIV.Msg {
+  height:20px;
+}
+DIV.Msg A {
+  color:red;
+}
+DIV#info {
+  position:absolute;
+  width:450px;
+  font-family:Calibri,Arial;
+  font-size:13pt;
+}
+DIV.how {
+  padding-left:40px;
+  background:url(../img/icons/msg-question.gif) no-repeat left center;
+  height:35px;
+  line-height:35px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:17px;
+  font-weight:bold;
+  color:#004B52;
+  margin-bottom:10px;
+} 

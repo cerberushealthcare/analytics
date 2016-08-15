@@ -1,0 +1,162 @@
+<?
+set_include_path('../../../');
+require_once "inc/uiFunctions.php";
+/**
+ * Document Opener popups
+ */
+?>
+<div id="pop-dv" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-dv-cap" class="pop-cap">
+    <div id="pop-dv-cap-text"> 
+      Clicktate - Document Viewer
+    </div>
+    <a href="javascript:DocOpener.pvClose()" class="pop-close"></a>
+  </div>
+  <div id="pop-dv-content" class="pop-content">
+    <div id="pop-dv-nav">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td id="dv-nav-1">
+            <a id="dv-nav-prev" href="javascript:DocOpener.pvPrev()">
+              <div id="dv-nav-prev-div"></div>
+            </a>
+          </td>
+          <td id="dv-nav-2">
+            <div id="dv-nav-on-div"></div>
+          </td>
+          <td id="dv-nav-3">
+            <a id="dv-nav-next" href="javascript:DocOpener.pvNext()">
+              <div id="dv-nav-next-div"></div>
+            </a>
+          </td>
+        </tr> 
+      </table>
+    </div>
+    <div id="pop-dv-body">
+    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td nowrap="nowrap">
+          <div class="pop-cmd">
+            <label>
+              This document:
+            </label>
+            <a id="dv-edit" href="javascript:DocOpener.pvEdit()" class="cmd note">Open in Console Editor</a>
+            <span>&nbsp;</span>
+            <a id="dv-copy" href="javascript:DocOpener.pvReplicate()" class="cmd copy-note">Replicate...</a>
+            <span>&nbsp;</span>
+            <a id="dv-copy" href="javascript:DocOpener.pvPrint()" class="cmd print-note">Print...</a>
+          </div>
+        </td>
+        <td style="width:100%">
+          <div class="pop-cmd cmd-right">
+            <a href="javascript:DocOpener.pvClose()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+            <span>&nbsp;</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+<?
+/**
+ * Replicate Document
+ */
+?>
+<div id="pop-rn" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-rn-cap" class="pop-cap">
+    <div id="pop-rn-cap-text">
+      Replicate Document
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-rn-content" class="pop-content">
+    <ul class="entry">
+      <li>
+        <label class="first6">Date of Service</label>
+        <? renderCalendar("rn-dos") ?>
+      </li>
+      <li>
+        <label class="first6">Send To</label>
+        <select id="pop-rn-sendtos">
+        </select>
+        <a class="act" href="javascript:DocOpener.rnDefaultSendTo()">Set as default</a>
+      </li>
+      <li>
+        <label class="first6">Override Facesheet?</label>
+        <? renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
+      </li>
+    </ul>
+    <div class="pop-cmd" style="">
+      <a href="javascript:" onclick="DocOpener.rnCreate()" class="cmd copy-note">Create Replicate</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * New Document
+ */
+?>
+<div id="pop-nn" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-nn-cap" class="pop-cap">
+    <div id="pop-nn-cap-text">
+      Create New Document 
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-nn-content" class="pop-content">
+    <div class="ro">
+      <div class="ro-title" style="margin:0">
+        <div>
+          <span id="nn-client-name"></span>
+        </div>
+        <!--  <a class="pencil patient" href="javascript:iChooseAnother(0)">Choose another</a> -->
+        <a href="javascript:">&nbsp;</a>
+      </div>
+    </div>
+    <ul class="entry">
+      <li>
+        <label class="first2">Date of Service</label>
+        <? renderCalendar("nn-dos") ?>
+      </li>
+      <li>
+        <label class="first2">Send To</label>
+        <select id="pop-nn-sendtos">
+        </select>
+        <a class="act" href="javascript:DocOpener.nnSetSendToDefault('pop-nn-sendtos')">Set as default</a>
+      </li>
+      <li style="padding-top:1px">
+        <label class="first2">Template</label>
+        <select id="pop-nn-templates" onchange="DocOpener.onTemplateChange()">
+        </select>
+        <a class="act" href="javascript:DocOpener.nnSetTemplateDefault()">Set as default</a>
+      </li>
+    </ul>
+    <div class="ro" style="padding:8px">
+      <ul class="entry" style="margin:0;">
+        <li style="padding:0">
+          <a id="pop-nn-start-empty" href="javascript:" onclick="DocOpener.nnCreateEmptySession()" class="cmd cbig empty-note">
+          </a>
+        </li>
+        <li style="padding:7px 0 0 0">
+          <a id="pop-nn-replicate" href="javascript:" onclick="DocOpener.nnCreateStandardSession()" class="cmd cbig copy-note" style="line-height:12pt">
+            <div id="pop-nn-replicate-text">Replicate from Patient History</div>
+            <span id="pop-nn-replicate-span" style="font-size:9pt; font-weight:normal;">&nbsp;</span>
+          </a><br/>
+        </li>
+        <li style="padding:7px 0 0 0">
+          <a id="pop-nn-start-custom" href="javascript:DocOpener.nnCreatePrefilledSession()" class="cmd cbig template-note">
+            Apply Custom Template:<br/>
+            <select id="pop-nn-presets">
+            </select>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="pop-cmd cmd-fixed" style="margin:0; padding:0">
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>

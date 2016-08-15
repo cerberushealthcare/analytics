@@ -1,0 +1,38 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/UserGroups.php'; 
+require_once 'php/data/rec/sql/PortalUsers.php'; 
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->Account->portal);
+  switch ($action) {
+    //
+    case 'getPortalUsers':
+      $pusers = PortalUsers::getAll();
+      AjaxResponse::out($action, $pusers);
+      exit;
+    case 'createPortalUser':
+      $puser = PortalUsers::create($obj);
+      AjaxResponse::out($action, $puser);
+      exit;
+    case 'savePortalUser':
+      $puser = PortalUsers::save($obj);
+      AjaxResponse::out($action, $puser);
+      exit;
+    case 'editPortalUserFor':
+      $puser = PortalUsers::editFor($_GET['id']);
+      AjaxResponse::out($action, $puser);
+      exit;
+    case 'resetPortalUser':
+      $puser = PortalUsers::reset($_GET['id']);
+      AjaxResponse::out($action, $puser);
+      exit;
+    case 'suspendPortalUser':
+      $puser = PortalUsers::suspend($_GET['id']);
+      AjaxResponse::out($action, $puser);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

@@ -1,0 +1,206 @@
+<?php
+require_once 'php/data/rec/sql/IProcCodes.php';
+require_once 'php/data/rec/sql/_TemplateRecs.php';
+//
+/**
+ * IPC Administration DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes_Admin extends IProcCodes {
+  //
+  static function getAll() {
+    $recs = Rec::sort(Ipc_A::fetchAll(), new RecSort('cat', 'name'));
+    return $recs;
+  }
+  /**
+   * @param stdClass $obj 
+   * @return Ipc updated rec
+   */
+  static function save($obj) {
+    $rec = Ipc_A::revive($obj);
+    if ($rec->ipc == null) {
+      $rec->ipc = Ipc_A::fetchNextAvailableIpc();
+      $rec->saveAsInsert();
+    } else {
+      $existing = Ipc_A::fetch($rec->ipc);
+      if ($existing)
+        $rec->save();
+      else 
+        $rec->saveAsInsert();
+    }
+    return $rec;
+  }
+  /**
+   * @param int $id
+   */
+  static function delete($id) {
+    $rec = Ipc_A::fetch($id);
+    Ipc_A::delete($rec);
+  }
+  /**
+   * @param int[] ids
+   */
+  static function deleteMany($ids) {
+    foreach ($ids as $id)
+      self::delete($id);
+  }
+  /**
+   * @param int[] $ids
+   * @param int $qid
+   */
+  static function copyToQuestion($ids, $qid) {
+    $ipcs = Ipc_A::fetchAllIn($ids);
+    QuestionIpc::copyToOptions($ipcs, $qid);
+  }
+  /**
+   * @param int $qid
+   * @return QuestionIpc+ParIpc
+   */
+  static function getQuestion($qid) {
+    return QuestionIpc::fetchWithPar($qid);
+  }
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc_A extends IpcRec implements NoAudit {
+  //
+  public $ipc;
+  public $userGroupId;
+  public $name;
+  public $desc;
+  public $cat;
+  public $code;  
+  public $codeSystem;
+  public $codeSnomed;
+  public $codeIcd9;
+  public $codeCpt;
+  public $codeLoinc;
+  public $codeIcd10;
+  //
+  static $FRIENDLY_NAMES = array(
+    'ipc' => 'IPC',
+    'name' => 'Name',
+    'desc' => 'Description',
+    'cat' => 'Category');
+  //
+  public function validate(&$rv) {
+    $rv->requires('cat', 'name');
+  }
+  //
+  static function fetch($ipc) {
+    $c = static::asCriteria();
+    $c->ipc = $ipc;
+    return static::fetchOneBy($c);
+  }
+  static function fetchAll() {
+    $c = self::asCriteria();
+    return SqlRec::fetchAllBy($c, null, 8000);
+  }
+  static function fetchAllIn($ids) {
+    $c = self::asCriteria();
+    $c->ipc = CriteriaValue::in($ids);
+    return self::fetchAllBy($c, null, 8000);
+  }
+  static function revive($obj) {
+    $rec = new self($obj);
+    $rec->userGroupId = self::APP_LEVEL_UGID;
+    return $rec;
+  }
+  static function asCriteria() {
+    $c = new self();
+    $c->userGroupId = self::APP_LEVEL_UGID;
+    return $c; 
+  }
+  static function fetchNextAvailableIpc() {
+    $max = Dao::fetchValue('SELECT MAX(ipc) FROM iproc_codes WHERE ipc<680000');
+    if ($max)
+      return intval($max) + 1;
+    else
+      return 600000;
+  }
+}
+/**
+ * Template Objects
+ */
+class ParIpc extends ParRec {
+  //
+  public $parId;
+  public $uid;
+	public $dateEffective;
+}
+class QuestionIpc extends QuestionRec {
+  //
+  public $questionId;
+  public $uid;
+  public $parId;
+  public $mix;
+  public $Options;
+  public $Par;
+  //
+  public function replaceOptions($ipcs) {
+    $this->clearMultiOptions();
+    $this->Options = OptionIpc::fromIpcs($ipcs, $this->questionId, $this->mix + 1);
+    OptionIpc::saveAll($this->Options);
+  }
+  public function clearMultiOptions() {
+    foreach ($this->Options as $o) 
+      if ($o->sortOrder > $this->mix)
+        OptionIpc::delete($o);
+    $this->Options = null;
+  }
+  //
+  static function copyToOptions($ipcs, $qid) {
+    $rec = self::fetch($qid);
+    $rec->replaceOptions($ipcs);
+  }
+  static function fetch($qid) {
+    $rec = parent::fetch($qid);
+    $rec->Options = OptionIpc::fetchAll($qid);
+    return $rec;
+  }
+  static function fetchWithPar($qid) {
+    $rec = self::fetch($qid);
+    $rec->Par = ParIpc::fetch($rec->parId);
+    return $rec;
+  }
+}
+class OptionIpc extends OptionRec {
+  //
+  public $optionId;
+  public $questionId;
+  public $uid;
+  public $desc;
+  public $text;
+  public $shape;
+  public $coords;
+  public $sortOrder;
+  public $syncId;
+  public $cptCode;
+  public $trackCat;
+  //
+  static function fetchAll($qid) {
+    $c = new self();
+    $c->questionId = $qid;
+    return parent::fetchAllBy($c);
+  }
+  static function fromIpcs($ipcs, $qid, $sortOrder = 1) {
+    $recs = array();
+    foreach ($ipcs as $ipc) 
+      $recs[] = self::fromIpc($ipc, $qid, $sortOrder++);
+    return $recs;
+  }
+  static function fromIpc($ipc, $qid, $sortOrder) {
+    $rec = new self();
+    $rec->questionId = $qid;
+    $rec->uid = $ipc->name;
+    $rec->desc = $ipc->name;
+    if ($ipc->name != $ipc->desc) 
+      $rec->text = $ipc->desc;
+    $rec->trackCat = $ipc->cat;
+    $rec->cptCode = $ipc->ipc;
+    $rec->sortOrder = $sortOrder;
+    return $rec;
+  }
+}

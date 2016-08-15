@@ -1,0 +1,355 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+/**
+ * Leveled Access Data Rec
+ * For tables with mix of app-level (UGID=0) and group-level (UGID=#) records
+ */
+abstract class SqlLevelRec extends SqlRec {
+  /*
+  public $someId;
+  public $userGroupId;
+  public ..  // rest of fields 
+  */
+  const APP_LEVEL_UGID = '0';
+  //
+  public function getPkFieldCount() {
+    if ($this instanceof CompositePk)
+      return 2;
+    else
+      return 1;
+  }
+  public function fetchForAudit() {
+    return self::fetch($this->getPkValues());
+  }
+  public function isAppLevel() {
+    return self::isAppLevelUgid($this->userGroupId);
+  }
+  public function setUserGroupCriteria($ugid) {
+    $this->userGroupId = CriteriaValues::_or(CriteriaValue::equals(self::APP_LEVEL_UGID), CriteriaValue::equals($ugid)); 
+  }
+  public function setAppLevelCriteria() {
+    $this->userGroupId = self::APP_LEVEL_UGID;
+  }
+  //
+  /**
+   * Fetch topmost level for primary key
+   * @param int $id
+   * @param int $ugid
+   * @return SqlLevelRec for group-level if exists, else app-level
+   */
+  static function fetchTopLevel($id, $ugid) {
+    $c = new static($id);
+    $c->setUserGroupCriteria($ugid);
+    $recs = self::fetchAllBy($c->setFetchCriteria(), new RecSort('-userGroupId'));
+    return current($recs);
+  }
+  static function fetchAppLevel($id) {
+    $c = new static($id);
+    $c->setAppLevelCriteria();
+    return self::fetchOneBy($c);
+  }
+  /**
+   * Calculate next available custom ID 
+   * @param int $ugid
+   * @return int >= static::getFirstCustomId()
+   */
+  static function getNextCustomId($ugid) {
+    $me = new static();
+    $col = $me->getIdField();
+    $table = $me->getSqlTable();
+    $max = Dao::fetchValue("SELECT MAX($col) FROM $table WHERE user_group_id=$ugid");
+    if ($max)
+      return intval($max) + 1;
+    else
+      return static::getFirstCustomId();
+  }
+  protected static function getFirstCustomId() {
+    return 100;
+  }
+  /**
+   * Fetch topmost levels 
+   * @param int $ugid
+   * @param int $id (optional)
+   * @return array(SqlLevelRec,..)
+   */
+  static function fetchTopLevels($ugid, $id = null) {
+    $c = new static($id);
+    $c->setUserGroupCriteria($ugid);
+    $recs = self::fetchAllBy($c->setFetchCriteria(), new RecSort($c->getIdFid(), '-userGroupId'));
+    $recs = static::flatten($recs, $id);
+    return $recs;
+  }
+  /**
+   * Fetch topmost levels as filtered list (for UI selection)
+   * @param int $ugid
+   * @return array('id'=>'value',..)
+   */
+  static function fetchList($ugid) {
+    $recs = static::fetchTopLevels($ugid);
+    $recs = static::filter($recs);
+    $recs = static::map($recs);
+    return $recs;
+  }
+  static function getListJson() {
+    global $login;
+    $ugid = $login->userGroupId;
+    return jsonencode(static::fetchList($ugid));
+  }
+  /**
+   * @param int $ugid
+   * @return SqlLevelRec 
+   */
+  static function asCriteria($ugid) {
+    $c = new static();
+    $c->setUserGroupCriteria($ugid);
+    return $c; 
+  }
+  static function asAppLevelCriteria() {
+    $c = new static();
+    $c->setAppLevelCriteria();
+    return $c;
+  }
+  static function isAppLevelUgid($ugid) {
+    return $ugid == self::APP_LEVEL_UGID;
+  }
+  //
+  protected function getId() {
+    reset($this);
+    return current($this);
+  }
+  protected function getIdFid() {
+    static $fid;
+    if ($fid === null) {
+      reset($this);
+      $fid = key($this);
+    }
+    return $fid;
+  }
+  protected function getIdField() {
+    static $field;
+    if ($field === null) {
+      reset($this);
+      $fid = key($this);
+      $field = self::camelToSql($fid);
+    }
+    return $field;
+  }
+  protected function getListKey() {  // first column value is "true" PK for lists (top levels fetched) 
+    return $this->getId();
+  }
+  protected function getListValue() {  // assumes 'name' for lists, override if other
+    return $this->name;
+  }
+  protected function authenticateUserGroupId($ugid, $forReadOnly = false) {
+    if ($ugid instanceof CriteriaValues) {
+      $ugids = $ugid->getInnerValues();
+      foreach ($ugids as $ug) 
+        $this->authenticateUserGroupId($ug, $forReadOnly);
+    } else {
+      if (self::isAppLevelUgid($ugid)) {
+        if ($forReadOnly) {
+          return;  // OK for all to read
+        } else {
+          global $login;
+          if ($login->admin)  
+            return;  // OK for admins to update
+          else
+            throw new SecurityException('Admin-only operation for ' . $this->getMyName());
+        }
+      }
+      parent::authenticateUserGroupId($ugid, $forReadOnly);
+    }
+  }
+  protected static function getRowPk($row) {
+    return join('|', array_slice($row, 0, 2));
+  }
+  protected static function flatten($recs, $id) {
+    $top = current($recs);
+    $tops = array($top);
+    if (empty($id)) {
+      for ($i = 1, $j = count($recs); $i < $j; $i++) {
+        $rec = $recs[$i];
+        if ($rec->getId() != $top->getId()) {
+          $top = $rec;
+          $tops[] = $top;
+        }
+      }
+    }
+    return $tops;
+  }
+  protected static function filter($recs, $fid = 'active') {
+    $filtered = array();
+    foreach ($recs as $rec) {
+      if ($rec->$fid) 
+        $filtered[] = $rec;
+    }
+    return $filtered;
+  }
+  protected static function map($recs) {
+    $map = null;
+    foreach ($recs as $rec)
+      $map[$rec->getListKey()] = $rec->getListValue();
+    return $map; 
+  }
+}
+/**
+ * Client Level Rec
+ * Adds client-level (non-null CID) to app-level and group-level
+ */
+abstract class SqlClientLevelRec extends SqlLevelRec {
+  /*
+  public $someId;
+  public $userGroupId;
+  public $clientId;
+  public ..  // rest of fields 
+  */
+  const GROUP_LEVEL_CID = '0';
+  //
+  public function getPkFieldCount() {
+    return 3;
+  }
+  public function isGroupLevel() {
+    return ! $this->isAppLevel() && self::isGroupLevelCid($this->clientId);
+  }
+  public function isClientLevel($cid = null) {
+    return ($cid) ? $this->clientId == $cid : $this->clientId > 0;
+  }
+  public function setClientLevelCriteria($cid) {
+    if ($cid)
+      $this->clientId = CriteriaValues::_or(CriteriaValue::equals(self::GROUP_LEVEL_CID), CriteriaValue::equals($cid));
+    else
+      $this->clientId = self::GROUP_LEVEL_CID; 
+  }
+  //
+  /**
+   * Fetch topmost level for primary key
+   * @param int $id
+   * @param int $ugid
+   * @param int $cid (optional)
+   * @return SqlLevelRec for client-level if exists, else group-level if exists, else app-level
+   */
+  static function fetchTopLevel($id, $ugid, $cid = null) {
+    return current(self::fetchTopLevels($ugid, $cid, $id));
+  } 
+  /**
+   * Fetch topmost levels 
+   * @param int $ugid
+   * @param int $cid (optional)
+   * @param int $id (optional)
+   */
+  static function fetchTopLevels($ugid, $cid = null, $id = null) {
+    $c = new static($id);
+    $c->setUserGroupCriteria($ugid);
+    $c->setClientLevelCriteria($cid);
+    $recs = self::fetchAllBy($c->setFetchCriteria(), new RecSort($c->getIdFid(), '-clientId', '-userGroupId'));
+    return static::flatten($recs, $id);
+  }
+  /**
+   * @param int $ugid
+   * @param int cid (optional)
+   * @return SqlClientLevelRec 
+   */
+  static function asCriteria($ugid, $cid = null) {
+    $c = parent::asCriteria($ugid);
+    $c->setClientLevelCriteria($cid);
+    return $c;
+  }
+  static function isGroupLevelCid($cid) {
+    return $cid == self::GROUP_LEVEL_CID;
+  }
+  //
+  protected function authenticateClientId($clientId, $forReadOnly = false) {
+    if ($clientId instanceof CriteriaValues) {
+      $cids = $clientId->getInnerValues();
+      foreach ($cids as $cid) 
+        $this->authenticateClientId($cid, $forReadOnly);
+    } else {
+      if (self::isGroupLevelCid($clientId)) {
+        if ($forReadOnly) {
+          return;  // OK for all to read
+        } else {
+          global $login;
+          if ($login->admin)  
+            return;  // OK for admins to update
+          else
+            throw new SecurityException('Admin-only operation for ' . $this->getMyName());
+        }
+      }
+      parent::authenticateClientId($clientId, $forReadOnly);
+    }
+  }
+  protected static function getRowPk($row) {
+    return join('|', array_slice($row, 0, 3));
+  }
+}
+/**
+ * User Level Rec
+ * Adds user-level (non-null userId) to app-level and group-level
+ */
+abstract class SqlUserLevelRec extends SqlLevelRec {
+  /*
+  public $someId;
+  public $userGroupId;
+  public $userId;
+  public ..  // rest of fields 
+  */
+  const GROUP_LEVEL_USER_ID = '0';
+  //
+  public function getPkFieldCount() {
+    return 3;
+  }
+  public function isGroupLevel() {
+    return ! $this->isAppLevel() && self::isGroupLevelUserId($this->userId);
+  }
+  public function isUserLevel($userId = null) {
+    return ($userId) ? $this->userId == $userId : $this->userId > 0;
+  }
+  public function setUserLevelCriteria($userId) {
+    if ($userId)
+      $this->userId = CriteriaValues::_or(CriteriaValue::equals(self::GROUP_LEVEL_USER_ID), CriteriaValue::equals($userId));
+    else
+      $this->userId = self::GROUP_LEVEL_USER_ID; 
+  }
+  //
+  /**
+   * Fetch topmost level for primary key
+   * @param int $id
+   * @param int $ugid
+   * @param int $userId (optional)
+   * @return SqlLevelRec for client-level if exists, else group-level if exists, else app-level
+   */
+  static function fetchTopLevel($id, $ugid, $userId = null) {
+    return current(self::fetchTopLevels($ugid, $userId, $id));
+  } 
+  /**
+   * Fetch topmost levels 
+   * @param int $ugid
+   * @param int $userId (optional)
+   * @param int $id (optional)
+   */
+  static function fetchTopLevels($ugid, $userId = null, $id = null) {
+    $c = new static($id);
+    $c->setUserGroupCriteria($ugid);
+    $c->setUserLevelCriteria($userId);
+    $recs = self::fetchAllBy($c->setFetchCriteria(), new RecSort($c->getIdFid(), '-userId', '-userGroupId'));
+    return static::flatten($recs, $id);
+  }
+  /**
+   * @param int $ugid
+   * @param int userId (optional)
+   * @return SqlClientLevelRec 
+   */
+  static function asCriteria($ugid, $userId = null) {
+    $c = parent::asCriteria($ugid);
+    $c->setUserLevelCriteria($userId);
+    return $c;
+  }
+  static function isGroupLevelUserId($userId) {
+    return $userId == self::GROUP_LEVEL_USER_ID;
+  }
+  //
+  protected static function getRowPk($row) {
+    return join('|', array_slice($row, 0, 3));
+  }
+}

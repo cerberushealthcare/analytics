@@ -1,0 +1,102 @@
+<?php 
+require_once "inc/noCache.php";
+require_once "inc/requireLogin.php";
+require_once "php/delegates/JsonDelegate.php";
+
+$templateId = $_GET["tid"];
+$parId = $_GET["pid"];
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html>
+  <!-- Copyright (c)2006 by LCD Solutions, Inc.  All rights reserved. -->
+  <!-- http://www.clicktate.com -->
+  <head>
+    <title>clicktate : Console</title>
+    <link rel="stylesheet" type="text/css" href="css/new-console.css?0" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/pop.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/data-tables.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/consolePopIcd.css?0" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/facesheet.css?<?=Version::getUrlSuffix() ?>" media="screen" />
+    <script language='JavaScript1.2' src='js/_lcd_core.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language='JavaScript1.2' src='js/_lcd_html.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Header.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Polling.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/engine.js?1"></script>
+    <script language="JavaScript1.2" src="js/icd-pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/engine-download.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/new-console.js?1"></script>
+    <script language="JavaScript1.2" src="js/ui.js?1"></script>
+    <script language="JavaScript1.2" src="js/pages/Pop.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ajax.js?4"></script>
+    <script language="JavaScript1.2" src="js/yahoo-min.js"></script>
+    <script language="JavaScript1.2" src="js/connection-min.js"></script>
+    <script language="JavaScript1.2" src="js/json.js"></script>
+    <script language="JavaScript1.2" src="js/template-pops.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/consolePopMed.js?4"></script>
+    <script language="JavaScript1.2" src="js/consolePopFree.js?3"></script>
+    <script language="JavaScript1.2" src="js/consolePopAllergy.js?3"></script>
+    <script language="JavaScript1.2" src="js/consolePopCombo.js?3"></script>
+    <script language="JavaScript1.2" src="js/consolePopIcd.js?0"></script>
+    <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/libs/DateUi.js?<?=Version::getUrlSuffix() ?>"></script>
+  </head>
+  <body>
+    <div id="curtain"></div>
+    <div id="working"></div>
+    <div id="bodyContainer">
+      <div id="body" unselectable="on">
+        <table border=0 cellpadding=0 cellspacing=0 width=100%>
+          <tr>
+            <td align="right" style="padding:4px 4px 0 0"><input id="close1" type="button" value="Close Preview" onclick="window.close()"></td>
+            <td width=20 valign=bottom><div id="working"></div></td>
+            <td width=10></td>
+          </tr>
+        </table>
+        <table border=0 cellpadding=0 cellspacing=0 width=100%>
+          <tr>
+            <td valign=top>
+              <div id="docc">
+                <div id="doccap" class="captionbar">
+                </div>
+                <div id="doccaph">
+                  &nbsp; 
+                </div>
+                <div id="doc">
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <? include "inc/ajax-pops/template-pops.php" ?>
+    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <? include "inc/ajax-pops/icd-pop.php" ?>
+    <? include "inc/ajax-pops/calendar.php" ?>
+    <? include "inc/ajax-pops/new-open.php" ?>
+  </body>
+</html>
+<script>
+var today = "<?=date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
+var doc = document.getElementById("doc");
+var lu_custom = <?=LookupDao::getPrintCustomAsJson() ?>;
+var lu_console = <?=LookupDao::getConsoleCustomAsJson() ?>;  
+var me = <?=UserDao::getMyUserAsJson() ?>;
+init(<?=JsonDelegate::jsonJTemplate($templateId) ?>,
+  <?=$myUserId ?>, 
+  <?=$parId ?>);
+function tlog() {}
+function clog() {}
+function cloga() {}
+function isMenuChecked() {}
+function getMenuCheckedOrChange$() {}
+function enable() {}
+function disable() {}
+function selectDels() {}
+document.getElementById("close1").focus();
+</script>

@@ -1,0 +1,10 @@
+<?php
+require_once 'php/data/hl7/msg/seg/_HL7Segment.php';
+//
+/**
+ * Message Acknowledgment 
+ * @author Warren Hornsby
+ */
+class MSA extends HL7Segment {
+  //
+}

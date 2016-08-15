@@ -1,0 +1,352 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once "php/dao/DataDao.php";
+//
+/**
+ * Vitals DAO
+ * - FaceVital (sid=null): Vitals record (by date)
+ * - SessionVital (sid>0): Built from closed note (generates a FaceVital) 
+ * @author Warren Hornsby
+ */
+class Vitals {
+  /**
+   * Build facesheet records from unprocessed session history and old facesheet records
+   * @param int $cid
+   */
+  static function rebuild($cid) {
+    Vital::buildFacesFromOldFaces($cid);
+    Vital::buildFacesFromSessions($cid);
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceVital,..)
+   */
+  static function getActive($cid) {
+    self::rebuild($cid);
+    $recs = FaceVital::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort(-'date'));
+    return $recs; 
+  }
+  /**
+   * Get vitals questions
+   * @return array(prop=>JQuestion,..)
+   */
+  static function getQuestions() {
+    $vqs = array();
+    $questions = DataDao::fetchQuestionsForTable(1, nowNoQuotes(), "vitals");
+    foreach (Vital::$PROPS_TO_QUID as $prop => $quid)
+      $vqs[$prop] = $questions[$quid];
+    return $vqs;
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return FaceVital
+   */
+  static function save($o) {
+    global $myLogin;
+    return FaceVital::saveFromUi($o, $myLogin->userGroupId);
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return FaceVital
+   */
+  static function deactivate($id) { 
+    $face = FaceVital::fetch($id);
+    if ($face) {
+      $face->deactivate();
+      return $face;
+    }
+  }
+}
+//
+/**
+ * Vital
+ */
+class Vital extends FsDataRec {
+  //
+  public $dataVitalsId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+  public $pulse;
+  public $resp;
+  public $bpSystolic;
+  public $bpDiastolic;
+  public $bpLoc;
+  public $temp;
+  public $wt;
+  public $wtUnits;
+  public $height;
+  public $hc;
+  public $hcUnits;
+  public $wc;
+  public $wcUnits;
+  public $o2Sat;
+  public $o2SatOn;
+  public $bmi;
+  public $htUnits;
+  public $dateUpdated;
+  public $active;
+  //
+  static $PROPS_TO_QUID = array(
+    'pulse'        => 'vitals.pulse',
+    'resp'         => 'vitals.rr', 
+    'bpSystolic'   => 'vitals.sbp', 
+    'bpDiastolic'  => 'vitals.dbp', 
+    'bpLoc'        => 'vitals.loc', 
+    'temp'         => 'vitals.temp', 
+    'wt'           => 'vitals.#Weight', 
+    'wtUnits'      => 'vitals.lbsKgs', 
+    'height'       => 'vitals.#Height', 
+    'htUnits'      => 'vitals.unitsHt', 
+    'hc'           => 'vitals.#hc', 
+    'hcUnits'      => 'vitals.inCm', 
+    'wc'           => 'vitals.#wc', 
+    'wcUnits'      => 'vitals.inCmWC', 
+    'o2Sat'        => 'vitals.#O2Sat', 
+    'o2SatOn'      => 'vitals.O2SatOn', 
+    'bmi'          => 'vitals.bmi');
+  //
+  public function getSqlTable() {
+    return 'data_vitals';
+  }
+  public function getKey() {
+    return 'date';
+  }
+  public function getFaceClass() {
+    return 'FaceVital';
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::editableDateTime(),
+      'dateUpdated' => JsonFilter::informalDateTime());
+  }
+  public function toJsonObject($o) {
+    $o->all = $this->getAllValues();
+    $o->htcm = $this->getHtCm();
+    $o->wtkg = $this->getWtKg();
+    $o->bp = $this->getBp();
+    $o->o2 = $this->getO2();
+    return $o;
+  }
+  public function getAuditRecName() {
+    return 'Vital';
+  }
+  /*
+   * @return FaceVital
+   */
+  public function asFace($replaceFace = null, $allowEmptyRecord = false) {
+    $face = parent::asFace($replaceFace);
+    $face->bpSystolic = str_replace('/', '', $face->bpSystolic); 
+    $face->toNumeric(
+      'pulse',
+    	'bpSystolic',
+      'bpDiastolic',
+      'temp',
+      'wt',
+      'height',
+      'hc',
+      'wc',
+      'o2Sat',
+      'bmi');
+    if ($face->bpSystolic == null && $face->bpDiastolic == null)
+      $face->bpLoc = null; 
+    if ($face->wt) 
+      if (self::formatWtUnits($face->wtUnits) == 'KG') 
+        $face->wt = $this->getWtLb();
+    if ($face->height) 
+      if (self::formatHtUnits($face->htUnits) == 'CM') 
+        $face->height = $this->getHtIn();
+    $face->wtUnits = null;
+    $face->htUnits = null;
+    if (! $allowEmptyRecord)
+      if (! $face->isAnySet())
+        $face = null; 
+    return $face;
+  }
+  //
+  public function getBp() {
+    return "$this->bpSystolic/$this->bpDiastolic $this->bpLoc";
+  }
+  public function getO2() {
+    $s = $this->o2Sat;
+    if ($s && $this->o2SatOn) 
+      $s = "$s - $this->o2SatOn";
+    return $s;
+  }
+  public function getWtKg() {
+    if ($this->wt) 
+      return round($this->wt * 0.45359, 2);
+  }
+  public function getWtLb() {
+    if ($this->wt) 
+      return round($this->wt *  2.20462, 2);
+  }
+  public function getHtCm() {
+    if ($this->height) 
+      return round($this->height * 2.54, 2);
+  }
+  public function getHtIn() {
+    if ($this->height) 
+      return round($this->height * 0.3937, 2);
+  }
+  public function getAllValues() {
+    $a = array();
+    if ($this->pulse)
+      $a[] = 'Pulse: ' . $this->pulse;
+    if ($this->resp)
+      $a[] = 'Resp: ' . $this->resp;
+    if ($this->bpSystolic)
+      $a[] = 'BP: ' . $this->getBp();
+    if ($this->temp)
+      $a[] = 'Temp: ' . $this->temp;
+    if ($this->wt)
+      $a[] = 'Wt: ' . $this->wt;
+    if ($this->height)
+      $a[] = 'Height: ' . $this->height;
+    if ($this->hc)
+      $a[] = 'HC: ' . $this->hc;
+    if ($this->wc)
+      $a[] = 'WC: ' . $this->wc;
+    if ($this->o2Sat)
+      $a[] = 'O2: ' . trim($this->o2Sat . ' ' . $this->o2SatOn);
+    if ($this->bmi)
+      $a[] = 'BMI: ' . $this->bmi;
+    return $a;
+  }
+  private function isAnySet() {
+    return
+      $this->pulse ||
+      $this->resp ||
+      $this->bpSystolic ||
+      $this->temp ||
+      $this->wt ||
+      $this->height ||
+      $this->hc ||
+      $this->wc ||
+      $this->o2Sat;
+  }
+  //
+  protected static function formatWtUnits($u) {
+    return (strtoupper(substr($u, 0, 1)) == 'K') ? 'KG' : 'LB';
+  }
+  protected static function formatHtUnits($u) {
+    return (strtoupper(substr($u, 0, 1)) == 'C') ? 'CM' : 'IN';
+  }
+  /**
+   * @param object $o JSON
+   * @param int $ugid
+   * @return Vital 
+   */
+  static function fromUi($o, $ugid) {
+    $rec = new Vital($o);
+    $rec->userGroupId = $ugid;
+    return $rec;
+  }
+  /**
+   * Build new face records from session history
+   * @param int cid
+   */
+  static function buildFacesFromSessions($cid) {
+    $sessions = SessionVital::fetchAllUnbuilt($cid);
+    if ($sessions) {
+      $faces = FaceVital::fetchMap($cid);
+      parent::_buildFacesFromSessions($sessions, $faces);
+    }
+  }
+  /**
+   * Build new face records from old (active=null)
+   * @param int $cid
+   */
+  static function buildFacesFromOldFaces($cid) {
+    $c = FaceVital::asCriteria($cid);
+    $c->active = CriteriaValue::isNull();
+    $oldFaces = parent::fetchAllBy($c);
+    foreach ($oldFaces as $oldFace) {
+      $face = $oldFace->asFace();
+      if ($face)
+        $face->save();
+    }
+  }
+}
+/**
+ * Vital Face Record
+ */
+class FaceVital extends Vital {
+  //
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+	/**
+   * @param int $id
+   * @return FaceVital
+   */
+  static function fetch($id) {
+    return parent::_fetchFace($id, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(date=>FaceVital,..) 
+   */
+  static function fetchMap($cid) {
+    $c = self::asCriteria($cid);
+    $c->active = CriteriaValue::isNotNull();
+    return self::fetchMapBy($c, $c->getKey());
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceVital,..)
+   */
+  static function fetchAllActive($cid) {
+    return parent::_fetchActiveFaces($cid, __CLASS__);
+  }
+  /**
+   * @param object $o JSON
+   * @param int $ugid
+   * @return FaceVital saved
+   */
+  static function saveFromUi($o, $ugid) {
+    $vital = Vital::fromUi($o, $ugid);
+    $face = $vital->asFace(null, true);
+    return parent::_saveFromUi($face);
+  }
+  /**
+   * @param int $cid
+   * @return FaceVital 
+   */
+  static function asCriteria($cid) {
+    $c = parent::_asFaceCriteria($cid, __CLASS__);
+    return $c;
+  }  
+  static function asActiveCriteria($cid) {
+    return parent::_asActiveFaceCriteria($cid, __CLASS__);
+  } 
+}
+//
+/**
+ * Vital Session Record
+ */
+class SessionVital extends Vital implements ReadOnly {
+  //
+  /**
+   * @param int $cid
+   * @return array(SessionVital,..)
+   */
+  static function fetchAllUnbuilt($cid) {
+    $c = self::asUnbuiltCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @return SessionVital
+   */
+  static function asUnbuiltCriteria($cid) {
+    $c = parent::_asUnbuiltSessCriteria($cid, __CLASS__);
+    return $c;
+  }
+}
+?>

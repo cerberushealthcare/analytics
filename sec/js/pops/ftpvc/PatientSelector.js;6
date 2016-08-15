@@ -1,0 +1,229 @@
+/**
+ * IncludedSourcePop PatientSelector
+ */
+PatientSelector = {
+  /*
+   * @callback(client) (optional, default navs to selected facesheet)
+   * @arg showUnavail (optional to show 'unavail time' create, default false)
+   */
+  pop:function(callback, showUnavail) {
+    this.create(function(self) {
+      PatientSelector = self;
+      PatientSelector.pop(callback, showUnavail);
+    })
+  },
+  create:function(callback) {
+    Html.IncludedSourcePop.create('PatientSelector', 'pop-ps', function(self) {
+      callback(self.augment({
+        clients:null,
+        _scb:null,
+        reset:function() {
+          setText('working-msg-ps', '');
+          setValue('search-pid', '');
+          setValue('search-last', '');
+          setValue('search-first', '');
+          setValue('search-address', '');
+          setValue('search-phone', '');
+          setValue('search-email', '');
+          setValue('search-custom', '');
+          setText('pop-ps-cap-text', 'Patient Selector');
+          setText('pop-ps-h1', 'Search for a patient');
+        },
+        pop:function(callback, showUnavail) {
+          callback = callback || function(client){Page.Nav.goFacesheet(client.clientId)};
+          overlayWorking(true);
+          if (showUnavail) 
+            $('pop-ps-unavail').style.display = 'block';
+          else 
+            $('pop-ps-unavail').style.display = 'none';
+          self._scb = Ajax.buildScopedCallback(callback, 'patientSelector');
+          Lookup.getClientSearchCustom(
+            function(luSearch) {
+              overlayWorking(false);
+              var foc = self._applySearchCustom(luSearch);
+              self.showPosCursor(foc);
+            });
+        },
+        onshow:function(foc) {
+          self.setFocus(foc);
+          if (self.clients == null) 
+            self.search(foc);
+        },
+        psSearch:function(foc) {
+          Page.workingCmd(true);
+          self.search(foc);
+        },
+        search:function(foc) {
+          var s_pid = value('search-pid');
+          var s_ln = value('search-last');
+          var s_fn = value('search-first');
+          show('ss').className = 'spreadsheet workingbar';
+          show('ss-searching');
+          hide('ss-table');
+          var req = {'uid':s_pid,'ln':s_ln,'fn':s_fn,'ad':value('search-address'),'ph':value('search-phone'),'em':value('search-email'),'cu':value('search-custom')};
+          Ajax.get(Ajax.SVR_SCHED, 'search', req, function(clients) {
+            Page.workingCmd(false);
+            self.clients = clients.clients;
+            self._buildResultsTable();
+            show('ss').className = 'spreadsheet';
+            hide('ss-searching');
+            show('ss-table'); 
+            if (foc == null) {
+              if (s_ln != '') {
+                focus('search-last');
+              } else if (s_fn != '') {
+                focus('search-first');
+              } else {
+                focus('search-pid');
+              }
+            }
+          });
+        },
+        psSelect:function(i) {
+          Pop.close();
+          var client = self.clients[i];
+          Ajax.callScopedCallback(self._scb, client);
+        },
+        psCustomize:function() {
+          Pop.show('pop-ccs');
+        },
+        ccsSave:function() {
+          var rec = self._createClientSearchCustom();
+          Lookup.saveClientSearchCustom(rec);
+          self.resetClientSearchCustomCallback(rec);
+        },
+        ccsReset:function() {
+          Lookup.resetClientSearchCustom(self);
+        },
+        searchCallback:function(clients) {
+          Page.workingCmd(false);
+          self.clients = clients.clients;
+          self._buildResultsTable();
+          show('ss').className = 'spreadsheet';
+          hide('ss-searching');
+          show('ss-table');
+        },
+        resetClientSearchCustomCallback:function(rec) {
+          Pop.close();
+          hide('ss');
+          self._applySearchCustom(rec);
+          self.search();
+        },
+        _createClientSearchCustom:function() {
+          return {
+            'first':(isChecked('ccs-by-id') ? 0 : 1),
+            'incAddress':isChecked('ccs-inc-address'),
+            'incPhone':isChecked('ccs-inc-phone'),
+            'incEmail':isChecked('ccs-inc-email'),
+            'incCustom':isChecked('ccs-inc-custom')
+            };
+        },
+        _applySearchCustom:function(luSearch) {
+          var foc;
+          if (luSearch.first && luSearch.first == 1) {
+            $('search-ul').insertBefore($('search-li-name'), $('search-li-pid'));
+            $('ccs-by-name').checked = true;
+            foc = 'search-last';
+          } else {
+            $('search-ul').insertBefore($('search-li-pid'), $('search-li-name'));
+            $('ccs-by-id').checked = true;
+            foc = 'search-pid';
+          }
+          hide('search-li-more');
+          if (luSearch.incAddress) {
+            show('search-li-address');
+            show('search-li-more');
+            setCheck('ccs-inc-address', true);
+          } else {
+            hide('search-li-address');
+            setCheck('ccs-inc-address', false);
+          }
+          if (luSearch.incPhone) {
+            show('search-li-phone');
+            show('search-li-more');
+            setCheck('ccs-inc-phone', true);
+          } else {
+            hide('search-li-phone');
+            setCheck('ccs-inc-phone', false);
+          }
+          if (luSearch.incEmail) {
+            show('search-li-email');
+            show('search-li-more');
+            setCheck('ccs-inc-email', true);
+          } else {
+            hide('search-li-email');
+            setCheck('ccs-inc-email', false);
+          }
+          if (luSearch.incCustom) {
+            show('search-li-custom');
+            show('search-li-more');
+            setCheck('ccs-inc-custom', true);
+          } else {
+            hide('search-li-custom');
+            setCheck('ccs-inc-custom', false);
+          }  
+          return foc;
+        },
+        _buildResultsTable:function() {
+          var clients = self.clients;
+          var tbody = $('ss-tbody');
+          clearRows(tbody);
+          var offset = false;
+          if (clients != null) {
+            for (var i = 0; i < clients.length; i++) {
+              var c = clients[i];
+              if (c.clientId > 0) {
+                var href = 'javascript:PatientSelector.psSelect(' + i + ')';
+                var tr = createTr(offset ? 'offset' : '');
+                var id = (i == 0) ? 'ss-first-a' : null;
+                var cls = (c.sex == 'M') ? 'action umale' : 'action ufemale';
+                tr.appendChild(createTdAnchor(href, 'action noimg', c.uid, null, null));
+                tr.appendChild(createTdAnchor(href, cls, c.name, id, 'Select this patient'));
+                tr.appendChild(createTd(c.birth));
+                tbody.appendChild(tr);
+                offset = ! offset;
+              }
+            }
+          } 
+          if (tbody.children.length == 1) {
+            var tr = createTr('');
+            var td = createTd('No patients match your criteria.');
+            td.colSpan = 3;
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+          }
+          $('ss').scrollTop = 0;
+        }
+      }));
+    });
+  }
+};
+/**
+ * RecordEntryPop PatientAdd
+ */
+PatientAdd = {
+  pop:function(rec) {
+    PatientAdd = this.create().pop(rec);
+  },
+  create:function() {
+    var self = Html.RecordEntryPop.create('Create a Patient', 740);
+    return self.augment({
+      buildForm:function(ef) {
+        ef.li('Patient ID').textbox('uid', 15);
+        ef.li('Last Name').textbox('lastName', 25).lbl('First').textbox('firstName', 15).lbl('Middle').textbox('middleName', 15);
+        ef.li('Gender').select('sex', C_Client.SEXES).lbl('Birth').date('birth');
+      },
+      buildCmd:function(cb) {
+        cb.save(self.save_onclick, 'Create and Continue >').cancel(self.cancel_onclick);
+      },
+      onshow:function(rec) {
+        self.form.focus('uid');
+      },
+      save:function(rec, onsuccess, onerror) {
+        onsuccess = function(rec){Page.Nav.goFacesheet(rec.clientId)};
+        Ajax.Facesheet.Patients.save(rec, onsuccess, onerror);
+      }
+    });
+  }
+}

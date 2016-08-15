@@ -1,0 +1,16 @@
+<?php
+require_once 'server.php';
+//
+try {
+  LoginSession::verify_forServer();
+  switch ($action) {
+    //
+    case 'setup':
+      $login->setupTrial();
+      AjaxResponse::out($action, null);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

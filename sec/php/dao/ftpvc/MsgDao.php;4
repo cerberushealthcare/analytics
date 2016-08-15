@@ -1,0 +1,504 @@
+<?php
+require_once 'php/dao/_util.php';
+require_once 'php/dao/LoginDao.php';
+require_once 'php/dao/FacesheetDao.php';
+//
+// Exceptions
+class InvalidSendToException extends Exception {}
+//
+/**
+ * Messaging Data Access Object
+ */
+class MsgDao {
+  //
+  const TID_MESSAGING = 25;  // Messaging template
+  //
+  const STATUS_OPEN = 1;
+  const STATUS_CLOSED = 2;
+  //
+  const ACTION_CREATE = 0;
+  const ACTION_REPLY = 1;
+  const ACTION_CLOSE = 9;
+  //
+  const TYPE_GENERAL = 0;
+  //
+  const PRIORITY_NORMAL = 0;
+  const PRIORITY_STAT = 9;
+  //
+  public static $PRIORITIES = array(
+  MsgDao::PRIORITY_NORMAL => 'Normal',
+  MsgDao::PRIORITY_STAT => 'STAT'
+  );
+  /*
+   * UI helpers
+   */
+  public static function jsonLists() {
+    $lists = array(
+      'recips' => MsgDao::getMyRecipients(),
+      'sections' => MsgDao::getTemplateList()
+    );
+    return jsonencode($lists);
+  }
+  /*
+   * Returns count of unread threads
+   */
+  public static function getMyInboxCt() {
+    global $myLogin;
+    $sql = <<<eos
+SELECT thread_id
+FROM msg_inbox
+WHERE recipient=$myLogin->userId AND is_read=0
+GROUP BY thread_id;
+eos;
+    return count(fetchArray($sql, null, false));
+  }
+  /*
+   * Returns [
+   *    mtid=>[     // read or unread threads in inbox
+   *      mpid,..]  // only unread posts included (in descending order)
+   *   ]
+   */
+  public static function getMyInbox($markAsRead = false) {
+    global $myLogin;
+    $sql = <<<eos
+SELECT inbox_id, thread_id, post_id, is_read
+FROM msg_inbox i
+WHERE recipient=$myLogin->userId AND is_read<=1
+ORDER BY post_id DESC;
+eos;
+    $miids = array();
+    $inbox = array();
+    $res = query($sql);
+    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      $mtid = $row['thread_id'];
+      $mpid = $row['post_id'];
+      $isUnread = ($row['is_read'] == '0');
+      if (! array_key_exists($mtid, $inbox)) {
+        $inbox[$mtid] = array();
+      }
+      if ($isUnread) {
+        $inbox[$mtid][] = $mpid;
+        if ($markAsRead) {
+          $miids[] = $row['inbox_id'];
+        }
+      }
+    }
+    if ($markAsRead && count($miids) > 0) {
+      $in = implode(',', $miids);
+      $sql = <<<eos
+UPDATE msg_inbox
+SET is_read=1
+WHERE inbox_id IN ($in);
+eos;
+      query($sql);
+    }
+    return $inbox;
+  }
+  /*
+   * Get array of thread (headers)
+   * $mtids: [mtid,..]
+   * Returns [
+   *    ['mtid'=>
+   *     'creator'=>
+   *     'date'=>
+   *     'dateClosed'=>
+   *     'type'=>
+   *     'subject'=>
+   *     'status'=>
+   *     'priority'=>
+   *     'cid'=>
+   *     'cuid'=>
+   *     'cname'=>
+   *     'csex'=>
+   *     'cbirth'=>
+   *     'postCt'=>
+   *     'lastPostId'=>],..
+   *   ]
+   */
+  private static function getThreads($mtids, $orderBy = 'date DESC') {
+    if (isempty($mtids)) {
+      return array();
+    }
+    $in = implode(',', $mtids);
+    $sql = <<<eos
+SELECT t.thread_id AS mtid, t.creator, t.date_created AS date, t.date_closed as dateClosed, t.type, t.status, t.priority, t.client_id AS cid, c.uid AS cuid, CONCAT(c.last_name,', ',c.first_name) AS cname, c.sex AS csex, c.birth AS cbirth, t.subject, MAX(p.post_id) AS lastPostId, COUNT(p.post_id) AS postCt
+FROM msg_threads t
+LEFT OUTER JOIN msg_posts p ON t.thread_id=p.thread_id
+LEFT OUTER JOIN clients c ON t.client_id=c.client_id
+WHERE t.thread_id IN ($in)
+GROUP BY mtid
+ORDER BY $orderBy;    
+eos;
+    $rows = fetchArray($sql);
+    castRowsAsInformalTime($rows, array('date'));
+    castRowsAsInformalTime($rows, array('dateClosed'));
+    castRowsAsDate($rows, array('cbirth'));
+    return $rows;
+  }
+  /*
+   * Get threads for a particular client
+   * Returns [
+   *    mtid=>['mtid'=>
+   *       'creator'=>
+   *       'date'=>
+   *       'dateClosed'=>
+   *       'type'=>
+   *       'subject'=>
+   *       'status'=>
+   *       'priority'=>],..
+   *   ]
+   */
+  public static function getThreadsForClient($cid, $orderBy = 'date DESC') {
+    $sql = <<<eos
+SELECT t.thread_id AS mtid, t.creator, t.date_created AS date, t.date_closed as dateClosed, t.type, t.status, t.priority, t.subject 
+FROM msg_threads t
+WHERE t.client_id=$cid
+ORDER BY $orderBy;    
+eos;
+    $rows = fetchArray($sql, 'mtid');
+    castRowsAsDate($rows, array('date'));
+    castRowsAsDate($rows, array('dateClosed'));
+    return $rows;
+  }
+  /*
+   * Get sent threads
+   */
+  public static function getMySentThreads() {
+    $sort = 'priority DESC, lastPostId';
+    $threads = MsgDao::getThreads(MsgDao::getSentMtids(), $sort);
+    foreach ($threads as &$thread) {
+      $thread['post'] = MsgDao::getSinglePost($thread['lastPostId']);
+    }
+    return $threads;
+  }
+  /*
+   * Get inbox threads
+   * Returns [
+   *     ['mtid'..     // see getThreads
+   *      'unreadCt'=> // boolean
+   *      'post'=>[    // first unread post (if none, last read post)
+   *        'author'=>
+   *        'date'=>
+   *        'body'=>]
+   *     ],..
+   *   ]
+   */
+  public static function getMyInboxThreads() {
+    $sort = 'priority DESC, status, lastPostId';
+    $inbox = MsgDao::getMyInbox(true);
+    if (isempty($inbox)) {
+      return null;
+    }
+    $unread = array();
+    $read = array();
+    foreach ($inbox as $mtid => &$mpids) {
+      if (count($mpids) == 0) {
+        $read[] = $mtid;
+      } else {
+        $unread[] = $mtid;
+      }
+    }
+    $unread = MsgDao::getThreads($unread, $sort);
+    $read = MsgDao::getThreads($read, $sort);
+    foreach ($unread as &$thread) {
+      $mpids = $inbox[$thread['mtid']];
+      $thread['unreadCt'] = count($mpids);
+      $thread['post'] = MsgDao::getSinglePost($mpids[0]);
+    }
+    foreach ($read as &$thread) {
+      $thread['unreadCt'] = 0;
+      $thread['post'] = MsgDao::getSinglePost($thread['lastPostId']);
+    }
+    return array_merge($unread, $read);
+  }
+  /*
+   * Get thread with posts and client info
+   * Returns [
+   *    'mtid'..       // see getThreads
+   *    'posts'=>[..]  // see getPosts
+   *   ]
+   */
+  public static function getThread($mtid) {
+    LoginDao::authenticateThreadId($mtid);
+    $threads = MsgDao::getThreads(array($mtid));
+    $thread = $threads[0];
+    $posts = MsgDao::getPosts($mtid);
+    if ($thread['status'] == MsgDao::STATUS_CLOSED) {
+      $closedPost = $posts[0];
+      $thread['closed'] = 1;
+      $thread['closedBy'] = $closedPost['author'];
+    }
+    $thread['posts'] = $posts;
+    //    if ($thread['cid']) {
+    //      $thread['facesheet'] = FacesheetDao::getMsgFacesheet($thread['cid']);
+    //    }
+    return $thread;
+  }
+  /*
+   * Get single HTML view of thread's posts
+   */
+  public static function previewThread($mtid) {
+    LoginDao::authenticateThreadId($mtid);
+    $posts = MsgDao::getPosts($mtid);
+    $h = array();
+    foreach ($posts as $post) {
+      $h[] = '<div class="posthead"><b>From:</b> ';
+      $h[] = $post['author'];
+      if ($post['sendTo']) {
+        $h[] = ' <b>To:</b> ';
+        $h[] = $post['sendTo'];
+      }
+      $h[] = '<br><b>Date:</b> ';
+      $h[] = $post['date'];
+      $h[] = '</div>';
+      $h[] = $post['body'];
+    }
+    return implode($h, '');
+  }
+  /*
+   * Returns [
+   *     ['mpid'=>
+   *      'action'=>
+   *      'author'=>
+   *      'authorId'=>
+   *      'date'=>
+   *      'sendTo'=>
+   *      'body'=>
+   *      'data'=>
+   *      'isRead'=>  // 1=read, 0=unread, NULL=not sent to me
+   *     ],..
+   *   ]
+   */
+  private static function getPosts($mtid) {
+    global $myLogin;
+    $sql = <<<eos
+SELECT p.post_id AS mpid, p.action, p.author, p.author_id AS authorId, p.date_created AS date, p.send_to AS sendTo, p.body, p.data, i.is_read AS isRead
+FROM msg_posts p
+LEFT OUTER JOIN msg_inbox i ON (i.post_id=p.post_id AND i.recipient=$myLogin->userId)
+WHERE p.thread_id=$mtid
+ORDER BY mpid DESC;
+eos;
+    return castRowsAsInformalTime(fetchArray($sql), array('date'));
+  }
+  private static function getSentMtids() {
+    global $myLogin;
+    $sql = <<<eos
+SELECT thread_id 
+FROM msg_threads
+WHERE creator_id=$myLogin->userId
+eos;
+    return fetchSimpleArray($sql, 'thread_id');
+  }
+  /*
+   * Returns [
+   *    'mpid'=>
+   *    'author'=>
+   *    'date'=>
+   *    'body'=>
+   *   ]
+   */
+  private static function getSinglePost($mpid) {  // assumes already authenticated
+    $sql = <<<eos
+SELECT post_id AS mpid, author, date_created AS date, body
+FROM msg_posts
+WHERE post_id=$mpid;
+eos;
+    return castAsInformalTime(fetch($sql), array('date'));
+  }
+  /*
+   * Create new message thread
+   * $sendTos:[id,..]
+   * Returns mtid
+   */
+  public static function createThread($subject, $sendTos, $body, $data, $cid = null, $type = MsgDao::TYPE_GENERAL, $priority = MsgDao::PRIORITY_NORMAL) {
+    global $myLogin;
+    if ($cid) {
+      LoginDao::authenticateClientId($cid);
+    }
+    $recipients = MsgDao::getMyRecipients(true);
+    $myName = quote($myLogin->name, true);
+    $cid = quote($cid);
+    $status = quote(MsgDao::STATUS_OPEN);
+    $type = quote($type);
+    $priority = quote($priority);
+    $subject = quote($subject, true);
+    $sql = <<<eos
+INSERT INTO msg_threads 
+VALUES(NULL,$myLogin->userGroupId,$cid,$myLogin->userId,$myName,NULL,NULL,NULL,$type,$status,$priority,$subject);
+eos;
+    $mtid = insert($sql);
+    MsgDao::addPost($mtid, $sendTos, $body, $data, MsgDao::ACTION_CREATE);
+    return $mtid;
+  }
+  /*
+   * Add recip-less post and close thread
+   */
+  public static function complete($mtid, $body, $data) {
+    MsgDao::addPost($mtid, null, $body, $data, MsgDao::ACTION_CLOSE);
+    $status = MsgDao::STATUS_CLOSED;
+    $date = now();
+    $sql = <<<eos
+UPDATE msg_threads
+SET status=$status, date_closed=$date 
+WHERE thread_id=$mtid;
+eos;
+    query($sql);
+  }
+  /*
+   * Add a post to a thread
+   * $sendTos:[id,..]
+   */
+  public static function addPost($mtid, $sendTos, $body, $data, $action = MsgDao::ACTION_REPLY) {
+    global $myLogin;
+    LoginDao::authenticateThreadId($mtid);
+    $myName = quote($myLogin->name);
+    $body = quote($body, true);
+    $recipients = MsgDao::getMyRecipients(true);
+    $sendToNames = quote(MsgDao::buildSendToNames($recipients, $sendTos), true);  // authenticates recipients
+    $data = quote($data);
+    $sql = <<<eos
+INSERT INTO msg_posts 
+VALUES(NULL,$mtid,$action,NULL,$myLogin->userId,$myName,$body,$sendToNames,$data);
+eos;
+    $mpid = insert($sql);
+    MsgDao::deleteMyReadInbox($mtid);
+    if ($action != MsgDao::ACTION_CLOSE) {
+      MsgDao::addInboxes($sendTos, $mtid, $mpid);
+    }
+  }
+  private static function deleteMyReadInbox($mtid) {
+    global $myLogin;
+    $sql = <<<eos
+UPDATE msg_inbox
+SET is_read=2
+WHERE recipient=$myLogin->userId AND thread_id=$mtid AND is_read=1;
+eos;
+    query($sql);
+  }
+  /*
+   * Add inbox records for recipients
+   */
+  private static function addInboxes($sendTos, $mtid, $mpid) {  // sendTos assumed already authenticated
+    global $myLogin;
+    foreach ($sendTos as &$id) {
+      //if ($id != $myLogin->userId) {
+      MsgDao::addInbox($id, $mtid, $mpid);
+      //}
+    }
+  }
+  /*
+   * Add inbox record
+   */
+  private static function addInbox($recipient, $mtid, $mpid) {  // recip assumed already authenticated
+    $sql = <<<eos
+INSERT INTO msg_inbox 
+VALUES(NULL,$recipient,$mtid,$mpid,0);
+eos;
+    insert($sql);
+  }
+  /*
+   * Get all recipients I can send messages to
+   * Returns [
+   *    id=>[  // if map requested
+   *      'id'=>
+   *      'name'=>
+   *      'type'=>  // see User::USER_TYPEs
+   *     ],..
+   *   ]
+   */
+  public static function getMyRecipients($asMap = false) {
+    global $myLogin;
+    $sql = <<<eos
+SELECT user_id as id, name, user_type as type
+FROM users
+WHERE user_group_id=$myLogin->userGroupId AND active=1
+ORDER BY name;
+eos;
+    return fetchArray($sql, (($asMap) ? 'id' : null));
+  }
+  /*
+   * Sort getMyRecipients into groups and exclude self
+   * Returns [
+   *    'd'=>[id=>[..],..],  // Doctors
+   *    'o'=>[id=>[..],..],  // Office editors/readers
+   *    'r'=>[id=>[..],..]   // Recipient editors/readers
+   *   ]
+   */
+  public static function getMyRecipientGroups($asMap = false) {
+    global $myLogin;
+    $groups = array('d' => array(), 'o' => array(), 'r' => array());
+    $recips = MsgDao::getMyRecipients(true);
+    foreach ($recips as $id => &$r) {
+      if ($id != $myLogin->userId) {
+        switch ($r['type']) {
+          case User::USER_TYPE_DOCTOR:
+            $groups['d'][$id] = $r;
+            break;
+          case User::USER_TYPE_OFFICE_EDITOR:
+          case user::USER_TYPE_OFFICE_READER:
+            $groups['o'][$id] = $r;
+            break;
+          case User::USER_TYPE_RECIPIENT_EDITOR:
+          case user::USER_TYPE_RECIPIENT_READER:
+            $groups['r'][$id] = $r;
+            break;
+        }
+      }
+    }
+    return ($asMap) ? $groups : $groups['d'] + $groups['o'] + $groups['r'];
+  }
+  /*
+   * Returns [
+   *    sid=>[
+   *       'name'=>name,
+   *       'pars'=>[pid=>pdesc,..]
+   *      ]
+   *   ]
+   */
+  public static function getTemplateList() {
+    $sql = <<<eos
+SELECT s.section_id, s.name, p.par_id, p.desc 
+FROM template_sections s 
+INNER JOIN template_pars p ON p.section_id=s.section_id
+WHERE s.template_id=25 AND p.current=1 AND p.major=1
+ORDER BY s.sort_order, p.desc;
+eos;
+    $rows = fetchArray($sql);
+    $sections = array();
+    foreach ($rows as &$row) {
+      if (geta($sections, $row['section_id']) == null) {
+        $sections[$row['section_id']] = array(
+          'name' => $row['name'], 
+          'pars' => array());
+      }
+      $sections[$row['section_id']]['pars'][$row['par_id']] = $row['desc'];
+    }
+    return $sections;
+  }
+  /*
+   * Given [id,..] return 'name;..'
+   */
+  public static function buildSendToNames($sendTos) {
+    global $myLogin;
+    if ($sendTos == null) {
+      return null;
+    }
+    $recipients = MsgDao::getMyRecipients(true);
+    $s = array();
+    foreach ($sendTos as &$id) {
+      $s[$id] = MsgDao::getRecipientName($recipients, $id);
+    }
+    return implode($s, ';');
+  }
+  /*
+   * Return recipient name if valid
+   */
+  private static function getRecipientName($recipients, $id) {
+    $r = geta($recipients, $id);
+    if ($r == null) {
+      throw new InvalidSendToException('Invalid sendto: $id');
+    }
+    return $r['name'];
+  }
+}
+?>

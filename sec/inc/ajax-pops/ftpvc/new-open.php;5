@@ -1,0 +1,926 @@
+<?
+// New Note dialog
+// showNewNote(clientId, clientName, schedId=null, dos=today)
+// newNoteCallback(session)
+?>
+<div id="pop-nn" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-nn-cap" class="pop-cap">
+    <div id="pop-nn-cap-text">
+      Create New Document
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-nn-content" class="pop-content">
+    <div class="ro">
+      <div class="ro-title" style="margin:0">
+        <div>
+          <span id="nn-client-name"></span>
+        </div>
+        <a class="pencil patient" href="javascript:iChooseAnother(0)">Choose another</a>
+      </div>
+    </div>
+    <ul class="entry">
+      <li>
+        <label class="first2">Date of Service</label>
+        <? renderCalendar("nn-dos") ?>
+      </li>
+      <li>
+        <label class="first2">Send To</label>
+        <select id="pop-nn-sendtos">
+        </select>
+        <a class="act" href="javascript:setSendToDefault('pop-nn-sendtos')">Set as default</a>
+      </li>
+      <li style="padding-top:1px">
+        <label class="first2">Template</label>
+        <select id="pop-nn-templates" onchange="newNoteTemplateChange()">
+        </select>
+        <a class="act" href="javascript:setTemplateDefault()">Set as default</a>
+      </li>
+    </ul>
+    <div class="ro" style="padding:8px">
+      <ul class="entry" style="margin:0;">
+        <li style="padding:0">
+          <a id="pop-nn-start-empty" href="javascript:createEmptySession()" class="cmd cbig empty-note">
+          </a>
+        </li>
+        <li style="padding:7px 0 0 0">
+          <a id="pop-nn-replicate" href="javascript:createStandardSession()" class="cmd cbig copy-note" style="line-height:12pt">
+            <div id="pop-nn-replicate-text">Replicate from Patient History</div>
+            <span id="pop-nn-replicate-span" style="font-size:9pt; font-weight:normal;">&nbsp;</span>
+          </a><br/>
+        </li>
+        <li style="padding:7px 0 0 0">
+          <a id="pop-nn-start-custom" href="javascript:createPrefilledSession()" class="cmd cbig template-note">
+            Apply Custom Template:<br/>
+            <select id="pop-nn-presets">
+            </select>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="pop-cmd cmd-fixed" style="margin:0; padding:0">
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// Replicate Note dialog
+// showReplicate(clientId, sessionId)
+?>
+<div id="pop-rn" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-rn-cap" class="pop-cap">
+    <div id="pop-rn-cap-text">
+      Replicate Document
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-rn-content" class="pop-content">
+    <ul class="entry">
+      <li>
+        <label class="first6">Date of Service</label>
+        <? renderCalendar("rn-dos") ?>
+      </li>
+      <li>
+        <label class="first6">Send To</label>
+        <select id="pop-rn-sendtos">
+        </select>
+        <a class="act" href="javascript:setSendToDefault('pop-rn-sendtos')">Set as default</a>
+      </li>
+      <li>
+        <label class="first6">Override Facesheet?</label>
+        <? renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
+      </li>
+    </ul>
+    <div class="pop-cmd" style="">
+      <a href="javascript:rnCreate()" class="cmd copy-note">Create Replicate</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// Save note dialog
+// Does not actually save, just replaces session property values (title, dos, standard)if changed
+// showSaveDialog(focusId)
+// saveDialogCallback()
+?>
+<div id="pop-sv" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-sv-cap" class="pop-cap">
+    <div id="pop-sv-cap-text">
+      Save Note As
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-sv-content" class="pop-content" onkeypress="return ifCrClick('pop-sv-save')">
+    <div class="ro">
+      <div class="ro-title" style="margin:0; text-align:left">
+        <span id="sv-client-name"></span>
+      </div>
+    </div>
+    <ul class="entry">
+      <li>
+        <label class="first2">Label</label>
+        <input id="sv-title" type="text" size="50" />
+      </li>
+      <li>
+        <label class="first2">Date of Service</label>
+        <? renderCalendar("sv-dos") ?>
+      </li>
+      <li>
+        <label class="first2"></label>
+        <? renderLabelCheck("sv-standard", "Use as patient's standard note", false, null,  null, "sv-use") ?>
+      </li>
+    </ul>
+    <div class="pop-cmd">
+      <a id="pop-sv-save" href="javascript:" onclick="saveDialogSave();return false" class="cmd save">Save Note</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// Edit Header (DOS and Send-To) dialog
+// showEditHeader(sessionId, clientName, dos, sendToId)
+// editHeaderCallback(session)
+?>
+<div id="pop-eh" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-eh-cap" class="pop-cap">
+    <div id="pop-eh-cap-text">
+      Edit Send To
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-eh-content" class="pop-content">
+    <div class="ro" style="display:none">
+      <div class="ro-title" style="margin:0; text-align:left">
+        <span id="eh-client-name"></span>
+      </div>
+    </div>
+    <ul class="entry">
+      <li style="display:none">
+        <label class="first2">Date of Service</label>
+        <? renderCalendar("eh-dos") ?>
+      </li>
+      <li>
+        <label class="nopad">Send To</label>
+        <select id="pop-eh-sendtos">
+        </select>
+      </li>
+    </ul>
+    <div class="pop-cmd">
+      <a href="javascript:saveHeader()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// Patient History dialog
+// showOpenNote(clientId)
+// openNoteCallback(session)
+?>
+<div id="pop-on" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-on-cap" class="pop-cap">
+    <div id="pop-on-cap-text">
+      Patient History
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-on-content" class="pop-content">
+    <div class="ro">
+      <div class="ro-title" style="margin:0">
+        <div>
+          <span id="on-client-name"></span>
+        </div>
+        <a class="pencil patient" href="javascript:iChooseAnother(1)">Choose another</a>
+      </div>
+    </div>
+    <div id="on-ss" class="gridsheet small scrollable" style="height:180px; width:510px">
+      <table class="small" style="width:493px">
+        <tbody id="on-ss-tbody" class="grid">
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd">
+      <? if ($myLogin->permissions->accessOfficeNotes > Permissions::ACCESS_READ) { ?>
+        <a href="javascript:newNoteFromOpen()" class="cmd note">New Document...</a>
+        <span>&nbsp;</span>
+      <? } ?>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// New Custom Template dialog
+// showNewCustomTemplate()
+// newCustomTemplateCallback(preset)
+?>
+<div id="pop-nct" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-nct-cap" class="pop-cap">
+    <div id="pop-nct-cap-text">
+      New Custom Template
+    </div>
+    <a href="javascript:closeNewCustomTemplate()" class="pop-close"></a>
+  </div>
+  <div id="pop-nct-content" class="pop-content">
+    <ul class="entry" style="margin-bottom:0">
+      <li>
+        <label class="first">Based On</label>
+        <select id="pop-nct-templates">
+        </select>
+      </li>
+      <li style="padding-top:2px;">
+        <label class="first">&nbsp;</label>
+        <a href="javascript:createNewCustomTemplate()" class="cmd note">Start Custom Template ></a>
+        <span>&nbsp;</span>
+        <a href="javascript:closeNewCustomTemplate()" class="cmd none">Cancel</a>
+      </li>
+    </ul>
+  </div>
+</div>
+<?
+// Open Custom Template dialog
+// showOpenCustomTemplate(caption, tid)  // tid=null for all
+// openCustomTemplateCallback(preset, caption)
+?>
+<div id="pop-oct" class="pop" onmousedown="event.cancelBubble = true" style="width:500px">
+  <div id="pop-oct-cap" class="pop-cap">
+    <div id="pop-oct-cap-text">
+      Open Custom Template
+    </div>
+    <a href="javascript:closeOpenCustomTemplate()" class="pop-close"></a>
+  </div>
+  <div id="pop-oct-content" class="pop-content">
+    <div id="oct-ss" class="spreadsheet" style="display:none">
+     <table id="oct-ss-table" class="data small" width="96%">
+        <tbody id="oct-ss-tbody">
+          <tr>
+            <th>Name</th>
+            <th>Based On</th>
+            <th>Last Updated</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:closeOpenCustomTemplate()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+// Patient Selector dialog
+// showPatientSelector(nextPop)  // 0=pop-nn (new note), 1=pop-on (open note)
+?>
+<div id="pop-ps" class="pop" style="width:500px">
+  <div id="pop-ps-cap" class="pop-cap">
+    <div id="pop-ps-cap-text">
+      Patient Selector
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" onkeypress="ifCrClick('pop-ps-search')">
+    <div class="pop-frame">
+      <div class="pop-frame-head">
+        <h1 id="pop-ps-h1">Search for a patient</h1>
+        <a class="pencil custom" href="javascript:showCustomClientSearch()">Customize</a>
+      </div>
+      <div class="pop-frame-content">
+        <ul id="search-ul" class="entry">
+          <li id="search-li-pid">
+            <label class="first">Patient ID</label>
+            <input id="search-pid" type="text" size="20" value="" />
+          </li>
+          <li id="search-li-name">
+            <label class="first">Last Name</label>
+            <input id="search-last" type="text" size="25" value="" />
+            <label>First</label>
+            <input id="search-first" type="text" size="15" value="" />
+            <label></label>
+          </li>
+          <li id="search-li-more" style="font-size:0;line-height:0;height:10px">
+          </li>
+          <li id="search-li-address">
+            <label class="first">Address</label>
+            <input id="search-address" type="text" size="40" value="" />
+          </li>
+          <li id="search-li-phone">
+            <label class="first">Phone</label>
+            <input id="search-phone" type="text" size="20" value="" />
+          </li>
+          <li id="search-li-email">
+            <label class="first">Email</label>
+            <input id="search-email" type="text" size="30" value="" />
+          </li>
+          <li id="search-li-custom">
+            <label class="first">Custom</label>
+            <input id="search-custom" type="text" size="40" value="" />
+          </li>
+        </ul>
+        <div class="pop-cmd">
+          <a id="pop-ps-search" href="javascript:" onclick="psSearch();return false" class="cmd search">Search</a>
+          <span>&nbsp;</span>
+          <span id="pop-ps-create-new">
+            <a href="javascript:iNewPatient()" class="cmd new">Create New Patient...</a>
+            <span>&nbsp;</span>
+          </span>
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>
+      </div>
+    </div>
+    <div id="working-ps" class="working">
+      <div id="working-msg-ps" class="working-msg">
+      </div>
+    </div>
+    <div id="ss" class="spreadsheet" style="display:none">
+      <div id="ss-searching">
+        Searching...
+      </div>
+      <table id="ss-table" class="small" style="display:none">
+        <tbody id="ss-tbody">
+          <tr class="fixed">
+            <th>ID</th>
+            <th>Name</th>
+            <th>Birth</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="pop-ps-unavail" class="pop-frame" style="padding-top:10px">
+      <h1>Or, mark time as unavailable</h1>
+      <div class="pop-frame-content">
+        <div class="pop-cmd" style="margin:0">
+          <a id="pop-ps-unavail" href="javascript:unavailable()" class="cmd none">Unavailable...</a>
+          <span>&nbsp;</span>
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>        
+      </div>
+    </div>
+    <div id="pop-ps-generic" class="pop-frame" style="margin-top:1em; display:none">
+      <h1>...or use generic male/female</h1>
+      <div class="pop-frame-content">
+        <div class="pop-cmd" style="margin-top:0">
+          <a href="javascript:" onclick="psSearch();return false" class="cmd male">Generic Male</a>
+          <span>&nbsp;</span>
+          <a href="javascript:" onclick="psSearch();return false" class="cmd female">Generic Female</a>
+          <span>&nbsp;</span>
+          <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+        </div>      
+      </div>
+    </div>
+    <div id="pop-error-ps" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<?
+// Customize Client Search dialog
+// Interacts with console's map object
+// showCustomClientSearch()
+?>
+<div id="pop-ccs" class="pop" onmousedown="event.cancelBubble = true">
+  <div id="pop-ccs-cap" class="pop-cap">
+    <div id="pop-ccs-ccs-text"> 
+      Customize Patient Search
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div id="pop-css-content" class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first2"><b>Primary Search</b></label>
+            <input type="radio" name="ccs-by" id="ccs-by-id" value="0" />
+            <label class="nopad">By ID</label>
+          </li>
+          <li class="pull">
+            <label class="first2">&nbsp;</label>
+            <input type="radio" name="ccs-by" id="ccs-by-name" value="1" />
+            <label class="nopad">By Name</label>
+          </li>
+          <li class="push">
+            <label class="first2"><b>Include in Search</b></label>
+            <? renderLabelCheck("ccs-inc-address", "Address") ?>
+            <label>&nbsp;</label>
+            <label>&nbsp;</label>
+            <label>&nbsp;</label>
+            <label>&nbsp;</label>
+            <label>&nbsp;</label>
+          </li>
+          <li class="pull">
+            <label class="first2">&nbsp;</label>
+            <? renderLabelCheck("ccs-inc-phone", "Phone") ?>
+          </li>
+          <li class="pull">
+            <label class="first2">&nbsp;</label>
+            <? renderLabelCheck("ccs-inc-email", "Email") ?>
+          </li>
+          <li class="pull">
+            <label class="first2">&nbsp;</label>
+            <? renderLabelCheck("ccs-inc-custom", "Custom") ?>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:ccsSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:ccsReset()" class="cmd none">Reset to Default</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<? 
+// Patient Overview dialog
+// showPatient(client)
+// showPatientCallback()  // only called if patient info was changed
+?>
+<div id="pop-po" class="pop">
+  <div id="pop-po-cap" class="pop-cap">
+    <div id="pop-po-cap-text">
+      Clicktate - Patient 
+    </div>
+    <a href="javascript:closePo()" class="pop-close"></a>
+  </div>
+  <div class="pop-content" style="width:550px">
+    <div class="pop-frame">
+      <div class="pop-frame-content" style="padding-top:5px">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <h1 id="po-name" class="big" style="font-size:13pt; margin:0 0 5px 0"></h1>
+            </td>
+            <td style="text-align:right; vertical-align:top">
+              <a class="pencil smar" href="javascript:" onclick="pe1Edit()">Edit</a>
+            </td>
+          </tr>
+        </table>
+        <ul class="entry">
+          <li>
+            <label class="first">Patient ID</label>
+            <span id="po-cid" class="ro"></span>
+            <label>Gender</label>
+            <span id="po-sex" class="ro"></span>
+            <label>DOB</label>
+            <span id="po-dob" class="ro"></span>
+            <label>Age</label>
+            <span id="po-age" class="ro"></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sflinks">
+      <a href="javascript:scrollTo('csf','csf-contact')">Contact</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:scrollTo('csf','csf-insurance')">Insurance</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:scrollTo('csf','csf-family')">Family</a>
+      &nbsp;&#x2022;&nbsp;
+      <a href="javascript:scrollTo('csf','csf-custom')">Custom</a>
+    </div>
+    <div id="csf" class="scrollform">
+      <div class="sfcontent">
+        <h1 id="csf-contact">Contact</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-address" class="first4"></label>
+            <span id="po-address" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(2)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-emer" class="first4"></label>
+            <span id="po-emer" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(6)">Edit</a>
+          </li>
+        </ul>
+        <ul class="entry" style="margin-bottom:20px">
+          <li>
+            <label id="po-lbl-pharm" class="first4"></label>
+            <span id="po-pharm" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(7)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-insurance">Insurance</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-ins" class="first4"></label>
+            <span id="po-ins" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(3)">Edit</a>
+          </li>
+        </ul>
+        <ul id="po-ins-ul-2" class="entry">
+          <li>
+            <label id="po-lbl-ins2" class="first4"></label>
+            <span id="po-ins2" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(4)">Edit</a>
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-ichecks" class="first4"></label>
+            <span id="po-ichecks" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(11)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-family" style="margin-top:10px">Family</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-father" class="first4">Parent</label>
+            <span id="po-father" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(8)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-mother" class="first4">Parent</label>
+            <span id="po-mother" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(9)">Edit</a>
+          </li>
+          <li>
+            <label id="po-lbl-spouse" class="first4">Spouse</label>
+            <span id="po-spouse" class="ro" style="width:330px"></span>
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(10)">Edit</a>
+          </li>
+        </ul>
+        <h1 id="csf-custom" style="margin-top:20px">Custom Data</h1>
+        <ul class="entry">
+          <li>
+            <label id="po-lbl-custom" class="first4"></label>
+            <span id="po-custom" class="ro" style="width:330px"></span>            
+            <a class="pencil smar" href="javascript:" onclick="pe2Edit(5)">Edit</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd cmd-right">
+      <a href="javascript:closePo()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>
+<div id="pop-pe1" class="pop">
+  <div id="pop-pe1-cap" class="pop-cap">
+    <div id="pop-pe1-cap-text">
+      Patient Fields
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Patient ID</label>
+            <input id="pe1-pid" type="text" size="20" value="" />
+          </li>
+          <li>
+            <label class="first">Last Name</label>
+            <input id="pe1-lastName" type="text" size="25" value="" />
+            <label>First</label>
+            <input id="pe1-firstName" type="text" size="15" value="" />
+            <label>Middle</label>
+            <input id="pe1-middleName" type="text" size="15" value="" />
+          </li>
+          <li>  
+            <label class="first">Gender</label>
+            <? renderCombo("pe1-sex", CommonCombos::sexes(), Client0::FEMALE) ?>
+            <label>Birth</label>
+            <? renderCalendar("pe1-birth", "", false) ?>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="pe1-cmd-add" class="pop-cmd">
+      <a href="javascript:pe1Save()" class="cmd save">Create and Continue ></a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pe1-cmd-update" class="pop-cmd" style="display:none">
+      <a href="javascript:pe1Save()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-pe1" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-addr" class="pop">
+  <div id="pop-addr-cap" class="pop-cap">
+    <div id="pop-addr-cap-text">
+      Address 
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li id="pa-li-name" style="margin-bottom:8px">
+            <label class="first">Name</label>
+            <input id="pa-name" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">Address</label>
+            <input id="pa-addr1" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">&nbsp;</label>
+            <input id="pa-addr2" type="text" size="66" value="" />
+          </li>
+          <li style="display:none">
+            <label class="first">&nbsp;</label>
+            <input id="pa-addr3" type="text" size="66" value="" />
+          </li>
+          <li style="margin-top:8px; margin-bottom:8px">
+            <label class="first">City</label>
+            <input id="pa-city" type="text" size="30" value="" />
+            <label>State</label>
+            <? renderCombo("pa-state", CommonCombos::states()) ?>
+            <label>Zip</label>
+            <input id="pa-zip" type="text" size="8" value="" />
+          </li>
+        </ul>
+        <ul class="entry" style="margin-bottom:8px">
+          <li>
+            <label class="first">Phone 1</label>
+            <input id="pa-phone1" type="text" size="20" value="" />
+            <? $phoneTypes = CommonCombos::phoneTypes() ?>
+            <? renderCombo("pa-phone1Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 2</label>
+            <input id="pa-phone2" type="text" size="20" value="" />
+            <? renderCombo("pa-phone2Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 3</label>
+            <input id="pa-phone3" type="text" size="20" value="" />
+            <? renderCombo("pa-phone3Type", $phoneTypes) ?>
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label class="first">Email</label>
+            <input id="pa-email1" type="text" size="66" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:paSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-addr" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-icard" class="pop">
+  <div id="pop-icard-cap" class="pop-cap">
+    <div id="pop-icard-cap-text">
+      Insurance
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Plan</label>
+            <input id="pic-ic-plan" type="text" size="40" value="" />
+          </li>
+          <li>
+            <label class="first">Group #</label>
+            <input id="pic-ic-group" type="text" size="30" value="" />
+          </li>
+          <li>
+            <label class="first">Policy #</label>
+            <input id="pic-ic-policy" type="text" size="30" value="" />
+          </li>
+          <li class="push">
+            <label class="first">Subscriber</label>
+            <input id="pic-ic-subscriber" type="text" size="40" value="" />
+          </li>
+          <li>
+            <label class="first">Name on Card</label>
+            <input id="pic-ic-name" type="text" size="40" value="" />
+          </li>
+          <li class="push">
+            <label class="first">Effective</label>
+            <? renderCalendar("pic-ic-effective", "", false) ?>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:picSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-icard" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-custom" class="pop">
+  <div id="pop-custom-cap" class="pop-cap">
+    <div id="pop-custom-cap-text">
+      Patient Editor
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Custom 1</label>
+            <input id="pcu-custom1" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 2</label>
+            <input id="pcu-custom2" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 3</label>
+            <input id="pcu-custom3" type="text" size="80" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:pcuSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-custom" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<div id="pop-onfile" class="pop">
+  <div id="pop-onfile-cap" class="pop-cap">
+    <div id="pop-onfile-cap-text">
+      Patient Editor
+    </div>
+    <a href="javascript:Pop.close()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first5">Living Will on File?</label>
+            <input id="pof-living-will" type="checkbox" />
+          </li>
+          <li>
+            <label class="first5">Healthcare Power of Attorney on File?</label>
+            <input id="pof-poa" type="checkbox" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:pofSave()" class="cmd save">Save Changes</a>
+      <span>&nbsp;</span>
+      <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-error-custom" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+
+<?
+// Patient Editor dialog
+// showEditPatient(clientId)  // null for add
+// editPatientCallback(client, isNew)  // client=null if cancelled, isNew=true if added
+?>
+<div id="pop-pe" class="pop">
+  <div id="pop-pe-cap" class="pop-cap">
+    <div id="pop-pe-cap-text">
+      Patient Editor
+    </div>
+    <a href="javascript:closePePop()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div class="pop-frame">
+      <h1>Patient Fields (Required)</h1>
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Patient ID</label>
+            <input id="pid" type="text" size="20" value="" />
+          </li>
+          <li>
+            <label class="first">Last Name</label>
+            <input id="lastName" type="text" size="25" value="" />
+            <label>First</label>
+            <input id="firstName" type="text" size="15" value="" />
+            <label></label>
+          </li>
+          <li>  
+            <label class="first">Gender</label>
+            <? renderCombo("sex", CommonCombos::sexes(), Client0::FEMALE) ?>
+            <label>Birth</label>
+            <? renderCalendar("birth", "", false) ?>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-frame push">
+      <h1>Contact Info</h1>
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Address</label>
+            <input id="addr1" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">&nbsp;</label>
+            <input id="addr2" type="text" size="66" value="" />
+          </li>
+          <li style="display:none">
+            <label class="first">&nbsp;</label>
+            <input id="addr3" type="text" size="66" value="" />
+          </li>
+          <li>
+            <label class="first">City</label>
+            <input id="city" type="text" size="30" value="" />
+            <label>State</label>
+            <? renderCombo("state", CommonCombos::states()) ?>
+            <label>Zip</label>
+            <input id="zip" type="text" size="8" value="" />
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label class="first">Phone 1</label>
+            <input id="phone1" type="text" size="20" value="" />
+            <? $phoneTypes = CommonCombos::phoneTypes() ?>
+            <? renderCombo("phone1Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 2</label>
+            <input id="phone2" type="text" size="20" value="" />
+            <? renderCombo("phone2Type", $phoneTypes) ?>
+          </li>
+          <li>
+            <label class="first">Phone 3</label>
+            <input id="phone3" type="text" size="20" value="" />
+            <? renderCombo("phone3Type", $phoneTypes) ?>
+          </li>
+        </ul>
+        <ul class="entry">
+          <li>
+            <label class="first">Email</label>
+            <input id="email1" type="text" size="66" value="" />
+          </li>
+          <li style="display:none">
+            <label class="first">Email 2</label>
+            <input id="email2" type="text" size="66" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="pop-frame push">
+      <h1>Custom Data</h1>
+      <div class="pop-frame-content">
+        <ul class="entry">
+          <li>
+            <label class="first">Custom 1</label>
+            <input id="cdata1" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 2</label>
+            <input id="cdata2" type="text" size="80" value="" />
+          </li>
+          <li>
+            <label class="first">Custom 3</label>
+            <input id="cdata3" type="text" size="80" value="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="pop-pe-cmd-add" class="pop-cmd">
+      <a href="javascript:saveNewPatient()" class="cmd save">Create and Continue ></a>
+      <span>&nbsp;</span>
+      <a href="javascript:closePePop()" class="cmd none">Cancel</a>
+    </div>
+    <div id="pop-pe-cmd-update" class="pop-cmd" style="display:none">
+      <a href="javascript:savePatient()" class="cmd save">Save Changes</a>
+      <span id="pop-pe-delete">
+        <span>&nbsp;</span>
+        <a href="javascript:deletePatient()" class="cmd delete">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:closePePop()" class="cmd none">Cancel</a>
+    </div>
+    <div id="working-pe" class="working">
+      <div id="working-msg-pe" class="working-msg">
+      </div>
+    </div>
+    <div id="pop-error-pe" class="pop-error" style="display:none">
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+var nnug = <?=$myLogin->userGroupId ?>; 
+var lu_search = <?=LookupDao::getClientSearchCustomAsJson() ?>;
+
+</script>

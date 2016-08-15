@@ -1,0 +1,62 @@
+var C_ErxStatus;  
+/**
+ * ERX Status Page
+ * Global static, instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var ErxStatusPage = {
+  /*
+   * Loader
+   */
+  load:function(query, cErxStatus) {
+    C_ErxStatus = cErxStatus;
+    Page.setEvents();
+    this.reset();
+  },
+  reset:function() {
+    showOverlayWorking('Gathering status from ePrescribing partner site');
+    flicker('results-head');
+    var self = this;
+    Ajax.get(Ajax.SVR_ERX, 'getNewCropStatusDetail', null,
+      function(recs) {
+        self._load(recs);
+        closeOverlayWorking();
+      });
+  },
+  pNewCrop:function(cid, dest) {
+    NewCrop.sendFromStatus(cid, dest, function() {
+      Header.ncRefreshStat();
+      page.reset();
+    });
+  },
+  //
+  _load:function(recs) {
+    var t = new TableLoader('results-tbody', 'off', 'results-tbl', 'results-head');
+    var last = null;
+    for (var i = 0, j = recs.length; i < j; i++) {
+      var rec = recs[i];
+      var client = rec.ClientStub;
+      var status = C_ErxStatus.STATUSES[rec.status];
+      var doc = rec.UserStub_Doctor.name;
+      if (status != last) {
+        //t.createTr(true, null, self.getFilter(cat));
+        t.createTr(true);
+        t.createTd('histbreak', status);
+        t.td.colSpan = 4;
+        last = status;
+      }
+      t.createTr(false);
+      var a = ClientUi.createClientAnchor(client);
+      var dest = C_ErxStatus.DEST_BY_STATUS[rec.status];
+      a.href = 'javascript:page.pNewCrop(' + client.clientId + ',"' + dest + '")';
+      t.createTdAppend('nowrap', a);
+      t.createTd('nowrap', rec.date);
+      t.createTd('nowrap', rec.drugInfo);
+      t.createTd('nowrap', doc);
+    }
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = ErxStatusPage;  

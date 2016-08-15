@@ -1,0 +1,31 @@
+<?php
+require_once 'php/data/rec/_Rec.php';
+//
+/**
+ * Exception Record
+ */
+class ExceptionRec extends Rec {
+  //
+  public $type;
+  public $message;
+  //
+  public function echoShowErrorJs() {
+    echo "Page.showAjaxError(" . $this->toJson() . ")";
+  }
+  /**
+   * @param Exception $e
+   * @return ExceptionRec
+   */
+  static function from($e) {
+    if ($e instanceof UnauthorizedException) 
+      Logger::logException($e);
+    if (! $e instanceof DisplayableException)
+      $e = Logger::logException($e);  // Not meant for user eyes; log it and transform to UI-friendly
+    $rec = new self();
+    $rec->type = get_class($e);
+    $rec->message = $e->getMessage();
+    return $rec;
+  }
+}
+?>
+

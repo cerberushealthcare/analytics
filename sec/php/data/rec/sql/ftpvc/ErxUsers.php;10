@@ -1,0 +1,196 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/newcrop/data/NCScript.php';
+/**
+ * ERX Users 
+ * DAO for ErxUser, NCUser
+ * @auther Warren Hornsby  
+ */
+class ErxUsers {
+  /**
+   * @return array(
+   *   'me'=>ErxUser, 
+   *   'lps'=>array(ErxUser,..),
+   *   'lp'=>ErxUser, 
+   *   'staff'=>ErxUser)
+   */
+  public function getMyGroup() {
+    global $myLogin;
+    $me = self::getMe();
+    $lps = ErxUser::fetchAllLps($myLogin->userGroupId);
+    $lp = self::getMyLp($me, $lps);
+    $staff = self::getMyStaff($me);
+    return array(
+      'me' => $me,
+      'lps' => $lps,
+    	'lp' => $lp,
+      'staff' => $staff);
+  }
+  /**
+   * @return ErxUser
+   */
+  public function get($id, $ugid) {
+    $user = ErxUser::fetch($id, $ugid);
+    if ($user->NcUser) {
+      if ($user->NcUser->partnerId) 
+        $user->Partner = ErxUser::fetch($user->NcUser->partnerId, $ugid);
+      $user->_lpId = ($user->NcUser->isLp()) ? $id : $user->NcUser->partnerId; 
+    }  
+    return $user;
+  }
+  public function getMe($id = null) {
+    global $myLogin;
+    return self::get($myLogin->userId, $myLogin->userGroupId);
+  }
+  /**
+   * @return array('Doc Name',..)
+   */
+  public function getMyLpNames() {
+    global $myLogin;
+    $lps = ErxUser::fetchAllLps($myLogin->userGroupId);
+    $lpNames = array();
+    foreach ($lps as $lp)
+      $lpNames[] = $lp->name;
+    return $lpNames;
+  }
+  //
+  private function getMyLp($me, $lps = null) {
+    if ($me->NcUser->isLp())
+      return $me;
+    if ($me->Partner && $me->Partner->NcUser->isLp())
+      return $me->Partner;
+    if ($lps)
+      return current($lps);
+    else
+      return ErxUser::fetchLp($me->userGroupId);
+  }
+  //
+  public function getMyStaff($me) {
+    if ($me->NcUser->isStaff())
+      return $me;
+    if ($me->Partner && $me->Partner->NcUser->isStaff())
+      return $me->Partner;
+    return ErxUser::fetchStaff($me->userGroupId);
+  }
+}
+/**
+ * ERX User
+ */
+class ErxUser extends SqlRec {
+  //
+  public $userId;
+  public $uid;
+  public $name;
+  public $userGroupId;
+  public $userType;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public /*NcUser*/ $NcUser;
+  public /*ErxUser*/ $Partner;
+  //
+  public $_authenticated = true;  // lookups made prior to $myLogin set to session
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  //
+  /**
+   * @param int $userId
+   * @return ErxUser
+   */
+  static function fetch($userId, $ugid) {
+    $c = new ErxUser();
+    $c->userId = $userId;
+    $c->userGroupId = $ugid;
+    $c->NcUser = new NcUser($userId);
+    return parent::fetchOneBy($c);
+  }
+  /**
+   * @param int $ugid
+   * @param string $userType @see NCScript.UserType  
+   * @return ErxUser 
+   */
+  static function fetchByType($ugid, $userType) {
+    $rec = ErxUser::asCriteria($ugid, $userType);
+    $rec = parent::fetchOneBy($rec);
+    return $rec;
+  }
+  /**
+   * @param int $ugid
+   * @return ErxUser 
+   */
+  static function fetchLp($ugid) {
+    return ErxUser::fetchByType($ugid, UserType::LP);
+  }
+  /**
+   * @param int $ugid
+   * @return array(ErxUser,..)
+   */
+  static function fetchAllLps($ugid) {
+    $rec = ErxUser::asCriteria($ugid, UserType::LP);
+    $recs = parent::fetchAllBy($rec);
+    return $recs;
+  } 
+  /**
+	 * @param int $ugid
+   * @return ErxUser 
+   */
+  static function fetchStaff($ugid) {
+    return ErxUser::fetchByType($ugid, UserType::STAFF);
+  }
+  //
+  private static function asCriteria($ugid, $userType) {
+    $rec = new ErxUser();
+    $rec->userGroupId = $ugid;
+    $rec->NcUser = CriteriaJoin::requires(NcUser::asCriteria($userType));
+    return $rec;
+  }
+}
+/**
+ * NewCrop User
+ */
+class NcUser extends SqlRec {
+  //
+  public $userId;
+  public /*NCScript.UserType*/ $userType;
+  public /*NCScript.RoleType*/ $roleType;
+  public $partnerId;
+  public $nameLast;
+  public $nameFirst;
+  public $nameMiddle;
+  public $namePrefix;
+  public $nameSuffix;
+  public $freeformCred;
+  //
+  static $USER_TYPES = array(
+    UserType::LP => 'Licensed Prescriber',
+    UserType::MIDLEVEL => 'Midlevel Prescriber',
+    UserType::STAFF => 'Staff');
+  static $ROLE_TYPES = array(
+    RoleType::DOCTOR => 'Doctor',
+    RoleType::NURSE => 'Nurse',
+    RoleType::NURSE_NO_RX => 'Nurse (No RX)',
+    RoleType::MANAGER => 'Midlevel Prescriber');
+  //
+  public function getSqlTable() {
+    return 'nc_users';
+  }
+  public function isLp() {
+    return $this->userType == UserType::LP;
+  }
+  public function isStaff() {
+    return $this->userType == UserType::STAFF;
+  }
+  /**
+   * @param NcScript.UserType $userType
+   * @return NcUser
+   */
+  static function asCriteria($userType) {
+    $c = new self();
+    $c->userType = $userType;
+    return $c;
+  }
+}
+?>

@@ -1,0 +1,383 @@
+BODY {
+  margin:0;
+  background-image:none;
+  background-color:#D2E3E0;
+  padding-bottom:0;
+}
+DIV#body {
+  background-color:#D2E3E0;
+}
+IMG {
+  border:0;
+}
+P {
+  font-family:Arial;
+  font-size:11pt;
+  line-height:15pt;
+  margin:0 0 0.8em 0;  
+}
+LI P {
+  font-size:10pt;
+  line-height:13pt;
+}
+H1 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:20pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:1em 0 0.3em 0;
+}
+H2 {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:16pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:0.5em 0 0.3em 0;
+}
+H3 {
+  font-family:Arial,'Lucida Grande','Trebuchet MS';
+  font-size:13pt;
+  font-weight:bold;
+  letter-spacing:-1px;
+  color:#008C7B;
+  margin:0.5em 0 0.3em 0;
+}
+DIV.content {
+  width:800px;
+  margin:0 auto;
+  padding:0 10px;
+  background:none;
+  border:none;
+}
+DIV.center {
+  text-align:center;
+  background-color:white;
+}
+TD.wm {
+  padding:0 72px 0 100px;
+  background:url(../img/watermark.png) no-repeat;
+}
+DIV#head {
+  background-color:#061203;
+  color:white;
+  height:25px;
+  padding:15px 0 5px 0;
+}
+DIV#nav TABLE {
+  width:100%;
+}
+DIV#nav A.login {
+ a. color:#8BFFF0;
+}
+DIV#nav A {
+  color:white;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:11pt;
+  text-decoration:none;
+}
+DIV#nav A:hover {
+  color:#8BFFF0;
+  text-decoration:underline;
+}
+DIV#nav SPAN {
+  margin:0 10px;
+  color:#a0a0a0;
+}
+DIV#belt {
+  background:url(../img/background.png) #D5DDDC;
+  height:305px;
+  padding:10px 0;
+}
+TD#belt-left {
+  vertical-align:top;
+  width:330px;
+  height:295px;
+  padding-bottom:10px;
+}
+TD#belt-right {
+  width:470px;
+  text-align:right;
+  vertical-align:bottom;
+}
+DIV#logo {
+  border:1px solid transparent;
+  height:100px;
+  background:url(../img/tn-logo.png) no-repeat;
+  padding-left:40px;
+}
+DIV#logo DIV {
+  margin-top:42px;
+  width:250px;
+  height:50px;
+  background:url(../img/clicktate.png) no-repeat;
+}
+DIV#tag {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:21pt;
+  line-height:22pt;
+  color:black;
+  padding:5px 0 10px 0;
+}
+@media screen and (-webkit-min-device-pixel-ratio:0){
+DIV#tag {font-size:19pt}
+}
+DIV#tag2 {
+  padding:5px 30px 10px 0;
+}
+DIV#tag2 P {
+  margin:0;
+}
+A.tour {
+  display:block;
+  width:200px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  background:url(../img/tour-background.png) repeat-x;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  color:black;
+  text-decoration:none;
+}
+A.tour:hover {
+  color:#f42941;
+  border:1px solid #f42941; 
+}
+A.working {
+  display:block;
+  width:200px;
+  text-align:center;
+  border:1px solid #BCC88E;
+  background:url(../img/icons/working6.gif) no-repeat center center;
+  padding:5px 10px;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:14pt;
+  color:black;
+  text-decoration:none;
+}
+A.video {
+  width:250px; 
+  font-size:12pt; 
+  font-family:Arial;
+}
+DIV#flash {
+  width:450px;
+  height:288px;
+  padding:5px;
+  border:1px solid white;
+  background:url(../img/big-logo.png) white center center no-repeat;
+  background:url(../img/screen-shot.png) white center center no-repeat;
+}
+IMG#flash {
+  padding:5px;
+  border:1px solid white;
+}
+DIV#leg {
+  padding:20px 0 10px 0;
+  background-color:white;
+}
+DIV#leg TABLE {
+  width:100%;
+}
+TD#col1 {
+  width:50%;
+  padding-right:15px;
+  vertical-align:top;
+  border-right:1px solid #c0c0c0;
+}
+TD#col2 {
+  width:50%;
+  padding-left:15px;
+  vertical-align:top;
+}
+.drop {
+  margin-top:1.5em;
+}
+DIV#foot {
+  background-color:#061203;
+  color:white;
+  padding:25px 0 30px 0;
+  text-align:center;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:8pt;
+  color:#a0a0a0;
+}
+DIV.foot-text {
+  padding-bottom:1em;
+}
+DIV#foot A {
+  color:white;
+  text-decoration:none;
+}
+DIV#foot A:hover {
+  color:#f42941;
+  text-decoration:underline;
+}
+DIV#verisign {
+  padding:15px 0;
+  text-align:center;
+}
+DIV.ss {
+  padding:30px 0 35px 0;
+  border-bottom:1px solid #c0c0c0;
+}
+DIV.ss IMG {
+  margin:0.5em 0;
+}
+DIV.sp {
+  padding:10px 120px; 
+  text-align:left;
+  font-size:11pt;
+}
+A.h {
+  font-family:Arial,'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  font-weight:bold;
+  color:blue;
+}
+DIV#pplans {
+  padding:10px 0 0 0;
+}
+DIV#pplans TABLE {
+  width:80%;
+}
+DIV#pplans TABLE TH {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:18pt;
+  color:#008C7B;
+  font-weight:bold;
+  border-bottom:3px solid #BAD0CD;
+}
+DIV#pplans TABLE TH.b {
+  width:130px;
+}
+DIV#pplans TABLE TD {
+  padding:5px 5px 0 5px;
+  border-bottom:1px solid #BAD0CD;
+  font-family:Arial;
+  font-size:10pt;
+  font-weight:bold;
+}
+DIV#pplans TABLE TH DIV {
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-size:12pt;
+  color:#008C7B;
+  font-weight:bold;
+}
+DIV#pplans TABLE TD.d {
+  text-align:left;
+  font-family:Arial;
+  font-size:12pt;
+  font-weight:bold;
+  padding-left:20px;
+}
+DIV#pplans TABLE TR.n TD {
+  padding-bottom:5px;
+  border-bottom:3px solid #BAD0CD;
+}
+DIV#trial {
+  padding:15px 0 30px 0;
+  font-family:Arial;
+  font-size:10pt;
+  text-align:center;
+}
+DIV#login {
+  padding:0 10px;
+}
+DIV#login DIV.l {
+  padding:5px 10px;
+}
+DIV#login LABEL {
+  font-family:Arial;
+  font-weight:bold;
+  font-size:12pt;
+}
+DIV#login INPUT {
+  font-family:Arial;
+  font-size:12pt;
+}
+DIV#login SELECT {
+  font-family:Arial;
+  font-size:12pt;
+}
+DIV.login {
+  font-family:Arial;
+  font-size:9pt;
+}
+DIV#forgot {
+  margin-top:25px;
+  margin-bottom:100px;
+  text-align:center;
+  font-family:Arial;
+  font-size:9pt;
+}
+TABLE.box {
+  border:0;
+  background:#F8F8F8;
+}
+TABLE.box TD.tl {
+  background:url(../img/boxTl.bmp) no-repeat;
+  width:9px;
+  height:8px;
+  display:block;
+  padding:0;
+}
+TABLE.box TD.t {
+  background:url(../img/boxT.bmp) repeat-x;
+  height:8px;
+}
+TABLE.box TD.tr {
+  background:url(../img/boxTR.bmp) no-repeat;
+  width:9px;
+  height:8px;
+  display:block;
+  padding:0;
+}
+TABLE.box TD.l {
+  background:url(../img/boxL.bmp) repeat-y;
+  width:9px;
+}
+TABLE.box TD.r {
+  background:url(../img/boxR.bmp) repeat-y;
+  width:9px;
+}
+TABLE.box TD.bl {
+  background:url(../img/boxBl.bmp) no-repeat;
+  width:9px;
+  height:8px;
+}
+TABLE.box TD.b {
+  background:url(../img/boxB.bmp) repeat-x;
+  height:8px;
+}
+TABLE.box TD.br {
+  background:url(../img/boxBR.bmp) no-repeat;
+  width:9px;
+  height:8px;
+}
+TABLE.box TD.content {
+  padding:10px;
+  font-size:8pt;
+  font-family:Tahoma,Arial;
+  text-align:left;
+}
+TABLE.box TD.nowrap {
+  white-space:nowrap;
+}
+DIV.subh {
+  font-family:Arial;
+  font-size:11pt;
+  margin-bottom:2em;
+  margin-top:1em;
+}
+LABEL {
+  font-family:Arial;
+  font-size:10.5pt;
+  font-weight:bold;
+}

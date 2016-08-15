@@ -1,0 +1,66 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * User Base Class
+ * @author Warren Hornsby
+ */
+abstract class UserRec extends SqlRec {
+  /*  
+  public $userId;
+  public $uid;
+  public $pw;
+  public $name;
+  public $admin;
+  public $subscription;
+  public $active;
+  public $regId;
+  public $trialExpdt;
+  public $userGroupId;
+  public $userType;
+  public $dateCreated;
+  public $licenseState;
+  public $license;
+  public $dea;
+  public $npi;
+  public $email;
+  public $expiration;
+  public $expireReason;
+  */
+  const SUBSCRIPTION_TRIAL = 0;
+  const SUBSCRIPTION_PAYING = 1;
+  const SUBSCRIPTION_FREE = 2;
+  const SUBSCRIPTION_INVOICE = 3;
+  public static $SUBSCRIPTIONS = array(
+    self::SUBSCRIPTION_TRIAL => 'Trial',
+    self::SUBSCRIPTION_PAYING => 'Paying',
+    self::SUBSCRIPTION_FREE => 'Free',
+    self::SUBSCRIPTION_INVOICE => 'Invoice');
+  //
+  const TYPE_DOCTOR = 1;
+  const TYPE_OFFICE_EDITOR = 2;
+  const TYPE_OFFICE_READER = 3;
+  const TYPE_RECIPIENT_EDITOR = 4;
+  const TYPE_RECIPIENT_READER = 5;
+  public static $TYPES = array(
+    self::TYPE_DOCTOR => 'Doctor',
+    self::TYPE_OFFICE_EDITOR => 'OfficeEditor',
+    self::TYPE_OFFICE_READER => 'OfficeReader',
+    self::TYPE_RECIPIENT_EDITOR => 'RecipEditor',
+    self::TYPE_RECIPIENT_READER => 'RecipReader');
+  //
+  public function getSqlTable() {
+    return 'users';
+  }
+  public function isActive() {
+    return $this->active == '1';
+  }
+  public function isOnTrial() {
+    return $this->subscription == UserLogin::SUBSCRIPTION_TRIAL;
+  }
+  public function isPaying() {
+    return ! $this->isOnTrial();
+  }
+  public function isDoc() {
+    return $this->userType == UserLogin::TYPE_DOCTOR;
+  }
+}

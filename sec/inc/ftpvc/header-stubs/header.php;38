@@ -1,0 +1,187 @@
+<? 
+require_once "php/data/rec/sql/Messaging.php";
+require_once "php/dao/UserDao.php";
+//
+global $myLogin;
+$page = currentPage();
+if ($myLogin->tosExpired && $page != 'tos-accept.php') {
+  header('Location: tos-accept.php');
+  exit;
+}
+$noAlert = ($page == "registerCard.php");
+$pop = ($page == 'face.php' && isset($_GET['pop']));
+$popstyle = ($pop) ? 'style="display:none"' : '';
+?>
+    <script type='text/javascript' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Header.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Polling.js?<?=Version::getUrlSuffix() ?>"></script>
+    <div id="header">
+      <div id="logo-head" <?=$popstyle?>>
+        <div style='background:#D2E3E0;'>
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" /></a></td>
+              <td class="logo-right">
+                <div class="loginfo tf-header">
+                  <? if (isset($myLogin)) { ?>
+                    Logged in as <b><?=$myLogin->uid ?></b>
+                    <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                      | <a href="profile.php">My Profile</a>
+                    <? } else { ?>
+                      | <a href="profile.php?cp=1">Change Password</a>
+                    <? } ?>
+                    <? if ($myLogin->admin) { ?>
+                      | <a href="javascript:Header.icdLook()">ICD</a>
+                      | <a href="serverAdm.php">Admin</a>
+                    <? } ?>
+                    | <a href="javascript:Header.logout()">Logout</a>
+                  <? } ?>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <table id='logo-bot' border=0 cellpadding=0 cellspacing=0 width="100%">
+          <tr>
+            <td class="logoBottom">
+              <a href="welcome.php"><img src="img/lhdLogoBottomL.png" /></a>
+            </td>
+            <td id='page-nav' class="loginfo2">
+              <table border=0 cellpadding=0 cellspacing=0 width="100%">
+                <tr>
+                  <td style="vertical-align:top">
+                    <div class="loginfo2">
+                      <? if (isset($myLogin)) { ?>
+                        <a href="welcome.php">Home</a>
+                        <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                          | <a href="patients.php" title="Patient Database">Patients</a>
+                        <? } ?>
+                        | <a href="documents.php"title="Document Manager">Documents</a>
+                        <? if ($myLogin->permissions->accessSchedule > Permissions::ACCESS_NONE) { ?>
+                          | <a href="schedule.php" title="Scheduling">Sched</a>
+                        <? } ?>
+                        <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                          | <a href="tracking.php" title="Order Tracking Sheet">Track</a>
+                          | <a href="scanning.php" title="Scanning">Scan</a>
+                          | <a href="labs.php" title="Scanning">Labs</a>
+                          | <a href="reporting.php" title="Reporting">Reports</a>
+                        <? } ?>
+                        <? if (1==2) { ?>
+                        | <a href="javascript:Header.icdLook()">ICD</a>
+                        <? } ?>
+                      <? } ?>
+                    </div>
+                  </td>
+                  <td style='text-align:right'>
+                    <div class="loginfo2 rj">
+                      <span id='nc-pharm' style='display:none'>
+                        <span style='padding-right:1px;font-family:Times New Roman'><b style='color:black'>R</b><b style='color:#800000'>x</b></span>
+                        <a id='a-ncp' href="javascript:Header.Erx.pharm_onclick()"></a>
+                      </span>
+                      <span id='nc-status' style='display:none;margin-left:10px;margin-right:5px'>
+                        <span style='padding-right:1px;font-family:Times New Roman'><b style='color:black'>R</b><b style='color:#800000'>x</b></span>
+                        <a id='a-ncs' href="javascript:Header.Erx.status_onclick()"></a>
+                      </span>
+                      <img id="img-mail" style="display:none;position:absolute;z-index:100" src='img/icons/message-t.png' />
+                      <a id="a-mail" href="messages.php">&nbsp;</a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div id="stickies" <?=$popstyle?>>
+      <? if (1 == 2) { ?>
+        <? STICKY('downnote') ?>
+          <b>Note</b>: Clicktate will undergo scheduled maintenance at 9:30PM EST tonight.
+          <br/>
+          The website will be down for approximately 2-3 hours.
+        <? _STICKY('downnote') ?>
+      <? } ?>
+      <? if ($myLogin->userType == User::USER_TYPE_DOCTOR && ! $noAlert && $myLogin->onTrial && $myLogin->daysLeft < 25) { ?>
+        <? STICKY('countdown') ?>
+          Your trial account has <?=daysLeft($myLogin->daysLeft) ?> remaining.
+          <a href="registerCard.php">Activate now &gt;</a>
+        <? _STICKY('countdown', false) ?>
+      <? } else if (! $noAlert && $myLogin->isInactiveDoctor()) { ?>
+        <? STICKY('countdown') ?>
+          <?=$myLogin->getInactiveReason() ?><br/> 
+          At present you have limited (read-only) access to your information.<br/>
+          <a href="registerCard.php">Update billing info and restore full access &gt;</a>
+        <? _STICKY('countdown', false) ?>
+      <? } else if (! $noAlert && ! $myLogin->onTrial && $myLogin->daysLeft < 60) { ?>   
+        <? STICKY('countdown') ?>
+          <? if ($myLogin->daysLeft < 0) { ?>
+            Your credit card has expired. 
+          <? } else { ?>
+            Your credit card on file expires in <?=daysLeft($myLogin->daysLeft) ?>.
+          <? } ?>
+          <a href="registerCard.php">Update card &gt;</a>
+        <? _STICKY('countdown', false) ?>
+      <? } ?>
+      <? if ($myLogin->loginReqs) { ?>
+        <? foreach ($myLogin->loginReqs as $action => $reqs) { ?>
+          <? foreach ($reqs as $req) { ?>
+            <? $stid = 'req' . $req->userLoginReqId ?>
+            <? STICKY($stid) ?>
+              <?=daysLeft($req->_daysLeft, true) ?> left for
+              <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?=$req->LoginReq->name ?> &gt;</a>
+            <? _STICKY($stid) ?>
+          <? } ?>
+        <? } ?>
+      <? } ?>
+      <? STICKY('legacy-sticky', 'display:none') ?>
+        This patient has <i>legacy medications/allergies</i> that may need to be transferred to our partner ePrescribing system.
+        <br><a href='javascript:Facesheet.pNewCrop("medentry")'>Click here to do this now</a>
+      <? _STICKY('legacy-sticky', false) ?>
+    </div>
+    <? if ($myLogin->loginReqs) { ?>
+      <div id="pop-not" class="pop" onmousedown="event.cancelBubble = true" style='width:680px; background:white'>
+        <div id="pop-not-cap" class="pop-cap">
+          <div id="pop-not-cap-text">
+            Notifications and Warnings
+          </div>
+          <a href="javascript:Pop.close()" class="pop-close"></a>
+        </div>
+        <div class="pop-content">
+          <? foreach ($myLogin->loginReqs as $action => $reqs) { ?>
+            <? foreach ($reqs as $req) { ?>
+              <? renderBoxStart('wide min-pad push') ?>
+                <h4 style='color:red;margin-bottom:-0.5em'><?=$action . ': ' . $req->LoginReq->name ?></h4>
+                <div style='margin-bottom:-1em'><?=$req->LoginReq->notifyText ?></div>
+              <? renderBoxEnd() ?>
+            <? } ?>
+          <? } ?>
+          <div class="pop-cmd">
+            <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
+          </div>
+        </div>
+      </div>
+    <? } ?>
+<?
+function daysLeft($amt, $cap = false) {
+	$s = round($amt);
+	if ($s < 1) 
+	  $s = ($cap) ? 'Zero days' : 'zero days';
+	else if ($s == 1)
+		$s .= ' day';
+	else 
+		$s .= ' days';
+	return $s;
+}
+?>
+<script>
+var today = "<?=date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
+var now = <?=now() ?>;
+var me = <?=UserDao::getMyUserAsJson() ?>;
+me.perm = <?=$myLogin->permissions->toJson() ?>;
+var perm = <?=jsonencode($myLogin->Role)?>;
+Header.load('<?=$page ?>', <?=Messaging::getMyUnreadCt() ?>);
+</script>

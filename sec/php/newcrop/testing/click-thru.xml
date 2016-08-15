@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF8"?>
+<NCScript xmlns="http://secure.newcropaccounts.com/interfaceV7">
+	<Credentials>
+		<partnerName>clicktate</partnerName>
+		<name>demo</name>
+		<password>demo</password>
+		<productName>www.clicktate.com</productName>
+		<productVersion>5.0</productVersion>
+	</Credentials>
+	<UserRole>
+		<user>LicensedPrescriber</user>
+		<role>doctor</role>
+	</UserRole>
+	<Destination>
+		<requestedPage>compose</requestedPage>
+	</Destination>
+	<Account ID="T1">
+		<accountName>Clicktate Practice</accountName>
+		<siteID>1</siteID>
+		<AccountAddress>
+			<address1>4350 Brownsboro Rd</address1>
+			<city>Louisville</city>
+			<state>KY</state>
+			<zip>40207</zip>
+			<country>US</country>
+		</AccountAddress>
+		<accountPrimaryPhoneNumber>888 825-4258</accountPrimaryPhoneNumber>
+		<accountPrimaryFaxNumber>888 825-4258</accountPrimaryFaxNumber>
+	</Account>
+	<Location ID="1">
+		<locationName>Clicktate Practice</locationName>
+		<LocationAddress>
+			<address1>4350 Brownsboro Rd</address1>
+			<city>Louisville</city>
+			<state>KY</state>
+			<zip>40207</zip>
+			<country>US</country>
+		</LocationAddress>
+		<primaryPhoneNumber>888 825-4258</primaryPhoneNumber>
+		<primaryFaxNumber>888 825-4258</primaryFaxNumber>
+		<pharmacyContactNumber>888 825-4258</pharmacyContactNumber>
+	</Location>
+	<LicensedPrescriber ID="1">
+		<LicensedPrescriberName>
+			<last>Clicktate</last>
+			<first>Doctor</first>
+		</LicensedPrescriberName>
+		<dea>9876543210</dea>
+		<licenseState>KY</licenseState>
+		<licenseNumber>409329423942</licenseNumber>
+		<npi>9876543210</npi>
+	</LicensedPrescriber>
+	<Staff ID="2">
+		<StaffName>
+			<last>Clinical</last>
+			<first>Sally</first>
+		</StaffName>
+	</Staff>
+	<Patient ID="3760">
+		<PatientName>
+			<last>Papyrus</last>
+			<first>Elizabeth</first>
+			<middle>S</middle>
+		</PatientName>
+		<medicalRecordNumber>A00072</medicalRecordNumber>
+		<PatientAddress>
+			<address1>600 Dayton Ave</address1>
+			<city>Louisville</city>
+			<state>KY</state>
+			<zip>40207</zip>
+			<country>US</country>
+		</PatientAddress>
+		<PatientContact>
+			<homeTelephone>502 955-5555</homeTelephone>
+		</PatientContact>
+		<PatientCharacteristics>
+			<dob>19980107</dob>
+			<gender>F</gender>
+		</PatientCharacteristics>
+		<PatientDiagnosis>
+			<diagnosisID>244.8</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Acquired hypothyroid NEC</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>244.9</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Hypothyroidism</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>296.04</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Bipo I sin man-sev w psy</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>401</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Essential hypertension</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>401.9</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Hypertension</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>441.4</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Abdominal Aortic Aneurysm</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>466.0</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Acute Bronchitis</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>530.11</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>Gastroesophageal Reflux Disease</diagnosisName>
+		</PatientDiagnosis>
+		<PatientDiagnosis>
+			<diagnosisID>795.01</diagnosisID>
+			<diagnosisType>ICD9</diagnosisType>
+			<diagnosisName>ASCUS</diagnosisName>
+		</PatientDiagnosis>
+	</Patient>
+</NCScript>

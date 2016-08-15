@@ -1,0 +1,19 @@
+/**
+ * Rec MsgThread
+ */
+MsgThread = Object.Rec.extend({
+  //
+  onload:function() {
+    this.setr('facesheet', MsgFacesheet);
+  }
+})
+MsgThreads = Object.RecArray.of(MsgThread, {
+  //
+})
+//
+MsgFacesheet = Object.Rec.extend({
+  //
+  onload:function() {
+    this.setr('portalUser', PortalUser);
+  }
+})

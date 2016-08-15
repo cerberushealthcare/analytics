@@ -1,0 +1,36 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/Scanning.php';
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->Artifact->scan);
+  switch ($action) {
+    //
+    case 'getUnindexed':
+      $recs = Scanning::getUnindexedFiles();
+      AjaxResponse::out($action, $recs);
+      exit;
+    case 'getIndexedToday':
+      $recs = Scanning::getIndexedToday();
+      AjaxResponse::out($action, $recs);
+      exit;
+    case 'saveIndex':
+      $rec = Scanning::saveIndex($obj->rec, $obj->sfids);
+      AjaxResponse::out($action, $rec);
+      exit;
+    case 'deleteIndex':
+      $id = Scanning::deleteIndex($_GET['id']);
+      AjaxResponse::out($action, $id);
+      exit;
+    case 'deleteFile':
+      $id = Scanning::deleteFile($_GET['id']);
+      AjaxResponse::out($action, $id);
+      exit;
+    case 'splitBatch':
+      Scanning::splitBatch($_GET['id']);
+      AjaxResponse::out($action, null);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}

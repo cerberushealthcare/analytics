@@ -1,0 +1,325 @@
+/**
+ * FacePop Prototype
+ */
+FacePopProto = function(self) {
+  return {
+    onupdate:function() {},
+    //
+    onshow:function(fs) {
+      self.fs = fs;
+      self.table.load(fs);
+      return self;
+    },
+    onclose:function() {
+      if (self.updated)
+        self.onupdate();
+    },
+    reset:function() {
+      self.updated = false;
+      self.table.reset();
+    },
+    setUpdated:function() {
+      self.updated = true;
+    }
+  }
+}
+/**
+ * TableLoader FacePopTable 
+ */
+FacePopTable = {
+  create:function(container, cls, height) {
+    return Html.TableLoader.create(container, cls).extend(this, function(self, parent) {
+      return {
+        onupdate:function() {},
+        //
+        edit:function(rec) {},
+        getRecsFromFs:function(fs) {},
+        fetch:function(callback_recs) {},
+        drawRow:function(rec) {},
+        //
+        load:function(fs) {
+          if (fs) {
+            self.cid = fs.clientId;
+            parent(Html.TableLoader).load(self.getRecsFromFs(fs));
+          } else {
+            parent(Html.TableLoader).load();
+          }
+        }
+      }
+    })
+  }
+}
+/**
+ * Pop ProcsPop
+ *   TableLoader Table
+ */
+ProcsPop = {
+  pop:function(fs) {
+    return this.create().pop(fs);
+  },
+  create:function() {
+    var My = this;
+    return ProcsPop = Html.Pop.create('Procedures', 0).extend(FacePopProto).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          var height = self.fullscreen(1000, 600);
+          self.table = My.Table.create(self.content, height).bubble('onupdate', self.setUpdated);
+          self.cb = Html.CmdBar.create(self.content).add('Add Test/Procedure...', self.new_onclick).exit(self.close);
+        },
+        //
+        new_onclick:function() {
+          self.table.edit();
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container, height) {
+      return FacePopTable.create(container, 'fsg', height).extend(function(self) {
+        return {
+          onupdate:function() {},
+          //
+          init:function() {
+            self.setHeight(height);
+            self.thead().trFixed().th('Date').w('10%').th('Category').w('10%').th('Name').w('20%').th('Results').w('60%');
+            self.setTopFilter();
+          },
+          edit:function(proc) {
+            proc = proc || Proc.asNew(self.cid);
+            ProcEntry.pop(proc).bubble('onsave', self.update).bubble('ondelete', function() {
+              self.onupdate();
+              self.load();
+            })
+          },
+          //
+          getRecsFromFs:function(fs) {
+            return fs.procedures; 
+          },
+          fetch:function(callback_recs) {
+            Ajax.Procedures.getAll(self.cid, callback_recs);
+          },
+          filter:function(rec) {
+            var ipc = (rec.Ipc) ? rec.Ipc : {};
+            return {'Category':C_Ipc.CATS[ipc.cat],'Name':ipc.name};
+          },
+          rowKey:function(rec) {
+            return rec.procId;
+          },
+          drawRow:function(rec) {
+            rec._cat = rec.Ipc && C_Ipc.CATS[rec.Ipc.cat];
+            if (rec._results)
+              rec.__results = rec._results.join('; ');
+            self.tbody().tr(rec).td(rec.date, 'bold nw').td(rec._cat).select(AnchorProc).td(rec.__results);
+          },
+          onselect:function(rec) {
+            self.edit(rec);
+          }
+        }
+      })
+    }
+  }
+}
+/**
+ * Pop CdsPop
+ *   TableLoader Table
+ */
+CdsPop = {
+  pop:function(fs) {
+    return this.create().pop(fs);
+  },
+  create:function() {
+    var My = this;
+    return CdsPop = Html.Pop.create('Clinical Decision Support', 0).extend(FacePopProto).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          var height = self.fullscreen(1000, 600);
+          self.table = My.Table.create(self.content, height).bubble('onupdate', self.setUpdated);
+          self.cb = Html.CmdBar.create(self.content).add('Add Item...', self.new_onclick).exit(self.close);
+        },
+        //
+        new_onclick:function() {
+          IpcPickerPop.pop().bubble('onselect', function(rec) {
+            rec = IpcHm.asNewClientLevel(self.fs.cid, rec);
+            self.table.edit(rec);
+          })
+        }
+      }
+    })
+  },
+  Table:{
+    create:function(container, height) {
+      var My = this;
+      return FacePopTable.create(container, 'fsp', height).extend(function(self) {
+        return {
+          onupdate:function() {},
+          //
+          init:function() {
+            self.setHeight(height);
+            self.thead().trFixed().th('Item').w('20%').th('Description').w('50%').th('Frequency').w('15%').th('Last Recorded').w('15%');
+          },
+          edit:function(rec) {
+            rec = (rec.isClientLevel()) ? rec : IpcHm.cloneAsClientLevel(self.cid, rec);
+            CdsEntryPop.pop(rec).bubble('onupdate', self.pop_onupdate);
+          },
+          //
+          getRecsFromFs:function(fs) {
+            return fs.hms; 
+          },
+          fetch:function(callback_recs) {
+            IpcHms.ajax(self).refetch(callback_recs);
+          },
+          drawRow:function(rec) {
+            self.tbody().tr(rec).select(CdsAnchor.create(rec)).td(rec._comment).td(rec.summaryEvery()).td(My.ProcAnchor.create(rec, self.proc_onclick));
+          },
+          onselect:function(rec) {
+            self.edit(rec);
+          },
+          pop_onupdate:function() {
+            self.onupdate();
+            self.load();
+          },
+          proc_onclick:function(rec) {
+            if (rec) { 
+              ProcEntry.pop(rec);
+            }
+          }
+        }
+      })
+    },
+    ProcAnchor:{
+      create:function(rec, onclick) {
+        if (rec.hasInterval()) {
+          if (rec.Proc_last) 
+            return Html.Anchor.create('action graph', rec.Proc_last.date, onclick.curry(rec.Proc_last));
+          else
+            return Html.Anchor.create(null, '(None)', onclick);
+        }
+      }
+    }
+  }
+}
+CdsAnchor = {
+  create:function(rec) {
+    return Html.AnchorAction.create(this._getCls(rec), this._getName(rec));
+  },
+  _getCls:function(rec) {
+    if (! rec.active)
+      return 'sqcheck-gray fs';
+    else if (! rec.hasInterval())
+      return 'sqcheck-y fs';
+    else if (rec._overdue)
+      return 'sqcheck-r fs';
+    else
+      return 'sqcheck-g fs';
+  },
+  _getName:function(rec) {
+    return (rec.active) ? rec._name : 'Inactive: ' + rec._name;
+  }
+}
+/**
+ * DirtyPop CdsEntryPop
+ */
+CdsEntryPop = {
+  //
+  /*
+   * @arg IcpHm rec
+   */
+  pop:function(rec) {
+    return CdsEntryPop = this.create().pop(rec);
+  },
+  create:function() {
+    var My = this;
+    return Html.DirtyPop.create('Custom Clinical Decision Entry', 600).extend(function(self) {
+      return {
+        onupdate:function() {},
+        //
+        init:function() {
+          self.h2 = Html.H2.create().nbsp().into(self.content);
+          self.comment = Html.Div.create().into(self.content);
+          self.frame = Html.Pop.Frame.create(self.content).addClass('mt10');
+          self.applybox = My.ApplyBox.create(self.frame);
+          Html.Tiles.create(self.content, [ 
+            self.cmdNew = Html.CmdBar.create(self.content).save(self.save_onclick, 'Create Customization').cancel(self.close),
+            self.cmdUsed = Html.CmdBar.create(self.content).save(self.save_onclick).delc(self.delc_onclick, 'Delete Customization').cancel(self.close)]);
+        },
+        onshow:function(rec) {
+          self.h2.setText(rec._name);
+          self.load(rec);
+        },
+        load:function(rec) {
+          self.rec = rec;
+          self.applybox.load(rec);
+          self.draw();
+        },
+        draw:function() {
+          if (self.rec.isNew()) 
+            self.cmdNew.select();
+          else
+            self.cmdUsed.select();
+          self.comment.html(self.rec._comment);
+        },
+        //
+        save_onclick:function() {
+          var rec = self.applybox.getRecord(); 
+          rec.ajax(self).save(self.close_updated);
+        },
+        delc_onclick:function() {
+          var rec = self.applybox.getRecord(); 
+          rec.ajax(self).remove(self.close_updated);
+        },
+        close_updated:function() {
+          self.onupdate();
+          self.close(true);
+        }
+      }
+    })
+  },
+  ApplyBox:{
+    create:function(container) {
+      var My = this;
+      return Html.Tile.create(container, 'Tree').extend(function(self) {
+        return {
+          //
+          init:function() {
+            self.entry = My.Entry.create(self);
+          },
+          load:function(rec) {
+            self.rec = rec;
+            self.entry.load(rec);
+          },
+          getRecord:function() {
+            return self.entry.applyTo();
+          }
+        }
+      })
+    },
+    Entry:{
+      create:function(container) {
+        return Html.UlEntry.create(container).extend(function(self) {
+          var ef = self.ef;
+          return {
+            init:function() {
+              ef.line().check('active', 'Active for this patient', self.oncheck);
+              ef.line().id('liRec').check('auto', 'Interval', self.oncheck).startSpan('spanFreq').lbl('every', 'nopad').textbox('every', 2).lbl('', 'spacer').select('interval', C_IpcHm.INTERVALS).endSpan();
+            },
+            onload:function(rec) {
+              rec.auto = rec.every > 0;
+            },
+            draw:function() {
+              ef.liRec.visibleIf(self.rec.active);
+              ef.spanFreq.visibleIf(self.rec.auto);
+            },
+            oncheck:function() {
+              self.applyTo();
+              self.draw();
+            }
+          }
+        })
+      }
+    }
+  }
+}

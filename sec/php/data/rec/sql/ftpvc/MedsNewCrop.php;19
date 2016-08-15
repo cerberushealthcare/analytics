@@ -1,0 +1,610 @@
+<?php
+require_once 'php/data/rec/sql/MedsLegacy.php';
+//
+/**
+ * Medications DAO (New Crop)  
+ * @author Warren Hornsby
+ */
+class MedsNewCrop {
+  /**
+   * Build face recs from NewCrop status
+   * @param int $cid
+   * @param array $current @see NewCrop::pullCurrentMedAllergyV2
+   */
+  static function rebuildFromNewCrop($cid, $current) {
+    global $myLogin;
+    $sessions = SessionMedNc::fromNewCropMeds($myLogin->userGroupId, $cid, $current['med']);
+    $actives = FaceMedNc::fetchAllActiveNewCrop($cid);
+    foreach ($sessions as $name => $sess) {
+      if (isset($actives[$name])) {
+        $face = $actives[$name];
+        if ($face->isPreU1()) {
+          $face->deactivate();
+          $face->setFromU1($sess);
+          $face->_noAudit = true;
+          $face->save();
+        }
+        if ($face->isSigDifferent($sess)) {
+          $face->deactivate();
+          $face = FaceMedNc::fromSession($sess);
+          $face->save();
+          if (isToday($sess->date)) {  // only audit sig changes enacted today 
+            AuditMedNc::copyDeactivate($face);
+            $sess->quid = SessionMedNc::QUID_NC_ADD;
+            $sess->date = nowNoQuotes();
+            $sess->save();
+          }
+        } else if ($face->isDateDifferent($sess)) {  
+          $sess->quid = SessionMedNc::QUID_NC_RX;
+          $sess->save();
+          $face->setFromSession($sess);
+          $face->save();
+        } else if ($face->shouldBeUpdatedFrom($sess)) {
+          $face->save();
+        }
+      } else {
+        $sess->quid = SessionMedNc::QUID_NC_ADD;
+        $sess->save();
+        $face = FaceMedNc::fromSession($sess);
+        $face->save();
+      }
+    }
+    foreach ($actives as $name => $face) {
+      if (! isset($sessions[$name])) {
+        $face->deactivate();
+        AuditMedNc::copyDeactivate($face);
+      }
+    }
+  }
+  /**
+   * Summarize updates from NewCrop since supplied time
+   * @param int $clientId
+   * @param string $since 'yyyy-mm-dd hh:mm:ss'
+   * @return array(
+   *   'nc.add'=>array(JDataMed,..), 
+   *   'nc.dc'=>array(JDataMed,..), 
+   *   'nc.rx'=>array(JDataMed,..)) 
+   */
+  static function getNewCropAudits($cid, $since) {
+    $updates = array(
+      SessionMedNc::QUID_NC_ADD => array(),
+      SessionMedNc::QUID_NC_DC => array(),
+      SessionMedNc::QUID_NC_RX => array());
+    $dcAdds = array();
+    $meds = SessionMedNc::getNewCropAuditsSince($cid, $since);
+    foreach ($meds as &$med)  
+      switch ($med->quid) {
+        case SessionMedNc::QUID_NC_RX:
+          $updates[$med->quid][] = $med;
+          break;
+        case SessionMedNc::QUID_NC_ADD:
+        case SessionMedNc::QUID_NC_DC:
+          $key = "$med->name $med->text";
+          $dcAdd = geta($dcAdds, $key);
+          if ($dcAdd)
+            unset($dcAdds[$key]);
+          else
+            $dcAdds[$key] = $med;
+      }
+    foreach ($dcAdds as &$med) 
+      $updates[$med->quid][] = $med;
+    return $updates;
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceMedNc,..)
+   */
+  static function getActive($cid) {
+    $recs = FaceMedNc::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort('expires', 'name'));
+    return $recs; 
+  }
+  /**
+   * Get facesheet records by name
+   * @param int $cid
+   * @return array(name=>FaceMed,..)
+   */
+  static function getByName($cid) {
+    return FaceMedNc::fetchMap($cid);
+  }
+  /**
+   * @param FaceMedNc[] $meds
+   * @return bool @see FaceMedNc::areAllStale()
+   */
+  static function areAllNcStale($meds) {
+    return FaceMedNc::areAllNcStale($meds);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceMedNc,..] $actives (optional, to sync history active flags)
+   * @return array(FaceMedNc,..)
+   */
+  static function getHistoryByDate($cid, $actives = null) {
+    $recs = SessionMedNc::fetchAll($cid);
+    if ($actives)
+      SessionMedNc::syncActiveFlags($recs, $actives);
+    SessionMedNc::addSortFields($recs);
+    Rec::sort($recs, new RecSort('-_dateOnly', 'name', '_quid', '-date'));
+    $recs = self::extractDupes($recs);
+    return $recs;
+  }
+  /**
+   * Get history by name
+   * @param int $cid
+   * @param [FaceMedNc,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  static function getHistoryByName($cid, $actives = null) {
+    $recs = SessionMedNc::fetchAll($cid);
+    if ($actives)
+      SessionMedNc::syncActiveFlags($recs, $actives);
+    Rec::sort($recs, new RecSort('name', '-date'));
+    return $recs;
+  }
+  /**
+   * @return string static JSON of Med data object 
+   */
+  static function getStaticJson() {
+    return MedNc::getStaticJson();
+  }
+  //
+  private static function extractDupes($history) {
+    $recs = array();
+    foreach ($history as $sess) {
+      $last = end($recs);
+      if ($sess->isSameAs($last))
+        array_pop($recs);
+      $recs[] = $sess;
+    }
+    return $recs;
+  } 
+}
+//
+/**
+ * Medication (New Crop)
+ */
+class MedNc extends Med {
+  //
+  public $dataMedId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+	public $quid;
+	public $index;
+	public $name;
+	public $amt;
+	public $freq;
+	public $asNeeded;
+	public $meals;
+	public $route;
+	public $length;
+	public $disp;
+	public $text;
+	public $rx;
+	public $active;   
+	public $expires;
+	public $dateUpdated;
+	public $source;
+	public $ncDrugName;
+	public $ncGenericName;
+	public $ncRxGuid;
+	public $ncOrderGuid;
+	public $ncOrigrxGuid;
+	public $ncDosageNum;
+	public $ncDosageForm;
+	public $ncDosageNumId;
+	public $ncDosageFormId;
+	public $ncRouteId;
+	public $ncFreqId;
+  //
+  const SOURCE_NEWCROP = 1;
+  //
+  public function isSourceNewCrop() {
+    return $this->source == self::SOURCE_NEWCROP;
+  }
+  public function isSourceLegacy() {
+    return $this->source == null || $this->source == 0;
+  }
+  public function isSigDifferent($med) {
+    return (trim($this->text) != trim($med->text) || $this->name != $med->name);
+  }
+  public function isDateDifferent($med) {
+    return ($this->date != $med->date);
+  }
+  public function isPreU1() {  // true if created pre-Update1 web service 
+    return (strpos($this->name, '(') !== false && $this->dateUpdated <= '2011-06-02');
+  }
+  public function isNcStale() {
+    if ($this->source == self::SOURCE_NEWCROP)
+      return ($this->active && $this->sessionId == null && $this->index == null);
+  }
+  public function getNameOnly($fromNewCrop = false) {
+    $name = strtoupper($this->name);
+	  if (! $fromNewCrop && $this->isPreU1()) {
+      $a = explode('(', $name);
+      $b = explode(' ', $a[1]);
+      return trim($a[0] . self::getAmtOnly($b[0]));
+    }
+    $words = explode(' ', $name);
+    $a = array();
+    $num = false;
+    foreach ($words as $word) {
+      if (ctype_digit(substr($word, 0, 1))) 
+        $num = true;
+      else 
+        if ($num)
+          break;
+      $a[] = $word;
+    }
+    return implode(' ', $a);
+  }
+  public function getAmtOnly($s) {
+    $a = explode('-', $s);
+    return current($a);
+  }
+  public function getFreqInHours() {
+    switch ($this->freq) {
+      case 'DAILY':
+        return 24;
+      case 'Q4h':
+        return 4; 
+      case 'Q4-6h':
+        return 4; 
+      case 'Q6h':
+        return 6; 
+      case 'Q8h':
+        return 8; 
+      case 'Q12h':
+        return 12; 
+      case 'NIGHTLY':
+        return 24; 
+      case 'BEDTIME':
+        return 24; 
+      case 'in A.M.':
+        return 24; 
+      case 'Q2h WA':
+        return 2; 
+      case 'EVERY OTHER DAY':
+        return 48; 
+      case '3 TIMES WEEKLY':
+        return 56; 
+      case 'Q1wk':
+        return 168; 
+      case 'Q2wks':
+        return 336; 
+      case 'Q3wks':
+        return 504; 
+    }
+  }
+}
+/**
+ * Medication Face Record (New Crop)
+ */
+class FaceMedNc extends MedNc {
+  //
+  /**
+   * For meds from NewCrop, RxNorm ID stored in index
+   * @return int
+   */
+  public function getDrugId() {
+    if ($this->index > 0)
+      return $this->index;
+  }
+  /**
+   * Update from NC med if any new information
+   * @param SessionMedNc $sess
+   * @return true if $this updated and needs to be saved
+   */
+  public function shouldBeUpdatedFrom($sess) {
+    $dirty = false;    
+    if ($this->index == null && $sess->index > 0) {  // update RxNorm
+      $this->index = $sess->index;
+      $dirty = true;
+    }
+    if (empty($this->ncDrugName) && $sess->ncDrugName) {  // update NC fields
+      $this->ncDrugName = $sess->ncDrugName;
+      $this->ncGenericName = $sess->ncGenericName;
+    	$this->ncRxGuid = $sess->ncRxGuid; 
+    	$this->ncOrderGuid = $sess->ncOrderGuid;
+    	$this->ncOrigrxGuid = $sess->ncOrigrxGuid;
+    	$this->ncDosageNum = $sess->ncDosageNum;
+    	$this->ncDosageForm = $sess->ncDosageForm;
+    	$this->ncDosageNumId = $sess->ncDosageNumId;
+    	$this->ncDosageFormId = $sess->ncDosageFormId;
+    	$this->ncRouteId = $sess->ncRouteId;
+    	$this->ncFreqId = $sess->ncFreqId;
+      $dirty = true;
+    }
+    return $dirty;
+  }
+  //
+  public function setFromSession($sess) {
+    $rec = clone $sess;
+    self::copyNonNullValues($this, $rec);
+    $this->sessionId = null;
+    $this->active = true;
+    $this->quid = null;
+  }
+  public function setFromU1($sess) {
+    $this->dataMedId = null;
+    $this->name = $sess->name;
+    $this->index = $sess->index;
+    $this->active = true;
+  }
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+  /**
+   * @param int $cid
+   * @return array(name=>FaceMedNc,..) 
+   */
+  static function fetchMap($cid) {
+    return parent::_fetchFacesMap($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceMedNc,..)
+   */
+  static function fetchAllActive($cid, $class = __CLASS__) {
+    return parent::_fetchActiveFaces($cid, $class);
+  }
+  /**
+   * Fetch all active with New Crop source
+   * @param int $cid
+   * @return array(name=>FaceMedNc,..)
+   */
+  static function fetchAllActiveNewCrop($cid) {
+    $c = self::asCriteria($cid);
+    $c->source = MedNc::SOURCE_NEWCROP;
+    $c->active = true;
+    $recs = self::fetchAllBy($c);
+    $map = array();
+    foreach ($recs as $rec)
+      $map[$rec->getNameOnly()] = $rec;
+    return $map;
+  }
+  /**
+   * @param SessionMed $sess
+   * @return FaceMedNc
+   */
+  static function fromSession($sess) {
+    return parent::_faceFromSession($sess, __CLASS__);
+  } 
+  /**
+   * @param int $cid
+   * @return FaceMedNc
+   */
+  static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  }  
+  static function asActiveCriteria($cid) {
+    return parent::_asActiveFaceCriteria($cid, __CLASS__);
+  }
+  static function areAllNcStale($meds) {
+    if (! empty($meds)) {
+      foreach ($meds as $med) {
+        if (! $med->isNcStale())
+          return false;
+      }
+      return true;
+    }
+  }  
+  //
+  private static function copyNonNullValues($to, $from) {
+    foreach ($from as $fid => $value) 
+      if ($value !== null) 
+        $to->$fid = $value;
+  }
+}
+//
+/**
+ * Medication Session Record (New Crop)
+ */
+class SessionMedNc extends MedNc implements NoAudit {
+  //
+  const QUID_NC_ADD = 'nc.add';
+  const QUID_NC_DC  = 'nc.dc';
+  const QUID_NC_RX  = 'nc.rx';
+  //
+  const NEW_CROP_SID = 0;  // all recs from New Crop have same "SID"
+  // 
+  public function toJsonObject(&$o) {
+    $o->quid = $this->getQuidText();
+  }
+  public function isDiscontinued() {
+    switch ($this->quid) {
+      case self::QUID_NC_DC:
+      case 'plan.meds.@dcMed':
+      case 'plan.plan.@dcMed':
+        return true;
+    }
+  }
+  public function isSameAs($sess) {
+    if ($sess)
+      return $this->getQuidText() == $sess->getQuidText() &&
+        trim($this->name) == trim($sess->name) && 
+        trim($this->rx) == trim($sess->rx) &&
+        $this->getExtractedText() == $sess->getExtractedText();
+  }
+  protected function getExtractedText() {  // extract () and disp from session rec text, to match with original NC text
+    if ($this->sessionId != self::NEW_CROP_SID) {
+      $a = split("[(:)]", $this->text);
+      if (count($a) > 1)
+        return $a[1];
+      $a = explode('(Disp:', $this->text);
+      if (count($a) > 1)
+        return $a[0];
+    }
+    return $this->text;
+  }
+  protected function getQuidText() {
+    switch ($this->quid) {
+      case self::QUID_NC_ADD:
+        return 'Added';
+      case self::QUID_NC_DC:
+        return 'Discontinued';
+      case self::QUID_NC_RX:
+        return 'Refilled';
+      default:
+        return SessionMed::formatQuidText($this->quid);
+    }
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionMedNc,..)
+   */
+  static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @param string $since 'yyyy-mm-dd hh:mm:ss'
+   * @return array(SessionMedNc,..)
+   */
+  static function getNewCropAuditsSince($cid, $since) {
+    $c = self::asCriteria($cid);
+    $c->source = MedNc::SOURCE_NEWCROP;
+    $c->date = CriteriaValue::greaterThan($since);
+    return self::fetchAllBy($c); 
+  }
+  /**
+	 * @param int $ugid
+	 * @param int $cid 
+	 * @param PatientFullMedicationHistoryV6[] $ncs 
+	 * @return array(name=>SessionMedNc,..)
+	 */
+	static function fromNewCropMeds($ugid, $cid, $ncs) {
+	  $dtos = array();
+	  if ($ncs)
+  	  foreach ($ncs as $nc) {
+  	    $dto = self::fromNewCropMed($ugid, $cid, $nc);
+  	    $name = $dto->getNameOnly(true);
+  	    $old = geta($dtos, $dto->name);
+  	    if ($old && compareDates($old->date, $dto->date) == 1) {
+          // don't replace newer one already there  	      
+  	    } else {  
+    	    $dtos[$name] = $dto;
+  	    }
+  	  }
+	  return $dtos;
+	}
+  /**
+   * @param int $ugid
+   * @param int $cid 
+   * @param PatientFullMedicationHistoryV6 $nc 
+   * @return SessionMedNc
+   */
+  static function fromNewCropMed($ugid, $cid, $nc) {
+    $addlsigs = $nc->replaceSingleAddlSig();
+    $name = $nc->DrugInfo;
+    $amt = $nc->DosageNumberDescription;
+    $amt = "$amt $nc->DosageForm";
+    $freq = $nc->DosageFrequencyDescription;
+    $dto = new SessionMedNc();
+    $dto->dataMedId = null;
+    $dto->userGroupId = $ugid;
+    $dto->clientId = $cid;
+    $dto->sessionId = self::NEW_CROP_SID;
+    $dto->date = datetimeToString($nc->PrescriptionDate);
+  	$dto->index = $nc->rxcui;
+  	$dto->name = $name;
+  	$dto->amt = $amt;
+  	$dto->freq = $freq;
+  	$dto->asNeeded = ($nc->TakeAsNeeded == 'Y') ? 1 : 0;
+  	$dto->route = $nc->Route;
+  	$dto->length = null;
+  	$dto->disp = $nc->Dispense;
+  	$dto->rx = self::rxFromNewCrop($nc);
+  	$dto->source = MedNc::SOURCE_NEWCROP;
+    $dto->ncDrugName = $nc->DrugName;
+    $dto->ncGenericName = $nc->GenericName;
+  	$dto->ncRxGuid = $nc->PrescriptionGuid; 
+  	$dto->ncOrderGuid = $nc->OrderGUID;
+  	$dto->ncOrigrxGuid = $nc->OriginalPrescriptionGuid;
+  	$dto->ncDosageNum = $nc->DosageNumberDescription;
+  	$dto->ncDosageForm = $nc->DosageForm;
+  	$dto->ncDosageNumId = $nc->DosageNumberTypeID;
+  	$dto->ncDosageFormId = $nc->DosageFormTypeId;
+  	$dto->ncRouteId = $nc->DosageRouteTypeId;
+  	$dto->ncFreqId = $nc->DosageFrequencyTypeID;
+    if ($nc->PrescriptionNotes) {
+      if ($addlsigs)
+        $dto->text = $nc->PrescriptionNotes;
+      else 
+        $dto->text = $dto->formatSig() . ' ' . $nc->PrescriptionNotes;
+    } else {
+      $dto->text = $dto->formatSig();
+    }
+  	return $dto;
+  }
+  /**
+   * @param int $cid
+   * @return SessionMedNc
+   */
+  static function asCriteria($cid) {
+    $c = parent::_asSessCriteria($cid, __CLASS__);
+    $c->quid = CriteriaValue::notEquals(SessionMed::QUID_CURRENT);
+    $c->name = CriteriaValue::isNotNull();
+    return $c;
+  }
+  /**
+   * Sync active flags of history with current actives  
+   * @param [SessionMedNc,..] $meds
+   * @param [FaceMedNc,..] $actives
+   */
+  static function syncActiveFlags(&$meds, $actives) {
+    SessionMed::syncActiveFlags($meds, $actives);
+  }
+  /**
+   * Add sorting fields to meds in array
+   * @param [SessionMedNc,..] $meds
+   * @return array(SessionMedNc,..)
+   */
+  static function addSortFields(&$meds) {
+    foreach ($meds as &$med) { 
+      $med->_dateOnly = dateToString($med->date);
+      $med->_quid = $med->getQuidText();
+    }
+    return $meds;
+  }
+  //
+  private static function rxFromNewCrop($nc) {
+    $rx = null;
+    if ($nc->OrderGUID != '00000000-0000-0000-0000-000000000000') {
+      $date = formatDateTime($nc->PrescriptionDate);
+      $disp = $nc->Dispense;
+      $refill = $nc->Refills;
+      $leaflet = ($nc->PrintLeaflet == 'T') ? '(Patient leaflet printed)' : ''; 
+      $rx = "RX: $date Disp: $disp, Refills: $refill $leaflet";
+    } 
+    return $rx;
+  }
+}
+//
+/**
+ * Medication Face Audit Record (New Crop)
+ */
+class AuditMedNc extends MedNc implements NoAudit {
+  /**
+   * @param string $quid MedNc:QUID_
+   * @param string $rx 
+   */
+  static function copy($face, $quid) {
+    $rec = new AuditMedNc($face);
+    $rec->setPkValue(null);
+    $rec->sessionId = '0';
+    $rec->active = false;
+    $rec->date = nowNoQuotes();
+    $rec->quid = $quid;
+    $rec->save();
+    return $rec->dataMedId;
+  }
+  static function copyDeactivate($face) {
+    self::copy($face, SessionMedNc::QUID_NC_DC);
+  }
+}
+?>

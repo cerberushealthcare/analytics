@@ -1,0 +1,108 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+//
+abstract class MsgThreadRec extends SqlRec {
+  //
+  /*
+  public $threadId;
+  public $userGroupId;
+  public $clientId;
+  public $creatorId;
+  public $creator;
+  public $dateCreated;
+  public $dateToSend;
+  public $dateClosed;
+  public $type;
+  public $status;
+  public $priority;
+  public $subject;
+  public $stubType;
+  public $stubId;
+  */
+  //
+  const TYPE_GENERAL = 0;   // regular note
+  const TYPE_PATIENT = 10;  // patient-portal note
+  const TYPE_STUB_REVIEW = 20;
+  //
+  const STATUS_OPEN = 1;
+  const STATUS_CLOSED = 2;
+  //
+  const PRIORITY_NORMAL = 0;
+  const PRIORITY_STAT = 9;
+  static $PRIORITIES = array(
+    MsgThread::PRIORITY_NORMAL => 'Normal',
+    MsgThread::PRIORITY_STAT => 'STAT');
+  //
+  //  
+  public function getSqlTable() {
+    return 'msg_threads';
+  }
+  //
+  public function isClosed() {
+    return $this->status == MsgThread::STATUS_CLOSED;
+  }
+  public function isStat() {
+    return $this->priority == MsgThread::PRIORITY_STAT;
+  }
+  //
+  protected function authenticateClientId($cid) {
+    if ($cid)  // allow nulls
+      parent::authenticateClientId($cid);
+  }
+}
+/**
+ * Message Post 
+ */
+abstract class MsgPostRec extends SqlRec {
+  //
+  /*
+  public $postId;
+  public $threadId;
+  public $action;
+  public $dateCreated;
+  public $authorId;
+  public $author;
+  public $body;
+  public $sendTo;
+  public $data;
+  */
+  //
+  const ACTION_CREATE = 0;
+  const ACTION_REPLY = 1;
+  const ACTION_CLOSE = 9;
+  const ACTION_SIGNED = 19;
+  //
+  public function getSqlTable() {
+    return 'msg_posts';
+  }
+}
+/**
+ * Message Inbox
+ */
+abstract class MsgInboxRec extends SqlRec {
+  //
+  /*
+  public $inboxId;
+  public $recipient;
+  public $threadId;
+  public $postId;  
+  public $isRead;
+  */
+  //
+  const IS_UNREAD = '0';
+  const IS_READ = '1';
+  const IS_SENT = '2';
+  const IS_CLOSED = '9';
+  const IS_UNSIGNED = '10';
+  const IS_SIGNED = '19';
+  //
+  const ACCESS_READ = 0;
+  const ACCESS_POST = 1;
+  //
+  public function getSqlTable() {
+    return 'msg_inbox';
+  }
+  public function isUnread() {
+    return $this->isRead == static::IS_UNREAD;
+  }
+}

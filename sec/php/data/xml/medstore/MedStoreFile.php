@@ -1,0 +1,678 @@
+<?php
+require_once 'php/data/xml/_XmlRec.php';
+//
+class MedStoreFile extends XmlRec {
+  public /*Row[]*/ $ROW;
+  //
+  public function __construct($ccd) {
+    $this->addRows(MsRow::asHeaderRow($ccd));
+    $this->addRows(MsRow::asEncounterRows($ccd->getSectionEncounters()));
+    $this->addRows(MsRow::asVitalSignRows($ccd->getSectionVitals()));
+    $this->addRows(MsRow::asProcedureRows($ccd->getSectionProcedures()));
+    $this->addRows(MsRow::asProblemRows($ccd->getSectionProblems()));
+    $this->addRows(MsRow::asAllergyRows($ccd->getSectionAlerts()));
+    $this->addRows(MsRow::asMedicationRows($ccd->getSectionMeds()));
+  }
+  public function toXml() {
+    return parent::toXml(true, 'ROWSET');
+  }
+  //
+  private function addRows($rows) {
+    if (! empty($rows))
+      $this->set('ROW', $rows);
+  }
+}
+class MsRow extends XmlRec {
+  /**
+   * @param MsPatientId $patientId
+   */
+  public function __construct($patientId = null) {
+    if ($patientId)
+      $this->append($patientId);
+  }
+  //
+  protected function append($rec) {
+    foreach ($rec as $fid => $value)
+      $this->$fid = $value;
+  } 
+  //
+  /**
+   * @param ClinicalDocument $ccd
+   * @return MsRow
+   */
+  static function asHeaderRow($ccd) {
+    $patient = $ccd->getPatient();
+    $client = $patient->getSource();
+    $patientId = new MsPatientId($client);
+    $row = new MsRow($patientId);
+    $row->append(new MsPersonInformation($patient));
+    $row->append(new MsPersonContactInfo($client));
+    return $row;
+  }
+  /**
+   * @param Section_Encounters $section
+   */
+  static function asEncounterRows($section) {
+    if ($section) {
+      $encounters = $section->getEncounters();
+      $rows = array();
+      foreach ($encounters as $encounter) {
+        $row = new MsRow();
+        $row->append(new MsEncounter($encounter));
+        $rows[] = $row;
+      }
+      return $rows;
+    }
+  }
+  /**
+   * @param Section_Vitals $section
+   */
+  static function asVitalSignRows($section) {
+    if ($section) {
+      $organizers = $section->getOrganizers();
+      $rows = array();
+      foreach ($organizers as $organizer) {
+        $row = new MsRow();
+        $row->append(new MsVitalSigns($organizer));
+        $rows[] = $row;
+      }
+      return $rows;
+    }
+  }
+  /**
+   * @param Section_Procs $section
+   */
+  static function asProcedureRows($section) {
+    if ($section) {
+      $procedures = $section->getProcedures();
+      $rows = array();
+      foreach ($procedures as $procedure) {
+        $row = new MsRow();
+        $row->append(new MsProcedures($procedure));
+        $rows[] = $row;
+      }
+      return $rows;
+    }
+  }
+  /**
+   * @param Section_Problems $section
+   */
+  static function asProblemRows($section) {
+    if ($section) {
+      $acts = $section->getActs();
+      $rows = array();
+      foreach ($acts as $act) {
+        $observation = $act->getProblemObservation();
+        if ($observation) {
+          $row = new MsRow();
+          $row->append(new MsProblemCondition($observation));
+          $rows[] = $row;
+        }
+      }
+      return $rows;
+    }
+  }
+  /**
+   * @param Section_Alerts $section
+   */
+  static function asAllergyRows($section) {
+    if ($section) {
+      $acts = $section->getActs();
+      $rows = array();
+      foreach ($acts as $act) {
+        $observation = $act->getAlertObservation();
+        if ($observation) {
+          $row = new MsRow();
+          $row->append(new MsAllergyDrugSensitivity($observation));
+          $rows[] = $row;
+        }
+      }
+      return $rows;
+    }
+  }
+  /**
+   * @param Section_Meds $section
+   */
+  static function asMedicationRows($section) {
+    if ($section) {
+      $substances = $section->getSubstanceAdmins();
+      $rows = array();
+      foreach ($substances as $substance) {
+        if ($substance) {
+          $row = new MsRow();
+          $row->append(new MsMedication($substance));
+          $rows[] = $row;
+        }
+      }
+      return $rows;
+    }
+  }
+}
+class MsPatientId extends MsRec {
+  public $PD_FIRSTNAME;
+  public $PD_LASTNAME;
+  public $PD_DOB;
+  public $PD_BIRTHPLACE;
+  public $PD_GENDER;
+  public $PD_GOVT_ID;
+  public $PD_DATA_SOURCE_ID;
+  //
+  /**
+   * @param Client $client
+   */
+  public function __construct($client) {
+    $this->PD_FIRSTNAME = $client->firstName;
+    $this->PD_LASTNAME = $client->lastName;
+    $this->PD_DOB = $this->formatDate($client->birth);
+    $this->PD_BIRTHPLACE = $client->formatBirthplace();
+    $this->PD_GENDER = $client->sex;
+    $this->PD_GOVT_ID = $client->cdata1;
+    $this->PD_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsPersonInformation extends MsRec {
+  public $PI_FIRSTNAME;
+  public $PI_LASTNAME;
+  public $PI_MI;
+  public $PI_PREFIX;
+  public $PI_SUFFIX;
+  public $PI_MAIDEN;
+  public $PI_ALIASES;
+  public $PI_DOB;
+  public $PI_BIRTHPLACE;
+  public $PI_GENDER;
+  public $PI_GENDER_CS;
+  public $PI_MARITAL_STATUS;
+  public $PI_MARITAL_STATUS_CS;
+  public $PI_RELIGION;
+  public $PI_RELIGION_CS;
+  public $PI_RACE;
+  public $PI_RACE_CS;
+  public $PI_ETHNICITY;
+  public $PI_ETHNICITY_CS;
+  public $PI_GOVT_ID;
+  public $PI_DOD;
+  public $PI_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Patient $patient
+   */
+  public function __construct($patient) {
+    $client = $patient->getSource();
+    $this->PI_FIRSTNAME = $client->firstName;
+    $this->PI_LASTNAME = $client->lastName;
+    $this->PI_MI = $client->getMiddleInitial();
+    $this->PI_PREFIX =  get($patient->name, 'prefix');
+    $this->PI_SUFFIX = get($patient->name, 'suffix');
+    $this->PI_MAIDEN = null;  // TODO
+    $this->PI_ALIASES = null;  // TODO
+    $this->PI_DOB = $this->formatDate($client->birth);
+    $this->PI_BIRTHPLACE = $client->formatBirthplace();
+    $this->setFromRecCe($patient, 'administrativeGenderCode', $this->PI_GENDER, $this->PI_GENDER_CS);
+    $this->setFromRecCe($patient, 'maritalStatusCode', $this->PI_MARITAL_STATUS, $this->PI_MARITAL_STATUS_CS);
+    $this->setFromRecCe($patient, 'religiousAffiliationCode', $this->PI_RELIGION, $this->PI_RELIGION_CS);
+    $this->setFromRecCe($patient, 'raceCode', $this->PI_RACE, $this->PI_RACE_CS); 
+    $this->setFromRecCe($patient, 'ethnicGroupCode', $this->PI_ETHNICITY, $this->PI_ETHNICITY_CS); 
+    $this->PI_GOVT_ID = $client->cdata1;
+    $this->PI_DOD = null;  // TODO
+    $this->PI_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsPersonContactInfo extends MsAddressRec {
+  public $PC_CONTACT_INFO_CS;
+  public $PC_ADDRESS_TYPE1;
+  public $PC_ADDR1_STREET1;
+  public $PC_ADDR1_STREET2;
+  public $PC_ADDR1_STREET3;
+  public $PC_ADDR1_STREET4;
+  public $PC_CITY1;
+  public $PC_STATE1;
+  public $PC_ZIPCODE1;
+  public $PC_COUNTRY1;
+  public $PC_ADDRESS_TYPE2;
+  public $PC_ADDR2_STREET1;
+  public $PC_ADDR2_STREET2;
+  public $PC_ADDR2_STREET3;
+  public $PC_ADDR2_STREET4;
+  public $PC_CITY2;
+  public $PC_STATE2;
+  public $PC_ZIPCODE2;
+  public $PC_COUNTRY2;
+  public $PC_PHONE1;
+  public $PC_PHONE1_USE_TYPE;
+  public $PC_PHONE2;
+  public $PC_PHONE2_USE_TYPE;
+  public $PC_PHONE3;
+  public $PC_PHONE3_USE_TYPE;
+  public $PC_PHONE4;
+  public $PC_PHONE4_USE_TYPE;
+  public $PC_EMAIL;
+  public $PC_URL;
+  public $PC_DATA_SOURCE_ID;
+  //
+  protected function getPrefix() {
+    return 'PC';
+  }
+  /**
+   * @param Client $client
+   */
+  public function __construct($client) {
+    $this->PC_CONTACT_INFO_CS = null;  // TODO
+    $this->setAddress(1, $client->Address_Home, 'HOME');
+    $this->PC_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsPersonSupport extends MsAddressRec {
+  public $PS_CONTACT_TYPE;
+  public $PS_CONTACT_TYPE_CS;
+  public $PS_CONTACT_RELATIONSHIP;
+  public $PS_CONTACT_RELATIONSHIP_CS;
+  public $PS_CONTACT_LASTNAME;
+  public $PS_CONTACT_FIRSTNAME;
+  public $PS_CONTACT_INFO_CS;
+  public $PS_ADDRESS1_TYPE;
+  public $PS_ADDR1_STREET1;
+  public $PS_ADDR1_STREET2;
+  public $PS_ADDR1_STREET3;
+  public $PS_ADDR1_STREET4;
+  public $PS_CITY1;
+  public $PS_STATE1;
+  public $PS_ZIPCODE1;
+  public $PS_COUNTRY1;
+  public $PS_PHONE1;
+  public $PS_PHONE1_USE_TYPE;
+  public $PS_PHONE2;
+  public $PS_PHONE2_USE_TYPE;
+  public $PS_PHONE3;
+  public $PS_PHONE3_USE_TYPE;
+  public $PS_PHONE4;
+  public $PS_PHONE4_USE_TYPE;
+  public $PS_EMAIL;
+  public $PS_URL;
+  public $PS_DATA_SOURCE_ID;
+  //
+  protected function getPrefix() {
+    return 'PS';
+  }
+  /**
+   * @param POCD.Participant1 $participant
+   */
+  public function __construct($participant) {
+    // TODO
+  }
+}
+class MsEncounter extends MsRec {
+  public $PE_HPR_ID;
+  public $PE_ENCOUNTER_DATE;
+  public $PE_ENCOUNTER_TYPE;
+  public $PE_ENCOUNTER_TYPE_CS;
+  public $PE_FREE_TEXT_TYPE;
+  public $PE_FREE_TEXT_TYPE_CS;
+  public $PE_FREE_TEXT;
+  public $PE_IS_PREGNANT_FLAG;
+  public $PE_LMP_DATE;
+  public $PE_EXPECTED_DELIVERY_DATE;
+  public $PE_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Encounter_EncounterActivity $encounter
+   */
+  public function __construct($encounter) {
+    $session = $encounter->getSource();
+    $this->PE_HPR_ID = $session->User_ClosedBy->userId;
+    $this->PE_ENCOUNTER_DATE = $this->formatDate($session->dateService);
+    $this->setFromCe($encounter->code, $this->PE_ENCOUNTER_TYPE, $this->PE_ENCOUNTER_TYPE_CS, $dnField);
+    $this->PE_FREE_TEXT_TYPE = null;  // TODO
+    $this->PE_FREE_TEXT_TYPE_CS = null;  // TODO
+    $this->PE_FREE_TEXT = null;  // TODO
+    $this->PE_IS_PREGNANT_FLAG = null;  // TODO
+    $this->PE_LMP_DATE = null;  // TODO
+    $this->PE_EXPECTED_DELIVERY_DATE = null;  // TODO
+    $this->PE_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsVitalSigns extends MsRec {
+  public $PV_RESPIRATION_RATE;
+  public $PV_HEART_BEAT;
+  public $PV_OXYGEN_SATURATION;
+  public $PV_BP_SYSTOLIC;
+  public $PV_BP_DIASTOLIC;
+  public $PV_BODY_TEMP;
+  public $PV_BODY_TEMP_UNITS;
+  public $PV_BODY_HEIGHT;
+  public $PV_BODY_HEIGHT_LYING;
+  public $PV_BODY_HEIGHT_UNITS;
+  public $PV_BODY_WEIGHT;
+  public $PV_BODY_WEIGHT_UNITS;
+  public $PV_CIRCUM_OCCIPITAL_FRONTAL;
+  public $PV_COF_UNITS;
+  public $PV_BMI;
+  public $PV_MEASUREMENT_DATE;
+  public $PV_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Organizer_VitalSigns $organizer
+   */
+  public function __construct($organizer) {
+    $this->PV_MEASUREMENT_DATE = $this->formatDate($organizer->effectiveTime->_value);
+    foreach ($organizer->component as $component) 
+      $this->setFromObservation($component->observation);
+    $this->PV_DATA_SOURCE_ID = '12323';
+  }
+  private function setFromObservation($observation) {
+    switch ($observation->code->_displayName) {
+      case 'Heart Beat':
+        $this->setFromValue($observation, $this->PV_HEART_BEAT, $noUnit);
+        break; 
+      case 'Respiration Rate':
+        $this->setFromValue($observation, $this->PV_RESPIRATION_RATE, $noUnit); 
+        break; 
+      case 'Oxygen Saturation':
+        $this->setFromValue($observation, $this->PV_OXYGEN_SATURATION, $noUnit);
+      case 'Intravascular Diastolic':
+        $this->setFromValue($observation, $this->PV_BP_DIASTOLIC, $noUnit);
+        break; 
+      case 'Intravascular Systolic':
+        $this->setFromValue($observation, $this->PV_BP_SYSTOLIC, $noUnit);
+        break;
+      case 'Body Temperature':
+        $this->setFromValue($observation, $this->PV_BODY_TEMP, $this->PV_BODY_TEMP_UNITS);
+        break;
+      case 'Body Height':
+        $this->setFromValue($observation, $this->PV_BODY_HEIGHT, $this->PV_BODY_HEIGHT_UNITS);
+        break;
+      case 'Body Weight':
+        $this->setFromValue($observation, $this->PV_BODY_WEIGHT, $this->PV_BODY_WEIGHT_UNITS);
+        break;
+      case 'BMI':
+        $this->setFromValue($observation, $this->PV_BMI, $noUnit);
+        break;
+    }
+  }
+}
+class MsProcedures extends MsRec {
+  public $PP_PROCEDURES_CS;  // SNOMED
+  public $PP_ENCOUNTER_LOCATION;  // OFC
+  public $PP_PROCEDURE_DATE;  // 06/08/2011
+  public $PP_PROCEDURE_ACTIVITY;  
+  public $PP_METHOD_CODE;  // 288086009
+  public $PP_TARGET_SITE_CODE;  // 7771000 
+  public $PP_PROCEDURE_STATUS_CODE;  // COMPLETED
+  public $PP_PERFORMER_LASTNAME;  // DOCTOR
+  public $PP_PERFORMER_FIRSTNAME;  // JOE
+  public $PP_PERFORMER_MI; 
+  public $PP_AGE_AT_PROCEDURE;  // 5
+  public $PP_PATIENT_INSTRUCTIONS;  // Keep dry for 48 hours
+  public $PP_PROCEDURE_AUTHORIZATION;
+  public $PP_ENTRY_RELATIONSHIP;
+  public $PP_TEXT;  // 11 sutures
+  public $PP_PROCEDURE_EVENT_ENTRY;
+  public $PP_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Procedure_ProcedureActivity $procedure
+   */
+  public function __construct($procedure) {
+    $proc = $procedure->getSource();
+    $this->PP_PROCEDURES_CS = $procedure->code->_codeSystemName;
+    $this->PP_ENCOUNTER_LOCATION = null;  // TODO
+    //$this->PP_PROCEDURE_DATE = $procedure->effectiveTime->_value;
+    $this->PP_PROCEDURE_DATE = $this->formatDate($proc->date);
+    $this->PP_PROCEDURE_ACTIVITY = null;  // TODO 
+    $this->PP_METHOD_CODE = $procedure->code->_code;
+    $this->PP_TARGET_SITE_CODE = null;  // TODO 
+    $this->PP_PROCEDURE_STATUS_CODE = $procedure->statusCode->_code;
+    $this->PP_PERFORMER_LASTNAME = null;  // TODO
+    $this->PP_PERFORMER_FIRSTNAME = null;  // TODO
+    $this->PP_PERFORMER_MI = null;  // TODO
+    $this->PP_AGE_AT_PROCEDURE = null;  // TODO
+    $this->PP_PATIENT_INSTRUCTIONS = null;  // TODO
+    $this->PP_PROCEDURE_AUTHORIZATION = null;  // TODO
+    $this->PP_ENTRY_RELATIONSHIP = null;  // TODO
+    $this->PP_TEXT = $proc->name; 
+    $this->PP_PROCEDURE_EVENT_ENTRY = null;  // TODO
+    $this->PP_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsProblemCondition extends MsRec {
+  public $PB_HPR_ID;
+  public $PB_PROBLEM_CS;
+  public $PB_PROBLEM_DATE;
+  public $PB_PROBLEM_TYPE;
+  public $PB_PROBLEM_NAME;
+  public $PB_PROBLEM_CODE;
+  public $PB_PROBLEM_STATUS;
+  public $PB_PROBLEM_HEALTH_STATUS;
+  public $PB_EPISODE_OBSERVATION;
+  public $PB_PATIENT_AWARENESS;
+  public $PB_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Observation_Problem $observation
+   */
+  public function __construct($observation) {
+    $this->PB_PROBLEM_CS = $observation->value->_codeSystemName;
+    $this->PB_PROBLEM_DATE = $this->formatDate($observation->effectiveTime->_value);
+    $this->PB_PROBLEM_TYPE = null;  // TODO
+    $this->PB_PROBLEM_NAME = $observation->value->_displayName;
+    $this->PB_PROBLEM_CODE = $observation->value->_code;
+    $status = $observation->getProblemStatusObservation();
+    if ($status) 
+      $this->PB_PROBLEM_STATUS = $status->value->_displayName;
+    $this->PB_PROBLEM_HEALTH_STATUS = null;  // TODO
+    $this->PB_EPISODE_OBSERVATION = null;  // TODO
+    $this->PB_PATIENT_AWARENESS = null;  // TODO
+    $this->PB_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsProcedureMedications extends MsRec {
+  public $PM_OTHER_CS;
+  public $PM_ACTIVITY;
+  public $PM_DOSE;
+  public $PM_ROUTE;
+  public $PM_SITE;
+  public $PM_FREQUENCY;
+  public $PM_INTERVAL;
+  public $PM_DURATION;
+  public $PM_PRODUCT_FORM;
+  public $PM_DELIVERY_METHOD;
+  public $PM_PRODUCT_CS;
+  public $PM_PRODUCT_NAME;
+  public $PM_BRAND_NAME;
+  public $PM_FREE_TEXT_NAME;
+  public $PM_GENERIC_NAME;
+  public $PM_PRODUCT_CONCENTRATION;
+  public $PM_TYPE;
+  public $PM_STATUS;
+  public $PM_REACTION;
+  public $PM_VEHICLE;
+  public $PM_DOSE_INDICATOR;
+  public $PM_DOSE_RESTRICTION;
+  public $PM_DATA_SOURCE_ID;
+  //
+  // TODO
+}
+class MsAllergyDrugSensitivity extends MsRec {
+  public $PA_ALLERGY_CS;
+  public $PA_ADVERSE_EVENT_DATE;
+  public $PA_ADVERSE_EVENT_TYPE;
+  public $PA_CAUSAL_PRODUCT_CODE;
+  public $PA_CAUSAL_PRODUCT_DESCR;
+  public $PA_CAUSAL_PRODUCT_CODE_CS;
+  public $PA_REACTION_CODE;
+  public $PA_REACTION_DESCR;
+  public $PA_SEVERITY_CODE;
+  public $PA_SEVERITY_DESCR;
+  public $PA_DATA_SOURCE_ID;
+  //
+  /**
+   * @param POCD.Observation_Alert $observation
+   */
+  public function __construct($observation) {
+    $aller = $observation->getSource();
+    $code = $observation->getPlayingEntityCode();
+    $this->PA_ALLERGY_CS = null;  // TODO
+    $this->PA_ADVERSE_EVENT_DATE = null;  // TODO
+    $this->PA_ADVERSE_EVENT_TYPE = null;  // TODO
+    $this->setFromCe($code, $this->PA_CAUSAL_PRODUCT_CODE, $this->PA_ALLERGY_CS, $this->PA_CAUSAL_PRODUCT_DESCR);
+    $this->PA_REACTION_CODE = null;  // TODO
+    $this->PA_REACTION_DESCR = $aller->getReactionsText();
+    $this->PA_SEVERITY_CODE = null;  // TODO
+    $this->PA_SEVERITY_DESCR = $aller->getSeverityText();
+    $this->PA_DATA_SOURCE_ID = '12323';
+  }
+}
+class MsMedication extends MsRec {
+  public $PX_FREE_TEXT_INSTRUCTIONS;
+  public $PX_MEDICATION_STOPPED;
+  public $PX_ADMINISTRATION_TIMING;
+  public $PX_FREQUENCY;
+  public $PX_INTERVAL;
+  public $PX_DURATION;
+  public $PX_ROUTE;
+  public $PX_DOSE;
+  public $PX_SITE;
+  public $PX_DOSE_RESTRICTION;
+  public $PX_PRODUCT_FORM;
+  public $PX_DELIVERY_METHOD;
+  public $PX_EFFECTIVE_DATE;
+  // MEDICATION_ORDER_MODULE ITEMS start here
+  public $PX_ORDER_NUM;
+  public $PX_FILLS;
+  public $PX_QUANTITY_ORDERED;
+  public $PX_ORDER_EXPIRATION_DATE;
+  public $PX_ORDER_DATE;
+  public $PX_ORDERING_PROVIDER;
+  public $PX_FULLFILLMENT_INSTRUCTIONS;
+  // MEDICATION_INFO_MODULE ITEMS start here
+  public $PX_CODED_PRODUCT_NAME;
+  public $PX_CODED_BRAND_NAME;
+  public $PX_GENERIC_NAME;
+  public $PX_FREE_TEXT_BRAND_NAME;
+  public $PX_PRODUCT_CONCENTRATION;
+  public $PX_TYPE_OF_MEDICATION;
+  public $PX_MEDICATION_STATUS;
+  public $PX_PATIENT_INSTRUCTIONS;
+  public $PX_REACTION;
+  public $PX_VEHICLE;
+  public $PX_DOSE_INDICATOR;
+  public $PX_INDICATION;
+  public $PX_MED_INFO_CS;
+  public $PX_DRUG_MFG;
+  public $PX_MEDICATION_STATUS_CS;
+  public $PX_DATA_SOURCE_ID;
+  //
+  /**
+   * @param SubstanceAdministration_MedActivity $substance
+   */
+  public function __construct($substance) {
+    $med = $substance->getSource();
+    $this->PX_FREE_TEXT_INSTRUCTIONS = $med->text;
+    $this->PX_MEDICATION_STOPPED = null;  // TODO
+    $this->PX_ADMINISTRATION_TIMING = null;  // TODO
+    $period = $substance->getEffectiveTimePeriod();
+    if ($period) {
+      $this->PX_FREQUENCY = $period->_value;
+      $this->PX_INTERVAL = $period->_unit;
+    }
+    $this->PX_DURATION = null;  // TODO
+    $this->PX_ROUTE = $med->route;
+    $this->PX_DOSE = $med->ncDosageNum;
+    $this->PX_SITE = null;  // TODO
+    $this->PX_DOSE_RESTRICTION = null;  // TODO
+    $this->PX_PRODUCT_FORM = null;  // TODO
+    $this->PX_DELIVERY_METHOD = null;  // TODO
+    $this->PX_EFFECTIVE_DATE = $this->formatDate($med->date);
+    $this->PX_ORDER_NUM = null;  // TODO
+    $this->PX_FILLS = null;  // TODO
+    $this->PX_QUANTITY_ORDERED = null;  // TODO
+    $this->PX_ORDER_EXPIRATION_DATE = null;  // TODO
+    $this->PX_ORDER_DATE = $this->formatDate($med->date);
+    $this->PX_ORDERING_PROVIDER = null;  // TODO
+    $this->PX_FULLFILLMENT_INSTRUCTIONS = null;  // TODO
+    $this->PX_CODED_PRODUCT_NAME = $med->ncDrugName;
+    $this->PX_CODED_BRAND_NAME = null;  // TODO
+    $this->PX_GENERIC_NAME = $med->ncGenericName;
+    $this->PX_FREE_TEXT_BRAND_NAME = null;  // TODO
+    $this->PX_PRODUCT_CONCENTRATION = null;  // TODO
+    $this->PX_TYPE_OF_MEDICATION = null;  // TODO
+    $this->PX_MEDICATION_STATUS = $substance->statusCode->_code;
+    $this->PX_PATIENT_INSTRUCTIONS = null;  // TODO
+    $this->PX_REACTION = null;  // TODO
+    $this->PX_VEHICLE = null;  // TODO
+    $this->PX_DOSE_INDICATOR = null;  // TODO
+    $this->PX_INDICATION = null;  // TODO
+    $this->PX_MED_INFO_CS = null;  // TODO
+    $this->PX_DRUG_MFG = null;  // TODO
+    $this->PX_MEDICATION_STATUS_CS = null;  // TODO
+    $this->PX_DATA_SOURCE_ID = '12323';
+  }
+}
+
+/**
+ * Base classes
+ */
+abstract class MsRec extends XmlRec {
+  //
+  protected function formatDate($date) {
+    return date("m/d/Y", strtotime($date));
+  }
+  protected function setFromRecCe($rec, $recCeField, &$codeField, &$csField, &$dnField = null) {
+    $ce = get($rec, $recCeField);
+    $this->setFromCe($ce, &$codeField, &$csField, &$dnField);
+  }
+  protected function setFromCe($ce, &$codeField, &$csField, &$dnField) {
+    if ($ce) {
+      $codeField = $ce->_code;
+      $csField = $ce->_codeSystemName;
+      $dnField = $ce->_displayName;
+    }
+  }
+  protected function setFromValue($rec, &$valueField, &$unitField) {
+    $valueField = $rec->value->_value;
+    $unitField = get($rec->value, '_unit');
+  }
+}
+abstract class MsAddressRec extends MsRec {
+  //
+  abstract protected function getPrefix();
+  //
+  protected function setAddress($i, $addr, $type) {
+    if ($addr->isEmpty())
+      return;
+    $prefix = $this->getPrefix();
+    $this->set("${prefix}_ADDRESS_TYPE$i", $type);
+    $this->set("${prefix}_ADDR${i}_STREET1", $addr->addr1);  
+    $this->set("${prefix}_ADDR${i}_STREET2", $addr->addr2);  
+    $this->set("${prefix}_ADDR${i}_STREET3", $addr->addr3);
+    $this->set("${prefix}_CITY$i", $addr->city);  
+    $this->set("${prefix}_STATE$i", $addr->state);
+    $this->set("${prefix}_ZIPCODE$i", $addr->zip);  
+    $this->set("${prefix}_COUNTRY$i", $addr->country);
+  }
+  protected function setAddressPhones($addr, $type) {
+    $this->setPhone($addr->phone1, $this->getPhoneType($addr->type, $addr->phone1Type));
+    $this->setPhone($addr->phone2, $this->getPhoneType($addr->type, $addr->phone1Type));
+  }
+  protected function setPhone($phone, $phoneType) {
+    static $i = 0;
+    if ($i < 4 && $phone) {
+      $prefix = $this->getPrefix();
+      $i++;
+      $this->set("$prefix_PHONE$i", $phone);
+      $this->set("$prefix_PHONE_USE_TYPE$i", $phoneType);
+    }
+  } 
+  protected function getPhoneType($addrType, $phoneType) {
+    switch ($phoneType) {
+      case AddressRec::PHONE_TYPE_PRIMARY:
+        return $addrType;
+      case AddressRec::PHONE_TYPE_CELL:
+        return 'CELL';
+      // TODO  
+      default:
+        return 'OTHER';
+    }
+  }
+}
+?>

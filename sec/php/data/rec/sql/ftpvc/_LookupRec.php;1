@@ -1,0 +1,44 @@
+<?php
+require_once "php/dao/LookupDao.php";
+//
+/**
+ * Lookup Record Base Class
+ */
+abstract class LookupRec extends SqlRec {
+  //
+  public $_level;
+  public $_instance;
+  //
+  //
+  const LEVEL_APP = "A";     // Application (system-wide) level_id=0 
+  const LEVEL_GROUP = "G";   // Group (practice)          level_id=[user_group_id]
+  const LEVEL_USER = "U";    // User (doctor)             level_id=[user_id]
+  const LEVEL_CLIENT = "X";  // Client (most specific)    level_id=[client_id]
+  //
+  const ASSOCIATE_BY_INSTANCE_ID = 0;
+  const ASSOCIATE_BY_ID_PROPERTY = 1;
+  const ASSOCIATE_NONE = 2; 
+  //
+  abstract function getLookupTable();
+  abstract function getAssociation();
+  //
+  public function getSqlTable() {
+    return 'lookup_data';
+  }
+  protected function removeLookupProps() {
+    $this->_level = null;
+    $this->_instance = null;
+  }
+  /**
+   * @param int $as (optional)
+   * @return array(LookupRec,..)
+   */
+  static function fetchAll($criteria) {
+    $recs = LookupDao::getInstances($criteria->getLookupTable(), LookupDao::DEFAULT_USER, LookupDao::NO_CLIENT, LookupDao::AS_PHP_OBJECT, $criteria->getAssociation());
+    $class = $criteria->getMyName();
+    foreach ($recs as &$rec)
+      $rec = new $class($rec);
+    return $recs; 
+  }
+}
+?>

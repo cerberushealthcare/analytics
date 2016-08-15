@@ -1,0 +1,239 @@
+/**
+ * Lab
+ */
+Lab = Object.Rec.extend({
+  /*
+   labId
+   uid
+   name
+   address
+   contact
+   */
+  //
+})
+/**
+ * Hl7Inbox
+ */
+Hl7Inbox = Object.Rec.extend({
+  /*
+   hl7InboxId
+   userGroupId
+   labId
+   msgType 
+   source
+   dateReceived
+   patientName
+   cid
+   reconciledBy
+   data
+   //
+   Lab
+   */
+  onload:function() {
+    this.setr('Lab', Lab);
+  },
+  //
+  ajax:function() {
+    var self = this;
+    return {
+      remove:function(callback) {
+        Ajax.Labs.removeInbox(self.hl7InboxId, Html.Window, callback);
+      },
+      setClient:function(cid, callback) {
+        Ajax.Labs.setClient(cid, self.hl7InboxId, Html.Window, callback);
+      }
+    }
+  }
+})
+Hl7Inboxes = Object.RecArray.of(Hl7Inbox, {
+  //
+  ajax:function(worker) {
+    return {
+      fetch:function(callback) { 
+        Ajax.Labs.getInbox(null, callback);
+      }
+    }
+  }
+})
+/**
+ * LabRecon
+ */
+LabRecon = Object.Rec.extend({
+  onload:function() {
+    this.Msg = OruMessage.revive(this.Msg);
+    this.Inbox = Hl7Inbox.revive(this.Inbox);
+  },
+  getClient:function() {
+    return this.Msg.getClient();
+  },
+  //
+  ajax:function() {
+    var self = this;
+    var inbox = this.Inbox;
+    return {
+      /*
+       * @arg OruMessage msg
+       * @arg fn() callback
+       */
+      save:function(msg, callback) {
+        Ajax.Labs.saveRecon(self.Inbox.hl7InboxId, msg, Html.Window, callback);
+      },
+      //
+      fetch:function(inbox, callback) {
+        Ajax.Labs.getRecon(inbox.hl7InboxId, Html.Window, callback);
+      },
+      fetchClient:function(cid, callback) {
+        Ajax.Labs.getClient(cid, inbox.hl7InboxId, Html.Window, function(client) {
+          self.Client = client;
+          callback();
+        })
+      }
+    }
+  }
+})
+/**
+ * ClientRecon
+ */
+ClientRecon = Object.Rec.extend({
+  onload:function() {
+    this.Address_Home = XAD.revive(this.Address_Home);
+  },
+  uiAddress:function() {
+    var html = this.Address_Home.asHtml();
+    return html || 'None on File';
+  }
+})
+/**
+ * OruMessage
+ */
+OruMessage = Object.Rec.extend({
+  onload:function() {
+    this.PatientId = Pid.revive(this.PatientId);
+  },
+  getClient:function() {
+    return this.PatientId.Client_;
+  },
+  getCommonOrder:function() {
+    return this.PatientId.CommonOrder;
+  },
+  getObsRequests:function() {
+    return this.PatientId.ObsRequest;  
+  },
+  getObsRequest:function(seq) {
+    return this.getObsRequests()[seq - 1];
+  }
+})
+/**
+ * HL7 Segments
+ */
+Pid = Object.Rec.extend({
+  onload:function() {
+    this.CommonOrder = Orc.revive(this.CommonOrder);
+    this.ObsRequest = Obr.reviveAll(this.ObsRequest);
+    this.patientId = CE.revive(this.patientId);
+    this.address = XAD.revive(this.address);
+    this.phoneHome = XTN.revive(this.phoneHome);
+    this.phoneWork = XTN.revive(this.phoneWork);
+    this.account = CX.revive(this.account);
+  },
+  uiPatientId:function() {
+    return this.patientId.getId() || this.NA;
+  },
+  uiGender:function() {
+    if (this.gender) {
+      switch (this.gender.toUpperCase()) {
+        case 'M':
+          return 'Male';
+        case 'F':
+          return 'Female';
+        default:
+          return this.gender;
+      }
+    }  
+  },
+  uiAddress:function() {
+    var html = this.address.asHtml();
+    return html || this.NA;
+  },
+  //
+  NA:''
+})
+Orc = Object.Rec.extend({
+  //
+}) 
+Obr = Object.Rec.extend({
+  onload:function() {
+    this.Observation = Obx.reviveAll(this.Observation); 
+  },
+  getObservations:function() {
+    return this.Observation;
+  },
+  getObservation:function(seq) {
+    return this.Observation[seq - 1];
+  },
+  uiServiceId:function() {
+    return String.denull(this.serviceId.text || this.serviceId.altText);
+  }
+})
+Obx = Object.Rec.extend({
+  onload:function() {
+    if (this.Comment)
+      this.Comment = Ntes.revive(this.Comment);
+  },
+  uiValue:function() {
+    var s = String.from(this.value);
+    if (this.units)
+      s += ' ' + this.units.id;
+    return s;
+  },
+  uiAbnormal:function() {
+    return (this.abnormal) ? 'Abnormal: ' + this.abnormal : '';
+  },
+  uiComments:function() {
+    return this.Comment && this.Comment.ui();
+  }
+})
+Nte = Object.Rec.extend({
+  //
+})
+Ntes = Object.RecArray.of(Nte, {
+  ui:function() {
+    var a = [];
+    this.forEach(function(rec) {
+      a.push(rec.comment);
+    })
+    return a.join('<br>'); 
+  }
+})
+/**
+ * Hl7 Values
+ */
+CE = Object.Rec.extend({
+  getId:function() {
+    return this.id || this.altId;
+  }
+})
+XAD = Object.Rec.extend({
+  asHtml:function() {
+    if (this.addr1) {
+      var h = [this.addr1];
+      if (this.addr2)
+        h.push(this.addr2);
+      if (this.city) {
+        var csz = this.city;
+        if (this.state)
+          csz += ', ' + this.state;
+        if (this.zip)
+          csz += ' ' + this.zip;
+        h.push(csz);
+      }
+      return h.join('<br/>');      
+    }
+  }
+})
+XTN = Object.Rec.extend({
+  //
+})
+CX = Object.Rec.extend({
+  //
+})

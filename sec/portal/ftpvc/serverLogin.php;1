@@ -1,0 +1,15 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/PortalUsers_Session.php'; 
+//
+try {
+  switch ($action) {
+    //
+    case 'login':
+      $me = PortalUsers_Session::login($obj->id, $obj->pw);
+      jam($me);
+  }
+} catch (Exception $e) {
+  jamerr($e);
+}
+?>

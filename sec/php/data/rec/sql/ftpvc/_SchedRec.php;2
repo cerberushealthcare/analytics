@@ -1,0 +1,45 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+require_once 'php/data/Military.php';
+/**
+ * Sched Base Class
+ * @author Warren Hornsby
+ */
+class SchedRec extends SqlRec {
+  //
+  public $schedId;
+  public $userId;  
+  public $userGroupId;
+  public $clientId;
+  public $date;
+  public $timeStart;
+  public $duration;
+  public $closed;
+  public $status;
+  public $comment;
+  public $type;
+  public $schedEventId;
+  //
+  public function getSqlTable() {
+    return 'scheds';
+  }
+  public function toJsonObject(&$o) {
+    $o->label = $this->getLabel();
+  }
+  //
+  public function getLabel($types, $statuses) {
+    $time = new Military($this->timeStart);
+    $label = $time->formatted();
+    $type = LookupScheduling::getApptTypeName($types, $this->type);
+    if ($type)
+      $label .= ": $type";
+    $status = LookupScheduling::getStatusName($statuses, $this->status);
+    if ($status)
+      $label .= " ($status)";
+    return $label;
+  }
+  //
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+}

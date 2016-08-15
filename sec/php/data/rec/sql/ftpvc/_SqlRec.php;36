@@ -1,0 +1,957 @@
+<?php
+require_once 'php/dao/_util.php';
+require_once 'php/data/rec/_Rec.php';
+require_once 'php/data/rec/sql/dao/Dao.php';
+/**
+ * Marker Interfaces  
+ */
+interface ReadOnly {}     // Record is not persistable
+interface CompositePk {}  // Record does not use single auto-inc PK
+interface NoAudit {}      // Record should not self-audit updates  
+/**
+ * Persistable Data Record (SQL table row) 
+ * Formatting of class properties (fids):
+ * - First n fids for column values: 'colName'
+ * - Fids for joined rows: 'SqlRecName' or 'SqlRecName_FkFid' ('_FkFid' suffix not required if fk is same as SqlRec's pk)  
+ * - Helper fids: '_helper' 
+ * @author Warren Hornsby
+ */
+abstract class SqlRec extends Rec {
+  //
+  /**
+   * @return string 'table_name'
+   */
+  public abstract function getSqlTable();
+  /**
+   * Assigns fields based upon args supplied:
+   *   (value1,value2,..)      multiple args: each assigned in field definition order
+   *   ([value,..])            single arg, array: values assigned in field definition order 
+   *   ([sql_field=>value,..]) single arg, SQL array: assigned in field definition order 
+   *   ({fid:value,..})        single arg, decoded JSON object: values mapped to fields
+   */
+  public function __construct() {
+    $args = func_get_args();
+    if (count($args) == 1)  
+      if (is_assoc($args[0])) {  
+        $this->__constructFromSqlArray($args[0]);
+        $args = null;
+      } else if (is_array($args[0])) {  
+        parent::__constructFromArray($args[0]);
+        $args = null;
+      } else if (is_object($args[0])) { 
+        parent::__constructFromObject($args[0]);
+        $args = null;
+      }
+    if ($args)  
+      parent::__constructFromArgs($args);
+  }
+  public function __constructFromSqlArray($arr) {
+    $fids = $this->getFids();
+    for ($i = 0, $l = count($fids); $i < $l; $i++) {
+      $value = current($arr);
+      $this->set($fids[$i], $value);
+      next($arr);
+    }
+  }
+  /**
+   * Clone record (shallow) excluding PK 
+   */
+  public function __clone() {
+    $fid = $this->getPkFid();
+    if ($fid) 
+      $this->$fid = null;
+  }
+  /**
+   * Assign field value according to type
+   * @param string $fid
+   * @param string $value: simple field assignment
+   *        array $value: child Rec assignment from SQL array [sql_field=>value,..]
+   *        object $value: child Rec assignment from decoded JSON object {fid:value,..}  
+   */
+  public function set($fid, $value) {
+    if ($value !== null) {
+      if (is_assoc($value))
+        $this->setSqlArray($fid, $value);
+      else 
+        parent::set($fid, $value);
+    }
+  }
+  public function setSqlArray($fid, $value) {
+    if (is_assoc($value)) {
+      $class = SqlRec::getClassFromSqlField(key($value));
+      $this->$fid = new $class($value);
+    } else {
+      $class = SqlRec::getClassFromSqlField(key($value[0]));
+      $recs = array();
+      foreach ($value as $v) 
+        $recs[] = new $class($v);
+      $this->$fid = $recs;
+    }
+  }
+  /**
+   * Authenticate record as fetch criteria
+   * @throws SecurityException
+   */
+  public function authenticateAsCriteria() {
+    if (isset($this->_authenticated))
+      return;
+    if (! $this->authenticatePk()) { 
+      if (isset($this->clientId)) { 
+        LoginDao::authenticateClientId($this->clientId);
+      } else { 
+        if ($this->hasUserGroupId()) {
+          if (isset($this->userGroupId)) 
+            LoginDao::authenticateUserGroupId($this->userGroupId);
+          else 
+            throw new SecurityException('User group ID required in ' . $this->getMyName());
+        }
+      }
+    }
+    $this->_authenticated = true;
+    
+  }
+  /**
+   * Authenticate record PK value for fetch
+   * Override necessary if no user group on table
+   * @return true if PK set and authenticated 
+   * @throws SecurityException
+   */
+  public function authenticatePk() {
+    if (isset($this->_authenticated))
+      return;
+    if ($this->getPkValue()) {
+      if ($this->hasUserGroupId()) {
+        LoginDao::authenticateUserGroupIdWithin($this->getSqlTable(), $this->getPkField(), $this->getPkValue());
+        return true;
+      }        
+    }
+  }
+  /**
+   * Authenticate record (on updates and when used as select criteria)
+   * Override if necessary to extend checks 
+   * @throws SecurityException
+   */
+  public function authenticate() {
+    if (isset($this->_authenticated))
+      return;
+    $this->authenticatePk();
+    if ($this->hasUserGroupId()) 
+      if (isset($this->userGroupId)) 
+        LoginDao::authenticateUserGroupId($this->userGroupId);
+      else 
+        throw new SecurityException('User group ID required in ' . $this->getMyName());
+    if ($this->hasClientId())
+      if (isset($this->clientId))
+        LoginDao::authenticateClientId($this->clientId);
+      else 
+        throw new SecurityException('Client ID required in ' . $this->getMyName());
+  }
+  /**
+   * Persist record to database
+   * @param int $mode 1=insert, 2=update, 3=insertOnDupeUpdate (optional, omit to let method determine insert/update based on PK)
+   * @return SqlRec this record fetched after update (if auditing) 
+   * @throws ReadOnlySaveException, SecurityException
+   */
+  public function save($mode = null) {
+    if ($this instanceof ReadOnly) 
+      throw new ReadOnlySaveException($this);
+    /*
+     * $v = new Validator();
+     * $this->validate($v);
+     * $v->throwIfNotEmpty();
+     */
+    $v = new RecValidator($this);
+    $this->validate($v);
+    $this->authenticate();
+    if ($mode == null) 
+      if ($this instanceof CompositePk) 
+        $mode = 3;
+      else  
+        $mode = ($this->getPkValue() == null) ? 1 : 2;
+    switch ($mode) {
+      case 1:  
+        $sql = $this->getSqlInsert();
+        $id = Dao::insert($sql);
+        $this->setPkValue($id);
+        break;
+      case 2:  
+        if ($this->shouldAudit()) 
+          $before = new AuditImage($this);
+        $sql = $this->getSqlUpdate();
+        Dao::query($sql);
+        break;
+      case 3:  
+        $sql = $this->getSqlInsertOnDupeUpdate();
+        $mode = Dao::update($sql);
+        break;
+    }
+    if ($this->shouldAudit()) {
+      switch ($mode) {
+        case 1:
+          $rec = Auditing::logCreateRec($this);
+          break;
+        case 2:
+          $rec = Auditing::logUpdateRec($this, $before);
+          break;
+      }
+      return $rec;
+    }
+  }
+  public function saveAsInsert() {
+    $this->save(1);
+  }
+  public function saveAsUpdate() {
+    $this->save(2);
+  }
+  public function saveAsInsertOnDupeUpdate() {
+    $this->save(3);
+  } 
+  protected function shouldAudit() {
+    return ! ($this instanceof NoAudit || isset($this->_noAudit));
+  }
+  /**
+   * @return string value of record PK for auditing
+   * Must be overridden for CompositePk recs,  e.g. return "$this->clientId,$this->seq"; 
+   */
+  public function getAuditRecId() {
+    if ($this instanceof CompositePk) 
+      throw new SqlRecException($this, 'Override required for ' . $this->getMyName() . '->getAuditRecId');
+    else
+      return $this->getPkValue();
+  }
+  /**
+   * @return string name of record for Auditing
+   */
+  public function getAuditRecName() {
+    return $this->getMyName();
+  }
+  /**
+   * @return string value of client ID for auditing, can be overridden 
+   */
+  public function getAuditClientId() {
+    return get($this, 'clientId');
+  }
+  /**
+   * @return string for saving audit label (if overridden)
+   */
+  public function getAuditLabel() {
+    return null;
+  }
+  /**
+   * @return SqlRec for auditing before/after image
+   * Must be overridden for CompositePk recs, e.g. return self::fetchByClientSeq($this->clientId, $this->seq)
+   */
+  public function fetchForAudit() {
+    if ($this instanceof CompositePk)
+      throw new SqlRecException($this, 'Override required for ' . $this->getMyName() . '->fetchForAudit');
+    else
+      return self::fetch($this->getPkValue(), $this->getMyName());
+  }
+  /**
+   * @return array(fid=>value,..) excluding any fields to omit from incremental change, e.g. dateUpdated
+   */
+  public function getAuditFields() {
+    $fields = $this->getSqlFidValues();
+    unset($fields['dateUpdated']);
+    return $fields;
+  } 
+  /**
+   * @param mixed $value
+   */
+  public function setPkValue($value) {
+    if (! $this instanceOf CompositePk) {
+      $fid = $this->getPkFid();
+      $this->$fid = $value;
+    }
+  }
+  /**
+   * @return string
+   */
+  public function getPkValue() {
+    if ($this instanceof CompositePk) {
+      return null;
+    } else {
+      reset($this);
+      $value = current($this);
+      if (is_scalar($value))
+        return $value;
+      if (is_object($value) && get_class($value) == 'CriteriaValue')
+        if ($value->comparator == CriteriaValue::EQ) 
+          return $value->value;
+    }
+  }
+  //
+  protected function setParentage($children, $fid = null) {
+    if ($children) {
+      $fid = $fid ? $fid : $this->getMyName();
+      foreach ($children as $child)
+        $child->$fid = $this;
+    }
+  }
+  /**
+   * @return string SQL
+   */
+  protected function getSqlInsert() {
+    $table = $this->getSqlTable();
+    $values = $this->getSqlValues();
+    $values = implode(',', $values);
+    $sql = "INSERT INTO $table VALUES($values)";
+    return $sql;
+  }
+  /**
+   * @return string SQL
+   */
+  protected function getSqlUpdate() {
+    $table = $this->getSqlTable();
+    $fields = $this->getSqlFields();
+    $values = $this->getSqlValues();  
+    $pkField = array_shift($fields);
+    $pkValue = array_shift($values);
+    if ($pkValue == null) 
+      throw new SqlRecException($this, 'Cannot update record without PK');
+    $values = implode_with_keys(',', array_combine($fields, $values));
+    $sql = "UPDATE $table SET $values WHERE $pkField=$pkValue"; 
+    return $sql;
+  }
+  /**
+   * @return string SQL
+   */
+  protected function getSqlInsertOnDupeUpdate() {
+    $table = $this->getSqlTable();
+    $fields = $this->getSqlFields();
+    $values = $this->getSqlValues();  
+    $ifields = implode(',', $fields);
+    $ivalues = implode(',', $values);
+    $uvalues = array();
+    foreach ($fields as $field) 
+      $uvalues[$field] = "VALUES($field)";
+    $values = implode_with_keys(',', array_combine($fields, $uvalues));
+    $sql = "INSERT INTO $table ($ifields) VALUES($ivalues) ON DUPLICATE KEY UPDATE $values";
+    return $sql;
+  }
+  /**
+   * Build SQL DELETE
+   * @return string SQL
+   */
+  protected function getSqlDelete() {
+    $table = $this->getSqlTable();
+    $fields = $this->getSqlFields();
+    $values = $this->getSqlValues();  
+    $pkField = array_shift($fields);
+    $pkValue = array_shift($values);
+    if ($pkValue == null) 
+      throw new SqlRecException($this, 'Cannot delete record without PK');
+    $sql = "DELETE FROM $table WHERE $pkField=$pkValue"; 
+    return $sql;
+  }
+  /**
+   * Build SQL SELECT clause using this record as criteria
+   * @return array(
+   *   'sql'=>'SQL statement',
+   *   'cacheKey'=>'table|where')
+   * @throws InvalidCriteriaException
+   */
+  protected function getSqlSelect($recs, $infos, $asCount = false) {
+    if ($infos['where'][0] == null)
+      $this->throwNoCriteriaException($infos, 0);
+    $alias0 = $infos['alias'][0];
+    $infos['table'][0] .= " $alias0";
+    $parentPkFid = $this->getPkFid();
+    for ($i = 1; $i < count($recs); $i++) {
+      next($recs);
+      if (current($recs)) {
+        $pkFid = key($recs);
+        $table = $infos['table'][$i];
+        $alias = $infos['alias'][$i];
+        $pk = $infos['pk'][$i];      
+        $fk = SqlRec::getFkFromFid($pkFid, $pk);
+        if (property_exists($this, SqlRec::sqlToCamel($fk))) {  // one-to-one or many-to-one link
+          $infos['table'][$i] = " LEFT JOIN $table $alias ON $alias0.$fk=$alias.$pk";
+        } else {  
+          if (property_exists(current($recs), $parentPkFid)) { // check for one-to-many link
+            $pk = $infos['pk'][0];
+            $infos['where'][$i] = $this->appendCond("$alias0.$pk=$alias.$pk", $infos['where'][$i]);
+          }
+          if ($infos['where'][$i] == null)
+            $this->throwNoCriteriaException($infos, $i);
+          $infos['table'][$i] = ", $table $alias";
+        }
+      }
+    }
+    $fields = ($asCount) ? 'COUNT(*)' : implode(', ', array_filter($infos['fields']));
+    $table = implode('', array_filter($infos['table']));
+    $where = implode(' AND ', array_filter($infos['where']));
+    $sql = "SELECT $fields FROM $table WHERE $where";
+    $cacheKey = "$table|$where";
+    return array(
+      'sql' => $sql,
+      'cacheKey' => $cacheKey);
+  }
+  private function appendCond($cond, $where) {
+    return ($where) ? "$where AND $cond" : $cond;
+  }
+  private function throwNoCriteriaException($infos, $i) {
+    throw new InvalidCriteriaException($this, 'No criteria specified for ' . $infos['table'][$i]);
+  }
+  /**
+   * Build SQL WHERE clause using this record as criteria
+   * @param(opt) string $tableAlias 
+   * @return string 'field_name=field_value AND..'
+   */
+  protected function getSqlWhere($tableAlias = null) {
+    $fields = $this->getSqlFields();
+    if ($tableAlias == null) 
+      $tableAlias = $this->getSqlTable();
+    $values = array();
+    $lfid = $this->getLastFid();
+    foreach ($this as $fid => &$value) {
+      if ($value !== null) {
+        if (is_scalar($value)) 
+          $value = CriteriaValue::equals($value);
+        $field = $tableAlias . '.' . current($fields);
+        $values[$field] = $value;
+      }
+      if ($fid == $lfid)
+        break;
+      next($fields);        
+    }
+    $values = count($values) ? CriteriaValue::_toSql($values) : null;
+    return $values;
+  }
+  /**
+   * @return array(fid=>sql_field,..)
+   */
+  protected function getSqlFields() {
+    static $fields;
+    if ($fields === null) {  
+      $fields = array();
+      $fids = $this->getSqlFids();
+      foreach ($fids as $fid) 
+        $fields[$fid] = SqlRec::camelToSql($fid);
+    }
+    return $fields;
+  }
+  /**
+   * @return array(fid,..) 
+   */
+  protected function getSqlFids() {
+    static $sfids;
+    if ($sfids === null) {
+      $sfids = array();
+      $fids = $this->getFids();
+      $lfid = $this->getLastFid();
+      foreach ($fids as $fid) {
+        $sfids[] = $fid;
+        if ($fid == $lfid)
+          break;
+      }
+    }
+    return $sfids;
+  }
+  /**
+   * @return array(fid=>value,..) 
+   */
+  protected function getSqlFidValues() {
+    $fids = $this->getSqlFids();
+    $fvs = array();
+    foreach ($fids as $fid) 
+      $fvs[$fid] = $this->$fid;
+    return $fvs;
+  }
+  /**
+   * @return string of last column fid
+   */
+  protected function getLastFid() {
+    static $lfid;
+    if ($lfid === null) {
+      foreach ($this->getFids() as $fid) {  
+        if (! SqlRec::isTableFid($fid))
+          return $lfid;
+        $lfid = $fid;
+      }
+    }
+    return $lfid;
+  }
+  protected function hasUserGroupId() {
+    static $hasUgid;
+    if ($hasUgid === null) 
+      $hasUgid = array_key_exists('userGroupId', $this->getFids()); 
+    return $hasUgid;
+  } 
+  protected function hasClientId() {
+    static $hasCid;
+    if ($hasCid === null) 
+      $hasCid = array_key_exists('clientId', $this->getFids()); 
+    return $hasCid;
+  } 
+  /**
+   * @return int
+   */
+  protected function getSqlFieldCt() {
+    static $ct;
+    if ($ct === null) 
+      $ct = count($this->getSqlFields());
+    return $ct;
+  }
+  /**
+   * @return string 'sql_field'
+   */
+  protected function getPkField() {
+    static $field;
+    if ($field === null) {
+      if ($this instanceOf CompositePk) { 
+        $field = null;
+      } else {
+        reset($this);
+        $fid = key($this);
+        $field = SqlRec::camelToSql($fid);
+      }
+    }
+    return $field;
+  }
+  /**
+   * @return string 'sqlField'
+   */
+  protected function getPkFid() {
+    static $fid;
+    if ($fid === null) {
+      if ($this instanceOf CompositePk) { 
+        $fid = null;
+      } else {
+        reset($this);
+        $fid = key($this);
+      }
+    }
+    return $fid;
+  }
+  protected function getSqlValue($fid) {
+    $value = $this->$fid;
+    if (is_bool($value))
+      return ($value) ? 1 : 0;
+    else 
+      return quote($value, true);
+  }
+  protected function getSqlValues() {
+    $values = array();
+    $lfid = $this->getLastFid();
+    foreach ($this as $fid => &$value) {
+      $values[] = $this->getSqlValue($fid);
+      if ($fid == $lfid)
+        break;
+    }
+    return $values;
+  }
+  protected function buildSqlSelectFields($tableAlias = null) {
+    $fields = $this->getSqlFields();
+    $class = $this->getMyName();
+    if ($tableAlias) 
+      $class .= ".$tableAlias";
+    else 
+      $tableAlias = $this->getSqlTable();      
+    foreach ($this as $fid => &$value) {
+      $field = geta($fields, $fid);
+      if ($field) 
+        $fields[$fid] = "$tableAlias.$field AS `$class.$fid`"; 
+    }
+    $fields = implode(', ', $fields);
+    return $fields;
+  }
+  /**
+   * @return array(  
+   *   'recs'=>array(fid=>rec,..),
+   *   'arrays'=>array(fid=>1,..),  // for fids designated to store arrays of recs
+   *   'ct'=>#)
+   */
+  protected function getRecsFromCriteria() {
+    $arrays = array();
+    $recs = array(
+      $this->getMyName() => $this);
+    foreach ($this as $fid => $value) {
+      if (is_array($value)) { 
+        $arrays[$fid] = true;
+        $value = current($value);
+      }
+      if (is_object($value))
+        if (is_subclass_of($value, 'Rec'))
+          $recs[$fid] = $value;
+//        else
+//          $recs[$fid] = null;  FIX THIS TO USE A MARKER THAT DESIGNATES DON'T USE THIS CRITERIA OBJECT
+    }
+    return array(
+      'recs' => $recs,
+      'arrays' => $arrays,
+      'ct' => count($recs));
+  }
+  /**
+   * Fetch by primary key
+   * @param int $id auto-inc PK value
+   * @param string $class 'SomeRec'  
+   * @return Rec  
+   */
+  public static function fetch($id, $class) {
+//    if ($class == null)
+//      $class = get_called_class();
+    $rec = new $class($id);
+    return SqlRec::fetchOneBy($rec);
+  }
+  /**
+   * Fetch record(s) using supplied record as criteria
+   * @param SqlRec $criteria
+   * @param(opt) RecSort $order
+   * @param(opt) int $limit 0=no limit
+   * @param(opt) string $keyFid to return array(keyValue=>Rec,..)  
+   * @return array(Rec,..)
+   */
+  public static function fetchAllBy($criteria, $order = null, $limit = 500, $keyFid = null) {
+    $criteria->authenticateAsCriteria();
+    $class = $criteria->getMyName();
+    $ci = $criteria->getRecsFromCriteria();
+    $infos = SqlRec::buildSqlSelectInfos($ci);
+    $select = $criteria->getSqlSelect($ci['recs'], $infos);
+    $sql = $select['sql'];
+    if ($limit > 0) 
+      $sql .= " LIMIT $limit";
+//    $cacheKey = $select['cacheKey'];
+//    if (isset(SqlRec::$cache[$cacheKey])) {
+//      $recs = SqlRec::$cache[$cacheKey];
+//    } else { 
+    $recs = array();
+    $rows = Dao::fetchRows($sql);
+    if ($ci['ct'] > 1) 
+      $rows = SqlRec::unflattenRows($rows, $infos, $ci['ct']);
+    foreach ($rows as &$row) { 
+      $rec = new $class($row);
+      if ($keyFid)
+        $recs[$rec->$keyFid] = $rec;
+      else
+        $recs[] = $rec;
+    }
+    if ($order)
+      Rec::sort($recs, $order, ($keyFid != null));
+    return $recs;
+  }
+  /**
+   * Fetch and associate by key
+   * @param SqlRec $criteria
+   * @param string $keyFid;
+   * @return array(keyValue=>Rec,..)
+   */
+  public static function fetchMapBy($criteria, $keyFid, $limit = 0) {
+    return SqlRec::fetchAllBy($criteria, null, $limit, $keyFid);
+  }
+  /**
+   * Return first result of SqlRec::fetchAllBy($rec)  
+   * @param SqlRec $criteria
+   * @return Rec
+   */
+  public static function fetchOneBy($criteria) {
+    return current(SqlRec::fetchAllBy($criteria, null, 1));
+  }
+  /**
+   * Fetch count(*) using supplied record as criteria
+   * @param SqlRec $criteria
+   */
+  public static function count($criteria) {
+    $criteria->authenticateAsCriteria();
+    $ci = $criteria->getRecsFromCriteria();
+    $infos = SqlRec::buildSqlSelectInfos($ci);
+    $select = $criteria->getSqlSelect($ci['recs'], $infos, true);
+    $sql = $select['sql'];
+    return Dao::fetchValue($sql);
+  }
+  /**
+   * Delete record from database
+   * @param SqlRec $rec 
+   * @throws ReadOnlyDeleteException, SecurityException
+   */
+  public static function delete(&$rec) {
+    if ($rec instanceof ReadOnly) 
+      throw new ReadOnlyDeleteException($rec);
+    $rec->authenticate();
+    if ($rec->shouldAudit())
+      Auditing::logDeleteRec($rec, new AuditImage($rec));
+    Dao::query($rec->getSqlDelete());
+    $rec = null;
+  }
+  /**
+   * Save all recs in collection
+   * @param SqlRec[] $recs
+   */
+  public static function saveAll($recs) {
+    if ($recs)
+      foreach ($recs as $rec)
+        $rec->save();
+  }
+  //
+  protected static function buildSqlSelectInfos($ci) {
+    $recs = $ci['recs'];
+    $infos = array();
+    $fix = 0;
+    $ix = 0;
+    foreach ($recs as $fid => &$rec) {
+      $tableAlias = "T$ix";
+      $info = SqlRec::buildSqlSelectInfo($rec, $tableAlias);
+      $isArray = isset($ci['arrays'][$fid]);
+      push($infos, 'alias', $tableAlias);
+      push($infos, 'fields', $info['fields']);
+      push($infos, 'fct', $info['fct']);
+      push($infos, 'table', $info['table']);
+      push($infos, 'pk', $info['pk']);
+      push($infos, 'where', $info['where']);
+      push($infos, 'fix', $fix);
+      push($infos, 'array', $isArray);
+      if ($isArray)
+        $infos['anyArray'] = true;
+      $fix += $info['fct'];
+      $ix++;
+    }
+    return $infos;
+  }
+  protected static function buildSqlSelectInfo($rec, $tableAlias = null) {
+    if ($rec)
+      return array(
+        'fields' => $rec->buildSqlSelectFields($tableAlias),
+        'fct' => $rec->getSqlFieldCt(),
+        'table' => $rec->getSqlTable(),
+        'alias' => $tableAlias,
+        'pk' => $rec->getPkField(),
+        'where' => $rec->getSqlWhere($tableAlias));
+    else 
+      return array(
+        'fields' => null,
+        'fct' => 0,
+        'table' => null,
+        'alias' => null,
+        'pk' => null,
+        'where' => null);
+  }
+  protected static function unflattenRows($rows, $infos, $recCt) {
+    $urows = array();
+    $lastPk = null;
+    $anyArray = isset($infos['anyArray']);
+    foreach ($rows as &$row) {
+      $overlay = ($anyArray && current($row) == $lastPk);
+      $urow = array_slice($row, 0, $infos['fct'][0], true);
+      for ($i = 1; $i < $recCt; $i++) {
+        $reca = SqlRec::nullIfEmpty(array_slice($row, $infos['fix'][$i], $infos['fct'][$i]));
+        if ($overlay) {
+          if ($infos['array'][$i]) 
+            $urows[count($urows) - 1][$i - 1][] = $reca;
+        } else {
+          if ($infos['array'][$i]) 
+            $urow[$i - 1][] = $reca;
+          else 
+            $urow[$i - 1] = $reca;
+        }
+      }
+      if (! $overlay)
+        $urows[] = $urow;
+      $lastPk = current($row);
+    }
+    return $urows;     
+  }
+  protected static function nullIfEmpty($a) {
+    return (current($a) == null) ? null : $a;  // assumes first column of child row should always be populated
+  }
+  protected static function camelToSql($str) {
+    $str[0] = strtolower($str[0]);
+    $func = create_function('$c', 'return "_" . strtolower($c[1]);');
+    $field = preg_replace_callback('/([A-Z])/', $func, $str);
+    return "`$field`";
+  }
+  protected static function sqlToCamel($str, $capitalizeFirstChar = false) {
+    if (substr($str, 0, 1) == '`') 
+      $str = substr($str, 1, -1);
+    if ($capitalizeFirstChar) 
+      $str[0] = strtoupper($str[0]);
+    $func = create_function('$c', 'return strtoupper($c[1]);');
+    return preg_replace_callback('/_([a-z])/', $func, $str);
+  }
+  protected static function getClassFromSqlField($field) {
+    $a = explode('.', $field);
+    return $a[0];
+  }
+  protected static function getFkFromFid($parentFid, $childPk) {
+    // Extracts PK from fid, e.g. 'order_by' from '$User_orderBy'
+    $a = explode('_', $parentFid);
+    if (count($a) == 1) 
+      return $childPk;
+    else 
+      return SqlRec::camelToSql($a[1]);
+  }
+  protected static function isTableFid($fid) {
+    $c = substr($fid, 0, 1);
+    return ! ($c == '_' || SqlRec::isUpper($c));
+  }
+  protected static function isUpper($c) {
+    return ($c == strtoupper($c)); 
+  }
+}
+/**
+ * Criteria value object
+ * To extend functionality of criteria record value beyond simple = comparison 
+ */
+class CriteriaValue {
+  //
+  public $comparator;
+  public $value;
+  //
+  // Comparators
+  const EQ = 'eq';
+  const NEQ = 'neq';
+  const LT = 'lt';
+  const LTE = 'lte';
+  const GT = 'gt';
+  const GTE = 'gte';
+  const LTN = 'ltn';
+  const LTEN = 'lten';
+  const GTN = 'gtn';
+  const GTEN = 'gten';
+  const SW = 'sw';
+  const CW = 'cw';
+  const NUL = 'nul';
+  const NNUL = 'nnul';
+  const IN = 'in';
+  const DTEQ = 'dteq';
+  //
+  public function __construct($comparator, $value = null) {
+    $this->comparator = $comparator;
+    $this->value = $value;
+  } 
+  public function _toString($fid) {
+    if ($this->comparator == CriteriaValue::IN)
+      $value = array_map('addslashes', $this->value);
+    else
+      $value = addslashes($this->value);
+    switch ($this->comparator) {
+      case CriteriaValue::EQ:
+        return "$fid='$value'";
+      case CriteriaValue::NEQ:
+        return "$fid<>'$value'";
+      case CriteriaValue::LT:
+        return "$fid<'$value'";
+      case CriteriaValue::LTE:
+        return "$fid<='$value'";
+      case CriteriaValue::GT:
+        return "$fid>'$value'";
+      case CriteriaValue::GTE:
+        return "$fid>='$value'";
+      case CriteriaValue::LTN:
+        return "$fid<$value";
+      case CriteriaValue::LTEN:
+        return "$fid<=$value";
+      case CriteriaValue::GTN:
+        return "$fid>$value";
+      case CriteriaValue::GTEN:
+        return "$fid>=$value";
+      case CriteriaValue::SW:
+        return "$fid LIKE '$value%'";
+      case CriteriaValue::CW:
+        return "$fid LIKE '%$value%'";
+      case CriteriaValue::NUL:
+        return "$fid IS NULL";
+      case CriteriaValue::NNUL:
+        return "$fid IS NOT NULL";
+      case CriteriaValue::IN:
+        return "$fid IN ('" . implode("','", $value) . "')";
+      case CriteriaValue::DTEQ:
+        return "SUBSTR($fid,1,10)='$value'";
+    }
+  }
+  /**
+   * Static builders
+   */
+  public static function equals($value) {
+    return new CriteriaValue(CriteriaValue::EQ, $value);
+  }
+  public static function notEquals($value) {
+    return new CriteriaValue(CriteriaValue::NEQ, $value);
+  }
+  public static function lessThan($value) {
+    return new CriteriaValue(CriteriaValue::LT, $value);
+  }
+  public static function lessThanOrEquals($value) {
+    return new CriteriaValue(CriteriaValue::LTE, $value);
+  }
+  public static function greaterThan($value) {
+    return new CriteriaValue(CriteriaValue::GT, $value);
+  }
+  public static function greaterThanOrEquals($value) {
+    return new CriteriaValue(CriteriaValue::GTE, $value);
+  }
+  public static function lessThanNumeric($value) {
+    return new CriteriaValue(CriteriaValue::LTN, $value);
+  }
+  public static function lessThanOrEqualsNumeric($value) {
+    return new CriteriaValue(CriteriaValue::LTEN, $value);
+  }
+  public static function greaterThanNumeric($value) {
+    return new CriteriaValue(CriteriaValue::GTN, $value);
+  }
+  public static function greaterThanOrEqualsNumeric($value) {
+    return new CriteriaValue(CriteriaValue::GTEN, $value);
+  }
+  public static function startsWith($value) {
+    return new CriteriaValue(CriteriaValue::SW, $value);
+  }
+  public static function contains($value) {
+    return new CriteriaValue(CriteriaValue::CW, $value);
+  }
+  public static function isNull() {
+    return new CriteriaValue(CriteriaValue::NUL);
+  }
+  public static function isNotNull() {
+    return new CriteriaValue(CriteriaValue::NNUL);
+  }
+  public static function in($values) {  // ['value',..]
+    return new CriteriaValue(CriteriaValue::IN, $values);
+  }
+  public static function datePortionEquals($value) {
+    return new CriteriaValue(CriteriaValue::DTEQ, $value);
+  }
+  //
+  public static function _toSql($values) {
+    $conds = array();
+    foreach ($values as $fid => &$value)
+      $conds[] = $value->_toString($fid);
+    return implode(' AND ', $conds);
+  }
+}
+/**
+ * Exceptions
+ */
+class SqlRecException extends Exception {
+  public /*SqlRec*/ $rec;
+  public function __construct($rec, $message) {
+    $this->rec = $rec;
+    $name = ($rec) ? $rec->getMyName() : '[null]';
+    $this->message = "$name: $message";
+  }
+}
+class ReadOnlySaveException extends SqlRecException {
+  public function __construct($rec) {
+    parent::__construct($rec, 'Cannot save read-only record');
+  }
+}
+class ReadOnlyDeleteException extends SqlRecException {
+  public function __construct($rec) {
+    parent::__construct($rec, 'Cannot delete read-only record');
+  }
+}
+class InvalidCriteriaException extends SqlRecException {
+  public function __construct($criteria, $message) {
+    parent::__construct($criteria, $message);
+  }
+}
+/**
+ * Temporary "static call" fn until upgrade to PHP 5.3
+ * Usage: sc(get_class($rec), 'asActiveCriteria', $rec->clientId);
+ */
+function sc() {
+  $args = func_get_args();
+  $class = array_shift($args);
+  $fn = array_shift($args);
+  return call_user_func_array(array($class, $fn), $args);
+}
+require_once 'php/data/rec/sql/Auditing.php';
+?>

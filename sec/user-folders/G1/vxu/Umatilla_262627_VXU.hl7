@@ -1,0 +1,24 @@
+MSH|^~\&|Clicktate|X68||LCD|20141207002552||VXU^V04^VXU_V04|1-3834-20141207002552|P|2.5.1|||NE|NE
+PID|1||3834^^^1^MR||Umatilla^Salima^Kailyn^^^^L||20100824|F|||^^^^^^L
+ORC|RE||286^LCD|||||||||286-O^Radon^Nicholas^^^^^^Clicktate^L
+RXA|0|1|20120814201801||120^Pentacel (DTaP, Hib, IPV)^CVX|0.5|mL^milliliter^UCUM||00^New immunization record^NIP001||^^^G1||||568AHK11|20121214|PMC^Sanofi Pasteur^MVX|||CP|A
+RXR|IM^IM^HL70162|RA^Right Arm^HL70163
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V03^VFC Eligible- Uninsured^HL70064||||||F|||20120814201801|||VXC40^Eligibility captured at the immunization level^CDCPHINVS
+OBX|2|CE|30956-7^Vaccine type^LN|2|107^DTAP^CVX||||||F
+OBX|3|TS|29768-9^Date vaccine information statement published^LN|2|20070517||||||F
+OBX|4|TS|29769-7^Date vaccine information statement presented^LN|2|20120814201801||||||F
+OBX|5|CE|30956-7^Vaccine type^LN|3|17^HIB^CVX||||||F
+OBX|6|TS|29768-9^Date vaccine information statement published^LN|3|20111108||||||F
+OBX|7|TS|29769-7^Date vaccine information statement presented^LN|3|20120814201801||||||F
+OBX|8|CE|30956-7^Vaccine type^LN|4|89^POLIO^CVX||||||F
+OBX|9|TS|29768-9^Date vaccine information statement published^LN|4|19981216||||||F
+OBX|10|TS|29769-7^Date vaccine information statement presented^LN|4|20120814201801||||||F
+ORC|RE||284^LCD|||||||||284-O^Radon^Nicholas^^^^^^Clicktate^L
+RXA|0|1|20120814201101||140^Fluzone (Seasonal Injectable- Split Virus)^CVX|0.25|mL^milliliter^UCUM||00^New immunization record^NIP001||^^^G1||||D6992FF|20121216|PMC^Sanofi Pasteur^MVX|||CP|A
+RXR|IM^IM^HL70162|RA^Right Arm^HL70163
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V03^VFC Eligible- Uninsured^HL70064||||||F|||20120814201101|||VXC40^Eligibility captured at the immunization level^CDCPHINVS
+OBX|2|CE|30956-7^Vaccine type^LN|2|88^FLU^CVX||||||F
+OBX|3|TS|29768-9^Date vaccine information statement published^LN|2|20120702||||||F
+OBX|4|TS|29769-7^Date vaccine information statement presented^LN|2|20120814201101||||||F
+ORC|RE||9999^CDC
+RXA|0|1|20110214201601||20^Infanrx (DTaP)^CVX|999|||01^Historical information- source unspecified^NIP001

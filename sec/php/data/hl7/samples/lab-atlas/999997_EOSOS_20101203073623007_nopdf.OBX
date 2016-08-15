@@ -1,0 +1,73 @@
+MSH|^~\&||||999997|201012030736||ORU^R01|002056206356183038|P|2.3
+PID||PF0009|||TEST^ALLFIELDS^M^JR^MR||19710923|M|TESTY^^||123 MAIN ST^APT 4J, MIDDLE ROOM^NEW YORK^NY^10021^||(212)555-1212|||D|||123456789|NY18882882
+PV1|1||||||9999^Account^Test^^^^^PHYID||||||||U||||||||||||||||||||||||
+ORC|RE||||P
+OBR|1|LE09999970000050||90093^Comp Metabolic Panel|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||1090^Glucose||100|mg/dL|65 - 99|H|||F||||SHIEL
+NTE|1||Criteria for the diagnosis of diabetes:
+NTE|2||(Fasting Glucose)
+NTE|3||<100 mg/dL: Normal fasting glucose
+NTE|4||100-125 mg/dL: Impaired fasting glucose
+NTE|5||>125 mg/dL: Indicative of diabetes
+NTE|6||Ref: Diabetes Care 29:S43-S48, 2006
+OBX|2||1168^Urea Nitrogen||100|mg/dL|7 - 25|HH|||F||||
+OBX|3||1066^Creatinine||5.00|mg/dL|0.5 - 1.3|HH|||F||||
+OBX|4||10662^eGFR (calculation)||13||>60 -|L|||F||||
+NTE|1||For African-Americans, multiply EGFR result  x 1.2
+OBX|5||1039^BUN/Creat Ratio||20.0||5.3 - 50.0||||F||||
+OBX|6||1147^Sodium||<110|mEq/L|135 - 146|LL|||F||||
+OBX|7||1135^Potassium||5.0|mmol/L|3.5 - 5.5||||F||||
+OBX|8||1048^Chloride||<80|mEq/L|98 - 110|LL|||F||||
+OBX|9||1045^Carbon Dioxide||<10|mEq/L|21 - 33|LL|||F||||
+OBX|10||1042^Calcium||55.0|mg/dL|8.6 - 10.4|HH|||F||||
+OBX|11||1144^Protein, Total||5.0|g/dL|6.2 - 8.3|L|||F||||
+OBX|12||1009^Albumin||5.0|g/dL|3.6 - 5.3||||F||||
+OBX|13||1087^Globulin||0.0|g/dL|2.1 - 3.7|L|||F||||
+OBX|14||1003^A/G Ratio||0.0|Ratio|||||F||||
+OBX|15||1012^Alkaline Phosphatase||5|IU/L|40 - 115|L|||F||||
+OBX|16||1027^AST (SGOT)||5|IU/L|10 - 40|L|||F||||
+OBX|17||1018^ALT (SGPT)||5|IU/L|9 - 60|L|||F||||
+OBX|18||1036^Bilirubin, Total||5.0|mg/dL|0.2 - 1.2|HH|||F||||
+OBR|2|LE09999970000050||4126^TSH|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||4126^TSH 3rd Generation Ultra||5.00|uIU/mL|0.55 - 4.78|H|||F||||
+OBR|3|LE09999970000050||90138^Hemogram inc. Platelets|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||2252^White Blood Count||10.0|x10 3/uL|4.0 - 11.0||||F||||
+OBX|2||2210^Red Blood Count||10.00|x10 6/uL|4.2 - 6.0|HH|||F||||
+OBX|3||2090^Hemoglobin||10.0|g/dL|12.6 - 16.4|L|||F||||
+OBX|4||2087^Hematocrit||10.0|%|38 - 52|LL|||F||||
+OBX|5||2186^Platelets||10|x10 3/uL|150 - 450|LL|||F||||
+OBX|6||2186^PlateVHts||10|x10 3/uL|150 - 450|LL|||F||||
+OBR|4|LE09999970000050||2219^Reticulocyte Count|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||2219^Reticulocytes||10.0|%|0.5 - 2.5|HH|||F||||
+OBR|5|LE09999970000050||90204^Protime with Inr|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||2102^INR||5.00|Ratio|2.0 - 3.0|HH|||F||||
+NTE|1||Recommended therapeutic range: 2.0 - 3.0 Acute M.I., prophylaxis and treatment of venous thrombosis, pulmonary embolism, tissue heart valve, atrial fibrillation, valvular heart disease, prevention of systemic embolism. 2.5 - 3.5 Mechanical Heart Valve.
+NTE|2||An INR reference interval of 0.8-1.3 is applicabVH to patients not receiving anti-coagulant medication.
+OBR|6|LE09999970000050||90349^Urogram|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||5015^Color, Urine||Yellow||Yellow - Straw||||F||||
+OBX|2||5003^Appearance, Urine||CVHar||CVHar - CVHar||||F||||
+OBX|3||5054^pH, Urine||5.0||5.0 - 8.0||||F||||
+OBX|4||5063^Specific Gravity||10.000|R.I.|1.005 - 1.030|H|||F||||
+OBX|5||5009^Bilirubin, Urine||NEGATIVE||NEGATIVE - NEGATIVE||||F||||
+OBX|6||5012^Blood, Urine||NEGATIVE||NEGATIVE - TRACE||||F||||
+OBX|7||5042^Leuk. Esterase, U||NEGATIVE||NEGATIVE - NEGATIVE||||F||||
+OBX|8||5048^Nitrites, Urine||NEGATIVE||NEGATIVE - NEGATIVE||||F||||
+OBX|9||5027^Glucose, Urine||NEGATIVE|mg/dL|NEGATIVE - NEGATIVE||||F||||
+OBX|10||5039^Ketones, Urine||NEGATIVE|mg/dL|NEGATIVE - NEGATIVE||||F||||
+OBX|11||5057^Protein, Urine||NEGATIVE|mg/dL|NEGATIVE - NEGATIVE||||F||||
+OBX|12||5069^Urobilinogen, U||0.2|mg/dL|0 - 1.0||||F||||
+OBX|13||5042^VHuk. Esterase, U||NEGATIVE||NEGATIVE - NEGATIVE||||F||||
+OBR|7|LE09999970000050||90158^Lipid Panel|||201011181357||||||stat order clinical comment|201011181425||^Account^Test^||||||201011181429|||F||^^^^^S
+OBX|1||1054^Cholesterol||<25|mg/dL|125 - 200|L|||F||||
+OBX|2||1099^HDL Cholesterol||<10|mg/dL|39.9 -|L|||F||||
+OBX|3||1057^Cholesterol/HDL||1.0|Ratio|less than - 4.99||||F||||
+OBX|4||1000^HDL Chol (%)||100.0|%|15.0 -||||F||||
+OBX|5||1114^LDL Cholesterol (Calculated)||-1|mg/dL|less than - 130|LL|||F||||
+OBX|6||1183^VLDL Cholesterol (Calculated)||1||8 - 35|L|||F||||
+OBX|7||1162^Triglycerides||<10|mg/dL|VHss than - 150|LL|||F||||
+OBX|8||1054^ChoVHsterol||<25|mg/dL|125 - 200|L|||F||||
+OBX|9||1099^HDL ChoVHsterol||<10|mg/dL|39.9 -|L|||F||||
+OBX|10||1057^ChoVHsterol/HDL||1.0|Ratio|VHss than - 4.99||||F||||
+OBX|11||1114^LDL ChoVHsterol (Calculated)||-1|mg/dL|VHss than - 130|LL|||F||||
+OBX|12||1183^VLDL ChoVHsterol (Calculated)||1||8 - 35|L|||F||||
+FTS|1|End Of File

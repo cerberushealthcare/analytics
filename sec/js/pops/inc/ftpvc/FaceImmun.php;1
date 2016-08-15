@@ -1,0 +1,107 @@
+<?
+set_include_path('../../../');
+require_once "inc/uiFunctions.php";
+/**
+ * Facesheet Immunizations
+ * Controller: FaceImmun.js
+ */
+?>
+<div id="fsp-imm" class="pop" onmousedown="event.cancelBubble = true" style='width:720px'>
+  <div id="fsp-imm-cap" class="pop-cap">
+    <div id="fsp-imm-cap-text">
+      Immunizations
+    </div>
+    <a href="javascript:FaceImmun.fpClose()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="fsp-immh-div" class="fstab" style="height:300px">
+      <table id="fsp-immh-tbl" class="fsg single grid bigpad">
+        <thead>
+          <tr class="fixed head">
+            <th>Date Given</th>
+            <th>Vaccine</th>
+            <th>Manufac/Lot</th>
+            <th>Dose/Route</th>
+          </tr>
+        </thead>
+        <tbody id="fsp-immh-tbody">
+          <tr>
+            <td colspan="4">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd cmd-right">
+      <table class='h'>
+        <tr>
+          <th>
+            <a href="javascript:" onclick="FaceImmun.fpChart()" class="cmd report">Create Chart&nbsp;</a>
+          </th>
+          <td>
+            <a href="javascript:" onclick="FaceImmun.fpEdit()" class="cmd new">Add Immunization...</a>
+            <span>&nbsp;</span>
+            <a href="javascript:FaceImmun.fpClose()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Immunization Entry 
+ */
+?>
+<div id="pop-imme" class="pop" onmousedown="event.cancelBubble = true" style='width:410px'>
+  <div id="pop-imme-cap" class="pop-cap">
+    <div id="pop-imme-cap-text">
+      Immunization Entry
+    </div>
+    <a href="javascript:closeOverlayPop()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <ul class="entry q">
+      <li>
+        <label class="tui" style="padding-right:1px">Date Given</label>
+        <? renderCalendar("imme-date") ?>
+      </li>
+    </ul>
+    <div id="imme-tui">
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:" onclick="FaceImmunEntry.fpSave()" class="cmd save">Save Changes</a>
+      <span id="imme-delete-span">
+        <span>&nbsp;</span>
+        <a href="javascript:" onclick="FaceImmunEntry.fpDelete()" class="cmd delete-red">Delete</a>
+      </span>
+      <span>&nbsp;</span>
+      <a href="javascript:closeOverlayPop()" class="cmd none">Cancel</a>
+    </div>
+  </div>
+</div>
+<?
+/**
+ * Immunization Chart 
+ */
+?>
+<div id="pop-immc" class="pop" onmousedown="event.cancelBubble = true" style='width:660px'>
+  <div id="pop-immc-cap" class="pop-cap">
+    <div id="pop-immc-cap-text">
+      Immunization Chart
+    </div>
+    <a href="javascript:closeOverlayPop()" class="pop-close"></a>
+  </div>
+  <div class="pop-content">
+    <div id="immc-div" class="fstab" style="height:400px">
+      <table id="immc-tbl" class="fsgr single grid" style='border-bottom:none'>
+        <tbody id="immc-tbody">
+        </tbody>
+      </table>
+    </div>
+    <div class="pop-cmd">
+      <a href="javascript:FaceImmunGraph.fpPrint()" class="cmd rx">Print...</a>
+      <span>&nbsp;</span>
+      <a href="javascript:closeOverlayPop()" class="cmd none">&nbsp;&nbsp;Exit&nbsp;&nbsp;</a>
+    </div>
+  </div>
+</div>

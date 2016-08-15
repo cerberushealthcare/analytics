@@ -1,0 +1,1324 @@
+<?xml version="1.0" encoding="UTF8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:voc="urn:hl7-org:v3/voc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+  <realmCode code="US"/>
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.3.88.11.32.1"/>
+  <templateId root="2.16.840.1.113883.10.20.1"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.6"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.2"/>
+  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.1"/>
+  <templateId root="2.16.840.1.113883.10.20.3"/>
+  <id root="db734647-fc99-424c-a864-7e3cda82e703"/>
+  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="34133-9" displayName="Summarization of Episode Note"/>
+  <title>Continuity of Care Document</title>
+  <effectiveTime value="20131108014219+0500"/>
+  <confidentialityCode codeSystem="2.16.840.1.113883.5.25" codeSystemName="HL7 Confidentiality" code="N"/>
+  <languageCode code="en-US"/>
+  <recordTarget>
+    <patientRole>
+      <id root="G3013" extension="105054"/>
+      <addr><state>TX</state><city>Kerrville</city><postalCode>78028</postalCode><streetAddressLine>145 Sawgrass</streetAddressLine></addr>
+      <telecom value="(830) 367-5132"/>
+      <patient>
+        <name><given>Camilla</given><given>A</given><family>Dodge</family></name>
+        <administrativeGenderCode codeSystem="2.16.840.1.113883.5.1" codeSystemName="HL7 AdministrativeGender" code="F"/>
+        <birthTime value="19390108"/>
+      </patient>
+      <providerOrganization>
+        <id root="G3013"/>
+        <name>Salutopia</name>
+        <telecom value="832-278-7062"/>
+        <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+      </providerOrganization>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="20131108134219"/>
+    <assignedAuthor>
+      <id root="G3013" extension="U3329"/>
+      <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+      <telecom value="832-278-7062"/>
+      <assignedPerson>
+        <name><given>Adam</given><family>Howard</family></name>
+      </assignedPerson>
+      <representedOrganization>
+        <id root="G3013"/>
+        <name>Salutopia</name>
+        <telecom value="832-278-7062"/>
+        <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="G3013"/>
+        <name>Salutopia</name>
+        <telecom value="832-278-7062"/>
+        <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <documentationOf>
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low value="19390108"/>
+        <high value="20131108134219"/>
+      </effectiveTime>
+      <performer typeCode="PRF">
+        <functionCode codeSystem="2.16.840.1.113883.5.88" codeSystemName="HL7 ParticipationFunction" code="PCP"/>
+        <time>
+          <low value="20131108134219"/>
+          <high value="20131108134219"/>
+        </time>
+        <assignedEntity>
+          <id root="G3013" extension="U3329"/>
+          <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+          <telecom value="832-278-7062"/>
+          <assignedPerson>
+            <name><given>Adam</given><family>Howard</family></name>
+          </assignedPerson>
+          <representedOrganization>
+            <id root="G3013"/>
+            <name>Salutopia</name>
+            <telecom value="832-278-7062"/>
+            <addr><state>TX</state><city>Houston</city><postalCode>77040</postalCode><streetAddressLine>13831 Northwest Fwy</streetAddressLine></addr>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.2"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.102"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.13"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="48765-2" displayName="Allergies, Adverse Reactions, Alerts"/>
+          <title>Allergies and Adverse Reactions</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Substance</th>
+                  <th>Reactions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bee Sting</td>
+                  <td>Severe</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.6"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="G3013" extension="A136552"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20131107143038"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="G3013" extension="A136552"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="416098002" displayName="Drug Allergy"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20131107143038"/>
+                  </effectiveTime>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="282100009" displayName="Adverse Reaction to Substance" xsi:type="CD"/>
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Bee Sting">
+                          <originalText>
+                            <reference value="aller136552"/>
+                          </originalText>
+                        </code>
+                        <name>Bee Sting</name>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                  <entryRelationship typeCode="REFR">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.1.39"/>
+                      <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                      <statusCode code="completed"/>
+                      <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.3"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="46240-8" displayName="Encounters"/>
+          <title>Encounters</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Encounter</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Encounter</td>
+                  <td>08-Nov-2013</td>
+                </tr>
+                <tr>
+                  <td>Encounter</td>
+                  <td>28-Oct-2013</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.21"/>
+              <id root="G3013" extension="S206791"/>
+              <code codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActCode" code="IMP" displayName="Inpatient Encounter"/>
+              <effectiveTime value="20131108"/>
+            </encounter>
+          </entry>
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.21"/>
+              <id root="G3013" extension="S205372"/>
+              <code codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActCode" code="IMP" displayName="Inpatient Encounter"/>
+              <effectiveTime value="20131028"/>
+            </encounter>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.8"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.112"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.19"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="10160-0" displayName="History of Medication Use"/>
+          <title>Medications</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Instructions</th>
+                  <th>Date(s)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Asprin Ec Low Dose 81 mg tablet,delayed release</td>
+                  <td>1 tablet DAILY by mouth</td>
+                  <td>N/A</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>Delhistine DM 2 mg-12.5 mg-10 mg/5 mL Syrup</td>
+                  <td>1 mL Q12h by mouth</td>
+                  <td>N/A</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.32.8"/>
+              <templateId root="2.16.840.1.113883.10.20.1.24"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.8"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7"/>
+              <id root="G3013" extension="M1028415"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20131028182135"/>
+                <high value="20131108134219"/>
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI" code="C38288" displayName="Oral"/>
+              <doseQuantity value="1"/>
+              <consumable>
+                <manufacturedProduct>
+                  <templateId root="2.16.840.1.113883.10.20.1.53"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2"/>
+                  <manufacturedMaterial>
+                    <code displayName="Asprin Ec Low Dose 81 mg tablet,delayed release">
+                      <originalText>Asprin Ec Low Dose 81 mg tablet,delayed release<reference value="med1028415"/></originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.47"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                  <statusCode code="completed"/>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S205372"/>
+                </encounter>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.32.8"/>
+              <templateId root="2.16.840.1.113883.10.20.1.24"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.8"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7"/>
+              <id root="G3013" extension="M1028413"/>
+              <statusCode code="completed"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20131028180857"/>
+                <high value="20131108134219"/>
+              </effectiveTime>
+              <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI" code="C38288" displayName="Oral"/>
+              <doseQuantity value="1"/>
+              <consumable>
+                <manufacturedProduct>
+                  <templateId root="2.16.840.1.113883.10.20.1.53"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.8.2"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2"/>
+                  <manufacturedMaterial>
+                    <code displayName="Delhistine DM 2 mg-12.5 mg-10 mg/5 mL Syrup">
+                      <originalText>Delhistine DM 2 mg-12.5 mg-10 mg/5 mL Syrup<reference value="med1028413"/></originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="REFR">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.47"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="33999-4" displayName="Status"/>
+                  <statusCode code="completed"/>
+                  <value codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="55561003" displayName="Active" xsi:type="CE"/>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S205372"/>
+                </encounter>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.11"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.103"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.6"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="11450-4" displayName="Problem List"/>
+          <title>Problems</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Diagnosis</th>
+                  <th>ICD-9</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Carotid Bruit</td>
+                  <td>&amp;nbsp;</td>
+                  <td>08-Nov-2013</td>
+                  <td ID="diag415895">Active</td>
+                </tr>
+                <tr>
+                  <td>Fever</td>
+                  <td>780.60</td>
+                  <td>08-Nov-2013</td>
+                  <td ID="diag415896">Active</td>
+                </tr>
+                <tr>
+                  <td>Excessive cold</td>
+                  <td>E901</td>
+                  <td>28-Oct-2013</td>
+                  <td ID="diag413493">Active</td>
+                </tr>
+                <tr>
+                  <td>Normal Gynecologic Exam</td>
+                  <td>&amp;nbsp;</td>
+                  <td>28-Oct-2013</td>
+                  <td ID="diag415844">Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.7"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="G3013" extension="D415895"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20131108"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="G3013" extension="D415895"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="diag415895"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20131108"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" displayName="Carotid Bruit"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S206791"/>
+                </encounter>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.7"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="G3013" extension="D415896"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20131108"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="G3013" extension="D415896"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="diag415896"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20131108"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" code="780.60" displayName="Fever"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S206791"/>
+                </encounter>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.7"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="G3013" extension="D413493"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20131028"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="G3013" extension="D413493"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="diag413493"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20131028"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" code="E901" displayName="Excessive cold"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S205372"/>
+                </encounter>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry typeCode="DRIV">
+            <act classCode="ACT" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.27"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2"/>
+              <templateId root="2.16.840.1.113883.3.88.11.83.7"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>
+              <id root="G3013" extension="D415844"/>
+              <code nullFlavor="NA"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20131028"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ" inversionInd="false">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.28"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>
+                  <id root="G3013" extension="D415844"/>
+                  <code codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" code="64572001" displayName="Condition"/>
+                  <text>
+                    <reference value="diag415844"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20131028"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" nullFlavor="UNK">
+                    <translation codeSystem="2.16.840.1.113883.6.42" codeSystemName="ICD9" displayName="Normal Gynecologic Exam"/>
+                  </value>
+                </observation>
+              </entryRelationship>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S205372"/>
+                </encounter>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.12"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="47519-4" displayName="History of Procedures"/>
+          <title>Procedures</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Procedure</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Pap Smear Screening</td>
+                  <td>05-Nov-2013</td>
+                </tr>
+                <tr>
+                  <td>Mammogram-Screen Bilat</td>
+                  <td>04-Nov-2013</td>
+                </tr>
+                <tr>
+                  <td>common exam</td>
+                  <td>28-Oct-2013</td>
+                </tr>
+                <tr>
+                  <td>Mammogram-Screen Bilat</td>
+                  <td>14-Aug-2013</td>
+                </tr>
+                <tr>
+                  <td>Vaccine Pneumococcal 23 valent</td>
+                  <td>14-Aug-2013</td>
+                </tr>
+                <tr>
+                  <td>Colonoscopy</td>
+                  <td>04-Jan-2013</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P454844"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="V76.2" displayName="Pap Smear Screening">
+                <originalText>Pap Smear Screening<reference value="proc454844"/></originalText>
+              </code>
+              <text>Pap Smear Screening<reference value="proc454844"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20131105"/>
+            </procedure>
+          </entry>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P454845"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="77057" displayName="Mammogram-Screen Bilat">
+                <originalText>Mammogram-Screen Bilat<reference value="proc454845"/></originalText>
+              </code>
+              <text>Mammogram-Screen Bilat<reference value="proc454845"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20131104"/>
+            </procedure>
+          </entry>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P441974"/>
+              <code displayName="common exam">
+                <originalText>common exam<reference value="proc441974"/></originalText>
+              </code>
+              <text>common exam<reference value="proc441974"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20131028"/>
+              <entryRelationship typeCode="COMP" inversionInd="true">
+                <encounter classCode="ENC" moodCode="EVN">
+                  <id root="G3013" extension="S205372"/>
+                </encounter>
+              </entryRelationship>
+            </procedure>
+          </entry>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P441950"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="77057" displayName="Mammogram-Screen Bilat">
+                <originalText>Mammogram-Screen Bilat<reference value="proc441950"/></originalText>
+              </code>
+              <text>Mammogram-Screen Bilat<reference value="proc441950"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130814"/>
+            </procedure>
+          </entry>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P441951"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="90732" displayName="Vaccine Pneumococcal 23 valent">
+                <originalText>Vaccine Pneumococcal 23 valent<reference value="proc441951"/></originalText>
+              </code>
+              <text>Vaccine Pneumococcal 23 valent<reference value="proc441951"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130814"/>
+            </procedure>
+          </entry>
+          <entry typeCode="DRIV">
+            <procedure classCode="PROC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+              <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+              <templateId root="2.16.840.1.113883.10.20.1.29"/>
+              <id root="G3013" extension="P441983"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="45378" displayName="Colonoscopy">
+                <originalText>Colonoscopy<reference value="proc441983"/></originalText>
+              </code>
+              <text>Colonoscopy<reference value="proc441983"/></text>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130104"/>
+            </procedure>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.14"/>
+          <templateId root="2.16.840.1.113883.3.88.11.83.122"/>
+          <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.28"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="30954-2" displayName="Relevant Diagnostic Tests and/or Laboratory Data"/>
+          <title>Results</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>Result</th>
+                  <th>Date Performed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mammogram-Screen Bilat</td>
+                  <td>Normal</td>
+                  <td ID="res109643">14-Aug-2013</td>
+                </tr>
+                <tr>
+                  <td>Colonoscopy</td>
+                  <td>Normal</td>
+                  <td ID="res109644">04-Jan-2013</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32"/>
+              <id root="G3013" extension="P441950"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="77057" displayName="Mammogram-Screen Bilat"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130814"/>
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+                  <templateId root="2.16.840.1.113883.10.20.1.29"/>
+                  <id root="G3013" extension="P441950"/>
+                  <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="77057" displayName="Mammogram-Screen Bilat">
+                    <originalText>Mammogram-Screen Bilat<reference value="proc441950"/></originalText>
+                  </code>
+                  <text>Mammogram-Screen Bilat<reference value="proc441950"/></text>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814"/>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="R109643"/>
+                  <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="77057" displayName="Mammogram-Screen Bilat"/>
+                  <text>
+                    <reference value="res109643"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814"/>
+                  <interpretationCode codeSystem="2.16.840.1.113883.5.83" code="N"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.32"/>
+              <id root="G3013" extension="P441983"/>
+              <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="45378" displayName="Colonoscopy"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130104"/>
+              <component>
+                <procedure classCode="PROC" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.3.88.11.83.17"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.19"/>
+                  <templateId root="2.16.840.1.113883.10.20.1.29"/>
+                  <id root="G3013" extension="P441983"/>
+                  <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="45378" displayName="Colonoscopy">
+                    <originalText>Colonoscopy<reference value="proc441983"/></originalText>
+                  </code>
+                  <text>Colonoscopy<reference value="proc441983"/></text>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104"/>
+                </procedure>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="R109644"/>
+                  <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT4" code="45378" displayName="Colonoscopy"/>
+                  <text>
+                    <reference value="res109644"/>
+                  </text>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104"/>
+                  <value xsi:type="PQ"/>
+                  <interpretationCode codeSystem="2.16.840.1.113883.5.83" code="N"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.1.16"/>
+          <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8716-3" displayName="Vital Signs"/>
+          <title>Vital Signs</title>
+          <text>
+            <table border="1" width="100%">
+              <thead>
+                <tr>
+                  <th>Date/Time</th>
+                  <th>Pulse (BPM)</th>
+                  <th>Resp (BPM)</th>
+                  <th>Blood Pressure (mmHg)</th>
+                  <th>Temp (F)</th>
+                  <th>Weight (lb)</th>
+                  <th>Height (in)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>08-Nov-2013 10:08AM</td>
+                  <td>92</td>
+                  <td>40</td>
+                  <td>64/64 RUE</td>
+                  <td>100.4</td>
+                  <td>210</td>
+                  <td>64</td>
+                </tr>
+                <tr>
+                  <td>28-Oct-2013 05:10PM</td>
+                  <td>90</td>
+                  <td>40</td>
+                  <td>148/76 RUE</td>
+                  <td>100.5</td>
+                  <td>210</td>
+                  <td>64</td>
+                </tr>
+                <tr>
+                  <td>14-Aug-2013 03:14PM</td>
+                  <td>88</td>
+                  <td>40</td>
+                  <td>140/74 RUE</td>
+                  <td>98.7</td>
+                  <td>211</td>
+                  <td>64</td>
+                </tr>
+                <tr>
+                  <td>04-Jan-2013 04:18PM</td>
+                  <td>89</td>
+                  <td>40</td>
+                  <td>142/76 RUE</td>
+                  <td>98.5</td>
+                  <td>214</td>
+                  <td>64</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.35"/>
+              <id root="G3013" extension="V208070"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20131108100801"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8867-4" displayName="Heart Beat"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="92" unit="/min" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="9279-1" displayName="Respiration Rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="40" unit="/min" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8480-6" displayName="Intravascular Systolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="64" unit="mm[Hg]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8462-4" displayName="Intravascular Diastolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="64" unit="mm[Hg]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8310-5" displayName="Body Temperature"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="100.4" unit="[degF]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="3141-9" displayName="Body Weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="95.25" unit="kg" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8302-2" displayName="Body Height"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="162.56" unit="cm" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V208070"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="41909-3" displayName="BMI"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131108100801"/>
+                  <value value="36" unit="kg/m2" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S206791"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.35"/>
+              <id root="G3013" extension="V206522"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20131028171001"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8867-4" displayName="Heart Beat"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="90" unit="/min" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="9279-1" displayName="Respiration Rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="40" unit="/min" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8480-6" displayName="Intravascular Systolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="148" unit="mm[Hg]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8462-4" displayName="Intravascular Diastolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="76" unit="mm[Hg]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8310-5" displayName="Body Temperature"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="100.5" unit="[degF]" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="3141-9" displayName="Body Weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="95.25" unit="kg" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8302-2" displayName="Body Height"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="162.56" unit="cm" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206522"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="41909-3" displayName="BMI"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20131028171001"/>
+                  <value value="36" unit="kg/m2" xsi:type="PQ"/>
+                  <entryRelationship typeCode="COMP" inversionInd="true">
+                    <encounter classCode="ENC" moodCode="EVN">
+                      <id root="G3013" extension="S205372"/>
+                    </encounter>
+                  </entryRelationship>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.35"/>
+              <id root="G3013" extension="V206524"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130814151401"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8867-4" displayName="Heart Beat"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="88" unit="/min" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="9279-1" displayName="Respiration Rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="40" unit="/min" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8480-6" displayName="Intravascular Systolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="140" unit="mm[Hg]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8462-4" displayName="Intravascular Diastolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="74" unit="mm[Hg]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8310-5" displayName="Body Temperature"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="98.7" unit="[degF]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="3141-9" displayName="Body Weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="95.71" unit="kg" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8302-2" displayName="Body Height"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="162.56" unit="cm" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206524"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="41909-3" displayName="BMI"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130814151401"/>
+                  <value value="36.2" unit="kg/m2" xsi:type="PQ"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.1.35"/>
+              <id root="G3013" extension="V206528"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20130104161801"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8867-4" displayName="Heart Beat"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="89" unit="/min" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="9279-1" displayName="Respiration Rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="40" unit="/min" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8480-6" displayName="Intravascular Systolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="142" unit="mm[Hg]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8462-4" displayName="Intravascular Diastolic"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="76" unit="mm[Hg]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8310-5" displayName="Body Temperature"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="98.5" unit="[degF]" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="3141-9" displayName="Body Weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="97.07" unit="kg" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="8302-2" displayName="Body Height"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="162.56" unit="cm" xsi:type="PQ"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.1.31"/>
+                  <templateId root="2.16.840.1.113883.3.88.11.83.15.1"/>
+                  <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.13"/>
+                  <id root="G3013" extension="V206528"/>
+                  <code codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" code="41909-3" displayName="BMI"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20130104161801"/>
+                  <value value="36.7" unit="kg/m2" xsi:type="PQ"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>

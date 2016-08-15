@@ -1,0 +1,17 @@
+/**
+ * Messages Page
+ */
+MessagesPage = page = {
+  //
+  load:function(query) {
+    Html.Tile.create(_$('tile')).extend(MessagesTile);
+    Page.setEvents();
+  },
+  onresize:function() {
+    var i = Html.Window.getViewportDim().height - 200;
+    if (i != self.maxHeight) {
+      self.maxHeight = i;
+      MessagesTile.setMaxHeight(i);
+    }
+  }
+}

@@ -1,0 +1,128 @@
+DIV.ReportViewHeader {
+  padding-bottom:5px;
+}
+DIV.ReportViewHeader TD {
+  vertical-align:top;
+  padding-top:2px;
+}
+DIV.ReportViewHeader TD A {
+  font-size:11pt;
+  margin-left:1em;
+}
+DIV.ReportViewHeader A.ReportView {
+  font-size:12pt;
+  font-weight:bold;
+}
+DIV.ReportViewHeader H2 {
+  margin-bottom:1px;
+  font-size:13pt;
+  font-family:Calibri,Arial;
+  font-weight:bold;
+  color:black;
+}
+DIV.ReportStubView TABLE TD.comment {
+  padding-top:6px;
+}
+DIV.CritRecEntry TABLE TD {
+  padding:1px 3px;
+}
+DIV.CritRecEntry TD.Label {
+  width:100px;
+  text-align:right;
+  color:#606060;  
+}
+DIV.CritRecEntry TD.Op {
+  height:24px;
+  border-left:1px solid #c0c0c0;
+  border-top:1px solid #c0c0c0;
+  border-bottom:1px solid #c0c0c0;
+  background-color:#efefef;
+}
+DIV.CritRecEntry TD.Spans {
+  width:250px;
+  border-right:1px solid #c0c0c0;
+  border-top:1px solid #c0c0c0;
+  border-bottom:1px solid #c0c0c0;
+  background-color:#efefef;
+}
+DIV.CritRecEntry TR SELECT {
+  background-color:#efefef;
+}
+DIV.CritRecEntry TR.sel TD.Label {
+  color:black;
+  background:url(../../img/icons/ok.png) left center no-repeat;
+}
+DIV.CritRecEntry TR.sel TD.Op {
+  background-color:#f9f9f9;
+}
+DIV.CritRecEntry TR.sel TD.Spans {
+  background-color:#f9f9f9;
+}
+DIV.CritRecEntry TR.sel SELECT {
+  background-color:white;
+}
+DIV.ReportCriteriaView LI {
+  padding:0;
+  margin:1px 0;
+}
+DIV.ReportCriteriaView LI.l1 {
+  margin-left:2em;
+}
+DIV.ReportCriteriaView LI.l2 {
+  margin-left:4em;
+}
+A.Report {
+  background:url(../../img/icons/graph.png) no-repeat left 2px;
+  padding-top:2px;
+  font-size:12pt;
+  font-weight:bold;
+}
+A.Join {
+  background:url(../../img/icons/link.gif) no-repeat -1px 3px;
+  padding-top:2px;
+  font-size:12pt;
+  font-weight:bold;
+}
+SPAN.Record {
+  display:inline-block;
+  background:url(../../img/icons/grid.gif) no-repeat left 4px;
+  padding-top:2px;
+  padding-right:4px;
+  font-size:12pt;
+  font-weight:bold;
+  padding-left:18px;
+}
+A.red {
+  color:#cc6600;
+}
+A.red:hover {
+  color:#F42941;
+  text-decoration:underline;
+}
+DIV.Stats {
+  border-left:1px solid #c0c0c0;
+  border-right:1px solid #c0c0c0;
+  border-bottom:1px solid #c0c0c0;
+  padding:2px 5px;
+  background-color:#E4E2DC;
+}
+DIV.AuditViewer DIV.pop-frame-content {
+  padding:0;
+}
+DIV.Snapshot {
+  width:300px;
+  height:400px;
+  overflow-y:scroll;
+  padding:7px;
+  padding-right:1px;
+  padding-right:expression('17px');
+}
+DIV.Snapshot TH {
+  text-align:right;
+  padding-right:5px;
+  color:#004B52;
+  padding-bottom:4px;
+}
+DIV.Snapshot TD {
+  padding-bottom:4px;
+}

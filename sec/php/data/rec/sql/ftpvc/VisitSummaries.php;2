@@ -1,0 +1,225 @@
+<?php
+require_once 'php/data/rec/sql/Facesheets.php';
+require_once 'php/data/Html.php';
+require_once 'php/pdf/HTMLPDF.php';
+//
+/**
+ * DAO for VisitSummary
+ * @author Warren Hornsby
+ */
+class VisitSummaries {
+  //
+  /**
+   * @param int cid
+   * @return VisitSummary
+   */
+  static function getPending($cid) {
+    $rec = VisitSummary::fetchPending($cid);
+    return $rec;
+  }
+  /**
+   * @param stdObj $o VisitSummary
+   * @return VisitSummary
+   */
+  static function finalize($o) {
+    global $login;
+    $rec = VisitSummary::revive($o);
+    $fs = Facesheet_Visit::from($rec->clientId, $rec->dos);
+    $rec->finalize($fs, $login->userId);
+    $rec->save();
+    return $rec;
+  }
+  /**
+   * @param int $cid
+   * @param int $sid
+   */
+  static function download($cid, $sid) {
+    $rec = VisitSummary::fetchFinal($cid, $sid);
+    static::output($rec);
+  }
+  //
+  protected static function output($rec) {
+    $htmlBody = $rec->finalBody;
+    $htmlHeader = $rec->finalHead;
+    $filename = $rec->getFilename();
+    $author = null;
+    $title = 'Visit Summary';
+    $pdf = new HTMLPDF('helvetica');
+    $pdf->setDocInfo($author, $title);
+    $pdf->setHTML($htmlBody, $htmlHeader);
+    ob_clean();
+    $pdf->Output($filename, 'D');
+  }
+}
+//
+class VisitSummary extends SqlRec implements CompositePk {
+  //
+  public $clientId;
+  public $finalId;
+  public $dos;
+  public $sessionId;
+  public $finalHead;
+  public $finalBody;
+  public $finalizedBy;
+  public $diagnoses;
+  public $iols;
+  public $instructs;
+  public $vitals;
+  public $meds;
+  //
+  const FINAL_ID_PENDING = 0;
+  //
+  public function getSqlTable() {
+    return 'client_visitsums';
+  }
+  public function getPkFieldCount() {
+    return 2;
+  }
+  public function toJsonObject(&$o) {
+    $o->instructs = jsondecode($this->instructs);
+  }
+  public function finalize($fs, $userId) {
+    $this->finalId = $this->sessionId;
+    $this->setFinalHtml($fs);
+    $this->finalizedBy = $userId;
+    $this->diagnoses = null;
+    $this->iols = null;
+    $this->instructs = null;
+    $this->vitals = null;
+  }
+  public function getFilename() {
+    return 'Summary_' . $this->clientId . '_' . $this->finalId . '.pdf'; 
+  }
+  //
+  static function revive($o) {
+    $me = new static();
+    $me->clientId = $o->clientId;
+    $me->finalId = $o->finalId;
+    $me->dos = $o->dos;
+    $me->sessionId = $o->sessionId;
+    $me->diagnoses = $o->diagnoses;
+    $me->iols = $o->iols;
+    $me->instructs = jsonencode($o->instructs);
+    $me->vitals = $o->vitals;
+    $me->meds = $o->meds;
+    return $me;
+  }
+  static function fetchFinal($cid, $sid) {
+    $c = new static();
+    $c->clientId = $cid;
+    $c->finalId = $sid;
+    return static::fetchOneBy($c);
+  }
+  static function fetchPending($cid) {
+    $c = new static();
+    $c->clientId = $cid;
+    $c->finalId = static::FINAL_ID_PENDING;
+    return static::fetchOneBy($c); 
+  }
+  //
+  protected function setFinalHtml($fs) {
+    $this->finalHead = $this->makeHead($fs);
+    $this->finalBody = $this->makeBody($fs);
+  }
+  protected function makeHead($fs) {
+    $h = new Html();
+    $h->br($fs->Client->getFullName())
+      ->br('Visit Summary')
+      ->br(formatLongDate($this->dos))
+      ->br($fs->UserGroup->name);
+    return $h->out();
+  }
+  protected function makeBody($fs) {
+    $secs = array();
+    $secs[] = $this->makeDiagSec();
+    $secs[] = $this->makeAllerSec($fs);
+    $secs[] = $this->makeLabsSec($fs);
+    $secs[] = $this->makePlanSec();
+    $secs[] = $this->makeOrderSec($fs);
+    $secs[] = $this->makeImmunSec($fs);
+    $secs[] = $this->makeMedChangeSec($fs);
+    $secs[] = $this->makeMedSec($fs);
+    $secs[] = $this->makeNextApptSec($fs);
+    return implode('', $secs);
+  }
+  protected function makeDiagSec() {
+    if (! empty($this->diagnoses)) {
+      $diags = jsondecode($this->diagnoses);
+        return $this->makeSecList('Your Diagnoses', $diags);
+    }
+  }
+  protected function makeAllerSec($fs) {
+    if (! empty($fs->Allergies)) {
+      foreach ($fs->Allergies as &$rec) 
+        $rec = $rec->getDesc();
+        return $this->makeSecList('Your Allergies', $fs->Allergies);
+    }
+  }
+  protected function makePlanSec() {
+    if (! empty($this->instructs)) {
+      $plan = jsondecode($this->instructs);
+      return $this->makeSecList('Your Plan', $plan);
+    }
+  }
+  protected function makeOrderSec($fs) {
+    if (! empty($fs->TrackItems)) {
+      foreach ($fs->TrackItems as &$rec) 
+        $rec = $rec->trackDesc;
+      return $this->makeSecList('Ordered for You', $fs->TrackItems);
+    }
+  }
+  protected function makeLabsSec() {
+    if (! empty($this->iols)) {
+      $html = array($this->iols);
+      return $this->makeSecList('Your Lab Results', $html);
+    }
+  }
+  protected function makeImmunSec($fs) {
+    if (! empty($fs->Immuns)) {
+      foreach ($fs->Immuns as &$rec) 
+        $rec = $rec->name;
+      return $this->makeSecList('Immunizations Given', $fs->Immuns);
+    }
+  }
+  protected function makeMedSec($fs) {
+    if (! empty($fs->Meds)) {
+      foreach ($fs->Meds as &$rec) 
+        $rec = $rec->name . ' (' . Med::friendlySig($rec->text) . ')';
+      return $this->makeSecList('Current Medications', $fs->Meds);
+    }
+  }
+  protected function makeMedChangeSec($fs) {
+    $meds = jsondecode($this->meds);
+    $adds = $this->getMeds($meds, '@addMed', 'Add');
+    $dcs = $this->getMeds($meds, '@dcMed', 'Discontinue');
+    $list = array_merge($adds, $dcs);
+    if (! empty($list))
+      return $this->makeSecList('Medication Changes', $list);
+  }
+  protected function getMeds($meds, $action, $text) {
+    $a = array();
+    foreach ($meds as $med)   
+      if ($med->action == $action)
+        $a[] = $text . ': ' . $med->name; 
+    return $a;
+  }
+  protected function makeNextApptSec($fs) {
+    if ($fs->Sched) {
+      $list = array($fs->Sched->getDesc());
+      return $this->makeSecList('Your Next Appointment', $list);
+    }
+  }
+  protected function makeSec($head, $html) {
+    $h = new Html();
+    $h->p_()->h3($head)->add($html)->_();
+    return $h->out();
+  }
+  protected function makeList($list) {
+    $h = new Html();
+    $h->ul($list);
+    return $h->out();
+  }
+  protected function makeSecList($head, $list) {
+    return static::makeSec($head, $this->makeList($list));
+  }
+}

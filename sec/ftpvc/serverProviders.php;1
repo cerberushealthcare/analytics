@@ -1,0 +1,60 @@
+<?php
+require_once 'php/dao/LoginDao.php';
+require_once 'php/data/json/JAjaxMsg.php'; 
+require_once 'php/data/rec/sql/Providers.php';
+//
+if (LoginDao::authenticateSession() < 0) {
+  $m = new JAjaxMsg('save-timeout', 'null');
+  echo $m->out();
+  exit;
+}
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  logit('serverProviders.php?' . implode_with_keys('&', $_GET));
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = jsondecode($_POST['obj']);
+  logit('serverProviders.php (posted)');
+  logit_r($_POST);
+}
+try {
+  switch ($action) {
+    //
+    case 'getAll':
+      $recs = Providers::getAll();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'save':
+      $rec = Providers::save($obj);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'delete':
+      $id = $_GET['id'];
+      Providers::delete($id);
+      $m = new JAjaxMsg($action, $id);
+    //
+    case 'getFacilities':
+      $recs = Providers::getFacilities();
+      $m = new JAjaxMsg($action, jsonencode($recs));
+      break;
+    case 'saveFacility':
+      $rec = Providers::saveFacility($obj);
+      $m = new JAjaxMsg($action, jsonencode($rec));
+      break;
+    case 'deleteFacility':
+      $id = $_GET['id'];
+      Providers::deleteFacility($id);
+      $m = new JAjaxMsg($action, $id);
+    //
+    default:
+      $m = new JAjaxMsg('error', $action);
+  }
+} catch (DisplayableException $e) {
+  $m = JAjaxMsg::constructError($e);
+} catch (Exception $e) {
+  $m = JAjaxMsg::constructError(Logger::logException($e));
+}
+if ($m != null) 
+  echo $m->out();
+?>

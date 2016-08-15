@@ -1,0 +1,74 @@
+<?php
+require_once 'php/data/rec/sql/_DataRec.php';
+require_once 'php/data/rec/sql/MedsLegacy.php';
+require_once 'php/data/rec/sql/MedsNewCrop.php';
+//
+/**
+ * Medications DAO Base 
+ * @see MedsLegacy and MegsNewCrop for implementations 
+ * @author Warren Hornsby
+ */
+class Meds {
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceMed,..)
+   */
+  public static function getActive($cid) {
+    return call_user_func(self::getDao('getActive'), $cid);
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @param [FaceMed,..] $actives (optional, to sync history active flags)
+   * @return array(SessionMed,..)
+   */
+  public static function getHistory($cid, $actives = null) {
+    return call_user_func(self::getDao('getHistory'), $cid, $actives);
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return Med
+   */
+  public static function save($o) {
+    return call_user_func(self::getDao('save'), $o);
+  }
+  /**
+   * Deactivate record from UI
+   * @param int $id
+   * @return Med
+   */
+  public static function deactivate($id) { 
+    return call_user_func(self::getDao('deactivate'), $id);
+  }
+  /**
+   * Save audit records for printing RX
+   * @param [Med,..] $meds
+   * @return Med last one updated
+   */
+  public static function auditRxPrint($meds) {
+    return call_user_func(self::getDao('auditRxPrint'), $meds);
+  }
+  /**
+   * Build face recs from NewCrop status
+   * @param int $cid
+   * @param object $current @see NewCrop::pullCurrentMedAllergy()
+   */
+  public static function rebuildNewCropMeds($cid, $current) {
+    return call_user_func(self::getDao('rebuildNewCropMeds'), $cid, $current);
+  }
+  /**
+   * @return string static JSON of Med data object 
+   */
+  public static function getStaticJson() {
+    return call_user_func(self::getDao('getStaticJson'));
+  }
+  //
+  private static function getDao($method) {
+    global $myLogin;
+    $class = ($myLogin->isErx()) ? 'MedsNewCrop' : 'MedsLegacy';
+    return array($class, $method);
+  }
+}
+?>

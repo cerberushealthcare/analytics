@@ -1,0 +1,42 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Leveled Access Data Rec
+ * For tables with mix of app-level (UGID=0) and group-level (UGID=#) records
+ */
+abstract class SqlLevelRec extends SqlRec {
+  //
+  const APP_LEVEL_UGID = '0';
+  //
+  public function isAppLevel() {
+    return self::isAppLevelUgid($this->userGroupId);
+  }
+  //
+  static function isAppLevelUgid($ugid) {
+    return $ugid == self::APP_LEVEL_UGID;
+  }
+  static function getAllLevelsCriteria($ugid) {
+    return CriteriaValues::_or(CriteriaValue::equals(self::APP_LEVEL_UGID), CriteriaValue::equals($ugid));
+  }
+  //
+  protected function authenticateUserGroupId($ugid, $forReadOnly = false) {
+    if ($ugid instanceof CriteriaValues) {
+      $ugids = $ugid->getInnerValues();
+      foreach ($ugids as $ug) 
+        self::authenticateUserGroupId($ug, $forReadOnly);
+    } else {
+      if (self::isAppLevelUgid($ugid)) {
+        if ($forReadOnly) {
+          return;  // OK for all to read
+        } else {
+          global $myLogin;
+          if ($myLogin->isAdmin())  
+            return;  // OK for admins to update
+          else
+            throw new SecurityException('Admin-only operation for ' . $this->getMyName());
+        }
+      }
+      parent::authenticateUserGroupId($ugid, $forReadOnly);
+    }
+  }
+}

@@ -1,0 +1,54 @@
+<? $title = 'Clicktate - Privacy Policy' ?>
+<? include "inc/hheader.php" ?>
+<div id="body" style="background:white">
+  <div class="content center">
+    <h1>Privacy Policy</h1>
+  </div>
+  <div class="wm">
+    <p>
+      Our Privacy Policy is designed to assist you in understanding how we collect and use the personal information you provide to us and to assist you in making informed decisions when using our site and our products and services.
+    </p>
+    <h2 style="margin-top:1em">What information do we collect?</h2>
+    <ol>
+    <li><b>Personal Information You Choose to Provide</b><p>
+    Registration Information.
+    You will provide us information about yourself, your firm or company, and your practices when you register to be a member of  LCD Solutions, Inc. and clicktate.com, register for certain services, or register for email newsletters and alerts. You may also provide additional comments on how you see LCD Solutions, Inc. and clicktate.com servicing your needs and interests. 
+    Email Information.
+    If you choose to correspond with us through email, we may retain the content of your email messages together with your email address and our responses.
+    </p>
+    </li> 
+    <li><b>Web Site Use Information</b><p>
+    How Do We Use Information We Collect?
+    As you utilize the online resources of LCD Solutions, Inc. and clicktate.com, any information that we collect from you is maintained in the strictest confidentiality.  The information is only used to improve service to you via clicktate.com.  By gathering information regarding the utilization of clicktate.com including but not limited to such information as time of usage, aggregate amount of usage, number of notes generated, length of documents and number of smart templates utilized, and also by gathering user feedback we are able to constantly improve our Web site and better serve our customers. In the process of doing this we do not gather any personal information about you, other than that routinely needed for billing purposes, system maintenance, and medical note generation, nor do we retain any information regarding patient care including names, dates of birth or medical record numbers.
+    </p>
+    </li> 
+    <li><b>Sharing Information with Third Parties</b><p>
+    We may enter into alliances, partnerships or other business arrangements with third parties who may provide services which could expand or improve clicktate.com, or who are necessary for the routine day to day operation of our business.   We also use third parties to facilitate our business, including, but not limited to, sending email and processing credit card payments. In connection with these offerings and business operations, our partners and other third parties may have access to your personal information for use in connection with business activities. As we develop our business, we may buy or sell assets or business offerings. Customer, email, and visitor information is generally one of the transferred business assets in these types of transactions. We may also transfer such information in the course of corporate divestitures, mergers, or any dissolution.
+    </p>
+    </li> 
+    <li><b>Protection of Information</b><p>
+    How Do We Secure Information Transmissions?
+    Email is not recognized as a secure medium of communication. For this reason, we request that you do not send private information to us by email. The information you may enter on our Web site will be transmitted securely via Secure Sockets Layer SSL, 256 bit encryption services, which are enabled by VeriSign, Inc. Pages utilizing this technology will have URLs that start with HTTPS instead of HTTP. Please contact info@clicktate.com or by calling 1-888-8click8 if you have any questions or concerns.
+    How Can You Access and Correct Your Information?
+    You may request access to all your personally identifiable information that we collect online and maintain in our database by emailing info@clicktate.com or by calling 1-888-8click8.  Information will only by sent to you via an address or email that you have previously registered.  
+    Certain Disclosures
+    We may disclosure your personal information if required to do so by law or subpoena or if we believe that such action is necessary to (a) conform to the law or comply with legal process served on us or Affiliated Parties; (b) protect and defend our rights and property, the Site, the users of the Site, and/or our Affiliated Parties; (c) act under circumstances to protect the safety of users of the Site, us, or third parties.
+    </p>
+    </li> 
+    <li><b>Links to other Web Sites</b><p>
+    We are not responsible for the practices employed by Web sites linked to or from our Web site nor the information or content contained therein. Often links to other Web sites are provided solely as pointers to information on topics that may be useful to the users of our Web site. 
+    Please remember that when you use a link to go from our Web site to another Web site, our Privacy Policy is no longer in effect. Your browsing and interaction on any other Web site, including Web sites which have a link on our Web site, is subject to that Web site's own rules and policies. Please read over those rules and policies before proceeding.
+    </p>
+    </li> 
+    <li><b>Access to Information</b><p>
+    Only those administrative members of LCD Solutions, Inc. who are required to access information in order to maintain or improve the system, perform routine business activities, or to perform security functions will have access to any information on clicktate.com.  Other outside vendors may have access to certain billing information to assist us in our day to day business activities as defined above.  A log of all interactions with clicktate.com is maintained for security purposes.  
+    </p>
+    </li> 
+    <li><b>Your Consent</b><p>
+    By using our Web site you consent to our collection and use of your personal information as described in this Privacy Policy. If we change our privacy policies and procedures, we will post those changes on our Web site to keep you aware of what information we collect, how we use it and under what circumstances we may disclose it.
+    </p>
+    </li> 
+    </ol>
+  </div>
+</div>
+<? include "inc/hfooter.php" ?>

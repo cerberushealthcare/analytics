@@ -1,0 +1,178 @@
+<?php
+require_once 'php/data/rec/sql/dao/Logger.php';
+require_once 'php/data/ui/LoginResult.php';
+//
+/**
+ * MySql Data Access Object
+ * @author Warren Hornsby
+ */
+class Dao {
+  //
+  /**
+   * Execute query 
+   * @param string $sql
+   * @return MySqlResource
+   */
+  public static function query($sql) {
+    Logger::debug($sql);
+    $conn = self::open();
+    $res = mysql_query($sql); 
+    if (! $res)
+      throw self::buildException(mysql_error(), mysql_errno($conn));
+    return $res;
+  }
+  /**
+   * @param string $sql INSERT
+   * @return int ID generated
+   */
+  public static function insert($sql) {
+    self::query($sql);
+    return mysql_insert_id();
+  }
+  /**
+   * @param string $sql UPDATE/DELETE/INSERT ON DUPLICATE
+   * @return int number of affected rows (for INSERT/DELETE)
+   * @return int 1=was inserted, 2=was updated (for INSERT ON DUPLICATE)
+   */
+  public static function update($sql) {
+    self::query($sql);
+    return mysql_affected_rows();
+  }
+  /**
+   * Fetch single row
+   * @param string $sql SELECT
+   * @return array('col_name'=>value,..)
+   */
+  public static function fetchRow($sql) {
+    $res = self::query($sql);
+    return mysql_fetch_array($res, MYSQL_ASSOC);
+  }
+  /**
+   * Fetch multiple rows
+   * @param string $sql SELECT
+   * @param string $keyCol 'col_name' (optional, to map array) 
+   * @return array(array('col_name'=>value,..),..) if no $keyCol 
+   * @return array(keyValue=>array('col_name'=>value,..),..) if $keyCol supplied
+   */
+  public static function fetchRows($sql, $keyCol = null) {
+    $res = self::query($sql);
+    $rows = array();
+    if ($keyCol == null) 
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC))
+        $rows[] = $row;  
+    else
+      while ($row = mysql_fetch_array($res, MYSQL_ASSOC))
+        $rows[$row[$keyCol]] = $row;
+    return $rows;  
+  }
+  /**
+   * Fetch column value of single row
+   * @param string $sql SELECT
+   * @param string $col 'col_name' (optional, defaults to first column)
+   * @return value 
+   */
+  public static function fetchValue($sql, $col = 0) {
+    $res = self::query($sql);
+    $row = mysql_fetch_array($res, MYSQL_BOTH);
+    return $row[$col];
+  }
+  /** 
+   * Fetch column value across multiple rows 
+   * @param string $sql SELECT
+   * @param string $col 'col_name' (optional, defaults to first column)
+   * @param string $keyCol 'col_name' (optional, to map array)
+   * @return array(value,..) if no $keyCol
+   * @return array(keyValue=>value,..) if $keyCol supplied
+   */
+  public static function fetchValues($sql, $col = 0, $keyCol = null) {
+    $res = self::query($sql);
+    $values = array();
+    if ($keyCol == null)
+      while ($row = mysql_fetch_array($res, MYSQL_BOTH))
+        $values[] = $row[$col];
+    else
+      while ($row = mysql_fetch_array($res, MYSQL_BOTH))
+        $values[$row[$keyCol]] = $row[$col];
+    return $values;  
+  } 
+  /**
+   * Open connection
+   * @return MySqlConnection
+   */
+  public static function open() {
+    $cred = self::getCredFromEnv();
+    $conn = mysql_connect($cred->server, $cred->user, $cred->pw) 
+      or die(mysql_error());
+    mysql_select_db(dbFromEnv()) 
+      or die(mysql_error());
+    return $conn;
+  }
+  /**
+   * Begin transaction
+   */
+  public static function begin() {
+    self::query('BEGIN');
+  }
+  /**
+   * Commit transaction
+   */
+  public static function commit() {
+    self::query('COMMIT');
+  }
+  /**
+   * Rollback transaction
+   */
+  public static function rollback() {
+    self::query('ROLLBACK');
+  }
+  //
+  protected static function buildException($msg, $code) {
+    switch ($code) {
+      case 1062:
+        return new DupeInsertException($msg, $code);
+      default:
+        return new SqlException($msg, $code);
+    }
+  }
+  protected static function getCredFromEnv() {
+    static $cred;
+    if ($cred == null) {
+      $cred = new stdClass();
+      if (isset($_SERVER['HTTP_HOST'])) {
+        switch (LoginResult::getEnv()) {
+          case LoginResult::ENV_PRODUCTION:
+          case LoginResult::ENV_CERT:
+          case LoginResult::ENV_LOCAL:
+          case LoginResult::ENV_TEST:
+          case LoginResult::ENV_PAPYRUS_LOCAL:
+            $cred->server = 'localhost';
+            $cred->user = 'webuser';
+            $cred->pw = 'click01';
+            break;
+          case LoginResult::ENV_PAPYRUS_TEST:
+            $cred->server = '10.10.20.54:5000';
+            $cred->user = 'clicktate';
+            $cred->pw = 'clicktate';
+            break;
+          case LoginResult::ENV_PAPYRUS_PROD:
+            // todo
+            break;
+        }
+      } else {
+        global $myHost;
+        if ($myHost == 'prod') {
+          $cred->server = 'localhost';
+          $cred->user = 'webuser';
+          $cred->pw = 'click01';
+        }
+      }
+    }
+    return $cred;
+  } 
+}
+//
+/**
+ * Exceptions
+ */ 
+class DupeInsertException extends Exception implements UserFriendly {}
+?>

@@ -1,0 +1,231 @@
+DIV.dsp {
+  padding:0px 5px 10px 5px;
+}
+DIV.dsp DIV.Viewer {
+}
+DIV.dsp DIV.NavBar {
+  height:60px;
+}
+DIV.dsp DIV.NavBar TD {
+  vertical-align:top;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TD {
+  width:50%;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TD DIV {
+  text-align:right;
+  padding-right:10px;
+  padding-left:10px;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TH {
+  width:50%;
+}
+DIV.dsp DIV.Viewer TABLE.t2c TH DIV {
+  text-align:left;
+  padding-right:10px;
+  padding-left:10px;
+}
+DIV.dsp DIV.View {
+  margin:5px 0 0 0;
+  border:1px solid #c0c0c0;
+  background-color:white;
+  padding:10px;
+  padding-right:expression('27px');
+  overflow-y:scroll;
+  overflow-x:hidden;
+  border:1px solid #DBD7CD;
+}
+DIV.dsp DIV.View TABLE.h {
+  width:100%;
+  margin-bottom:1em;
+}
+DIV.dsp DIV.View TABLE.h TH {
+  text-align:left;
+  padding:0;
+  vertical-align:middle;
+}
+DIV.dsp DIV.View TABLE.h TD {
+  text-align:right;
+  border:0;
+  padding:0;
+  vertical-align:middle;
+  padding-left:10px;
+}
+DIV.dsp DIV.linkbox {
+  width:140px;
+  height:50px;
+  cursor:pointer;
+  padding-top:2px;
+  padding:2px;
+  border:1px dashed #c0c0c0;
+  margin-top:5px;
+  overflow:hidden;
+}
+DIV.dsp DIV.linkbox A {
+  white-space:normal;
+}
+DIV.dsp DIV.prevbox {
+  padding-left:24px;
+  background:url(../../img/icons/prev2.png) no-repeat -6px -2px;
+}
+DIV.dsp DIV.nextbox {
+  padding-right:24px;
+  background:url(../../img/icons/next2.png) no-repeat 139px -2px;
+}
+DIV.dsp DIV.hover {
+  border:1px solid #F42941;
+  background-color:white;
+}
+DIV.dsp DIV.empty {
+  visibility:hidden;
+}
+DIV.dsp A.linkbox {
+  display:block;
+  margin-top:5px;
+} 
+DIV.dsp A.linkbox:hover {
+  color:#000099;
+}
+DIV.dsp DIV.hover A.linkbox {
+  color:#F42941;
+}
+DIV.dsp DIV.onbox {
+  text-align:center;
+}
+DIV.dsp DIV.onbox H2 {
+  margin:0;
+  padding:0;
+}
+DIV.dsp DIV.onbox DIV {
+  vertical-align:top;
+  height:1.15em;
+  overflow:hidden;
+}
+DIV.dsp IFRAME {
+  margin:5px 0 0 0;
+  height:490px;
+  width:100%;
+}
+DIV.dsp DIV.ScanImage {
+  margin:5px 0 10px 0;
+  text-align:center;
+}
+DIV.dsp DIV.ScanImage DIV.pancontainer {
+  display:block;
+  margin:0 auto;
+}
+TABLE.EditHead TH {
+  padding-left:10px;
+  font-weight:normal;
+}
+DIV.ViewSession {
+  font-family:Arial;
+  font-size:10pt;
+  line-height:1.4em;
+}
+DIV.ViewSession DIV#sig TABLE {
+  width:100%;
+}
+DIV.ViewSession DIV#sig TABLE B {
+  color:red;
+}
+TABLE.ResultTable THEAD TH {
+  color:#004B52;
+  font-weight:normal;
+}
+TABLE.ResultTable TBODY TH {
+  border:1px solid #c0c0c0;
+  padding:2px;
+  font-weight:normal;
+  text-align:right;
+  vertical-align:top;
+  padding:2px 5px 2px 2px;
+  font-size:1.2em;
+}
+TABLE.ResultTable A:hover {
+  text-decoration:underline;
+}
+TABLE.ResultTable TR TD {
+  border:1px solid #c0c0c0;
+  padding:2px 4px;
+  vertical-align:top;
+}
+TABLE.ResultTable TR.row1 TD {
+  background-color:#F5F5F5;
+}
+TABLE.ResultTable TD.L, DIV.dsp DIV.ViewResult TABLE TD.LL {
+  color:green;
+}
+TABLE.ResultTable TD.H, DIV.dsp DIV.ViewResult TABLE TD.HH {
+  color:red;
+}
+TABLE.ResultTable TD.A, DIV.dsp DIV.ViewResult TABLE TD.AA {
+  color:orange;
+}
+DIV.ViewResult H3 {
+  text-transform:uppercase;
+}
+DIV.ViewResult PRE {
+  margin:0;
+  padding:0;
+  font-size:1em;
+  font-family:'Lucida Console',Monaco,monospace;
+}
+DIV.EditHead {
+  padding-bottom:10px;
+}
+A.EditHead {
+  margin-bottom:10px;
+  font-size:13pt;  
+  font-weight:bold;
+  text-transform:uppercase;
+  color:#004B52;
+}
+A.EditHead:hover {
+  color:#F42941;
+}
+DIV.ViewXml TABLE {
+  width:100%;
+}
+DIV.ViewXml TD {
+  padding:2px 5px;
+}
+DIV.ViewXml DIV.CCD TABLE {
+  border:1px solid black;
+}
+DIV.ViewXml DIV.CCD H2 {
+  margin-top:10px;
+}
+DIV.ViewXml DIV.CCR H2 {
+  margin-top:5px;
+}
+DIV.ViewXml DIV.CCR TABLE TH {
+  width:100px;
+  text-align:right;
+  font-size:11pt;
+  padding-right:4px;
+  vertical-align:top;
+}
+DIV.ViewXml DIV.CCR TABLE TD {
+  border:1px solid #c0c0c0;
+  font-size:10pt;
+  padding:2px 5px;
+}
+DIV.ViewXml DIV.CCR TABLE TD.CxSub {
+  border:none;
+}
+DIV.posthead LABEL {
+  margin-right:2px;
+}
+DIV.nplabel {
+  font-family:Arial;
+  font-size:8pt;
+  line-height:10pt;
+  text-align:center;
+  width:15px;
+  color:#909090;
+}
+DIV.bold2 {
+  font-size:12pt;
+  font-weight:bold;
+}

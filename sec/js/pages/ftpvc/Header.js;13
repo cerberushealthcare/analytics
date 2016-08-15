@@ -1,0 +1,123 @@
+/**
+ * Page Header 
+ * Global static 
+ * Requires: Ajax.js, ui.js, icd-pop.js
+ */
+var Header = {
+  MAIL_CHECK_INTERVAL:120000,      // 2 minutes
+  NEWCROP_CHECK_INTERVAL:300000,  // 5 minutes  
+  _a:null,  // message anchor
+  _inboxCt:null,
+  _newMsgCallback:null,
+  _ncStatus:null,
+  _pageName:null,
+  /*
+   * Loader
+   * - inboxCt: current inbox count per MsgDao
+   */
+  load:function(pageName, inboxCt) {
+    this._a = $('a-mail');
+    this._pageName = pageName;
+    this._inboxCt = inboxCt;
+    this._elimImageFlicker();
+    this._refreshMailAnchor(inboxCt);
+    setTimeout(Header._mailCheck, Header.MAIL_CHECK_INTERVAL);
+    if (me.perm.er) 
+      Header._ncCheck();
+  },
+  /*
+   * Assign a callback when new message received
+   */
+  setNewMsgCallback:function(callback) {
+    this._newMsgCallback = callback
+  },
+  /*
+   * Set inbox count 
+   */
+  setUnread:function(ct) {
+    this._refreshMailAnchor(ct);
+  },
+  /*
+   * NewCrop status anchor
+   */
+  ncStatus:function() {
+    Page.go(Page.PAGE_ERX_STATUS);
+  },
+  /*
+   * NewCrop pharm anchor
+   */
+  ncPharm:function() {
+    Page.go(Page.PAGE_ERX_PHARM);
+  },
+  /*
+   * Refresh New Crop status anchors
+   */
+  ncRefreshStat:function(timeout) {
+    Cookies.expire('NC_STATUS');
+    Ajax.Erx.getStatusCount(timeout, 
+      function(status) {
+        Cookies.set('NC_STATUS', status, 10);  // check again in 10 minutes
+        Header._ncFormatNewCropStatus(status);
+      });
+  },
+  _ncFormatNewCropStatus:function(status) {
+    Header._ncFormat('nc-pharm', 'a-ncp', status._pharmText, status._pharmColor);
+    Header._ncFormat('nc-status', 'a-ncs', status._statusText);
+  },
+  _ncFormat:function(div, a, text, color) {
+    if (text) {
+      setText(a, text).style.color = (color) ? color : ''
+      show(div);
+    } else {
+      hide(div);
+    }
+  },
+  _ncCheck:function() {
+    var status = Cookies.get('NC_STATUS');
+    if (status) 
+      Header._ncFormatNewCropStatus(status);
+    else
+      setTimeout('Header.ncRefreshStat(10)', 5000);
+  },
+  icdLook:function() {
+    Includer.getWorking([Includer.AP_ICD_POP, Includer.JS_ICD_POP], function() {
+      showIcd(null, null, false);
+    });
+  },
+  closeSticky:function(id, remember) {
+    hide(id);
+    if (remember)
+      Ajax.get(Ajax.SVR_POP, 'hideSticky', id, Ajax.NO_CALLBACK);
+  },
+  getMyInboxCtCallback:function(ct) {
+    this._refreshMailAnchor(ct);
+  },
+  _elimImageFlicker:function() {
+    try {
+      document.execCommand('BackgroundImageCache', false, true);
+    } catch(e) {}
+  },
+  _mailCheck:function() {
+    Ajax.get(Ajax.SVR_MSG, 'getMyInboxCt', null, 
+      function(ct) {
+        if (ct != Header._inboxCt) {
+          Header._refreshMailAnchor(ct);
+        }
+        setTimeout(Header._mailCheck, Header.MAIL_CHECK_INTERVAL);
+      });
+  },
+  _refreshMailAnchor:function(ct) {
+    if (ct == 0) {
+      setText('a-mail', 'Messages (0)').className = 'mail';
+    } else {
+      setText('a-mail', 'Messages (' + ct + ' unread)').className = 'mail newmail';
+      if (ct > this._inboxCt) {
+        if (this._newMsgCallback) {
+          this._newMsgCallback.call(page);
+        }
+        swell($('img-mail'), true);
+      }
+    }
+    this._inboxCt = ct;
+  }
+};

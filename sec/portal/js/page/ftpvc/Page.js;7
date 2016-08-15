@@ -1,0 +1,155 @@
+/**
+ * Page PortalPage
+ */
+PortalPage = Html.Page.extend(function(self) {
+  return {
+    onbodyload:function() {},
+    //
+    init:function() {
+      self.content = _$('page');
+      self.htitle = _$('htitle');
+      self.hnav = _$('hnav');
+    },
+    onpageload:function() {
+      self.onpageresize();
+      self.onbodyload();
+    },
+    onpageresize:function() {
+      var cw = self.content.setWidth().getWidth() - 50;
+      var w = Math.min(800, cw);
+      self.content.setWidth(w);
+      if (self._w != w) {
+        self._w = w;
+        if (self.htitle)
+          self.htitle.setWidth(w);
+        if (self.hnav)
+          self.hnav.setWidth(w);
+      }
+    },
+    goHome:function() {
+      self.go('welcome.php');
+    },
+    goMessaging:function() {
+      self.go('messaging.php');
+    },
+    goFacesheet:function() {
+      self.go('facesheet.php');
+    }
+  }  
+})
+/**
+ * Anchor ReturnAnchor
+ */
+ReturnAnchor = {
+  create:function(container, text) {
+    var a = Html.Anchor.create('return', text || 'Back to Home').into(container);
+    if (text) 
+      a.bubble('onclick', container, 'onreturn');
+    else
+      a.onclick = window.goHome;
+    return a;
+  }
+}
+/**
+ * Div Curtain
+ */
+Curtain = {
+  create:function(container) {
+    return Curtain = Html.Window.append(Html.Div.create('Curtain')).extend(function(self) {
+      return {
+        //
+        init:function() {
+          self.show();
+        },
+        show:function() {
+          if (! self.showing) {
+            self.resize();
+            Html._proto.show.call(self);
+          }
+          return self;
+        },
+        resize:function() {
+          var dd = Html.Window.getViewportDim();
+          self.setHeight(dd.height - 4).setWidth(dd.width - 4);
+        },
+        create:function() {
+          self.show();
+          return self;
+        }
+      }
+    })
+  }
+}
+/**
+ * Div PortalPop
+ */
+PortalPop = {
+  create:function(caption, width) {
+    var My = this;
+    var wrapper = Html.Window.append(Html.Div.create('PortalPop'));
+    return Html.Tile.create(wrapper, 'Content').extend(function(self) {
+      return {
+        init:function() {
+          self.cap = My.Cap.create().before(self).bubble('onclose', self.close);
+          self.wrapper = wrapper.setWidth(width).hide();
+          self.setCaption(caption);
+          wrapper.setUnselectable();
+        },
+        setCaption:function(text) {
+          self.cap.setText(text);
+        },
+        show:function() {
+          Curtain.create().bubble('onclick', self.close);
+          self.wrapper.show().center().setTop(100);
+          self.wrapper.focus();
+        },
+        hide:function() {
+          self.wrapper.hide();
+        },
+        close:function() {
+          Curtain.hide();
+          self.hide();
+        },
+        create:function() {
+          return self;
+        }
+      }
+    })
+  },
+  Cap:{
+    create:function() {
+      return Html.Div.create('Cap').extend(function(self) {
+        return {
+          onclose:function() {},
+          //
+          init:function() {
+            var table = Html.Table2Col.create(self, 
+              self.cap = Html.Div.create(),
+              Html.Div.create().setText('X').cursor('pointer'));
+            self.close = table.right.set('onclick', function() {
+              self.onclose();
+            })
+          },
+          setText:function(text) {
+            self.cap.setText(text);
+          }
+        }
+      })
+    }
+  }
+}
+PopMsg = {
+  create:function() {
+    return PopMsg = PortalPop.create('Message', 300).extend(function(self) {
+      return {
+        //
+        init:function() {
+          self.msg = Html.Tile.create(self, 'Msg').setUnselectable();
+        },
+        show:self.show.prepend(function(msg) {
+          self.msg.setText(msg);
+        })
+      }
+    })
+  }
+}

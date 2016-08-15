@@ -1,0 +1,133 @@
+<?php 
+/**
+ * HL7 Tables
+ */
+abstract class HL7Table {
+  static $IDS;
+  //
+  static function lookup($text) {
+    return array_search($text, static::$IDS);  
+  }  
+  static function getText($id) {
+    return static::$IDS[$id];
+  }
+  static function getCodingSystem() {
+    return get_called_class();
+  }
+}
+/* RACE */
+class HL70005 extends HL7Table {
+  static $IDS = array(
+    'I' => 'American Indian or Alaska Native',
+    'A' => 'Asian or Pacific Islander',
+    'B' => 'Black or African-American', 
+    'W' => 'White',
+    'U' => 'Unknown');
+  //
+  static function lookup($client) {
+    switch ($client->race) {
+      case Client::RACE_NATIVE_AMER_ALASKA:
+        return 'I';
+      case Client::RACE_ASIAN_PACIFIC:
+        return 'A';
+      case Client::RACE_BLACK:
+        return 'B';
+      case Client::RACE_WHITE:
+        return 'W';
+      default:
+        return 'U';
+    }
+  }
+}
+/* ETHNIC GROUP */
+class HL70189 extends HL7Table {
+  static $IDS = array(
+    'H' => 'Hispanic or Latino',
+    'NH' => 'Not Hispanic or Latino',
+    'U' => 'Unknown');
+  //
+  static function lookup($client) {
+    switch ($client->ethnicity) {
+      case Client::ETHN_HISPANIC:
+        return 'H';
+      case Client::ETHN_NOT_HISPANIC:
+        return 'NH';
+      default:
+        return 'U';
+    }
+  }
+}
+/* ADDRESS TYPE */
+class HL70190 extends HL7Table {
+  static $IDS = array(
+    'B' => 'Business',
+    'C' => 'Current',
+    'H' => 'Home',
+    'M' => 'Mailing',
+    'O' => 'Office',
+    'P' => 'Permanent',
+    'BR' => 'Residence at Birth');
+  //
+  static function asHome() {
+    return 'H';
+  }
+}
+/* TELECOMMUNICATION USE */
+class HL70201 extends HL7Table {  
+  static $IDS = array(
+    'EMR' => 'Emergency Number',
+    'NET' => 'Network (Email) Address',
+    'ORN' => 'Other Residence Number',
+    'PRN' => 'Primary Residence Number',
+    'WPN' => 'Work Number');
+  //
+  static function lookup($phoneType) {
+    switch ($phoneType) {
+      case Address::PHONE_TYPE_PRIMARY:
+        return 'PRN';
+      case Address::PHONE_TYPE_WORK:
+        return 'WPN';
+      case Address::PHONE_TYPE_EMER:
+        return 'EMR';
+      case Address::PHONE_TYPE_OTHER:
+        return 'ORN';
+    }
+  }
+}
+//
+abstract class HL7LoadableTable extends HL7Table {
+  static function loadIds($ids) {
+    static::$IDS = $ids;
+  }
+  static function lookup($text) {
+    return array_search($text, static::$IDS); 
+  }
+}
+/* VACCINE ADMINISTERED */
+class HL70292 extends HL7LoadableTable {  
+  static $IDS;  // CVX
+}
+/* MANUFACTURER OF VACCINE */
+class HL70227 extends HL7LoadableTable { 
+  static $IDS;  // MVX
+}
+/*
+ * External Coding Systems
+ */
+class HL70396 extends HL7Table {
+  static $IDS = array(
+    'UCUM' => 'Unified Codes of Measure');
+}
+class XTable extends HL7Table {
+  static function getCodingSystem() {
+    return substr(get_called_class(), 3);  // e.g. 'XT_UCUM' to 'UCUM'
+  }
+} 
+class XT_UCUM extends XTable {
+  static $IDS = array(
+    'mL' => 'milliliter');
+  //
+  static function asMl() {
+    return 'mL';
+  }
+}

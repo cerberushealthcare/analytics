@@ -1,0 +1,177 @@
+<?php
+require_once 'php/data/rec/sql/_FsDataRec.php';
+require_once "php/dao/DataDao.php";
+//
+/**
+ * Vitals DAO 
+ * @author Warren Hornsby
+ */
+class Vitals {
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceVital,..)
+   */
+  public static function getActive($cid) {
+    Vital::buildFacesFromSessions($cid);
+    $recs = FaceVital::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort(-'date'));
+    return $recs; 
+  }
+  /**
+   * Save record from UI
+   * @param stdClass $o JSON object
+   * @return FaceVital
+   */
+  public static function save($o) {
+    global $myLogin;
+    return Vital::saveFromUi($o, $myLogin->userGroupId);
+  }
+}
+//
+/**
+ * Vital
+ */
+class Vital extends FsDataRec {
+  //
+  public $dataVitalsId;
+  public $userGroupId;
+  public $clientId;
+  public $sessionId;
+  public $date;  
+  public $pulse;
+  public $resp;
+  public $bpSystolic;
+  public $bpDiastolic;
+  public $bpLoc;
+  public $temp;
+  public $wt;
+  public $wtUnits;
+  public $height;
+  public $hc;
+  public $hcUnits;
+  public $wc;
+  public $wcUnits;
+  public $o2Sat;
+  public $o2SatOn;
+  public $bmi;
+  public $htUnits;
+  public $dateUpdated;
+  public $active;
+  //
+	public function getSqlTable() {
+    return 'data_vitals';
+  }
+  public function getKey() {
+    return 'date';
+  }
+  public function getFaceClass() {
+    return 'FaceVital';
+  }
+  public function getJsonFilters() {
+    return array(
+      'date' => JsonFilter::informalDate(),
+      'dateUpdated' => JsonFilter::informalDateTime());
+  }
+  /*
+   * @return FaceVital
+   */
+  public function asFace() {
+    $face = parent::asFace();
+    // TODO
+    return $face;
+  }
+  //
+  /**
+   * @param object $o JSON
+   * @param int $ugid
+   * @return Vital 
+   */
+  public static function fromUi($o, $ugid) {
+    $rec = new Vital();
+    $rec->setPkValue($o->id);
+    $rec->userGroupId = $ugid;
+    $rec->clientId = $o->clientId;
+    // TODO 
+    return $rec;
+  }
+  /**
+   * Build new face records from build session history
+   * @param int cid
+   */
+  public static function buildFacesFromSessions($cid) {
+    $sessions = SessionVital::fetchAllUnbuilt($cid);
+    if ($sessions) {
+      $faces = FaceVital::fetchAll($cid);
+      parent::_buildFacesFromSessions($sessions, $faces);
+    }
+  }
+}
+/**
+ * Vital Face Record
+ */
+class FaceVital extends Vital {
+  //
+  public function deactivate() {
+    parent::_deactivate($this);
+  }
+	/**
+   * @param int $id
+   * @return FaceVital
+   */
+  public static function fetch($id) {
+    return parent::_fetchFace($id, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(name=>FaceVital,..) 
+   */
+  public static function fetchAll($cid) {
+    return parent::_fetchFaces($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return array(FaceVital,..)
+   */
+  public static function fetchAllActive($cid) {
+    return parent::_fetchActiveFaces($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return FaceVital 
+   */
+  public static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  }  
+}
+//
+/**
+ * Vital Session Record
+ */
+class SessionVital extends Vital implements ReadOnly {
+  //
+  /**
+   * @param int $cid
+   * @return array(SessionVital,..)
+   */
+  public static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+   * @param int $cid
+   * @return array(SessionVital,..)
+   */
+  public static function fetchAllUnbuilt($cid) {
+    return parent::_fetchAllUnbuilt($cid, __CLASS__);
+  }
+  /**
+   * @param int $cid
+   * @return SessionVital
+   */
+  public static function asCriteria($cid) {
+    $c = parent::_asSessCriteria($cid, __CLASS__);
+    return $c;
+  }
+}
+?>

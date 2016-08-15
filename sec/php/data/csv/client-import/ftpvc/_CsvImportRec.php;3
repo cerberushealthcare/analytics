@@ -1,0 +1,32 @@
+<?php
+require_once 'php/data/csv/_CsvRec.php';
+require_once 'php/data/csv/client-import/ClientImport.php';
+//
+abstract class CsvImportRec extends CsvRec {
+  //
+  abstract public function getUgid();
+  abstract public function asClientImport();
+  //
+  static function read($filename, $class) {
+    $recs = parent::read($filename, $class);
+    foreach ($recs as &$rec) {
+      $rec->_client = $rec->asClientImport(); 
+      $rec->_match = ClientImport::fetchByCsv($rec);
+    }
+    return $recs;
+  }
+  static function export($recs, $max = 1000) {
+    for ($i = 0; $i <= $max; $i++) {
+      if (empty($recs))
+        return null;
+      $rec = array_shift($recs);
+      print_r($rec);
+      $client = $rec->_client;
+      $match = $rec->_match;
+      if ($match) 
+        $client->setFromMatch($match);
+      $client->save();
+    }
+    return empty($recs) ? null : $recs;
+  }
+}

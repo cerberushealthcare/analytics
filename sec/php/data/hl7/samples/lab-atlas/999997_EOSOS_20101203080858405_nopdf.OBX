@@ -1,0 +1,44 @@
+MSH|^~\&||||999997|201012030808||ORU^R01|002056206358138421|P|2.3
+PID||1126412|1126412||PATIENT^TEST||19320331|F|||400 South Service Road^^MELVILLE^NY^11747^|||||||1126412||
+PV1|1||||||^^^^^^^PHYID||||||||U||||||||||||||||||||||||
+ORC|RE||||P
+OBR|1|C10101192||1093^Glucose, Fasting|||201009090435|||||||201009091017||^^^||||||201009091300|||F
+OBX|1||1093^Glucose (grey)||112|mg/dL|65 - 99|H|||F||||SHIEL
+NTE|1||Fasting
+NTE|2||Criteria for the diagnosis of diabetes:
+NTE|3||(Fasting Glucose)
+NTE|4||<100 mg/dL: Normal fasting glucose
+NTE|5||100-125 mg/dL: Impaired fasting glucose
+NTE|6||>125 mg/dL: Indicative of diabetes
+NTE|7||Ref: Diabetes Care 29:S43-S48, 2006
+OBR|2|C10101192||90093^Comp Metabolic Panel|||201009090435|||||||201009091017||^^^||||||201009091300|||F
+OBX|1||1168^Urea Nitrogen||15|mg/dL|7 - 25||||F||||
+OBX|2||1066^Creatinine||0.74|mg/dL|0.5 - 1.3||||F||||
+OBX|3||10662^eGFR (calculation)||>60||>60 -||||F||||
+NTE|1||For African-Americans, multiply EGFR result  x 1.2
+OBX|4||1039^BUN/Creat Ratio||20.3||5.3 - 50.0||||F||||
+OBX|5||1147^Sodium||144|mEq/L|135 - 146||||F||||
+OBX|6||1135^Potassium||3.6|mmol/L|3.5 - 5.5||||F||||
+OBX|7||1048^Chloride||112|mEq/L|98 - 110|H|||F||||
+OBX|8||1045^Carbon Dioxide||25|mEq/L|21 - 33||||F||||
+OBX|9||1042^Calcium||7.8|mg/dL|8.6 - 10.4|L|||F||||
+OBX|10||1144^Protein, Total||5.0|g/dL|6.2 - 8.3|L|||F||||
+NTE|1||Confirmed
+OBX|11||1009^Albumin||2.8|g/dL|3.3 - 4.7|L|||F||||
+OBX|12||1087^Globulin||2.2|g/dL|2.1 - 3.7||||F||||
+OBX|13||1003^A/G Ratio||1.3|Ratio|||||F||||
+OBX|14||1012^Alkaline Phosphatase||51|IU/L|33 - 130||||F||||
+OBX|15||1027^AST (SGOT)||17|IU/L|10 - 35||||F||||
+OBX|16||1018^ALT (SGPT)||17|IU/L|6 - 40||||F||||
+OBX|17||1036^Bilirubin, Total||0.6|mg/dL|0.2 - 1.2||||F||||
+OBR|3|C10101192||1123^Magnesium, Urine|||201009090435|||||||201009091017||^^^||||||201009091300|||F
+OBX|1||1123^Magnesium||2.0|mg/dL|1.5 - 2.5||||F||||
+OBR|4|C10101192||4141^Vitamin B12|||201009090435|||||||201009091017||^^^||||||201009091300|||I
+OBX|1||4141^Vitamin B12||||||||I||||
+OBR|5|C10101192||4051^Folic Acid|||201009090435|||||||201009091017||^^^||||||201009091300|||I
+OBX|1||4051^Folate||||||||I||||
+NTE|1||Reference Range:
+NTE|2||Deficient <3.4 ng/mL
+NTE|3||Indeterminate: 3.4 -5.4 ng/mL
+NTE|4||Normal  >5.4 ng/mL
+FTS|1|End Of File

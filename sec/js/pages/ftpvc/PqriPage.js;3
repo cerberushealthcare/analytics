@@ -1,0 +1,148 @@
+PqriPage = page = {
+  //
+  load:function(query) {
+    PageTile.create(_$('tile'));
+  }
+}
+PageTile = {
+  create:function(container) {
+    return PageTile = Html.Tile.create(container, 'PageTile').extend(function(self) {
+      return {
+        init:function() {
+          self.setHeight(500);
+          Html.Select.create({'2011':'1/1/2011 Reporting Period'}).into(self).addClass('mb10');
+          var t = Html.Table.create(self).tbody();
+          for (var id in Cqs) {
+            var desc = Cqs[id];
+            t.tr().td(Button.create(id).bubble('onclick', self.button_onclick.curry(id))).td(desc);
+          }
+        },
+        button_onclick:function(id) {
+          AjaxPqri.report(id, self, function(report) {
+            PqriPop.pop(report, id);
+          })
+        }
+      }
+    }) 
+  }
+}
+Button = {
+  create:function(text, onclick) {
+    return Html.Anchor.create('cmd rep', text, onclick).into(Html.Div.create('cmd-fixed'));
+  }
+}
+Cqs = {
+  'NQF 0421':'Adult Weight Screening and Follow-Up',
+  'NQF 0043':'Pneumonia Vaccination Status for Older Adults',
+  'NQF 0034':'Colorectal Cancer Screening',
+  'NQF 0027':'Smoking and Tobacco Use Cessation, Medical assistance',
+  'NQF 0038':'Childhood Immunization Status',
+  'NQF 0013':'Hypertension: Blood Pressure Measurement',
+  'NQF 0041':'Preventive Care and Screening: Influenza Immunization for Patients >= 50 Years Old',
+  'NQF 0028a':'Preventive Care and Screening Measure Pair: a. Tobacco Use Assessment',
+  'NQF 0028b':'Preventive Care and Screening Measure Pair: b. Tobacco Cessation',
+  'NQF 0024':'Weight Assessment and Counseling for Children and Adolescents'};
+//
+PqriDownloader = {
+  pop:function(id) {
+    return PqriDownloader = this.create().pop(id);
+  },
+  create:function() {
+    return Hl7Downloader.create().extend(function(self) {
+      return {
+        getServer:function() {
+          return AjaxPqri;
+        },
+        download:function() {
+          Page.Nav.goDownloadPqri(self.file);            
+        }
+      }
+    })
+  }
+}
+AjaxPqri = {
+  _SVR:'Pqri',
+  get:function(id, callback) {
+    Ajax.get(this._SVR, 'get', id, callback);
+  },
+  report:function(id, worker, callback) {
+    Ajax.getr(this._SVR, 'report', id, null, worker, callback);
+  }
+}
+PqriPop = {
+  pop:function(rec, id) {
+    return PqriPop = this.create().pop(rec, id);
+  },
+  create:function() {
+    return Html.Pop.create('PQRI Report').extend(function(self) {
+      return {
+        //
+        init:function() {
+          self.t = Html.Table.create().into(self.content).tbody();
+//          self.form = Html.UlEntry.create(self.content, function(ef) {
+//            ef.line().h2('_measure');
+//            ef.line().lbl('Eligible').ro('_eligibles');
+//            ef.line().lbl('Meets').ro('_meets');
+//            ef.line().lbl('Exclusions').ro('_exclusions');
+//            ef.line().lbl('Not Meets').ro('_notMeets');
+//            ef.line().lbl('Rate').ro('_rate');
+//          })
+          Html.CmdBar.create(self.content).button('Download', self.download_onclick, 'download2');
+        },
+        onshow:function(rec, id) {
+          self.id = id;
+          self.rec = rec;
+          self.t.clean();
+          var tr;
+          if (! Array.is(rec))
+            rec = [rec];
+          tr = self.t.tr();
+          tr.th();
+          for (var i = 0; i < rec.length; i++) {
+            var p = rec[i].popNumber;
+            var n = rec[i].numNumber;
+            var s = (p) ? 'P' + p : '';
+            if (n)
+              s += ' N' + n;
+            tr.th(s);
+          }
+          tr = self.t.tr();
+          tr.th('Eligible');
+          for (var i = 0; i < rec.length; i++) {
+            var s = rec[i].Scorecard;
+            tr.td('' + s._eligibles, 'p5');
+          }
+          tr = self.t.tr();
+          tr.th('Meets');
+          for (var i = 0; i < rec.length; i++) {
+            var s = rec[i].Scorecard;
+            tr.td('' + s._meets, 'p5');
+          }
+          tr = self.t.tr();
+          tr.th('Exclusions');
+          for (var i = 0; i < rec.length; i++) {
+            var s = rec[i].Scorecard;
+            tr.td('' + s._exclusions, 'p5');
+          }
+          tr = self.t.tr();
+          tr.th('Not Meets');
+          for (var i = 0; i < rec.length; i++) {
+            var s = rec[i].Scorecard;
+            tr.td('' + s._notMeets, 'p5');
+          }
+          tr = self.t.tr();
+          tr.th('Rate');
+          for (var i = 0; i < rec.length; i++) {
+            var s = rec[i].Scorecard;
+            tr.td('' + s._rate, 'p5');
+          }
+        },
+        download_onclick:function() {
+          self.close();
+          PqriDownloader.pop(self.id);
+        }
+      }
+    })
+  }
+  
+}

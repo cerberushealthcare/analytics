@@ -1,0 +1,8 @@
+/**
+ * Rec PortalSession
+ */
+PortalSession = Object.Rec.extend({
+  needsChallenge:function() {
+    return this.status == C_PortalUser.STATUS_RESET;
+  }
+})

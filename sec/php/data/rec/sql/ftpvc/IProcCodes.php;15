@@ -1,0 +1,85 @@
+<?php
+require_once 'php/data/rec/sql/_IpcRec.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  /**
+   * @return array(Ipc,..)
+   */
+  static function getAll() {
+    global $myLogin;
+    $recs = Rec::sort(Ipc::fetchAll($myLogin->userGroupId), new RecSort('name'));
+    return $recs;
+  }
+  /**
+   * @return Ipc
+   */
+  static function getByName($name) {
+    return geta(self::mapByName($myLogin->userGroupId), $name);
+  }
+  /**
+   * @return Ipc
+   */
+  static function getBySurgProc($proc) {
+    return geta(self::mapSurgByDesc($myLogin->userGroupId), $proc);
+  }
+  //
+  private static function mapByName($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName($ugid);
+    return $map;
+  }
+  private static function mapSurgByDesc($ugid) {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap($ugid);
+    return $map;
+  } 
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends IpcRec implements ReadOnly {
+  //
+  public $ipc;
+  public $ugid;
+  public $name;
+  public $desc;
+  public $cat;
+  //
+  public function toJsonObject(&$o) {
+    if ($this->ugid == self::UGID_DEFAULT) 
+      unset($o->ugid);
+  }
+  static function fetch($id) {
+    return parent::fetch($id, __CLASS__);
+  }
+  static function fetchAll($ugid) {
+    $c = self::asCriteria($ugid);
+    return parent::fetchAllBy($c, null, 2000);
+  }
+  static function fetchMapByName($ugid) {
+    return parent::fetchMapBy(self::asCriteria($ugid), 'name');
+  }
+  static function fetchSurgMap($ugid) {
+    $c = self::asCriteria($ugid);
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+  static function asCriteria($ugid) {
+    $c = new self();
+    $c->ugid = CriteriaValues::_or(CriteriaValue::equals(self::UGID_DEFAULT), CriteriaValue::equals($ugid));
+    return $c; 
+  }
+  static function asRequiredJoin($fk = 'ipc') {
+    $c = new self();
+    return CriteriaJoin::optional($c, $fk);
+  }
+}
+?>

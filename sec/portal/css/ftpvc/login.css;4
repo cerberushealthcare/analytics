@@ -1,0 +1,51 @@
+BODY {
+  text-align:center;
+}
+INPUT {
+  font-size:12pt;
+}
+H1 {
+  color:#008E80;
+}
+DIV#loginc {
+  margin-top:2em;
+}
+DIV#login {
+  display:inline-block;
+  margin-top:1.5em;
+  padding-left:90px;
+  padding-right:10px;
+  background:url(../img/watermark.png) no-repeat left center;
+}
+DIV#login LABEL {
+  display:block;
+  font-family:'Arial';
+  font-weight:bold;
+  font-size:13pt;
+}
+DIV#login A {
+  display:block;
+  margin-top:1.5em;
+  width:140px;
+  padding:5px 10px;
+  border:1px solid #008E80;
+  color:#008E80;
+  background:url(../img/tour-background.png) repeat-x;
+  text-align:center;
+  font-family:'Lucida Grande','Trebuchet MS';
+  font-weight:bold;
+  font-size:13pt;
+  text-decoration:none;
+}
+DIV#login A:hover {
+  color:#f42941;
+  border:1px solid #f42941; 
+}
+DIV#links {
+  padding-top:2em;
+  font-family:'Arial';
+  font-size:11pt;
+}
+DIV#links A {
+  color:#008E80;
+}

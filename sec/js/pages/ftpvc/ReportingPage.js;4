@@ -1,0 +1,52 @@
+/**
+ * Reporting Page
+ * @author Warren Hornsby
+ */
+ReportingPage = page = {
+  //
+  load:function(query) {
+    Page.setEvents();
+    ReportingTile.create(_$('tile')).showList();
+  },
+  onresize:function() {
+    if (ReportingTile.resize)
+      ReportingTile.resize(200);
+  }
+}
+/**
+ * Tile ReportingTile
+ *   ReportStubView listview
+ *   ReportCriteriaView reportview
+ */
+ReportingTile = {
+  create:function(container) {
+    container.clean();
+    return ReportingTile = Html.Tile.create(container).extend(function(self) {
+      return {
+        init:function() {
+          self.reportview = ReportCriteriaView.create(self).bubble('onexit', self.reportview_onexit).hide();
+          self.listview = ReportStubView.create(self).bubble('onselect', self.listview_onselect).hide();
+        },
+        showList:function() {
+          self.reportview.hide();
+          return self.view = self.listview.show();
+        },
+        showReport:function(stub) {
+          self.listview.hide();
+          return self.view = self.reportview.show().loadFromStub(stub);
+        },
+        resize:function(pad) {
+          if (self.view) 
+            self.view.resize(pad); 
+        },
+        //
+        reportview_onexit:function() {
+          self.showList().load();
+        },
+        listview_onselect:function(stub) {
+          self.showReport(stub);
+        }        
+      }
+    })
+  }
+}

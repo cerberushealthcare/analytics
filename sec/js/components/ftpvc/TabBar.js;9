@@ -1,0 +1,137 @@
+/**
+ * Tab Bar (multi-page pop controller)
+ * Required html setup:
+ *   <div class='pop-content'>  
+ *     <div class='tabbar'></div>  // leave blank (this class provides content)
+ *     <div class='tabpanels'>
+ *       <div class='tabpanel'>
+ *         // -- page 1 contents --  
+ *       </div>
+ *       <div class='tabpanel'>
+ *         // -- page 2 contents --
+ *       </div>
+ *     </div>
+ *     // -- rest of pop contents --
+ *   </div>
+ * Or use static method TabBar.construct() to create above dynamically
+ */
+/*
+ * Constructor
+ * @arg <e>/'id' p: parent
+ * @arg ['Documentation History',..] titles: to diplay on left for selected tab  
+ * @arg ['Documents',..] tabCaptions: to display on bar-right (optional, will use titles if omitted)
+ * @arg int selIndex: (optional, default 0)
+ * @arg [trId,..] flickerTrs: to flicker TH rows on panel change
+ */
+function TabBar(p, titles, tabCaptions, selIndex, flickerTrs) {
+  p = isString(p) ? $(p) : p;
+  this.pop = p;
+  this.bar = $$$$("tabbar", p, "DIV")[0];
+  this.panels = $$$$("tabpanel", p, "DIV");
+  this.titles = titles;
+  this.flickers = flickerTrs;
+  this.tabCaptions = denull(tabCaptions, titles);
+  if (this.titles.length != this.tabCaptions.length) 
+    Page.error(TabBar.ERR_TABBAR, 'Unequal lengths: titles/tabCaptions');
+  if (this.panels.length != this.titles.length) 
+    Page.error(TabBar.ERR_TABBAR, 'Unequal lengths: panels/titles');
+  if (this.flickers && this.flickers.length != this.panels.length) 
+    Page.error(TabBar.ERR_TABBAR, 'Unequal lengths: flickers/panels');
+  this._loadBar();
+  this.select(selIndex || 0);
+  p.tabBar = this;
+}
+/*
+ * Class defs
+ */
+TabBar.prototype = {
+  selIndex:null,    // currently selected index
+  pop:null,         // parent pop
+  bar:null,         // <div class='tabbar'>
+  panels:null,      // <div class='tabpanels'>
+  titles:null,      // ['text',..]
+  tabCaptions:null, // ['text',..]
+  flickers:null,    // ['tr-id',..]
+  _h2s:null,        // [<h2>,..] for titles
+  _as:null,         // [<a>,..] for tabs
+  _onSelectCallback:null,
+  /*
+   * Select a tab
+   */
+  select:function(index) {
+    for (var i = 0; i < this.panels.length; i++) {
+      this._h2s[i].className = (i == index) ? "checked" : "";
+      this._as[i].className = (i == index) ? "checked" : "";
+      this.panels[i].style.display = (i == index) ? "" : "none";
+    }
+    if (this.flickers) 
+      flicker(this.flickers[index]);
+    this.selIndex = index;
+    this._as[index].blur();
+    if (this._onSelectCallback) 
+      this._onSelectCallback(index, this.panels[index]);
+  },
+  /*
+   * @callback(index, panel) on tab select
+   */
+  onSelect:function(callback) {
+    this._onSelectCallback = callback;
+    callback(this.selIndex, this.panels[this.selIndex]);
+  },
+  /*
+   * @return int
+   */
+  getSelIndex:function() {
+    return this.selIndex;
+  },
+  //
+  _loadBar:function() {
+    clearChildren(this.bar);
+    var t = createTable();
+    var tr = appendTr(t);
+    tr.appendChild(this._appendTitles(createTh()));
+    tr.appendChild(this._appendTabs(createTd()));
+    this.bar.appendChild(t);
+  },
+  _appendTitles:function(th) {
+    this._h2s = [];
+    for (var i = 0; i < this.titles.length; i++) {
+      var h2 = createH2(this.titles[i]);
+      this._h2s.push(h2);
+      th.appendChild(h2);
+    }
+    return th;
+  },
+  _appendTabs:function(td) {
+    this._as = [];
+    for (var i = 0; i < this.tabCaptions.length; i++) {
+      if (i > 0 && this.tabCaptions[i]) 
+        td.appendChild(createSpan(null, null, null, '&nbsp;&nbsp;&bull;&nbsp;&nbsp;'));
+      with ({index:i}) { 
+        var self = this;
+        var a = createAnchor(null, null, null, this.tabCaptions[i], null, function(){self.select(index)});
+      }
+      this._as.push(a);
+      td.appendChild(a);
+    }
+    return td;
+  }
+}
+/**
+ * Statics
+*/
+TabBar.ERR_TABBAR = 'TabBar.TabBar';
+/*
+ * Construct required HTML dynamically
+ * @arg <element> parent 
+ * @arg int panelCount
+ * @return [<panel>,..]
+ */
+TabBar.construct = function(parent, panelCount) {
+  createDivIn(parent, 'tabbar');
+  var tabpanels = createDivIn(parent, 'tabpanels');
+  var panels = [];
+  for (var i = 0; i < panelCount; i++) 
+    panels.push(createDivIn(tabpanels, 'tabpanel'));
+  return panels;
+}; 

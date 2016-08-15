@@ -1,0 +1,234 @@
+<?php
+require_once 'php/data/rec/sql/TemplateOrderEntry.php';
+//
+/**
+ * Internal Proc Codes DAO
+ * @author Warren Hornsby
+ */
+class IProcCodes {
+  //
+  static function getAll() {
+    $recs = Ipc::fetchAll();
+    return Rec::sort($recs, new RecSort('name'));
+  }
+  /**
+   * @return Ipc
+   */
+  static function getByName($name) {
+    return geta(self::mapByName(), $name);
+  }
+  /**
+   * @return Ipc
+   */
+  static function getBySurgProc($proc) {
+    return geta(self::mapSurgByDesc(), $proc);
+  }
+  /**
+   * Generate SQL build script from Order Entry template
+   * @return string
+   */
+  static function buildSqlScript() {
+    $t = TemplateOrderEntry::getWithQuestions();
+    $recsOe = Ipc::fromOeTemplate($t);
+    $t = PsTemplate::fetch();
+    $recsPs = Ipc::fromPsTemplate($t);
+    $recs = Rec::sort(array_merge($recsOe, $recsPs), new RecSort('cat', 'name'));
+    foreach ($recs as &$rec) 
+      $rec = $rec->getSqlInsert() . ";";
+    $sql = implode("\n", $recs);
+    return $sql;
+  }
+  //
+  private static function mapByName() {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchMapByName();
+    return $map;
+  }
+  private static function mapSurgByDesc() {
+    static $map;
+    if ($map == null)
+      $map = Ipc::fetchSurgMap();
+    return $map;
+  } 
+}
+//
+/**
+ * Internal Proc Code
+ */
+class Ipc extends SqlRec implements ReadOnly {
+  //
+  public $ipc;
+  public $name;
+  public $desc;
+  public $cat;
+  public $code;  
+  public $codeSystem;
+  //
+  const CAT_LAB = '1';
+  const CAT_NUCLEAR = '2';
+  const CAT_RADIO = '3';
+  const CAT_TEST = '5';
+  const CAT_PROC = '6';
+  const CAT_SURG = '10';
+  const CAT_OTHER = '99';
+  public static $CATS = array(
+    self::CAT_LAB => 'Labs',
+    self::CAT_NUCLEAR => 'Nuclear Medicine',
+    self::CAT_RADIO => 'Radiology',
+    self::CAT_TEST => 'Tests',
+    self::CAT_PROC => 'Procedures',  // diagnostic
+    self::CAT_SURG => 'Surgical',
+    self::CAT_OTHER => '(Other)');
+  //
+  const CS_ICD9 = 'I9';
+  const CS_SNOMED = 'S';
+  const CS_LOINC = 'L';
+  const CS_CPT4 = 'C4';
+  //
+  public function getSqlTable() {
+    return 'iproc_codes';
+  }
+  //
+  static function fetchAll() {
+    $c = new Ipc();
+    return parent::fetchAllBy($c);
+  }
+  static function fetchMapByName() {
+    return parent::fetchMapBy(new Ipc(), 'name');
+  }
+  static function fetchSurgMap() {
+    $c = new Ipc();
+    $c->cat = self::CAT_SURG;
+    return parent::fetchMapBy($c, 'desc');
+  }
+  /**
+   * @param OeTemplate $t
+   * @return array(Ipc,..)
+   */
+  static function fromOeTemplate($t) {
+    $p = $t->getPar();
+    $recs = array();
+    foreach ($p->Questions as $q) 
+      foreach ($q->Options as $o) 
+        if (! isset($recs[$o->uid]))
+          $recs[$o->uid] = self::fromOeOption($o);
+    return array_values($recs);          
+  }
+  /**
+   * @param OeOption $t
+   * @return Ipc
+   */
+  static function fromOeOption($o) {
+    $r = new self();
+    $r->ipc = $o->optionId;
+    $r->name = $o->uid;
+    $r->desc = $o->getText();
+    $r->cat = $o->trackCat;
+    return $r;
+  }
+    /**
+   * @param PsTemplate $t
+   * @return array(Ipc,..)
+   */
+  static function fromPsTemplate($t) {
+    $q = $t->getQuestion();
+    $recs = array();
+    foreach ($q->getMultiOptions() as $o) 
+      $recs[] = self::fromPsOption($o);
+    return $recs;          
+  }
+  /**
+   * @param OeOption $t
+   * @return Ipc
+   */
+  static function fromPsOption($o) {
+    $r = new self();
+    $r->ipc = $o->optionId;
+    $r->name = $o->uid;
+    $r->desc = $o->getText();
+    $r->cat = Ipc::CAT_SURG;
+    return $r;
+  }
+}
+class PsTemplate extends OeTemplate {
+  //
+  public function getQuestion() {
+    return $this->Section->Par->Question;
+  }
+  //
+  static function getTemplateId() {
+    return TemplateRec::TID_MED_NOTE;
+  }
+  static function fetch() {
+    $c = self::asCriteria();
+    $rec = parent::fetchOneBy($c);
+    $rec->Section->loadPar();
+    return $rec;
+  }
+  static function asCriteria() {
+    $c = new self();
+    $c->templateId = self::getTemplateId();
+    $c->Section = PsSection::asCriteria();
+    return $c;
+  }
+}
+class PsSection extends OeSection {
+  //
+  public function loadPar() {
+    $this->Par = PsPar::fetch($this->sectionId);
+  }
+  //
+  static function asCriteria() {
+    $c = new self();
+    $c->uid = 'pmHx';
+    return $c;
+  }
+}
+class PsPar extends OePar {
+  //
+  static function fetch($sid, $withQuestions = false) {
+    $c = self::asCriteria($sid);
+    $par = parent::fetchOneBy($c);
+    $par->Question = PsQuestion::fetch($par->parId);
+    return $par;
+  }
+  static function asCriteria($sid) {
+    $c = new self();
+    $c->sectionId = $sid;
+    $c->uid = 'pastSurgHx';
+    $c->current = true;
+    return $c;
+  }
+}
+class PsQuestion extends OeQuestion {
+  //
+  public $questionId;
+  public $parId;
+  public $uid;
+  public $mix;
+  //
+  public function getMultiOptions() {
+    return array_slice($this->Options, $this->mix);
+  }
+  //
+  static function fetch($pid) {
+    $c = self::asCriteria($pid);
+    return current(parent::fetchAllBy($c, null, 3000));
+  }
+  static function asCriteria($pid) {
+    $c = new self();
+    $c->parId = $pid;
+    $c->Options = array(PsOption::asCriteria(3));
+    return $c;
+  }
+}
+class PsOption extends OeOption {
+  //
+  static function asCriteria($mix) {
+    $c = new self();
+    $c->optionId = CriteriaValue::greaterThanNumeric($mix);
+    return $c;
+  }
+}
+?>

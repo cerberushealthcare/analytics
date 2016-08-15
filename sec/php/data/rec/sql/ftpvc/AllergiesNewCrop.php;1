@@ -1,0 +1,162 @@
+<?php
+require_once 'php/data/rec/sql/AllergiesLegacy.php';
+//
+/**
+ * Allergies DAO (New Crop)  
+ * @author Warren Hornsby
+ */
+class AllergiesNewCrop {
+  /**
+   * Build face recs from NewCrop status
+   * @param int $cid
+   * @param object $current @see NewCrop::pullCurrentMedAllergy()
+   */
+  public static function rebuildFromNewCrop($cid, $current) {
+    global $myLogin;
+    $sessions = SessionAllergyNc::fromNewCropAllergies($myLogin->userGroupId, $cid, $current['allergy']);
+    $actives = FaceAllergyNc::fetchAllActiveNewCrop($cid);
+    foreach ($sessions as $agent => $sess) {
+      if (! isset($actives[$agent])) {
+        $face = FaceAllergyNc::fromSession($sess);
+        $face->index = null;
+        $face->save();
+      }
+    }
+    foreach ($actives as $agent => $face) 
+      if (! isset($sessions[$agent])) 
+        $face->deactivate();
+  }
+  /**
+   * Get active facesheet records
+   * @param int $cid
+   * @return array(FaceAllergyNc,..)
+   */
+  public static function getActive($cid) {
+    $recs = FaceAllergyNc::fetchAllActive($cid);
+    Rec::sort($recs, new RecSort('agent'));
+    return $recs; 
+  }
+  /**
+   * Get history by date
+   * @param int $cid
+   * @return array(FaceAllergyNc,..)
+   */
+  public static function getHistoryByDate($cid) {
+    $recs = SessionAllergyNc::fetchAll($cid);
+    Rec::sort($recs, new RecSort('-date', 'sessionId', 'agent'));
+    return $recs;
+  }
+}
+//
+/**
+ * Allergy (New Crop)
+ */
+class AllergyNc extends Allergy {
+  //
+  const SOURCE_NEWCROP = 1;
+  //
+  public function isSourceNewCrop() {
+    return $this->source == self::SOURCE_NEWCROP;
+  }
+}
+/**
+ * Allergy Face Record (New Crop)
+ */
+class FaceAllergyNc extends FaceAllergy {
+  //
+  /**
+   * @param int $cid
+   * @return array(FaceAllergyNc,..)
+   */
+  public static function fetchAllActive($cid) {
+    return parent::_fetchActiveFaces($cid, __CLASS__);
+  }
+  /**
+   * Fetch all active with New Crop source
+   * @param int $cid
+   * @return array(agent=>FaceAllergyNc,..)
+   */
+  public static function fetchAllActiveNewCrop($cid) {
+    $c = self::asCriteria($cid);
+    $c->source = AllergyNc::SOURCE_NEWCROP; 
+    return self::fetchMapBy($c, 'agent');
+  }
+  /**
+   * @param SessionAllergy $sess
+   * @return FaceAllergyNc
+   */
+  public static function fromSession($sess) {
+    return parent::_faceFromSession($sess, __CLASS__);
+  } 
+  /**
+   * @param int $cid
+   * @return FaceAllergyNc
+   */
+  public static function asCriteria($cid) {
+    return parent::_asFaceCriteria($cid, __CLASS__);
+  }  
+  
+}
+//
+/**
+ * Allergy Session Record (New Crop)
+ */
+class SessionAllergyNc extends SessionAllergy implements NoAudit {
+  //
+  const NEW_CROP_SID = 0;  // all recs from New Crop have same "SID"
+  // 
+  /**
+   * @param int $cid
+   * @return array(SessionAllergyNc,..)
+   */
+  public static function fetchAll($cid) {
+    $c = self::asCriteria($cid);
+    return self::fetchAllBy($c);
+  }
+  /**
+	 * @param int $ugid
+	 * @param int $cid 
+	 * @param array $allergies @see NewCrop::getCurrent()
+	 * @return array(name=>SessionAllergyNc,..)
+	 */
+	public static function fromNewCropAllergies($ugid, $cid, $allergies) {
+    $dtos = array();
+    if ($allergies)
+      foreach ($allergies as $allergy) {
+        $dto = self::fromNewCropAllergy($ugid, $cid, $allergy);
+        $dtos[$dto->agent] = $dto;
+      }
+    return $dtos;
+	}
+  /**
+   * @param int $ugid
+   * @param int $cid 
+   * @param object $allergy @see NewCrop::getCurrent()
+   * @return SessionAllergyNc
+   */
+  public static function fromNewCropAllergy($ugid, $cid, $allergy) {
+    $dto = new SessionAllergyNc(
+      null,
+      $ugid,
+      $cid,
+      null,
+      nowNoQuotes(),
+      null,
+      $allergy->Allergy,
+      null,
+      true,
+      null,
+      AllergyNc::SOURCE_NEWCROP);
+    return $dto;
+  }
+  /**
+   * @param int $cid
+   * @return SessionAllergyNc
+   */
+  public static function asCriteria($cid) {
+    $c = parent::_asSessCriteria($cid, __CLASS__);
+    $c->index = CriteriaValue::greaterThanOrEquals(self::FIRST_ALLERGY_INDEX);
+    return $c;
+  }
+}
+?>

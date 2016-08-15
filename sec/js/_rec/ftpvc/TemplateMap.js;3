@@ -1,0 +1,78 @@
+/**
+ * Rec TemplateMap
+ */
+TemplateMap = Object.Rec.extend({
+  onload:function() {
+    this.Sections = MapSections.revive(this.Sections);
+    var suids = {};
+    this.Sections.forEach(function(section) {
+      suids[section.uid] = section;
+    })
+    this._suids = suids;
+  },
+  getPar:function(suid, puid) {
+    return this._suids[suid]._puids[puid];
+  },
+  getPars:function(suid) {
+    return this._suids[suid]._puids;
+  },
+  getSection:function(suid) {
+    return this._suids[suid];
+  },
+  clone:function(proto) {
+    proto = proto || this;
+    return proto.revive(Json.decode(Json.encode(this)));
+  }
+})
+//
+MapSection = Object.Rec.extend({
+  onload:function() {
+    this.Pars = MapPars.revive(this.Pars);
+    var puids = {};
+    this.Pars.forEach(function(par) {
+      puids[par.uid] = par;
+    })
+    this._puids = puids;
+  }
+})
+MapSections = Object.RecArray.of(MapSection);
+//
+MapPar = Object.Rec.extend({
+})
+MapPars = Object.RecArray.of(MapPar, {
+  testNoMajor:function() {
+    for (var i = 0; i < this.length; i++) 
+      if (this[i].major)
+        return;
+    this.forEach(function(p) {
+      p.major = true;
+    })
+  }
+})
+/**
+ * TemplateMap WorkingTemplateMap (for customizing)
+ */
+WorkingTemplateMap = TemplateMap.extend({
+  from:function(map) {
+    return map.clone(this);
+  },
+  testNoMajors:function() {
+    this.Sections.forEach(function(s) {
+      s.Pars.testNoMajor();
+    })
+  },
+  buildLookupMap:function() {
+    var lumap = {'startSection':this._startSection,'main':{},'auto':{}};
+    this.Sections.forEach(function(s) {
+      var mains = lumap.main[s.uid] = [];
+      var autos = lumap.auto[s.uid] = [];
+      s.Pars.forEach(function(p) {
+        if (p.major) 
+          mains.push(p.uid);
+        if (p.auto) 
+          autos.push(p.uid);
+      })
+    })
+    return lumap;
+  }
+})

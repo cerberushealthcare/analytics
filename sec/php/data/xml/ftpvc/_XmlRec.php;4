@@ -1,0 +1,196 @@
+<?php
+/**
+ * XML Record
+ * Extend this class for each <tag> in model 
+ * Public vars used to create <tag> attributes, properties and children:
+ * - $_attr = 'value'                 <this attr="value"..
+ * - $tag = 'value'                   <this><tag>value</tag>..
+ * - $Tag = XmlRec                    <this><Tag><XmlRec>..</XmlRec></Tag>..
+ * - $Tag = array(XmlRec,..)          <this><Tag><XmlRec>..</XmlRec><XmlRec>..</XmlRec>..</Tag>..
+ * - $tag = array('attr'=>'value',..) <this><tag attr='value' attr='value'.. />..
+ * - $_ = 'innerText'                 <this>innerText</this>
+ * @author Warren Hornsby
+ */
+class XmlRec {
+  /**
+   * Constructor
+   * Assigns constructor args to public vars in definition order
+   * To call this from an overriden constructor, use:
+   *   $args = func_get_args(); 
+   *   call_user_func_array(array('XmlRec', '__construct'), $args);
+   */
+  public function __construct() {
+    $vars = array_keys(get_object_vars($this));
+    $args = func_get_args();
+    for ($i = 0, $l = func_num_args(); $i < $l; $i++) {
+      $value = func_get_arg($i);
+      if ($value !== null) {
+        if (is_string($value))
+          $value = self::xmlentities($value); 
+        $this->$vars[$i] = $value;
+      } 
+    }
+  }
+  /**
+   * Generate XML output string
+   * @param $formatted true for CR+indents, false for compressed string (optional)
+   * @return string '<root>..</root>'
+   */
+  public function toXml($formatted = false, $rootTagName = null) {
+    return self::buildXml($this, $formatted, $rootTagName);
+  }
+  /**
+   * Field setter; will automatically convert to array if field already assigned
+   * @param string $fid
+   * @param string $value
+   */
+  public function set($fid, $value) {
+    $current = $this->get($fid);
+    if ($current == null)
+      $this->$fid = $value;
+    else if (is_array($current))
+      array_push($this->$fid, $value);
+    else
+      $this->$fid = array($current, $value);
+  }
+  /**
+   * Field getter
+   * @param string $fid
+   * @return string value if set, null otherwise
+   */
+  public function get($fid) {
+    if (isset($this->$fid))
+      return $this->$fid;
+  }
+  /**
+   * Build array from XML input string
+   * @param string $xml
+   * @return array 
+   */
+  static function parse($xml) {
+    $dom = new DomDocument('1.0', 'UTF8');
+    $dom->preserveWhiteSpace = false;
+    if (! $dom->loadXml($xml))
+      throw new XmlParseException();
+    return static::parseNode($dom->documentElement);
+  }
+  //
+  private static $dom;
+  private static $rootTagName;
+  private static $includeEmpties;
+  private static function parseNode($root) {
+    $rec = null;
+    if ($root->hasAttributes()) {
+      $rec = new stdClass();
+      foreach ($root->attributes as $name=>$node) {
+        $fid = "_$name";
+        $rec->$fid = $node->nodeValue;
+      }
+    }
+    $children = $root->childNodes;
+    if ($rec || $children->length > 0) 
+      foreach ($children as $child) {
+        $name = $child->nodeName;
+        if ($name == '#text') {
+          if ($root->hasAttributes()) {
+            $rec->_value = $child->nodeValue;
+            return $rec; 
+          } else 
+            return $child->nodeValue;
+        }
+        $e = static::_get($rec, $name);
+        if ($e == null) 
+          $rec->$name = static::parseNode($child);
+        else {
+          if (! is_array($e)) 
+            $rec->$name = array($e);
+          $rec->{$name}[] = static::parseNode($child);
+        }
+      }
+    return $rec;
+  }
+  private static function _get($obj, $prop, $default = null) {
+    return isset($obj->$prop) ? $obj->$prop : $default;
+  }
+  private static function buildXml($e, $formatted, $rootTagName = null) {
+    self::$dom = new DOMDocument('1.0', 'UTF8');
+    if ($formatted)
+      self::$dom->formatOutput = true;
+    self::defaultRootTag($e, $rootTagName);
+    $root = ($rootTagName != null) ? 
+      self::$dom->createElement($rootTagName) : 
+      null;
+    foreach ($e as $key => $value)
+      self::createNode($key, $value, $root);
+    if ($root) 
+      self::$dom->appendChild($root);
+    return self::$dom->saveXML();
+  }
+  private static function defaultRootTag($e, &$name) {
+    if ($name == null) {
+      $name = get_class($e);
+      if ($name == '' || $name == 'stdClass') 
+        $name = null;
+    }
+  }
+  private static function createNode($key, $value, &$parent) {
+    $node = null;
+    if (substr($key, 0, 1) == '_')  {
+      if ($key == '_')
+        $node = self::$dom->createTextNode(self::toString($value)); 
+      else
+        $node = self::createAttr(self::fixAttrName($key), self::toString($value));
+    } else if ($value === null) {
+      if (self::$includeEmpties) 
+        $node = self::$dom->createElement($key);
+    } else if (is_scalar($value)) {
+      $node = self::$dom->createElement($key, self::toString($value));
+    } else if (is_object($value)) {
+      $node = self::$dom->createElement($key);
+      foreach ($value as $key => $value) 
+        self::createNode($key, $value, $node);
+    } else if (is_assoc($value)) {
+      $node = self::$dom->createElement($key);
+      foreach ($value as $attr => $val) 
+        self::appendNode($node, self::createAttr($attr, $val));
+    } else if (is_array($value)) {
+      foreach ($value as $e) 
+        self::createNode($key, $e, $parent);
+    }    
+    if ($node) 
+      self::appendNode($parent, $node);
+  }
+  private static function toString($value) {
+    if (is_bool($value)) 
+      return ($value) ? 'true' : 'false';
+    else
+      return (string) $value;
+  }
+  private static function fixAttrName($key) {
+    return str_replace('_', ':', substr($key, 1));
+  }
+  private static function appendNode(&$parent, $node) {
+    if ($parent) 
+      $parent->appendChild($node);
+    else 
+      self::$dom->appendChild($node);
+  }
+  private static function createAttr($key, $value) {
+    $attr = null;
+    if ($value != null) {
+      $attr = self::$dom->createAttribute($key);
+      $attr->appendChild(self::$dom->createTextNode($value));
+    }
+    return $attr;
+  }
+  private static function is_assoc($array) {
+    return (is_array($array) && 0 !== count(array_diff_key($array, array_keys(array_keys($array)))));
+  }
+  private static function xmlentities($string) {
+    return str_replace ( array ( '&', '"', "'", '<', '>' ), array ( '&#38;' , '&quot;', '&apos;' , '&lt;' , '&gt;' ), $string );
+  }
+}
+/**
+ * Exceptions
+ */
+class XmlParseException extends DisplayableException {}

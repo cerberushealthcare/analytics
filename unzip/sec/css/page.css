@@ -1,0 +1,78 @@
+.w100 {
+  width:100%;
+}
+.w5 {
+  width:5px;
+}
+TD.w5 {
+  white-space:nowrap;
+}
+.nw {
+  white-space:nowrap;
+}
+.h5 {
+  height:5px;
+}
+.vtop {
+  vertical-align:top;
+}
+.bold {
+  font-weight:bold;
+}
+.lj {
+  text-align:left;
+}
+.cj {
+  text-align:center;
+}
+.cm {
+  margin-left:auto;
+  margin-right:auto;
+}
+.rj {
+  text-align:right;
+}
+.mt10 {
+  margin-top:10px;
+}
+.mt15 {
+  margin-top:15px;
+}
+.mt5 {
+  margin-top:5px;
+}
+.mb10 {
+  margin-bottom:10px;
+}
+.mb5 {
+  margin-bottom:5px;
+}
+.pt5 {
+  padding-top:5px;
+}
+.hand {
+  cursor:pointer;
+}
+.ital {
+  font-style:italic;
+}
+TABLE {
+  border-collapse:collapse;
+}
+TD, TH {
+  padding:0;
+}
+/* */
+TABLE.h {
+  width:100%;
+}
+TABLE.h TH {
+  font-weight:normal;
+  text-align:left;
+  vertical-align:bottom;
+}
+TABLE.h TD {
+  text-align:right;
+  vertical-align:bottom;
+}
+

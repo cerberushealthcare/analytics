@@ -1,0 +1,24 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/HL7_ClinicalDocuments.php';
+require_once 'php/data/rec/GroupFolder_Ccd.php';
+//
+try { 
+  LoginSession::verify_forServer()->requires($login->Role->Artifact->hl7);
+  switch ($action) {
+    case 'get':
+      $password = geta($_GET, 'pw');
+      $ccd = HL7_ClinicalDocuments::buildFull($id);
+      $folder = GroupFolder_Ccd::open();
+      $file = $folder->save($ccd, $password);
+      AjaxResponse::out($action, $file);
+      exit;
+    case 'download':
+      $folder = GroupFolder_Ccd::open();
+      $folder->download($id);
+      exit;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}
+  

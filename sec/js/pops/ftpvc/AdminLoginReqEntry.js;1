@@ -1,0 +1,52 @@
+/**
+ * Admin Login Req Entry
+ */
+AdminLoginReqEntry = {
+  callback:null,
+  form:null,
+  _pop:null,
+  //
+  pop:function(rec, asReceived, callback) {
+    this._build();
+    this.callback = callback;
+    this._load(rec);
+    if (asReceived) {
+      this.form.setValue('status', C_UserLoginReq.STATUS_GOOD);
+      this.form.setValue('dateRcvd', DateValue.nowValue());
+      this.form.setValue('dateExpires', null);
+    }
+    Pop.show(this._pop.id);
+  },
+  pSave:function() {
+    var rec = this.form.getRecord();
+    var self = this;
+    overlayWorking(true);
+    Ajax.post('Admin', 'saveLoginReq', rec, 
+      function(rec) {
+        overlayWorking(false);
+        Pop.close();
+        self.callback(rec);
+      });
+  },
+  pClose:function() {
+    Pop.closeConfirmDirty(this, this.form, this.pSave);
+  },
+  //
+  _load:function(rec) {
+    var ef = new EntryForm(this._pop.form, 'first2');
+    ef.li().head(rec.UserStub.name + ': ' + rec._name);
+    ef.li('Status', 'mt10').select('status', C_UserLoginReq.STATUSES);
+    ef.li('Notified', 'mt10').datetime('dateNotified').lbl('Received').datetime('dateRcvd').lbl('Expires').date('dateExpires');
+    ef.li('Comments', 'mt10').textarea('comments');
+    ef.setRecord(rec);
+    this.form = ef;
+  },
+  _build:function() {
+    if (this._pop == null) {
+      this._pop = Pop.Builder.build(this, 'pop-alre', 'Login Req Entry', '750px', this.pClose);
+      this._pop.form = Pop.Builder.entryUl();
+      var cmdBar = Pop.Builder.cmdBar();
+      cmdBar.saveCancel(this.pSave, this.pClose);
+    }
+  }
+};

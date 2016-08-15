@@ -1,0 +1,132 @@
+<?php
+require_once 'php/data/rec/sql/_SqlRec.php';
+/**
+ * Client Base Class
+ * @author Warren Hornsby
+ */
+abstract class ClientRec extends SqlRec {
+  public $clientId;
+  /*  
+  public $userGroupId;
+  public $uid;
+  public $lastName;
+  public $firstName;
+  public $sex;
+  public $birth;
+  public $img;
+  public $dateCreated;
+  public $active;
+  public $cdata1;
+  public $cdata2;
+  public $cdata3;
+  public $cdata4;
+  public $cdata5;  // living will
+  public $cdata6;  // power of attorney
+  public $cdata7;
+  public $middleName;
+  public $notes;
+  public $dateUpdated;
+  public $race;
+  public $ethnicity;
+  public $deceased;
+  public $language;
+  public $familyRelease;
+  public $primaryPhys;
+  public $releasePref;
+  public $release;
+  public $userRestricts;
+  */
+  const SEX_MALE = 'M';
+  const SEX_FEMALE = 'F';
+  static $SEXES = array(
+    self::SEX_FEMALE => "Female",
+    self::SEX_MALE => 'Male');
+  //
+  const RELEASE_LETTER = '1';
+  const RELEASE_PHONE = '2';
+  const RELEASE_EMAIL = '3';
+  static $RELEASE_PREFS = array(
+    self::RELEASE_LETTER => 'Letter',
+    self::RELEASE_PHONE => 'Phone',
+    self::RELEASE_EMAIL => 'Email');
+  //
+  const RACE_NATIVE_AMER_ALASKA = '1';
+  const RACE_ASIAN = '2';
+  const RACE_BLACK = '3';
+  const RACE_WHITE = '4';
+  const RACE_HAW_PAC_ISLAND = '5';
+  static $RACES = array(
+    '1' => 'American Indian or Alaska Native',
+    '2' => 'Asian',
+    '3' => 'Black or African-American',
+    '4' => 'White',
+    '5' => 'Native Hawaiian or Other Pacific Islander');
+  //
+  const ETHN_HISPANIC = '1';
+  const ETHN_NOT_HISPANIC = '2';
+  static $ETHNICITIES = array(
+    '1' => 'Hispanic or Latino',
+    '2' => 'Not Hispanic or Latino');
+  //
+  static $LANGUAGES = array(
+    '3' => 'English',
+    '2' => 'Spanish',
+  	'1' => 'Mandarin',
+  	'4' => 'Hindi-Urdu',
+    '5' => 'Arabic',
+    '6' => 'Bengali',
+    '7' => 'Portuguese',
+    '8' => 'Russian',
+    '9' => 'Japanese',
+    '10' => 'Punjabi',
+    '11' => 'German',
+    '12' => 'Javanese',
+    '13' => 'Vietnamese',
+    '14' => 'Marathi',
+    '15' => 'French',
+    '16' => 'Korean',
+    '17' => 'Turkish',
+    '18' => 'Pashto',
+    '19' => 'Italian',
+    '20' => 'Polish',
+    '21' => 'Ukrainian',
+    '22' => 'Thai',
+    '23' => 'Romanian',
+    '24' => 'Dutch',
+    '25' => 'Greek',
+    '26' => 'Hebrew');
+  //
+  static $FRIENDLY_NAMES = array(
+    'uid' => 'Patient ID');
+  //
+  public function getSqlTable() {
+    return 'clients';
+  }
+  //
+  public function getFullName() {
+    return self::formatName($this);
+  }  
+  public function getMiddleInitial() {
+    if ($this->middleName) 
+      return substr($this->middleName, 0, 1);
+  }
+  public function setBirth($date) {
+    $this->birth = formatFromDate($date);
+  }
+  public function toJsonObject(&$o) {
+    if (isset($o->clientId)) {
+      $o->name = $this->getFullName();
+    }
+  }
+  //
+  static function formatName($rec) {
+    $name = "$rec->lastName, $rec->firstName";
+    if ($rec->middleName) 
+      $name .= " $rec->middleName";
+    if ($rec->deceased)
+      $name .= " (DECEASED)";
+    else if (! $rec->active)
+      $name .= ' (INACTIVE)';
+      return trim($name);
+  }
+}

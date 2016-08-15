@@ -1,0 +1,57 @@
+<?php
+require_once 'server.php';
+require_once 'php/data/rec/sql/OrderEntry.php'; 
+//
+try {
+  LoginSession::verify_forServer()->requires($login->Role->Patient->track);
+  switch ($action) {
+		/**
+     * Get track items
+     */
+    case 'getOpen':
+    case 'getUnsched':
+    case 'getClosed':
+      $action .= 'Items';
+      $recs = OrderEntry::$action(get($obj, 'cid'));
+      AjaxResponse::out($action, $recs);
+      break;
+    /**
+     * Update a track item
+     */
+    case 'update':
+      $item = OrderEntry::saveItem($obj);
+      AjaxResponse::out($action, $item);
+      break;
+    /**
+     * Generate from ordersheet  
+     */
+    case 'order':
+      $orderItems = $obj;
+      $trackCatItems = OrderEntry::order($orderItems);
+      AjaxResponse::out($action, $trackCatItems);
+      break;
+    /**
+     * Save ordersheet items
+     */
+    case 'saveOrder':
+      OrderEntry::saveOrder($obj);
+      AjaxResponse::out($action);
+      break;
+    /**
+     * Get add tracking template
+     */
+    case 'getPid':
+      $pid = OrderEntry::getPid();
+      AjaxResponse::out($action, $pid);
+      break;
+    /**
+     * Close item as received
+     */
+    case 'received':
+      $item = OrderEntry::receivedItem($_GET['id']);
+      AjaxResponse::out($action, $item);
+      break;
+  }
+} catch (Exception $e) {
+  AjaxResponse::exception($e);
+}

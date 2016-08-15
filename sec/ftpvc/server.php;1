@@ -1,0 +1,14 @@
+<?php
+require_once 'php/data/LoginSession.php';
+require_once 'php/data/rec/AjaxResponse.php'; 
+//
+Logger::debug_server();
+if (isset($_GET['action'])) {
+  $action = $_GET['action'];
+  $id = geta($_GET, 'id');
+} else {
+  $_POST['obj'] = stripslashes($_POST['obj']);
+  $action = $_POST['action'];
+  $obj = json_decode($_POST['obj']);
+}
+  

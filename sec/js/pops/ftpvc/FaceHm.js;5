@@ -1,0 +1,647 @@
+/**
+ * Facesheet Health Maintenance
+ * Global static 
+ * Requires: TableLoader.js, facesheet.css
+ */
+FaceHm = {
+  fs:null,
+  changed:null,
+  _scb:null,
+  _POP:'fsp-hm',
+  /*
+   * procId: optional 
+   * callback(facesheet) if anything changed (calls page.hmChangedCallback by default)
+   */
+  pop:function(fs, procId, zoom, callback) {
+    overlayWorking(true);
+    this.fs = fs;
+    this.changed = false;
+    this._scb = Ajax.buildScopedCallback(denull(callback, 'hmChangedCallback'));
+    var self = this;
+    Includer.get([Includer.HTML_FACE_HM, Includer.AP_TEMPLATE_POPS], function() {
+      if (fs.client) {
+        setCaption("fsp-hm-cap-text", fs.client.name + " - Health Maintenance");
+        setCaption("pop-hme-cap-text", fs.client.name + " - Health Maintenance Entry");
+      }
+      self._load();
+      self._loadFaceEntry(fs);
+      self._setFspHmProc(procId);
+      overlayWorking(false);
+      if (zoom) {
+        zoomPop(FaceHm._POP, null, function(){self._pop()});
+      } else {
+        showOverlayPop(FaceHm._POP);
+        self._pop();
+      }
+    });
+  },
+  _pop:function() {
+    if (this.fs.hms == null) {
+      this.fpAddHm();
+    }
+  },
+  update:function(fs) {
+    this.fs.cuTimestamp = fs.cuTimestamp;
+    this.fs.hms = fs.hms;
+    this.fs.hmsHistory = fs.hmsHistory;
+    this.fs.hmProcs = fs.hmProcs;
+    this.changed = true;
+    this._load();    
+    return this.fs;
+  },
+  fpClose:function() {
+    closeOverlayPop();
+    if (this.changed) {
+      Ajax.callScopedCallback(this._scb, this.fs);
+    }    
+  },
+  fpAddHm:function() {
+    var fs = this.fs;
+    var self = this;
+    FaceHmProcPicker.pop(
+      function(id) {
+        if (fs.hmFacesByProcId[id]) {
+          self._setFspHmProc(id);
+        } else {
+          overlayWorking(true);
+          var o = {
+            clientId:fs.client.id,
+            proc:fs.hmProcs[id]};
+          Ajax.post(Ajax.SVR_POP, 'addFacesheetHm', o,
+            function(f) {
+              self.update(f);
+              self._setFspHmProc(id);
+              overlayWorking(false);
+            } 
+          );
+        }
+      }
+    );
+  },
+  fpDeleteBlankHm:function() {
+    var fs = this.fs;
+    var self = this;
+    confirm('Are you sure you want to remove this record?', function() {
+      overlayWorking(true);
+      var id = fs.hmFacesByProcId[fs.hmProc.id].id;
+      Ajax.get(Ajax.SVR_POP, 'deactivateHm', id, 
+        function(f) {
+          overlayWorking(false);
+          self.update(f);
+          self._setFspHmProc();
+        });
+    });
+  },
+  fpDeleteChecked:function() {
+    var checks = getCheckedValues('sel-hm', 'fsp-hm-tbody'); 
+    var self = this;
+    if (checks.length > 0) {
+      showConfirmChecked('remove', function(confirm) {
+        if (confirm) {
+          overlayWorking(true);
+          Ajax.post(Ajax.SVR_POP, 'deactivateHms', checks, 
+            function(f) {
+              self.update(f);
+              overlayWorking(false);
+            });
+        }
+      });  
+    } else {
+      showCritical('Nothing was selected.');
+    }
+  },
+  fpReturn:function() {
+    this._setFspHmProc();
+  },
+  fpEditInterval:function() {
+    var self = this;
+    FaceHmIntEntry.pop(function(hmFace){self._hmIntCallback(hmFace)});
+  },
+  fpEditHm:function(id) {
+    FaceHmEntry.pop(id);
+  },
+  //
+  _load:function() {
+    var fs = this.fs;
+    this._loadSummary(fs);
+    this._loadHist(fs);
+    this._flicker();
+  },
+  _loadFaceEntry:function(fs) {
+    var self = this;
+    var tform = new TemplateForm($("ul-hm-face-fields"), "first2", null, function(q){self._hmNextDateCallback(q)});
+    tform.addLi(null, 'push2');
+    tform.appendLabel('Interval', '');
+    var span = createSpan('q qd');
+    span.appendChild(createAnchor('hme-interval', 'javascript:FaceHm.fpEditInterval()', 'df', '_______'));
+    tform.li.appendChild(span);
+    tform.append("Next Due", "hme-next-due", null, null, null, TemplateForm.Q_DEF_CALENDAR);
+    fs.hmFaceTf = tform;
+  },
+  _loadSummary:function(fs) {
+    var ta = new TableLoader("fsp-hma-tbody", "off", "fsp-hma-div");
+    fs.hmqs = {};
+    fs.hmFacesByProcId = {};
+    if (fs.hms) {
+      for (var i = 0; i < fs.hms.length; i++) {
+        var hm = fs.hms[i];
+        fs.hmFacesByProcId[hm.procId] = hm;
+        var name = (hm.nextExpireText) ? bulletJoin([hm.proc, " <span>" + hm.nextExpireText + "</span>"]) : hm.proc; 
+        var next = (hm.nextExpireText) ? "<span class='red'>" + hm.nextShort + "</span>" : hm.nextShort;
+        var results = ellips(simpleBulletJoin(hm.results), 120);
+        ta.createTrTd();
+        ta.append(createAnchor(null, buildHrefFn("FaceHm._setFspHmProc", [hm.procId]), "fs", null, name));
+        ta.createTd("nowrap", null, nbsp(hm.dateShort));
+        ta.createTd(null, null, results);
+        ta.createTd("nowrap", null, nbsp(next));
+      }
+    }
+  },
+  _loadHist:function(fs) {
+    fs.hmTable = null;
+    var t = new TableLoader("fsp-hm-tbody", "off", "fsp-hm-div");
+    var self = this;
+    t.defineFilter(this._filter((fs.hmProc) ? fs.hmProc.name : null), function(tl){self._filterCallback(tl)});
+    if (fs.hmsHistory) {
+      fs.hmsById = {};
+      for (var i = 0; i < fs.hmsHistory.length; i++) {
+        var hm = fs.hmsHistory[i];
+        fs.hmsById[hm.id] = hm;
+        var results = bulletJoin(hm.results);
+        t.createTr(null, null, this._filter(hm.proc), hm.procId);
+        t.tr.className = (hm.sessionId == "0") ? null : "hide";
+        t.createTd("check");
+        t.append(createCheckbox("sel-hm", hm.id));
+        t.createTd("nowrap");
+        t.append(createAnchor(null, buildHrefFn("FaceHm.fpEditHm", [hm.id]), "fs", hm.proc));
+        t.createTd("nowrap", null, hm.dateShort);
+        t.createTd(null, null, results);
+      }
+    }
+    t.loadFilterSidebar("hm-filter-ul", TableLoader.NO_FILTER_COUNT);
+    fs.hmTable = t;
+    this._hmShowHideDelete(t);
+  },
+  _filter:function(proc) {
+    return {
+      "Test/Procedures":proc
+      };
+  },
+  _filterCallback:function(t) {
+    var value = t.getTopFilterValue();
+    if (value == null) {  // all
+      this._setFspHmProc(null, true);
+    } else {
+      var keys = t.getVisibleRowKeys();
+      var procId = keys[0];
+      this._setFspHmProc(procId, true);
+      this._hmShowHideDelete(t);
+    }
+  },
+  _hmShowHideDelete:function(t) {
+    var keys = t.getVisibleRowKeys();
+    showHideIf(keys.length == 1, "fsp-hm-deactivate", "fsp-hm-delete");
+  },
+  _setIntervalText:function() {
+    var face = this.fs.hmFace;
+    var proc = this.fs.hmProc;
+    var a = $("hme-interval");
+    if (face.every != null) {
+      this._setAnchorText(a, FaceUi.formatInterval(face));
+      a.className = "";
+    } else {
+      this._setAnchorText(a, FaceUi.formatInterval(proc));
+      a.className = "df";
+    }  
+  },
+  _toggleHmView:function(one) {
+    if (one) {
+      show("hm-one");
+      showHide("fsp-hma-2", "fsp-hma-1");
+    } else {
+      hide("hm-one");
+      showHide("fsp-hma-1", "fsp-hma-2");
+    }
+    this._flicker();
+  },
+  _setFspHmProc:function(procId, noApplyFilter) {
+    var fs = this.fs;
+    if (procId) {
+      if (fs.hmProc == null || fs.hmProc.id != procId) {
+        setChecks("sel-hm", "fsp-hm-tbody", false);
+        fs.hmProc = fs.hmProcs[procId];
+        this._renderFspHmProc();
+        this._toggleHmView(true);
+        if (! noApplyFilter) {
+          fs.hmTable.applyTopFilterValue(fs.hmProcs[procId].name);
+        }
+      }
+    } else {
+      fs.hmProc = null;
+      fs.hmFace = null;
+      this._toggleHmView(false);
+      if (! noApplyFilter) {
+        fs.hmTable.applyTopFilterValue(null);
+      }
+    }
+  },
+  _renderFspHmProc:function() {
+    var fs = this.fs;
+    if (fs.hmProc) {
+      fs.hmFace = fs.hmFacesByProcId[fs.hmProc.id];
+      setText("hm-one-proc", fs.hmProc.name);
+      setHtml("hm-one-proc-desc", FaceUi.formatProcDesc(fs.hmProc));
+      if (fs.hmFace) {
+        show("hm-face-entry");
+        fs.hmFaceTf.setFormattedText('hme-next-due', fs.hmFace.nextText);
+        this._setIntervalText();
+        if (fs.hmFace.nextExpireText) {
+          show("hme-next-info").innerText = "This test/procedure is " + fs.hmFace.nextExpireText + ".";
+        } else {
+          hide("hme-next-info");
+        }
+      } else {
+        hide("hm-face-entry");
+      }
+    }
+  },
+  _hmNextDateCallback:function(q) {
+    var fs = this.fs;
+    var rec = fs.hmFaceTf.buildRecord(TemplateForm.VALUES_MIXED);
+    fs.hmFace.nextText = rec['hme-next-due'];
+    fs.hmFace.nextSort = calFormatShortDate(calParse(fs.hmFace.nextText, CAL_FMT_SENTENCE));
+    overlayWorking(true);
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveHm', fs.hmFace,
+      function(f) {
+        overlayWorking(false);
+        self.update(f);
+      } 
+    );
+  },
+  _hmIntCallback:function(hmFace) {
+    overlayWorking(true);
+    this._setIntervalText();
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveHmInt', hmFace, 
+      function(f) {
+        overlayWorking(false);
+        self.update(f);
+      });
+  },
+  _setAnchorText:function(a, text) {
+    if (text == null) {
+      a.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      a.className = "df";
+    } else {
+      a.innerText = text;
+      a.className = "";
+    }
+    try {
+      a.focus();
+    } catch (e) {}
+  },
+  _flicker:function() {
+    flicker('fsp-hm-head');
+    flicker('fsp-hma-head');
+  }
+};
+/**
+ * HM Proc Picker
+ */
+FaceHmProcPicker = {
+  parent:null,
+  fs:null,
+  callback:null,
+  pop:function(callback) {
+    var fs = FaceUi.setParentage(FaceHm, this);
+    overlayWorking(true);
+    this.callback = callback;
+    this._load();
+    showOverlayPop("pop-pp");
+    overlayWorking(false);
+  },
+  fpSel:function(pcid) {
+    closeOverlayPop();
+    this.callback(pcid);
+  },
+  fpCustomize:function() {
+    var self = this;
+    FaceHmCustomProc.pop(
+      function(fs) {
+        self.fs = fs; 
+        self._load();
+      });
+  },
+  _load:function() {
+    var fs = this.fs;
+    if (fs.hmProcs) {
+      var tpp = new TableLoader("pp-tbody", "off", "pp-div");
+      for (var pcid in fs.hmProcs) {
+        var proc = fs.hmProcs[pcid];
+        if (proc.active) {
+          var href = "javascript:FaceHmProcPicker.fpSel(" + proc.id + ")";
+          tpp.createTrTd();
+          tpp.append(createAnchor(null, href, "fs", proc.name));
+          tpp.createTd(null, null, this._formatAutoApply(proc));
+        }
+      }
+    }  
+  },
+  _formatAutoApply:function(proc) {
+    var a = [];
+    if (proc.auto) {
+      a.push(FaceUi.formatGender(proc));
+      a.push(FaceUi.formatAgeRange(proc));
+      a.push(FaceUi.formatInterval(proc));
+      a.push(FaceUi.formatIcd(proc));
+    }
+    return bulletJoin(a, true);
+  }
+};
+/**
+ * HM Interval Entry
+ */
+FaceHmIntEntry = {
+  parent:null,
+  fs:null,
+  callback:null,
+  _loaded:null,
+  /*
+   * callback(fs.hmFace)
+   */
+  pop:function(callback) {
+    var fs = FaceUi.setParentage(FaceHm, this);
+    this.callback = callback;
+    this._loadIntCombo();
+    var p = this._getIntervalObject();
+    setValue("hmcint-every", p.every);
+    setValue("hmcint-int", p["int"]);
+    showOverlayPop("fsp-hmcint", "hmcint-every", true);
+  },
+  fpOk:function(pcid) {
+    var fs = this.fs;
+    fs.hmFace.every = val(value("hmcint-every"));
+    fs.hmFace["int"] = val(value("hmcint-int"));
+    this.callback(fs.hmFace); 
+    closeOverlayPop();
+  },
+  fpClear:function(pcid) {
+    var fs = this.fs;
+    fs.hmFace.every = null;
+    fs.hmFace["int"] = null;
+    this.callback(fs.hmFace); 
+    closeOverlayPop();
+  },
+  _getIntervalObject:function() {  // return face if overrides proc
+    var fs = this.fs;
+    return fs.hmFace.every != null ? fs.hmFace : fs.hmProc;  
+  },
+  _loadIntCombo:function() {
+    if (! this._loaded) {
+      loadSelect($("hmcint-int"), FaceUi.intComboArray(), null, "");
+      this._loaded = true;
+    }
+  }
+};
+/**
+ * HM Entry
+ */
+FaceHmEntry = {
+  parent:null,
+  fs:null,
+  pop:function(id) {
+    var fs = FaceUi.setParentage(FaceHm, this);
+    overlayWorking(true);
+    if (id) {
+      fs.hm = fs.hmsById[id];
+    } else {
+      fs.hm = {
+        'id':null, 
+        'dateText':null, 
+        'results':null};
+    }
+    var proc = fs.hmProc;
+    var self = this;
+    if (proc.quid && ! fs.hmqs[proc.quid]) {
+      Ajax.get(Ajax.SVR_POP, 'getQuestionByQuid', proc.quid,
+        function(q) {
+          fs.hmqs[q.quid] = q;
+          self._pop();
+        });
+    } else {
+      self._pop();
+    }
+  },
+  _pop:function() {
+    this._load();
+    overlayWorking(false);
+    showOverlayPop("pop-hme");
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var rec = this._buildRec();
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'saveHm', rec, 
+      function(fs) {
+        Page.workingCmd(false);
+        self.parent.update(fs);
+        closeOverlayPop();
+      });
+  },
+  fpDelete:function() {
+    var fs = this.fs;
+    var self = this;
+    confirm('Are you sure you want to remove this record?', function() {
+      overlayWorking(true);
+      Ajax.get(Ajax.SVR_POP, 'deactivateHm', fs.hm.id, 
+        function(fs) {
+          overlayWorking(false);
+          self.parent.update(fs);
+          closeOverlayPop();
+        });
+    });
+  },
+  _buildRec:function() {
+    var fs = this.fs;
+    var rec = fs.htform.buildRecord(TemplateForm.VALUES_ALWAYS_ARRAY, null, true);
+    var dateText = rec.dateText[0];
+    return {
+      'id':fs.hm.id,
+      'clientId':fs.client.id,
+      'type':1,
+      'procId':fs.hmProc.id,
+      'proc':fs.hmProc.name,
+      'results':toJSONString(rec.results),
+      'dateText':dateText,
+      'dateSort':calFormatShortDate(calParse(dateText, CAL_FMT_SENTENCE))};
+  },
+  _load:function() {
+    var fs = this.fs;
+    var proc = fs.hmProc;
+    setText("hme-proc", proc.name);
+    showIf(fs.hm.id, "hme-delete-span");
+    var tform = new TemplateForm($("ul-hme-fields"), "first2", fs.hmqs);
+    tform.addLiAppend("Date Performed", null, "dateText", fs.hm.dateText, null, TemplateForm.Q_DEF_CALENDAR);
+    tform.addLiAppend("Results", proc.quid, "results", fs.hm.results, "qr");
+    fs.htform = tform;
+  }
+}
+/**
+ * HM Customize Procs
+ */
+FaceHmCustomProc = {
+  parent:null,
+  fs:null,
+  callback:null,
+  //
+  _tl:null,
+  /*
+   * callback(fs) on change (complete updated fs)
+   */
+  pop:function(callback) {
+    var fs = FaceUi.setParentage(FaceHm, this);
+    this.callback = callback;
+    overlayWorking(true);
+    var self = this;
+    setTimeout(function() {
+      self._load(fs);
+      showOverlayPop("fsp-hmcp");
+      overlayWorking(false);
+    }, 1);
+  },
+  fpClick:function() {
+    var e = event.srcElement;
+    if (e) {
+      if (e.sibs) {
+        this._toggleActive(e);
+      } else if (e.cb && e.disabled) {
+        e.cb.checked = true;
+        this._toggleActive(e.cb);
+      } else if (e.id == "hmcp-auto") {
+        this._toggleColorCheck(e);
+      }
+    }
+  },
+  fpSave:function() {
+    Page.workingCmd(true);
+    var fs = this.fs;
+    var o = {
+      'cid':fs.client.id,
+      'rec':this._buildRec()};
+    var self = this;
+    Ajax.post(Ajax.SVR_POP, 'customizeHmProcs', o, 
+      function(f) {
+        Page.workingCmd(false);
+        var fs = self.parent.update(f);
+        closeOverlayPop();
+        self.callback(fs);
+      });
+  },
+  fpAdd:function() {
+    hide('fsp-hmcp');
+    setValue('proc-name', null);
+    setValue('proc-cpt', null);
+    showOverlayPop('fsp-hmcpa', 'proc-name');
+  },
+  fpaSave:function() {
+    var rec = {
+      'id':value('proc-cpt'),
+      'name':value('proc-name'),
+      'active':true};
+    if (isBlank(rec.name) || isBlank(rec.id)) {
+      showCritical('Name and CPT are required fields.');
+      return;
+    }
+    if (this.fs.hmProcs[rec.id]) {
+      showCritical('This CPT code is already in use.');
+      return;
+    }
+    closeOverlayPop();
+    this._buildRow(rec);
+    this._tl.scrollToBottom();
+  },
+  _buildRec:function() {
+    var cbs = getCheckboxes("sel-hmcp", "hmcp-tbody");
+    var procs = {};
+    for (var i = 0; i < cbs.length; i++) {
+      var cb = cbs[i];
+      if (cb.value || cb.checked) {
+        var proc = this._buildData(cbs[i]);
+        if (proc.id == null) {
+          proc.id = this._nextCustomIx++;
+        }      
+        procs[proc.id] = proc;
+      }
+    }
+    return procs;  
+  },
+  _buildData:function(cb) {
+    var d = {};
+    d.id = nullify(cb.value);
+    d.active = cb.checked;
+    for (var name in cb.sibs) {
+      var sib = cb.sibs[name];
+      if (sib.type == "checkbox") {
+        d[name] = sib.checked;
+      } else {
+        d[name] = nullify(sib.value);
+      }
+    }
+    return d; 
+  },
+  _load:function(fs) {
+    var fs = this.fs;
+    this._tl = new TableLoader("hmcp-tbody", "off", "hmcp-div");
+    this._nextCustomIx = FaceHmCustomProc.FIRST_CUSTOM_IX;
+    for (var pcid in fs.hmProcs) {
+      var proc = fs.hmProcs[pcid];
+      this._buildRow(proc);
+    }
+  },
+  _buildRow:function(proc) {
+    var t = this._tl;
+    var cb = createCheckbox("sel-hmcp", proc.id);
+    t.createTrTd("wcheck");
+    t.append(cb);
+    cb.sibs = {};
+    cb.sibs.name = createSpan(null, proc.name + " [" + proc.id + "]");
+    cb.sibs.name.value = proc.name;
+    cb.sibs.auto = createCheckbox("hmcp-auto", true);
+    cb.sibs.gender = createSelect(null, null, {"F":"female","M":"male"}, proc.gender, "");
+    cb.sibs.after = createTextbox(null, proc.after, 1, "w1");
+    cb.sibs.until = createTextbox(null, proc.until, 1, "w1");
+    cb.sibs.every = createTextbox(null, proc.every, 1, "w1");
+    cb.sibs["int"] =  createSelect(null, null, FaceUi.intComboArray(), proc["int"], "");
+    cb.sibs.icd = createTextbox(null, proc.icd, 20);
+    t.createTdAppend("pname", cb.sibs.name);
+    t.createTdAppend("wcheck", cb.sibs.auto);
+    t.createTdAppend(null, cb.sibs.gender);
+    t.createTdAppend(null, cb.sibs.after);
+    t.createTdAppend(null, cb.sibs.until);
+    t.createTd();
+    t.append(cb.sibs.every);
+    t.append(cb.sibs["int"]);
+    t.createTdAppend(null, cb.sibs.icd);
+    cb.checked = proc.active;
+    this._toggleActive(cb, true);
+    cb.sibs.auto.checked = proc.auto;
+    this._toggleColorCheck(cb.sibs.auto);
+  },
+  _toggleColorCheck:function(e) {
+    e.className = (e.checked) ? "color-check" : "";
+  },
+  _toggleActive:function(e, noFocus) {
+    var doFocus = (! noFocus && e.checked);
+    for (var name in e.sibs) {
+      var sib = e.sibs[name];
+      setDisabledElement(sib, ! e.checked);
+      if (doFocus) {
+        if (! sib.readOnly) {
+          focus(sib.id);
+        }
+        doFocus = false;
+      }
+    } 
+  }
+};

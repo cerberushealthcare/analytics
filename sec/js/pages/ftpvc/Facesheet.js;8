@@ -1,0 +1,800 @@
+/**
+ * Facesheet
+ * Global static
+ * Instance assigned to global variable: page
+ * @author Warren Hornsby
+ */
+var Facesheet = {
+  cid:null,
+  fs:null,
+  //
+  sentToNewCrop:null, // true while e-rxing
+  /*
+   * Loader
+   */
+  load:function(query) {
+    Page.setEvents();
+    overlayWorking(true);
+    this.cid = query.id;
+    Page.sessid = query.sess;
+    if (this.cid == null) {
+      Page.go(Page.PAGE_PATIENTS);
+    }
+    Includer.get(Includer.LIB_FACE_UI, function() {
+      page._loadTiles();
+      page._getFacesheet(query);
+    }); 
+  },
+  onFocus:function() {
+    var fs = this.fs; 
+    if (fs) {
+      if (this.sentToNewCrop) {
+        this.sentToNewCrop = null;
+        this.refreshNewCrop();
+      } else {
+        if (isPopUp()) {
+          this._pollingOn();
+        } else {
+          this._pollingOff();
+          overlayWorking(true);
+          var self = this;
+          Ajax.get(Ajax.SVR_POP, 'getFacesheet', {'id':this.cid,'cu':denull(fs.cuTimestamp)}, 
+            function(fs) {  
+              if (fs) {  // fs returned only if changed since cuTimestamp
+                self._loadFacesheet(fs);
+              }
+              overlayWorking(false);
+            });
+        }
+      }
+    }
+  },
+  onBlur:function() {
+    if (this.fs) {
+      this._pollingOff();
+    }
+  },
+  refreshNewCrop:function() {
+    var fs = this.fs;
+    var self = this;
+    Includer.getWorking(Includer.AP_WORKING_CONFIRM, function() {
+      showOverlayWorking('Requesting updated meds/allergies...');
+      Ajax.get(Ajax.SVR_POP, 'refreshFromNewCrop', {'id':fs.client.id,'uid':fs.client.uid},
+        function(f) {
+          if (fs.FaceAllergies)
+            fs.FaceAllergies.update(f);
+          if (fs.FaceMeds)
+            fs.FaceMeds.update(f);
+          fs.cuTimestamp = f.cuTimestamp;
+          fs.allergies = f.allergies;
+          fs.meds = f.meds;
+          fs.activeMeds = f.activeMeds;
+          closeOverlayWorking();
+        });
+    });
+  },
+  /*
+   * Refresh UI after facesheet change
+   */
+  facesheetChanged:function(fs) {
+    if (fs) {
+      this.fs = fs;
+    }
+    overlayWorking(true);
+    this._loadFacesheet();
+    overlayWorking(false);
+  },
+  /*
+   * UI interactions
+   */
+  pRefresh:function() {
+    overlayWorking(true);
+    this._getFacesheet();
+  },
+  pPopNotepad:function() {
+    this.notepadTile.pop();
+  },
+  pPopDemo:function() {
+    this.demoTile.pop();
+  },
+  pPopMeds:function() {
+    this.medTile.pop();
+  },
+  pNewCrop:function() {
+    var cid = this.fs.client.id;
+    var self = this;
+    overlayWorking(true);
+    Ajax.get(Ajax.SVR_POP, 'validNewCropXml', cid,
+      function(required) {
+        overlayWorking(false);
+        if (required == null) 
+          self._popNewCrop();
+        else 
+          self._showNewCropRequired(required);    
+      } 
+    );
+  },
+  _popNewCrop:function(dest) {
+    this.sentToNewCrop = true;
+    var args = {'id':this.fs.client.id};
+    if (dest) 
+      args.dest = dest;
+    Page.pop(Page.PAGE_NEWCROP, args, Page.HIDE_MENU);
+  },
+  pPrint:function() {
+    window.print();
+  },
+  pPopHm:function(pcid) {
+    this.hmTile.pop(pcid);
+  },
+  pPopVitals:function(fvid) {
+    this.vitalTile.pop(fvid);
+  },
+  pPopAllergies:function() {
+    this.allerTile.pop();
+  },
+  pPopDiagnoses:function() {
+    this.diagTile.pop();
+  },
+  pPopDocHx:function() {
+    this.docTile.pop();
+  },
+  pPopImmun:function() {
+    Includer.getFaceImmun_pop(page.fs, true, [page.facesheetChanged, page]);    
+  },
+  pPopMedSurgHx:function() {
+    this.hxTile.pop(FaceUi.FACE_HX_TAB_MED);
+  },
+  pPopFamHx:function() {
+    this.hxTile.pop(FaceUi.FACE_HX_TAB_FAM);
+  },
+  pPopSocHx:function() {
+    this.hxTile.pop(FaceUi.FACE_HX_TAB_SOC);
+  },
+  pEditDoc:function(sid) {
+    Includer.getDocOpener_open(sid);
+  },
+  pNewDoc:function() {
+    var c = this.fs.client;
+    Includer.getDocOpener_new(c.id, c.name);
+  },
+  pNewAppt:function(id) {
+    Page.go(Page.PAGE_SCHEDULE, {'v':1,'sid':this.fs.client.id});
+  },
+  pNewMsg:function() {
+    Page.go(Page.PAGE_MESSAGE, {'cid':this.fs.client.id});
+  },
+  pSearch:function() {
+    Includer.getPatientSelector_pop(
+      function(client) {
+        Page.go(Page.PAGE_FACESHEET, client.id);
+      });
+  },
+  //
+  _showNewCropRequired:function(required) {
+    Includer.get([Includer.AP_WORKING_CONFIRM], function() {
+      var a = ['The following information is required for e-prescribing:<ul><li>'];
+      a.push(required.join('</li><li>'));
+      a.push('</li></ul>');
+      showErrorMsg(a.join(''), null, true);
+    });
+  },
+  _pollingOn:function() {
+    if (this.fs && this.fs.cuTimestamp && this.fs.cInterval == null) {
+      this.fs.cInterval = setInterval('Facesheet._pollTimestamp()', 60000);
+    }
+  },
+  _pollingOff:function() {
+    if (this.fs && this.fs.cuInterval) {
+      clearInterval(this.fs.cuInterval);
+      this.fs.cuInterval = null;
+    }
+  },
+  _pollTimestamp:function() {
+    var self = this;
+    Ajax.get(Ajax.SVR_POP, 'checkCuTimestamp', this.fs.client.id, 
+      function(ts) {
+        if (ts != self.fs.cuTimestamp) {
+          Page.show($('fs-refresh'), true);
+          self._pollingOff();
+        }
+      });
+  },
+  _loadTiles:function() {
+    this.refreshTile = new Tile('fs-refresh');
+    this.demoTile = DemoTile.getInstance();
+    this.notepadTile = NotepadTile.getInstance();
+    this.workflowTile = WorkflowTile.getInstance();
+    this.allerTile = AllerTile.getInstance();
+    this.diagTile = DiagTile.getInstance();
+    this.medTile = MedTile.getInstance();
+    this.hxTile = HxTile.getInstance();
+    this.hmTile = HmTile.getInstance();
+    this.docTile = DocTile.getInstance();
+    this.vitalTile = VitalTile.getInstance();
+  },
+  _getFacesheet:function(query) {
+    var self = this;
+    Ajax.get(Ajax.SVR_POP, 'getFacesheet', this.cid, 
+      function(fs) {
+        self._loadFacesheet(fs);
+        overlayWorking(false);
+        if (query && query.pe)  // pop edit demo
+          self.demoTile.pop();
+        else if (query && query.nc)  // NewCrop
+          self._popNewCrop(query.nc);
+      });
+  },
+  _loadFacesheet:function(fs) {
+    fs = (fs) ? fs : this.fs;
+    this.fs = fs;
+    setPageTitle(fs.client.name);
+    setText('h1-name', fs.client.name);
+    this.demoTile.load(fs);
+    this.notepadTile.load(fs);
+    this.workflowTile.load(fs);
+    this.allerTile.load(fs);
+    this.diagTile.load(fs);
+    this.medTile.load(fs);
+    this.hxTile.load(fs);
+    this.hmTile.load(fs);
+    this.docTile.load(fs);
+    this.vitalTile.load(fs);
+    this._resizeDivs();
+    this._renderPageBreaks();
+    this._pollingOn();
+    Page.show($('fs-refresh'), false);
+  },
+  _renderPageBreaks:function() {
+    this._clearPageBreaks();
+    var divs = $$('print');
+    var y = 0;
+    var pgs = 1;
+    var widow;
+    for (var i = 0; i < divs.length; i++) {
+      var div = divs[i];
+      var ht = div.offsetHeight;
+      y += ht;
+      if ((pgs == 1 && y > 950) || (pgs > 1 && y > 850)) {
+        if (pgs == 1) {
+          divs[0].parentElement.insertBefore(createDiv('pgbrk', 'pghead1'), divs[0]);
+        }
+        pgs++;
+        if (widow) {
+          widow.parentElement.insertBefore(createDiv('pgbrk', 'pghead'), widow);
+          y = widow.offsetHeight + ht;      
+          widow = null;
+        } else {
+          div.parentElement.insertBefore(createDiv('pgbrk', 'pghead'), div);
+          y = ht;
+        }
+      } else {
+        widow = (divs[i].className == 'no-widow') ? divs[i] : null; 
+      }
+    }
+    this._setPageBreaks(pgs);
+  },
+  _clearPageBreaks:function() {
+    var divs = $$('pgbrk');
+    for (var i = 0; i < divs.length; i++) {
+      divs[i].parentElement.removeChild(divs[i]); 
+    }
+  },
+  _setPageBreaks:function(pgs) {
+    var fs = this.fs;
+    var h = 'Patient: ' + fs.client.name + ' (' + fs.client.uid + ')<br>DOB: ' + fs.client.birth + ' (age ' + fs.client.age + ')<br>';
+    var divs = $$('pgbrk');
+    for (var i = 0; i < divs.length; i++) {
+      var p = 'Page ' + (i + 1) + ' of ' + pgs;
+      divs[i].innerHTML = (i == 0) ? p : h + p;
+    }
+  },
+  _resizeDivs:function() {
+    syncHeights(['med-tbl', 'dia-tbl'], 100);
+    syncHeights(['medhx-box', 'famhx-box', 'sochx-box']);
+  }
+};
+/**
+ * Tiles
+ */
+var DemoTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var c = fs.client;
+    setText('dem-cid', c.uid);
+    setText('dem-dob', c.birth);
+    setText('dem-age', c.age);
+    setText('dem-lbl-flags', '');
+    setText('dem-flags', '');
+    var parents = [];
+    if (c.fatherAddress && c.fatherAddress.name) parents.push(c.fatherAddress.name);
+    if (c.motherAddress && c.motherAddress.name) parents.push(c.motherAddress.name);
+    if (parents.length) {
+      setText('dem-lbl-flags', 'Parent(s):');
+      setHtml('dem-flags', bulletJoin(parents)).className = 'ro';
+    }    
+    if (c.cdata5 || c.cdata6) {
+      var flags = [];
+      if (c.cdata5) flags.push('Living Will');
+      if (c.cdata6) flags.push('Power of Attorney');
+      setText('dem-lbl-flags', 'On File:');
+      setHtml('dem-flags', bulletJoin(flags)).className = 'ro red';
+    }
+    var pl = new ProfileLoader('dem-lbl-addr', 'dem-addr');
+    var a = c.shipAddress;
+    pl.add('Address:', [a.addr1, a.addr2, a.csz, AddressUi.formatPhone(a.phone1, a.phone1Type)]);
+    if (c.icards) {
+      var ic = c.icards[0];
+      var a = [ic.planName, ic.groupNo, ic.subscriberNo, ic.dateEffective]; 
+      var li = addListItem($('ul-dem'), null, null, null, 'print');
+      li.appendChild(createLabel('first', 'Insurance:'));
+      li.appendChild(createSpan('ro', null, null, bulletJoin(a)));
+    }
+    if (c.cdata1) {
+      var li = addListItem($('ul-dem'), null, null, null, 'print');
+      li.appendChild(createLabel('first', 'Custom1:'));
+      li.appendChild(createSpan('ro', c.cdata1));
+    }
+    if (c.cdata2) {
+      var li = addListItem($('ul-dem'), null, null, null, 'print');
+      li.appendChild(createLabel('first', 'Custom2:'));
+      li.appendChild(createSpan('ro', c.cdata2));
+    }
+  },
+  pop:function() {
+    Includer.getPatientEditor_pop(page.fs.client, null, 
+      function(client) {
+        page.pRefresh();
+      });
+  }
+}
+var NotepadTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    if (fs.client.notes) {
+      setClass('notepad', 'full');
+      hide('notepad-empty');
+      show('notepad-text').innerHTML = fs.client.notes;
+    } else {
+      setClass('notepad', '');
+      show('notepad-empty');
+      hide('notepad-text');
+    }
+  },
+  pop:function() {
+    var fs = page.fs;
+    if (fs.client.notes) {
+      setValue("pop-cn-text", brToCrlf(fs.client.notes));
+    } else {
+      setValue("pop-cn-text", "");
+    }
+    zoomPop("pop-cn", "pop-cn-text");
+  },
+  pSave:function() {
+    var fs = page.fs;
+    var text = value("pop-cn-text");
+    if (isBlank(text)) {
+      text = null; 
+    } else {
+      text = esc(crlfToBr(text));
+    }
+    var note = {"cid":fs.client.id, "text":text};
+    closeOverlayPop();
+    overlayWorking(true);
+    Ajax.post(Ajax.SVR_POP, 'saveClientNotes', note, 
+      function(fs) {
+        page.fs.client = fs.client;
+        page.facesheetChanged();
+      });
+  },
+  pDelete:function() {
+    setValue("pop-cn-text", "").select();
+  }
+}
+var WorkflowTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    this.renderWfVital(fs);
+    this.renderWfAppt(fs);
+    this.renderWfDocs(fs);
+  },
+  renderWfVital:function(fs) {
+    var a;
+    var href;
+    var div = clearChildren($('wf-vit'));
+    if (fs.workflow.vital) {
+      href = 'javascript:page.pPopVitals(' + fs.workflow.vital.id + ')';
+      a = createAnchor(null, href, 'qcmd qvital', null, 'Vitals <span>(' + bulletJoin(fs.workflow.vital.all) + ')</span>');
+    } else {
+      href = 'javascript:page.pPopVitals()';
+      a = createAnchor(null, href, 'qicon qnew-vital', "Record Today's Vitals...");
+    }
+    div.appendChild(a);
+    if (a.clientWidth > 400) {
+      a.style.width = 400;
+    }
+  },
+  renderWfAppt:function(fs) {
+    var a;
+    var href;
+    var div = clearChildren($('wf-appt'));
+    if (fs.workflow.appt) {
+      var e = fs.workflow.appt;
+      href = 'schedule.php?pe=1&pop=' + e.id;
+      a = createAnchor(null, href, 'qcmd qappt', null, e.time + ' - ' + e.type);
+    } else {
+      href = 'javascript:page.pNewAppt()';
+      a = createAnchor(null, href, 'qicon qnew-appt', 'New Appointment...');
+    }
+    div.appendChild(a);
+  },
+  renderWfDocs:function(fs) {
+    var a;
+    var href;
+    var ul = clearChildren($('wf-doc-ul'));
+    if (fs.workflow.docs) {
+      var li = addListItem(ul);
+      for (var i = 0; i < fs.workflow.docs.length; i++) {
+        var e = fs.workflow.docs[i];
+        href = 'javascript:page.pEditDoc(' + e.id + ')';
+        a = createAnchor(null, null, 'qcmd qnote', null, e.label + ' <br><span>(' + e.date + ')</span>', href);
+        li.appendChild(a);
+      }
+    }
+    a = createAnchor(null, 'javascript:page.pNewDoc()', 'qicon qnew-note', 'Create New Document...');
+    var a2 = createAnchor(null, 'javascript:page.pNewMsg()', 'qicon qnew-msg', 'New Message...');
+    var ul = addListItem(ul);
+    ul.appendChild(a);
+    ul.appendChild(a2);
+  }
+}
+var AllerTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    $('all-tbl').style.border = (fs.allergies) ? '2px dashed red' : '';
+    $('allprt-tbl').style.border = (fs.allergies) ? '2px dashed red' : '';
+    var t = new TableLoader('all-tbody', 'off', 'all-div');
+    var tp = new TableLoader('allprt-tbody', 'off', 'allprt-div');
+    var self = this;
+    var click = function(){self.pop()};
+    if (fs.allergies) {
+      for (var i = 0; i < fs.allergies.length; i++) {
+        var allergy = fs.allergies[i];
+        var html = bulletJoin(allergy.reactions);
+        t.createTrTd();
+        t.append(createAnchor(null, null, 'fs aller', allergy.agent, null, click), createSpan('lpad', null, null, html));
+        tp.createTrTd();
+        tp.append(createAnchor(null, null, 'fs aller', allergy.agent, null, click), createSpan('lpad', null, null, html));
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Known)', null, click));
+      tp.createTrTd();
+      tp.tr.className = '';
+      tp.append(createAnchor(null, null, 'fsnone', '(None Known)', null, click));
+    }
+  },
+  pop:function() {
+    Includer.getFaceAllergies_pop(page.fs, true, [page.facesheetChanged, page]);
+  }
+}
+var DiagTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var t = new TableLoader('dia-tbody', 'off', 'dia-div');
+    var self = this;
+    var click = function(){self.pop()};
+    if (fs.diagnoses) {
+      for (var i = 0; i < fs.diagnoses.length; i++) {
+        var diagnosis = fs.diagnoses[i];
+        var text = diagnosis.text;
+        if (diagnosis.icd) {
+          text += ' (' + diagnosis.icd + ')';
+        }
+        t.createTrTd();
+        t.append(createAnchor(null, null, 'fs', text, null, click));
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Recorded)', null, click));
+    }
+  },
+  pop:function() {
+    Includer.getFaceDiagnoses_pop(page.fs, true, [page.facesheetChanged, page]);    
+  }
+}
+var MedTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var t = new TableLoader('med-tbody', 'off', 'med-div');
+    var self = this;
+    var click = function(){self.pop()};
+    if (fs.activeMeds) {
+      for (var i = 0; i < fs.activeMeds.length; i++) {
+        var med = fs.activeMeds[i];
+        var name = (! med.expires) ? med.name : bulletJoin([med.name,' <span>' + med.expireText + '</span>']);
+        t.createTrTd();
+        t.append(createAnchor(null, null, 'fs', null, name, click));
+        t.append(createSpan('lpad', med.text));
+      }
+    } else {
+      t.createTrTd();
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Recorded)', null, click));
+    }
+  },
+  pop:function() {
+    Includer.getFaceMeds_pop(page.fs, true, [page.facesheetChanged, page]);
+  }
+}
+var HxTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    this.loadMedHx(fs);
+    this.loadFamHx(fs);
+    this.loadSocHx(fs);
+  },
+  loadMedHx:function(fs) {
+    var tp = new TableLoader('medhx-prt-tbody', 'off', 'medhx-prt-div');
+    for (var proc in fs.medhx.recs) {
+      var rec = fs.medhx.recs[proc];
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var rx = bulletJoin(rec.rx);
+      var comment = bulletJoin(rec.comment);
+      tp.createTr();
+      tp.createTd('fs', proc);
+      tp.createTd('w80', null, bulletJoin([date, type, rx, comment], true));
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd('fs', '(None)');
+    }
+    tp = new TableLoader("surghx-prt-tbody", "off", "surghx-prt-div");
+    for (var proc in fs.surghx.recs) {
+      var rec = fs.surghx.recs[proc];
+      var date = extractDate(bulletJoin(rec.date));
+      var type = bulletJoin(rec.type);
+      var comment = bulletJoin(rec.comment);
+      tp.createTr();
+      tp.createTd("fs", proc);
+      tp.createTd("w80", null, bulletJoin([date, type, comment], true));
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd("fs", "(None)");
+    }
+    
+    this.renderHxSummary(fs);    
+  },
+  renderHxSummary:function(fs) {
+    var as = [];
+    pushIfNotNull(as, this.hxSumProcsAnchor(fs.medhx.recs, FaceUi.FACE_HX_TAB_MED));
+    pushIfNotNull(as, this.hxSumProcsAnchor(fs.surghx.recs, FaceUi.FACE_HX_TAB_SURG));
+    if (as.length > 0) {
+      setHtml('fshx-sum', bulletJoin(as));
+    }
+  },
+  hxSumProcsAnchor:function(recs, tab) {
+    var procs = [];
+    for (var proc in recs) {
+      procs.push(proc);
+    }
+    return this.hxSumAnchor(procs, tab);
+  }, 
+  hxSumAnchor:function(a, tab) {
+    if (isEmpty(a)) return null;
+    return "<a class='fs0' href='javascript:page.hxTile.pop(" + tab + ")'>" + bulletJoin(a) + '</a>';  
+  },
+  loadFamHx:function(fs) {
+    this.renderFamhxSummary(fs);
+  },
+  renderFamhxSummary:function(fs) {
+    setHtml('famhx-sum', this.hxSumAnchor(fs.famhx.sopts, FaceUi.FACE_HX_TAB_FAM));
+  },
+  loadSocHx:function(fs) {
+    var tp = new TableLoader('sochx-prt-tbody', 'off', 'sochx-prt-div');
+    var topics = [];  // topics that have values
+    for (var topic in fs.sochx) {
+      var tpvals = [];  // ['bullet-rec-values',..]
+      var rec = fs.sochx[topic];
+      var dsyncCombo = FaceUi.getDsyncCombo(topic);
+      for (var dsyncId in rec) {
+        var values = rec[dsyncId].v;
+        dsyncCombo = rec[dsyncId].d;
+        if (dsyncCombo) {
+          tpvals.push(bulletJoin(values) + '<br>');
+        } else {
+          tpvals.push(bulletJoin(values));
+        }
+      }
+      var s = bulletJoin(tpvals, true);
+      if (s != '') {
+        topics.push(topic);
+        tp.createTr();
+        tp.createTd('fs', topic);
+        tp.createTd('w80', null, s);
+      }
+    }
+    if (tp.rows() == 0) {
+      tp.createTrTd('fs', '(None)');
+    }
+    if (topics.length) {
+      var a = "<a class='fs0' href='javascript:page.hxTile.pop(FaceUi.FACE_HX_TAB_SOC)'>" + bulletJoin(topics) + '</a>';
+      setHtml('sochx-sum', a);
+    }    
+  },
+  pop:function(tab) {
+    Includer.getFaceHx_pop(page.fs, tab, true, [page.facesheetChanged, page]);    
+  }
+}
+var HmTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var t = new TableLoader('hm-tbody', 'off', 'hm-div');
+    var self = this;
+    if (fs.hms) {
+      for (var i = 0; i < fs.hms.length; i++) {
+        var hm = fs.hms[i];
+        var click = 'page.pPopHm(' + hm.procId + ')';
+        var name = (hm.nextExpireText) ? bulletJoin([hm.proc, ' <span>' + hm.nextExpireText + '</span>']) : hm.proc; 
+        var next = (hm.nextExpireText) ? '<span class="red">' + hm.nextShort + '</span>' : hm.nextShort;
+        var results = ellips(simpleBulletJoin(hm.results), 120);
+        t.createTrTd('nowrap');
+        t.append(createAnchor(null, null, 'fs', null, name, click));
+        t.createTd('nowrap', null, nbsp(hm.dateShort));
+        t.createTd(null, null, results);
+        t.createTd('nowrap norb', null, nbsp(next));
+      }
+    } else {
+      var click = 'page.pPopHm()';
+      t.createTrTd();
+      t.td.colSpan = 4;
+      t.tr.className = '';
+      t.append(createAnchor(null, null, 'fsnone', '(None Recorded)', null, click));
+    }
+    var tp = new TableLoader("hmprt-tbody", "off", "hmprt-div");
+    if (fs.hmsHistory) {
+      for (var i = 0; i < fs.hmsHistory.length; i++) {
+        var hm = fs.hmsHistory[i];
+        var results = bulletJoin(hm.results);
+        if (hm.sessionId == "0") {
+          tp.createTr();
+          tp.createTd("fs", hm.proc);
+          tp.createTd("w80", null, bulletJoin([hm.dateShort, results], true));
+        }
+      }
+    }
+  },
+  pop:function(pcid) {
+    Includer.getFaceHm_pop(page.fs, pcid, true, [page.facesheetChanged, page]);    
+  }
+}
+var DocTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var t = new TableLoader('his-tbody', 'off', 'his-div');
+    var hist = fs.clientHistory;
+    if (hist && hist.all) {
+      for (var i = 0; i < hist.all.length; i++) {
+        var e = hist.all[i];
+        t.createTr(e.date, [e.date]);
+        t.createTd('bold', e.date);
+        t.createTdAppend(null, this.createHistAnchor(fs, e));
+      }
+    }
+    fs.clientHistory.filteredSessions = fs.clientHistory.sessions;    
+  },
+  createHistAnchor:function(fs, h) {
+    if (h.type == 0) {  // appt
+      return this.createApptAnchor(fs, h.id);
+    } else if (h.type == 1) {  // session
+      return FaceUi.createSessionAnchor(fs, h.id, true);
+    } else {
+      return this.createMsgAnchor(fs, h.id);
+    }
+  },
+  createMsgAnchor:function(fs, id) {
+    var msg = fs.clientHistory.msgs[id];
+    var label = 'Msg: ' + msg.subject;
+    var href = buildHrefFn('Includer.getMsgPreviewer_pop', [fs.client.id, id, true]);
+    var a = createAnchor(null, href, 'icon edit-msg', label);
+    return a;
+  },
+  createApptAnchor:function(fs, id) {
+    var click = 'editAppt(' + id + ')';
+    var appt = fs.clientHistory.appts[id];
+    var label = appt.time + ' - ' + appt.type; 
+    var a = createAnchor(null, null, 'icon edit-appt', label, null, click);
+    var span = createSpan();
+    span.appendChild(a);
+    var s = createSpan(null, appt.status);
+    if (appt.statusColor) {
+      s.style.backgroundColor = appt.statusColor;
+    } 
+    span.appendChild(s);
+    return span;
+  },
+  pop:function() {
+    Includer.getDocOpener_preview(page.fs.client.id);
+  }
+}
+var VitalTile = {
+  getInstance:function() {
+    return this;
+  },
+  load:function(fs) {
+    var self = this;
+    var t = new TableLoader('vit-tbody', 'off', 'vit-div');
+    var tp = new TableLoader('vitprt-tbody', 'off', 'vit-div');
+    if (fs.vitals) {
+      for (var i = 0; i < fs.vitals.length; i++) {
+        var vital = fs.vitals[i];
+        var click = 'page.pPopVitals(' + vital.id + ')';
+        t.createTrTd();
+        t.append(createAnchor(null, null, 'fs vital', vital.dateText, null, click));
+        if (vital.all) {
+          var div = createDiv(null, 'vit-text', null, bulletJoin(vital.all));
+          t.append(div);
+        }
+        tp.createTrTd('main');
+        tp.append(createAnchor(null, click, 'fs vital', vital.dateText));
+        tp.createTd(null, vital.pulse);
+        tp.createTd(null, vital.resp);
+        tp.createTd('nowrap', vital.bp);
+        tp.createTd(null, vital.temp);
+        tp.createTd(null, this._wtText(vital));
+        tp.createTd(null, this._htText(vital));
+        tp.createTd(null, vital.bmi);
+        tp.createTd(null, vital.wc);
+        tp.createTd(null, vital.hc);
+        tp.createTd('nowrap', vital.o2);
+      }
+    }
+  },
+  _wtText:function(vital) {
+    var text = null;
+    if (vital.wt) {
+      text = vital.wt;
+      if (vital.wtUnits) {
+        text += ' ' + (vital.wtUnits == 'Pounds' ? 'lbs' : 'kg');
+      }
+    }
+    return text;
+  },
+  _htText:function(vital) {
+    var text = null;
+    if (vital.height) {
+      text = vital.height;
+      if (vital.htUnits) {
+        text += ' ' + (vital.htUnits == 'inches' ? 'in' : 'cm');
+      }
+    }
+    return text;
+  },
+  pop:function(fvid) {
+    Includer.getFaceVitals_pop(page.fs, fvid, true, [page.facesheetChanged, page]);
+  }
+}
+/**
+ * Assign global instance
+ */
+var page = Facesheet;  

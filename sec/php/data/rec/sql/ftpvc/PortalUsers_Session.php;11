@@ -1,0 +1,46 @@
+<?php
+require_once 'php/data/rec/sql/_PortalUserRec.php';
+require_once 'php/data/rec/sql/_ClientRec.php';
+require_once 'php/data/rec/sql/UserGroups.php';
+//
+/**
+ * Patient Portal Session Manager
+ * @author Warren Hornsby 
+ */
+class PortalUsers_Session {
+  /**
+   * Login patient to portal
+   * @param string $uid
+   * @param string $pw plaintext  
+   * @return PortalSession
+   * @throws PortalException
+   */
+  static function login($uid, $pw) {
+    $rec = PortalUser::fetchByUid($uid);
+    if ($rec == null) 
+      $login = PortalLogin::asBadUid($uid);
+    else if (! $rec->matchesPassword($pw)) 
+      $login = PortalLogin::asBadPassword($uid);
+    else
+      $login = PortalLogin::asOk($uid, $rec);
+    $login->save();
+    if (! $login->isOk())
+      throw new PortalException('Your login credentials do not match our records');
+    return new PortalSession($rec);
+  }
+  /**
+   * Ensure login session is valid
+   * @return PortalUser
+   * @throws PortalException
+   */
+  static function reauthenticate() {
+    $sess = PortalSession::get();
+    if (! $sess->reauthenticate(PortalUser::fetchByUid($sess->uid)))
+      throw new PortalException('Your session is no longer valid');
+    return PortalUser::fetchByUid($sess->uid);
+  }
+  /**
+   * Respond to challenge questions
+   * @param string[] $cas
+   * @return PortalSession
+   * @th
