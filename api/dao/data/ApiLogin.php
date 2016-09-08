@@ -15,7 +15,7 @@ class ApiLogin extends Api {
    * @param ['field'=>value,..] $data
    */
   public function __construct($data) {
-    $required = array('practiceId','userId','password','session','cookie');
+    $required = array('practiceId','userId','password');//,'session','cookie');
     $this->load($data, $required);
   }
   /**
@@ -23,7 +23,7 @@ class ApiLogin extends Api {
    * @return '5001_userId'
    */
   public function getUserUid() {
-    return $this->practiceId . "_" . $this->userId;
+    return $this->userId;
   }
 }
 ?>

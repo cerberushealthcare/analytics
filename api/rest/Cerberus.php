@@ -1,17 +1,25 @@
 <?php
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/api/');
 require_once 'ApiException.php';
-require_once './dao/ApiDao.php';
-require_once './dao/data/ApiLogin.php';
-require_once './dao/data/ApiSelectPatient.php';
-require_once './dao/data/ApiPatient.php';
-require_once './dao/data/ApiPatientMap.php';
-require_once './dao/data/ApiPollStatus.php';
-require_once './dao/data/ApiPractice.php';
-require_once './dao/data/ApiUser.php';
-require_once './dao/data/Xml.php';
-require_once './dao/ApiLogger.php';
-set_include_path('../sec/');
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/api/');
+require_once 'dao/ApiDao.php';
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/api/');
+require_once 'dao/data/ApiLogin.php';
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/api/');
+require_once 'dao/data/ApiSelectPatient.php';
+require_once 'dao/data/ApiPatient.php';
+require_once 'dao/data/ApiPatientMap.php';
+require_once 'dao/data/ApiPollStatus.php';
+require_once 'dao/data/ApiPractice.php';
+require_once 'dao/data/ApiUser.php';
+require_once 'dao/data/Xml.php';
+//require_once 'dao/ApiLogger.php';
 require_once 'php/data/LoginSession.php';
+
+
+//These two needed for clinical file import.
+require_once 'php/data/rec/group-folder/GroupFolder_ClinicalImport.php';
+require_once 'php/c/patient-import/clinical-xml/ClinicalImporter.php';
 /**
  * Cerberus web service handler
  */
@@ -37,12 +45,19 @@ class Cerberus {
       log2_r($rest, 'Cerberus::request');
       $op = strtolower(Data::get($rest->data, 'operation'));
       unset($rest->data['operation']);
-      if ($op == 'login') { 
+	  log2('op is ' . $op);
+      if ($op == 'login') {
         $response = $this->requestLogin($rest);
       } else {
-        $sessionId = Data::get($rest->data, 'sessionId');
-        if ($sessionId == null) 
-          throw new ApiException('Session required.');
+		
+		/*try {
+			$sessionId = Data::get($rest->data, 'sessionId');
+		}
+		catch (Exception $e) {
+			throw new ApiException('Session required.');
+		}*/
+		
+		log2('The op is ' . $op);
         ApiDao::requireLogin($sessionId);
         switch ($op) {
           case 'practice':
@@ -66,18 +81,66 @@ class Cerberus {
           case 'patientinfo':
             $response = $this->requestPatientInfo($rest);
             break;
+		  case 'ccdupload':
+			$response = $this->requestCCD_UPLOAD($rest);
+			break;
           default:
             header('Request not recognized.', true, 405);
             return;        
         }
       }
+	  echo 'return response';
       return $response;
     } catch (ApiException $e) {
+		echo 'ApiException';
       throw new CerberusApiException($e->getMessage());
     } catch (Exception $e) {
+		echo 'Exception';
       throw new CerberusApiException($e->getMessage());
     }
   }
+  
+   /**
+   * Login request
+   * @param Rest $rest
+   * @return 'OK,session_id,unread_count,unreviewed_count,msg_url,review_url,doc_url,status_url,pharm_url,scan_url,track_url,report_url'
+   */
+  public function requestCCD_UPLOAD($rest) {
+	try {
+	
+		try {
+			$sessionId = Data::get($rest->data, 'sessionId');
+		}
+		catch (Exception $e) {
+			throw new ApiException('Session required.');
+		}
+		//$sessionId = $rest->data['sessionId'];
+		//LoginSession::login('mm', 'clicktate1');
+		
+		$fileQualifiedPath = $rest->data['filepath'] . '/' . $rest->data['filename'];
+		
+		if (!file_exists($fileQualifiedPath)) {
+			throw new RuntimeException('File does not exist: ' . htmlentities($fileQualifiedPath));
+		}
+		
+		$file = new ClinicalFile;
+		
+		$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
+		$file->setFilename($rest->data['filename']);
+
+		if (gettype($file) !== 'object') {
+			throw new RuntimeException("Can't import anything that isn't a <b>ClinicalFile</b> object. I got a(n) " . gettype($file));
+		}
+			
+		$result = ClinicalImporter::importFromFile($file);
+		echo 'OK. ' . $rest->data['sessionId'];
+	}
+	catch (Exception $e) {
+		//$errorLog->log($e->getMessage()) for debugging
+		echo 'ERROR, ' . $e->getMessage();
+	}
+  }
+  
   /**
    * Retrieve patient info by CLIENT_ID
    * @param Rest $rest
@@ -107,7 +170,9 @@ class Cerberus {
    */
   public function requestLogin($rest) {
     $login = new ApiLogin($rest->data);
+	//echo '-------------';
     $params = $this->dao->login($login);
+	echo 'requestLogin in Cerberus.php: done';
     return $this->response('OK', $params);
   }
   /**
@@ -181,6 +246,6 @@ class Cerberus {
  */
 class CerberusApiException extends ApiException {
   function getResponse() {
-    return "ERROR," . $this->getMessage();
+    return "Cerberus.php ERROR," . $this->getMessage();
   }
 }

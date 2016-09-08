@@ -1,6 +1,5 @@
 <?php
-set_include_path('../sec/');
-require_once '../api/dao/data/Api.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/analytics/api/dao/data/Api.php';
 //
 /**
  * PatientMap
@@ -15,7 +14,7 @@ class ApiPatientMap extends Api {
    * Constructor
    * @param ['field'=>value,..] $data
    */
-  public function __construct($data) {
+   public function __construct($data) {
     $required = array('practiceId','patientId','externalId');
     $this->load($data, $required);
   }

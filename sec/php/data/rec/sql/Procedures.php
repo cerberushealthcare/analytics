@@ -383,7 +383,7 @@ class Proc extends ProcRec {
     $c->Provider = Provider::asOptionalJoin();
     $c->Facility = FacilityAddress::asOptionalJoin();
     $c->ProcResults = ProcResult::asOptionalJoin();
-    return self::fetchAllBy($c);
+    return self::fetchAllBy($c, null, 2000);
   }
   static function fetchAllProcOnly($cid) {
     $c = new static();

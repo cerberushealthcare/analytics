@@ -1,8 +1,7 @@
 <?php
 require_once 'ApiLogin.php';
 require_once 'ApiAddress.php';
-set_include_path('../sec/');
-require_once 'php/data/rec/sql/_UserRec.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/analytics/sec/php/data/rec/sql/_UserRec.php';
 /**
  * User
  */

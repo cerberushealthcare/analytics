@@ -293,11 +293,24 @@ function fetch($sql, $logging = true) {
  */
 function fetchField($sql, $field = 0, $logging = true) {
   $res = query($sql, $logging);
-  if (mysql_num_rows($res) < 1) {
-    return false;
+  $field = null;
+  
+  if (MyEnv::$IS_ORACLE) {
+	if (oci_num_rows($res) < 1) {
+		return false;
+	}
+	$row = oci_fetch_all($stid, $res);
+	oci_free_statement($stid);
+	logit(print_r($row));
+	return $row[0][$field];
   }
-  $row = mysql_fetch_array($res, MYSQL_BOTH);
-  return $row[$field];
+  else {
+	  if (mysql_num_rows($res) < 1) {
+		return false;
+	  }
+	  $row = mysql_fetch_array($res, MYSQL_BOTH);
+	  return $row[$field];
+  }
 }
 /*
  * If key field supplied, returns [
@@ -409,11 +422,29 @@ function castRowsAsDate(&$rows, $fields) {
   }
   return $rows;
 }
-// Returns resource
+// Returns resource for SQL statements and an associative array if it's Oracle.
 function query($sql, $logging = true) {
   if ($logging) logit($sql);
-  $conn = open();
-  $res = mysql_query($sql) or die("Query failure: " . mysql_error());
+  if (MyEnv::$IS_ORACLE) {
+	logit('We are dealing with Oracle now.');
+	try {
+		$conn = openOracle();
+		/*$stid = oci_parse($conn, $sql);
+		oci_execute($stid);
+		$rows = oci_fetch_all($stid, $res);
+		oci_free_statement($stid);
+		oci_close($conn);*/
+		$res = 'Hi';
+	}
+	catch (Exception $e) {
+		logit('ERROR: ' . $e->getMessage() . ' in ' . $e->getFilename() . ' on line ' . $e->getLine());
+		throw new RuntimeException('Could not execute the Oracle query: ' . $e->getMessage());
+	}
+  }
+  else {
+	  $conn = open();
+	  $res = mysql_query($sql) or die("Query failure: " . mysql_error());
+  }
   return $res;
 }
 function queryNoDie($sql) {
@@ -1170,9 +1201,21 @@ function dbCredFromEnv() {
 }
 */
 function open() {
+  //echo 'Connecting to ' . MyEnv::$DB_NAME . ' on ' . MyEnv::$DB_SERVER . ' ' .  MyEnv::$DB_USER . ' ' . MyEnv::$DB_PW;
+  //throw new RuntimeException('Cheezit time! ' . print_r(debug_backtrace()));
   $conn = mysql_connect(MyEnv::$DB_SERVER, MyEnv::$DB_USER, MyEnv::$DB_PW) or die("Connection failure: " . mysql_error());
   mysql_select_db(MyEnv::$DB_NAME) or die("Database select failure: " . mysql_error());
   return $conn;
+}
+
+function openOracle() {
+	try {
+		$conn = oci_connect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
+	}
+	catch (Exception $e) {
+		throw new RuntimeException('Could not connect to the oracle database ' . MyEnv::$DB_SERVER . ' with proc name ' . MyEnv::$DB_PROC_NAME . ': ' . $e->getMessage());
+	}
+	return $conn;
 }
 
 function close($conn) {

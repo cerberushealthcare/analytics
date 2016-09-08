@@ -17,9 +17,26 @@ class Dao {
   static function query($sql, $db = null) {
     Logger::debug($sql);
     $conn = static::open($db);
-    $res = mysql_query($sql); 
-    if (! $res)
-      throw static::buildException(mysql_error(), mysql_errno($conn));
+	
+	if (MyEnv::$IS_ORACLE) {
+		//Oracle does not like backticks, but SQL does. Substitute them for a single quote before doing the query.
+		$sql = str_replace('`', '"', $sql);
+		$stid = oci_parse($conn, $sql);
+		$res = oci_execute($stid);
+	}
+	else {
+		$res = mysql_query($sql); 
+	}
+    
+    if (! $res) {
+		if (MyEnv::$IS_ORACLE) {
+			$err = oci_error();
+			throw static::buildException(htmlentities($err['message'], ENT_QUOTES), E_USER_ERROR);
+		}
+		else {
+			throw static::buildException(mysql_error(), mysql_errno($conn));
+		}
+	 }
     return $res;
   }
   /**
@@ -93,12 +110,19 @@ class Dao {
   static function open($db = null) {
     if ($db == null)
       $db = MyEnv::$DB_NAME;
-    $conn = mysql_connect(MyEnv::$DB_SERVER, MyEnv::$DB_USER, MyEnv::$DB_PW)
-      or die(mysql_error());
-    mysql_select_db($db) 
-      or die(mysql_error());
+  
+	if (MyEnv::$IS_ORACLE) {
+		$conn = openOracle();
+	}
+	else {
+		$conn = mysql_connect(MyEnv::$DB_SERVER, MyEnv::$DB_USER, MyEnv::$DB_PW)
+		  or die(mysql_error());
+		mysql_select_db($db) 
+		  or die(mysql_error());
+	}
     return $conn;
   }
+  
   /**
    * Begin transaction
    */

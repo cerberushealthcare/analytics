@@ -1,10 +1,10 @@
 <?php
-set_include_path('../sec/');
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/sec/');
 require_once 'php/data/rec/sql/_ClientRec.php';
 require_once 'php/data/rec/sql/_AddressRec.php';
-require_once '../api/dao/data/Api.php';
-require_once '../api/dao/data/ApiAddress.php';
-require_once '../api/dao/data/ApiInsurance.php';
+require_once 'Api.php';
+require_once 'ApiAddress.php';
+require_once 'ApiInsurance.php';
 //
 /**
  * Patient

@@ -1,5 +1,5 @@
 <?php
 require_once 'config/Environments.php';
 //
-class MyEnv extends Env_Test {
+class MyEnv extends Oracle_Production {
 }
