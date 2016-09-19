@@ -79,7 +79,7 @@ class Procedures {
   }
   /**
    * @param ProcResult result
-   * @return array(ProcResult_Hist+Proc_Hist,..) 
+   * @return array(ProcResult_Hist+Proc_Hist,..)
    */
   static function getResultHistory($result) {
     $recs = ProcResult_Hist::fetch_byResult($result);
@@ -91,19 +91,19 @@ class Procedures {
   static function getInDataHm($cid) {
     $recs = Proc::fetchMostRecentMap($cid);
     $rows = array();
-    foreach ($recs as $ipc => $proc) 
+    foreach ($recs as $ipc => $proc)
       $rows[$ipc] = static::asInDataRow($proc);
     return $rows;
   }
   static function getInDataHmAll($cid) {
     $recs = Proc::fetchAllNonAdmin($cid);
     $rows = array();
-    foreach ($recs as $proc) 
+    foreach ($recs as $proc)
       $rows[] = static::asInDataRow($proc);
     logit_r($rows, 'getInDataHmAll');
     return $rows;
   }
-  private static function asInDataRow($proc) { 
+  private static function asInDataRow($proc) {
     $row = array();
     if (isset($proc->Ipc)) {
       $row['proc'] = $proc->Ipc->name;
@@ -111,7 +111,7 @@ class Procedures {
     }
     $row['date_text'] = formatLongApproxDate($proc->date);
     $row['data_hm_id'] = $proc->procId;
-    if ($proc->ProcResults) 
+    if ($proc->ProcResults)
       $row['results'] = implode('<br>', ProcResult::summarizeResults($proc, $proc->ProcResults, false));
     else
       $row['results'] = $proc->comments;
@@ -128,7 +128,7 @@ class Procedures {
     return $rec;
   }
   /**
-   * @param stdClass $obj 
+   * @param stdClass $obj
    * @return Proc updated rec
    */
   static function saveProc($obj) {
@@ -148,10 +148,10 @@ class Procedures {
     } catch (Exception $e) {
       Dao::rollback();
       throw $e;
-    } 
+    }
   }
   /**
-   * @param stdClass $obj 
+   * @param stdClass $obj
    */
   static function savePanel($obj) {
     global $login;
@@ -169,11 +169,11 @@ class Procedures {
     } catch (Exception $e) {
       Dao::rollback();
       throw $e;
-    } 
+    }
   }
   /**
    * @param int $procId
-   * @return int ID  
+   * @return int ID
    */
   static function delete($procId) {
     $rec = Proc::fetch($procId);
@@ -192,7 +192,7 @@ class Procedures {
   }
   /**
    * @param int $procId
-   * @param stdClass $obj 
+   * @param stdClass $obj
    * @return Proc updated rec
    */
   static function saveResult($procId, $obj) {
@@ -200,7 +200,7 @@ class Procedures {
     $rec = ProcResult::revive($obj, $proc);
     $rec->save();
     $rec->Proc = self::get($procId);
-    return $rec; 
+    return $rec;
   }
   /**
    * @param Proc $proc
@@ -209,7 +209,7 @@ class Procedures {
     $recs = ProcResult::fetchAll($proc);
     Dao::begin();
     try {
-      foreach ($recs as $rec) 
+      foreach ($recs as $rec)
         ProcResult::delete($rec);
       Dao::commit();
     } catch (Exception $e) {
@@ -229,7 +229,7 @@ class Procedures {
     }
   }
   /**
-   * Migrate from HM and Surgical HX 
+   * Migrate from HM and Surgical HX
    * @param int $cid
    */
   static function migrate($cid) {
@@ -278,7 +278,7 @@ class Proc extends ProcRec {
   public $procId;
   public $userGroupId;
   public $clientId;
-  public $date;  
+  public $date;
   public $ipc;
   public $priority;
   public $location;
@@ -311,7 +311,7 @@ class Proc extends ProcRec {
       global $login;
       if ($login->User->isDoctor()) {
         $this->userId = $login->userId;
-      } 
+      }
     }
     parent::save($ugid);
     if ($this->ProcResults) {
@@ -399,7 +399,7 @@ class Proc extends ProcRec {
     $c->clientId = $cid;
     $recs = self::fetchAllBy($c);
     $map = array();
-    foreach ($recs as $rec) 
+    foreach ($recs as $rec)
       $map[$rec->getIpcDate()] = $rec;
     return $map;
   }
@@ -425,7 +425,7 @@ class Proc extends ProcRec {
   static function fetchReasonsForVisit($cid) {
     $c = new static();
     $c->clientId = $cid;
-    $c->ipc = Ipcs::ReasonForVisit; 
+    $c->ipc = Ipcs::ReasonForVisit;
     //$c->setDateCriteria($dos);
     return self::fetchAllBy($c);
   }
@@ -456,7 +456,7 @@ class Proc extends ProcRec {
     //$c->setDateCriteria($dos);
     $c->Doctor = User_Doctor::asJoin();
     $recs = static::fetchAllBy($c, new RecSort('-date'));
-    return $recs;      
+    return $recs;
   }
   /**
    * @param int $cid
@@ -469,14 +469,14 @@ class Proc extends ProcRec {
     $map = array();
     foreach ($recs as $rec) {
       if (! isset($map[$rec->ipc])) {
-        $rec->ProcResults = ProcResult::fetchAll($rec);      
+        $rec->ProcResults = ProcResult::fetchAll($rec);
         $map[$rec->ipc] = $rec;
       }
     }
     return $map;
-  } 
+  }
   private static function loadResults(&$recs) {
-    foreach ($recs as &$rec) 
+    foreach ($recs as &$rec)
       $rec->ProcResults = ProcResult::fetchAll($rec);
      return $recs;
   }
@@ -487,7 +487,7 @@ class Proc extends ProcRec {
   }
   static function asCriteria($ugid = null) {
     $c = new static();
-    $c->Ipc = Ipc::asRequiredJoin($ugid); 
+    $c->Ipc = Ipc::asRequiredJoin($ugid);
     $c->Provider = Provider::asOptionalJoin();
     $c->Facility = FacilityAddress::asOptionalJoin();
     return $c;
@@ -511,10 +511,10 @@ class Proc extends ProcRec {
   }
   /**
    * @param Proc[] $recs
-   * @return Proc[]  
+   * @return Proc[]
    */
   static function summarizeResults(&$recs) {
-    foreach ($recs as &$rec)  
+    foreach ($recs as &$rec)
       if ($rec->ProcResults)
         $rec->_results = ProcResult::summarizeResults($rec, $rec->ProcResults);
     return $recs;
@@ -535,7 +535,7 @@ class Proc extends ProcRec {
     $rec->clientId = $hm->clientId;
     $rec->date = $hm->getApproxDate();
     //$rec->cat = $hm->getCat();
-    $rec->name = $hm->proc; 
+    $rec->name = $hm->proc;
     $rec->Ipc = Ipc_MigrateHm::from($hm);
     $rec->ipc = $rec->Ipc->ipc;
     $result = ProcResult::fromHm($hm, $rec->Ipc);
@@ -560,7 +560,7 @@ class Proc extends ProcRec {
     return $recs;
   }
   private static function fromSurgHx($surg, $ugid, $cid) {
-    if (self::hasData($surg)) { 
+    if (self::hasData($surg)) {
       $rec = new self();
       $rec->userGroupId = $ugid;
       $rec->clientId = $cid;
@@ -609,29 +609,29 @@ class ProcResult extends ProcResultRec {
   public function toJsonObject(&$o) {
     $o->lookup('interpretCode', self::$INTERPRET_CODES);
     $o->_value = $this->getResult();
-    if ($this->Ipc) 
+    if ($this->Ipc)
       $o->_ipc = $this->Ipc->name;
     unset($o->Proc);
   }
   public function save() {
-    if ($this->procId == null) 
+    if ($this->procId == null)
       $this->procId = $this->getFromProc('procId');
     if (is_null($this->seq) && $this->procResultId == null)
-      $this->seq = count($this->getFromProc('ProcResults')); 
+      $this->seq = count($this->getFromProc('ProcResults'));
     if ($this->ipc == null)
       $this->ipc = $this->getFromProc('ipc');
     parent::save();
   }
   public function getResult() {
     $s = array();
-    if ($this->value !== null) 
+    if ($this->value !== null)
       $s[] = $this->value;
-    if ($this->valueUnit) 
+    if ($this->valueUnit)
       $s[] = $this->valueUnit;
     return implode(' ', $s);
   }
   public function getInterpret() {
-    return geta(static::$INTERPRET_CODES, $this->interpretCode); 
+    return geta(static::$INTERPRET_CODES, $this->interpretCode);
   }
   public function isAlert() {
     switch ($this->interpretCode) {
@@ -694,7 +694,7 @@ class ProcResult extends ProcResultRec {
   }
   static function revive_asQuickResult($obj, $proc) {
     if (get($obj, 'value') || get($obj, 'units') || get($obj, 'rcomments') || get($obj, 'interpretCode')) {
-      $obj->comments = get($obj, 'rcomments'); 
+      $obj->comments = get($obj, 'rcomments');
       $obj->seq = $seq;
       return static::revive($obj, $proc);
     }
@@ -703,7 +703,7 @@ class ProcResult extends ProcResultRec {
     if (isset($obj->PanelResults)) {
       $recs = array();
       $seq = 0;
-      foreach ($obj->PanelResults as $o) 
+      foreach ($obj->PanelResults as $o)
         $recs[] = static::revive_asPanelResult($o, $proc->procId, $seq++);
       return $recs;
     }
@@ -721,24 +721,24 @@ class ProcResult extends ProcResultRec {
    */
   static function summarizeResults($proc, $recs, $chop = true) {
     $s = array();
-    foreach ($recs as $rec) 
+    foreach ($recs as $rec)
       $s[] = self::summarizeResult($proc, $rec, $chop);
     return $s;
   }
   /**
    * @param Proc $proc
    * @param ProcResult $rec
-   * @param bool $chop to limit comments size 
+   * @param bool $chop to limit comments size
    * @return string
    */
   static function summarizeResult($proc, $rec, $chop = true) {
     $s = array();
-    if ($rec->Ipc) 
+    if ($rec->Ipc)
      if ($proc == null || $rec->ipc != $proc->ipc)
         $s[] = $rec->Ipc->name . ": ";
     if ($rec->value)
       $s[] = $rec->getResult();
-    if ($rec->interpretCode) 
+    if ($rec->interpretCode)
       $s[] = geta(self::$INTERPRET_CODES, $rec->interpretCode);
     if (count($s) == 0)
       $s[] = $chop && strlen($rec->comments) > 100 ? substr($rec->comments, 0, 100) . '...' : $rec->comments;
@@ -979,12 +979,12 @@ class Ipc_MigrateHm extends Ipc {
     '22' => '600090',
     '23' => '600091',
     '24' => '600092',
-    '25' => '699285'); 
+    '25' => '699285');
   //
   static function from($hm) {
     $pcid = $hm->procId;
     $ipc = geta(self::$P2IPC, $pcid);
-    if ($ipc) 
+    if ($ipc)
       return self::fetchTopLevel($ipc, $hm->userGroupId);
     $ipc = self::fetchTopLevel($pcid, $hm->userGroupId);
     if ($ipc == null)
@@ -1009,25 +1009,25 @@ class Hm extends SqlRec {
   public $userGroupId;
   public $clientId;
   public $sessionId;
-  public $type;           
-  public $procId;        
-  public $proc;          
-  public $dateText;      
-  public $dateSort;      
-  public $results;       
-  public $nextTimestamp; 
+  public $type;
+  public $procId;
+  public $proc;
+  public $dateText;
+  public $dateSort;
+  public $results;
+  public $nextTimestamp;
   public $active;
   public $dateUpdated;
-  public $nextText;      
-  public $cint;      
-  public $cevery;         
+  public $nextText;
+  public $cint;
+  public $cevery;
   //
   public function getSqlTable() {
     return 'data_hm';
   }
   public function getApproxDate() {
     $date = formatFromLongApproxDate($this->dateText);
-    if ($date) 
+    if ($date)
       return $date;
     else
       return formatAsUnknownDate();
@@ -1082,11 +1082,11 @@ class SurgHx extends Rec {
   }
   private static function fromDataSyncProcGroup($group) {
     $recs = array();
-    if ($group->procs) { 
+    if ($group->procs) {
       foreach ($group->procs as $proc) {
         $procRec = geta($group->records, $proc);
         $recs[] = self::fromDataSyncProc($proc, $procRec);
-      }      
+      }
     }
     return $recs;
   }
@@ -1097,7 +1097,7 @@ class SurgHx extends Rec {
       $rec->date = self::getProcRecValue($procRec, 'date');
       $rec->type = self::getProcRecValue($procRec, 'type');
       $rec->comment = self::getProcRecValue($procRec, 'comment');
-    } 
+    }
     if ($rec->date == null) {
       $i = strrpos($proc, '(');  // Knee Scope (Jan 2008)
       logit_r($proc, 'proc i=' . $i);

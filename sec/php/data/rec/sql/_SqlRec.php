@@ -58,9 +58,11 @@ abstract class SqlRec extends Rec {
       $this->decryptSqlValues();
   }
   public function __constructFromSqlArray($arr) {
+    //logit_r($arr,'arr');
     $fids = $this->getFids();
     foreach ($arr as $rfid => $value) {
       if (is_array($value)) {
+        //logit_r("set $rfid,$value", 'rfid,value');
         $this->set($rfid, $value);
       } else {
         $fid = current($fids);
@@ -90,6 +92,7 @@ abstract class SqlRec extends Rec {
    *        object $value: child Rec assignment from decoded JSON object {fid:value,..}  
    */
   public function set($fid, $value) {
+    //logit_r("$fid=$value", 'set');
     if ($value !== null) {
       if (is_array($value))
         $this->setSqlArray($fid, $value);
@@ -99,6 +102,7 @@ abstract class SqlRec extends Rec {
     return $this;
   }
   public function setSqlArray($fid, $value) {
+    //logit_r($value, 'setsqlarray');
     if (substr(key($value), 0, 1) == '@') {  /*indicates came from join (see unflatten)*/
       $field = key(current($value));
       if (strpos($field, '.') == false) {
@@ -479,6 +483,7 @@ abstract class SqlRec extends Rec {
    * @throws InvalidCriteriaException
    */
   public function getSqlSelect($recs = null, $infos = null, $asCount = false, $sortBy = null, $groupBy = null) {
+    //logit_r($infos, 'infos');
     if ($recs == null) {
       $ci = $this->getRecsFromCriteria();
       $recs = $ci['recs'];
@@ -761,12 +766,17 @@ abstract class SqlRec extends Rec {
     $fields = $this->getSqlFields();
     $class = $this->getMyName();
     $class .= ".$tableAlias";
-    if ($recFid) 
-      $class .= ".$recFid";
+    //if ($recFid) 
+      //$class .= ".$recFid";
+    $i = 0;
     foreach ($this as $fid => &$value) {
       $field = geta($fields, $fid);
-      if ($field) 
-        $fields[$fid] = "$tableAlias.$field AS `$class.$fid`"; 
+      if ($field) {
+        //$as = "$class.$fid";
+        $as = "$class.$i";
+        $fields[$fid] = "$tableAlias.$field AS `$as`";
+        $i++;
+      } 
     }
     $fields = implode(', ', $fields);
     return $fields;
@@ -852,39 +862,6 @@ abstract class SqlRec extends Rec {
     if ($order)
       Rec::sort($recs, $order, ($keyFid != null));
     return array($recs, $rows, $limit);
-  }
-  static function testFetch($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
-    $criteria->authenticateAsCriteria();
-    $class = $criteria->getMyName();
-    $ci = $criteria->getRecsFromCriteria();
-    $infos = self::buildSqlSelectInfos($ci);
-    $sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
-    if ($limit > 0) {
-      if ($page >= 1)
-        $sql .= " LIMIT " . ($limit * ($page - 1)) . "," . ($limit + 1);
-      else
-        $sql .= " LIMIT $limit";
-    }
-    p_r($sql, 'sql');
-    $rows = static::fetchRows($sql);
-    p_r($rows, 'rows');
-    $frows = ($ci['ct'] == 1) ? $rows : self::unflattenRows($rows, $infos, $ci['ct'], $criteria);
-    p_r($frows, 'frows');
-    $recs = $class::fromRows($frows, $keyFid);
-    if ($order)
-      Rec::sort($recs, $order, ($keyFid != null));
-    return array($recs, $rows, $limit);
-  }
-  static function getSqlFetch($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
-    $class = $criteria->getMyName();
-    $ci = $criteria->getRecsFromCriteria();
-    $infos = self::buildSqlSelectInfos($ci);
-    $sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
-    return $sql;
-  } 
-  static function fetchAllBySql($sql, $class, $keyFid = null) {
-    $rows = static::fetchRows($sql);
-    return $class::fromRows($rows, $keyFid);
   }
   protected static function fetchRows($sql) {
     return Dao::fetchRows($sql);
@@ -1052,6 +1029,7 @@ abstract class SqlRec extends Rec {
     if ($rec == null) 
       return array(
         'fields' => null,
+        'fieldas' => null,
         'fct' => 0,
         'table' => null,
         'alias' => null,
