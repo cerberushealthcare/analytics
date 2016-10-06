@@ -8,6 +8,7 @@ require_once 'php/data/xml/clinical/ccd/ContinuityCareDocument.php';
 require_once 'php/data/xml/clinical/ccr/ContinuityCareRecord.php';
 require_once 'php/data/rec/sql/Scanning.php';
 require_once 'php/data/rec/sql/Procedures_Admin.php';
+require_once 'php/data/rec/sql/dao/Logger.php'; //analytics/sec/logs/log.txt
 //
 /**
  * Clinical Data Import
@@ -17,8 +18,27 @@ class ClinicalImporter {
   //
   /** Import new patient from uploaded XML */
   static function /*ClinicalImport*/import_asUpload() {
-    $file = GroupFolder_ClinicalImport::open()->upload();
-    return static::import($file);
+  
+	/*Open the clinical-import folder in the root (?) and upload the xml file.
+	
+	$file will be a GroupFile object (defined in data/rec/group-folder/GroupFolder.php:195)
+	*/
+  
+    $file = GroupFolder_ClinicalImport::open()->upload(); 
+	
+	
+	/*
+		If we're gonna call import, we need to have $file be a valid GroupFile object with the folder and filename properties defined.
+		
+		This should work:
+		
+		global $login; //defined in GroupFolder_ClinicalImport.php
+		$file = GroupFile::from(GroupFolder::open($login->userGroupId, 'path/to/xml'), 'path/to/xml/file/file.xml');
+		return static::import($file);
+		
+		'path/to/xml' is by default defined as 'clinical-import' in our script call.
+	*/
+    return static::import($file); //Import the file to the database.
   }
   /** Import previous upload to existing patient */
   static function /*ClinicalImport*/import_asUpdate($filename, $cid) {
@@ -27,6 +47,19 @@ class ClinicalImporter {
   }
   protected static function import($file, $cid = null) {
     $ci = ClinicalImport::from($file);
+    try {
+      $cid = $ci->import($cid);
+      Scanning::saveClinicalXml($cid, $file->filename);
+      Proc_CcdImported::record($cid);
+    } catch (DuplicateNameBirth $e) {
+      $ci->Client = $e->data;
+      throw new DupeImportPatient($ci);
+    }
+    return $ci;
+  }
+  
+  static function importFromFile($file, $cid = null) {
+    $ci = ClinicalImport::fromFile($file);
     try {
       $cid = $ci->import($cid);
       Scanning::saveClinicalXml($cid, $file->filename);
@@ -56,11 +89,33 @@ class ClinicalImport extends BasicRec {
   public /*ClinicalXml*/$Xml;
   public /*Client_Ci*/$Client;
   //
+  
+  static function fromFile(/*ClinicalFile*/$file, $cid = null) {
+    $xml = $file->getContent();
+	//$backtrace = debug_backtrace();
+	//Logger::debug(print_r($backtrace, true));
+	//Logger::debug('xml is ' . $xml);
+    $filename = $file->getFilename();
+    $type = ClinicalXml::getDocType($xml);
+	Logger::debug('type is ' . gettype($type) . ' ' . $type);
+    switch ($type) {
+      case ClinicalXml::TYPE_CCD:
+        return ClinicalImport_Ccd::create(706, $filename, $xml); //706 = group ID of the user that we defined that will do the import. We need this to match. McKinley
+      case ClinicalXml::TYPE_CCR:
+        return ClinicalImport_Ccr::create(1, $filename, $xml);
+    }
+    if ($type == ClinicalXml::TYPE_CCR)
+      return ClinicalImport_Ccr::create(1, $filename, $xml);
+    else
+      throw new XmlParseException('Clinical document type not recognized [2].');
+  }
+  
   static function from(/*ClinicalFile*/$file, $cid = null) {
     global $login;
     $xml = $file->getContent();
     $filename = $file->getFilename();
     $type = ClinicalXml::getDocType($xml);
+	echo 'type is ' . gettype($type) . ' ' . $type;
     switch ($type) {
       case ClinicalXml::TYPE_CCD:
         return ClinicalImport_Ccd::create($login->userGroupId, $filename, $xml);
@@ -96,6 +151,7 @@ class ClinicalImport extends BasicRec {
     return Rec::sort($recs, new RecSort('agent'));
   }
   protected static function create($ugid, $filename, $type, $Xml) {
+    Logger::debug('Creating...');
     $me = new static();
     $me->ugid = $ugid;
     $me->filename = $filename;
@@ -112,6 +168,7 @@ class ClinicalImport_Ccd extends ClinicalImport {
   //
   protected static function create($ugid, $filename, $xml) {
     $ccd = ContinuityCareDocument::fromXml($xml);
+	Logger::debug('Creating CCD.....');
     return parent::create($ugid, $filename, ClinicalXml::TYPE_CCD, $ccd);
   }
 }

@@ -4,8 +4,8 @@ echo 'The path is <b>' . get_include_path() . '&&&' . PATH_SEPARATOR . '&&&' . $
 require_once 'config/Environments.php';
 require_once 'config/MyEnv.php';
 //$con=oci_connect('userame','password','oracle_sid');
-echo 'Connecting with username ' . MyEnv::$DB_USER . ' to 208.187.161.81...';
-$conn = oci_connect(MyEnv::$DB_USER,'emrtest','208.187.161.81/pdborcl');
+echo 'Connecting with username cin to 208.187.161.81...';
+$conn = oci_connect('cin','Cin123','208.187.161.81/pdborcl');
 if($conn)
 	echo "Connection succeeded";
 else
@@ -15,15 +15,29 @@ else
 	trigger_error(htmlentities($err['message'], ENT_QUOTES), E_USER_ERROR);	
 }
 ?>
-<table border=1 cellpadding=5><tr><td> Section Code</td><td>Section Name</td></tr>
+<table border=1 cellpadding=5><tr><td>Upload ID</td><td>status</td></tr>
 <?php  
-	$stid = oci_parse($conn, 'SELECT user_groups');
+	$sql = "select upload.upload_id, upload.user_group_id, upload.practice_id, upload.name, upload.blob_content, upload.status, 
+			user_groups.upload_uid, user_groups.upload_pw, user_groups.user_group_id
+			from upload
+			left join user_groups
+			on upload.user_group_id = user_groups.USER_GROUP_ID
+			where upload.status = 'UPLOAD REQUESTED'
+			order by upload.user_group_id";
+	$stid = oci_parse($conn, $sql);
 	oci_execute($stid);
+	echo 'We have ' . oci_fetch_all($stid, $res) . ' rows!';
+	$err = oci_error($stid);
+	if (!empty($err)) {
+		echo 'Error: ' . $err['message'] . '. Query: ' . $err['sqltext'] . '<br>';
+		exit;
+	}
+	
 	while (($row = oci_fetch_array($stid, OCI_BOTH)) != false) {
 ?>
   <tr>
-	<td><?php echo $row[0] ?></td>
-	<td><?php echo $row[1] ?></td>
+	<td><?php echo $row['UPLOAD_ID'] ?></td>
+	<td><?php echo $row['STATUS'] ?></td>
   </tr>
 <?php
 }

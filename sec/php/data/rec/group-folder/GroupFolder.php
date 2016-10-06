@@ -6,7 +6,6 @@ require_once 'php/data/rec/cryptastic.php';
 /**
  * GroupFolder 
  * @author Warren Hornsby
-	Last change: CS 7/28/2016 12:54:23 PM
  */
 class GroupFolder {  /* can implement AutoEncrypt */
   //
@@ -148,7 +147,8 @@ class GroupFolder {  /* can implement AutoEncrypt */
     return new static($ugid, $root);
   }
   protected static function getRoot($ugid) {
-    $root = "user-folders\\G$ugid";
+//    $root = "user-folders\\G$ugid";
+    $root = MyEnv::$BASE_PATH . "\user-folders\\G$ugid";
     return $root;
   } 
   /**
@@ -451,7 +451,6 @@ class GroupUpload extends Rec {
    */
   static function asUploads() {
     $uploads = static::fromHttpPostFile(current($_FILES));
-    print_r($_FILES);
     if (empty($uploads)) 
       throw new GroupUploadException(null, 'Please select a file for upload.');
     return $uploads;      

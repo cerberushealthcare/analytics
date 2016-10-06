@@ -3,6 +3,7 @@ require_once 'php/data/rec/_Rec.php';
 require_once 'php/data/rec/sql/dao/Dao.php';
 require_once 'php/dao/LoginDao.php';
 require_once 'php/data/rec/cryptastic.php';
+require_once 'php/data/rec/sql/dao/Logger.php';
 //
 /**
  * Marker Interfaces  
@@ -84,6 +85,33 @@ abstract class SqlRec extends Rec {
     if ($fid) 
       $this->$fid = null;
   }
+  
+  /*
+	In our SQL queries, there are times where we'll have a column or table name that is valid in SQL but reserved in Oracle.
+	This function will add a _ to the end of the word if we are dealing with Oracle so that the query can be built correctly.
+	
+	You should only need this function if the environment is Oracle.
+	
+	Words that are reserved in both SQL and Oracle (e.g., ADD, ALL, SELECT) are not included - they wouldn't be there anyway because SQL forbids them too.
+	
+	@param string $word
+	
+	returns string $word
+  */
+  public function convertReservedOracleWords($word) {
+	$reservedWords = array('ACCESS', 'AUDIT', 'CHAR', 'CLUSTER', 'COMMENT', 'COMPRESS', 'CONNECT', 'DATE', 'DECIMAL', 'EXCLUSIVE', 'FLOAT', 'IDENTIFIED', 'IMMEDIATE', 'INCREMENT', 'INITIAL', 'INTEGER',  'LEVEL', 'LOCK', 'LONG', 'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOWAIT', 'NUMBER', 'OFFLINE', 'ONLINE', 'PCTFREE', 'PRIOR', 'PRIVILEGES', 'RAW', 'RENAME', 'RESOURCE', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SESSION', 'SHARE', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TRIGGER', 'UID', 'VALIDATE', 'VARCHAR', 'VARCHAR2', 'WHENEVER');
+	
+	$upper = strtoupper($word);
+	
+	foreach ($reservedWords as &$reservedWord) {
+		if ($upper === $reservedWord) {
+			$word = $word . '_';
+			break;
+		}
+	}
+	
+	return $word;
+  }
   /**
    * Assign field value according to type
    * @param string $fid
@@ -94,20 +122,25 @@ abstract class SqlRec extends Rec {
   public function set($fid, $value) {
     //logit_r("$fid=$value", 'set');
     if ($value !== null) {
-      if (is_array($value))
+      if (is_array($value)) {
+		Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . print_r($value, true));
         $this->setSqlArray($fid, $value);
-      else
+	  }
+      else {
         parent::set($fid, $value);
+	  }
     }
     return $this;
   }
   public function setSqlArray($fid, $value) {
     //logit_r($value, 'setsqlarray');
+	Logger::debug('setSqlArray: Got ' . print_r($value, true) . ' as value.');
     if (substr(key($value), 0, 1) == '@') {  /*indicates came from join (see unflatten)*/
       $field = key(current($value));
       if (strpos($field, '.') == false) {
         parent::set($fid, $value);
       } else {
+		Logger::debug('setSqlArray: getClassFromSqlField(' . $field . ')');
         $class = self::getClassFromSqlField($field);
         $recs = array();
         foreach ($value as $v) 
@@ -116,8 +149,17 @@ abstract class SqlRec extends Rec {
       }
     } else {
       if (current($value) != null) {
+		Logger::debug('setSqlArray: getClassFromSqlField(' . key($value) . ')');
         $class = self::getClassFromSqlField(key($value));
-        $this->$fid = new $class($value);
+		try {
+			//echo 'Making the class!...<br>';
+			if ($class !== '0') $this->$fid = new $class($value);
+			//echo 'Class made!<br>';
+		}
+		catch (Exception $e) {
+			echo 'CLASS EXCEPTION: ' . $e->getMessage() . '. Stack is ' . $e->getTraceAsString();
+			exit;
+		}
       }
     }
   }
@@ -194,8 +236,10 @@ abstract class SqlRec extends Rec {
     return Dao::fetchValue("SELECT user_group_id FROM $table WHERE $col='$id'");
   }
   protected function authenticateUserGroupId($ugid, $forReadOnly = false) {
+    Logger::debug('Entered authenticateUserGroupId!');
+	$backtrace = debug_backtrace();
     if ($ugid == null) 
-      throw new SecurityException('User group ID required in ' . $this->getMyName());
+      throw new SecurityException('User group ID required in ' . $this->getMyName() . '. Backtrace is ' . print_r($backtrace, true));
     $class = $this->getAuthenticator();
     if ($class == null)
       SqlAuthenticator::authenticateUserGroupId($ugid);
@@ -262,7 +306,7 @@ abstract class SqlRec extends Rec {
     switch ($mode) {
       case SaveModes::INSERT:  
         $sql = $this->getSqlInsert();
-        $id = Dao::insert($sql);
+        $id = Dao::insert($sql, $this->getSqlTable());
         //logit_r($id, 'Dao::insert');
         if ($this->getPkValue() == null && $this->getPkFieldCount() == 1) 
           $this->setPkValue($id);
@@ -419,9 +463,37 @@ abstract class SqlRec extends Rec {
    */
   public function getSqlInsert() {
     $table = $this->getSqlTable();
-    $fields = implode(',', $this->getSqlFields());
-    $values = implode(',', $this->getSqlValues());
-    $sql = "INSERT INTO $table ($fields) VALUES($values)";
+	//echo 'getSqlInsert: Got array ' . print_r($this->getSqlFields(), true);
+    $fields = $this->getSqlFields();
+	
+	if (MyEnv::$IS_ORACLE) {
+		foreach ($fields as &$currField) {
+			$currField = $this->convertReservedOracleWords($currField);
+		}
+		//echo 'After converting, got array ' . print_r($fields, true);
+		//$fields = implode(',', $fields);
+		
+		//var_dump(debug_backtrace());
+		if ($table == 'logins') {
+			$valueArray = $this->getSqlValues();
+			unset($valueArray[0]);
+			unset($valueArray[1]);
+			$values = implode(',', $valueArray);
+			$sql = 'BEGIN :returnVal := LIKE FN_INSERTLOGIN(' . $values . '); END;';
+		}
+		else {
+			$fields = implode(',', $fields);
+			$values = implode(',', $this->getSqlValues());
+			$sql = "INSERT INTO $table ($fields) VALUES($values)";
+		}
+    }
+	else {
+		$fields = implode(',', $fields);
+		$values = implode(',', $this->getSqlValues());
+		$sql = "INSERT INTO $table ($fields) VALUES($values)";
+	}
+  
+	
     return $sql;
   }
   /**
@@ -431,6 +503,9 @@ abstract class SqlRec extends Rec {
     $table = $this->getSqlTable();
     $fields = $this->getSqlFields();
     $values = $this->getSqlValues();  
+	
+	//sdf - We must update this and change $values to oracle keywords
+	
     $pkField = array_shift($fields);
     $pkValue = array_shift($values);
     if ($pkValue == null) 
@@ -472,6 +547,10 @@ abstract class SqlRec extends Rec {
       if ($value == null) 
         throw new SqlRecException($this, 'Null found in PK');
       $field = current($fields);
+	  
+	  
+	  
+	  
       $wheres[] = "$field='$value'";
       next($fields);
     }
@@ -524,6 +603,7 @@ abstract class SqlRec extends Rec {
         $alias = $infos['alias'][$i];
         $childPk = $infos['pk'][$i];
         $where = $infos['where'][$i];
+		Logger::debug('_SqlRec: call calcSQL!');
         $join->calcSql($parent, $parentAlias, $parentPk, $parentPkFid, $parentFkFid, $table, $alias, $childPk, $where, $cts);
         if (! empty($cts) && $groupByPk == null)
           $groupByPk = "$parentAlias.$parentPk";
@@ -615,7 +695,7 @@ abstract class SqlRec extends Rec {
       if ($value !== null) {
         if (is_scalar($value)) 
           $value = CriteriaValue::equals($value);
-        $field = $tableAlias . '.' . current($fields);
+        $field = $tableAlias . '.' . $this->convertReservedOracleWords(current($fields));
         $values[$field] = $value;
       }
       if ($fid == $lfid)
@@ -633,8 +713,16 @@ abstract class SqlRec extends Rec {
     if ($fields === null) {  
       $fields = array();
       $fids = $this->getSqlFids();
-      foreach ($fids as $fid) 
+      foreach ($fids as $fid) {
+		//This was commented out before. Not sure why.
+		if (MyEnv::$IS_ORACLE) {
+			$fid = $this->convertReservedOracleWords($fid);
+		}
+		
         $fields[$fid] = self::camelToSql($fid);
+		
+		
+	  }
     }
     return $fields;
   }
@@ -645,6 +733,7 @@ abstract class SqlRec extends Rec {
     static $sfids;
     if ($sfids === null) {
       $sfids = array();
+	  //var_dump(get_object_vars($this));
       $fids = $this->getFids();
       $lfid = $this->getLastFid();
       foreach ($fids as $fid) {
@@ -756,6 +845,7 @@ abstract class SqlRec extends Rec {
     $values = array();
     $lfid = $this->getLastFid();
     foreach ($this as $fid => &$value) {
+	  //echo 'SqlRec getSqlValues: ' . $this->getSqlValue($fid, $efids) . '<br>';
       $values[] = $this->getSqlValue($fid, $efids);
       if ($fid == $lfid)
         break;
@@ -772,9 +862,20 @@ abstract class SqlRec extends Rec {
     foreach ($this as $fid => &$value) {
       $field = geta($fields, $fid);
       if ($field) {
-        //$as = "$class.$fid";
+		if (MyEnv::$IS_ORACLE) {
+			$field = $this->convertReservedOracleWords($field); //Look at a list of reserved words that Oracle has for field names and if this word is reserved, add a _ to the end.
+		}
+		
+		//$as = "$class.$fid";
         $as = "$class.$i";
-        $fields[$fid] = "$tableAlias.$field AS `$as`";
+		
+		//Oracle wants aliases to have quotes around them if the alias contains a period
+		if (MyEnv::$IS_ORACLE) {
+			$fields[$fid] = "$tableAlias.$field AS \"$as\"";
+		}
+		else {
+			$fields[$fid] = "$tableAlias.$field AS `$as`";
+		}
         $i++;
       } 
     }
@@ -849,8 +950,12 @@ abstract class SqlRec extends Rec {
     $class = $criteria->getMyName();
     $ci = $criteria->getRecsFromCriteria();
     $infos = self::buildSqlSelectInfos($ci);
+	/*Logger::debug('fetchAllandFlatten: Getting arrays:');
+	Logger::debug(print_r($ci['recs'], true));
+	Logger::debug(print_r($infos, true));*/
+	//Logger::debug('fetchAllAndFlatten: Calling getSqlSelect(' . $ci['recs'] . ', ' . $infos . ', null, ' . $sortBy . ', ' . $groupBy);
     $sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
-    if ($limit > 0) {
+    if ($limit > 0 && !MyEnv::$IS_ORACLE) {
       if ($page >= 1)
         $sql .= " LIMIT " . ($limit * ($page - 1)) . "," . ($limit + 1);
       else
@@ -908,6 +1013,7 @@ abstract class SqlRec extends Rec {
    * @return Rec
    */
   static function fetchOneBy($criteria, $limit = 500) {
+  Logger::debug('_SqlRec::fetchOneBy: Got criteria ' . gettype($criteria));
     $recs = self::fetchAllBy($criteria, null, $limit);
     if (! empty($recs))
       return current($recs);
@@ -1179,6 +1285,10 @@ abstract class SqlRec extends Rec {
     $str[0] = strtolower($str[0]);
     $func = create_function('$c', 'return "_" . strtolower($c[1]);');
     $field = preg_replace_callback('/([A-Z])/', $func, $str);
+	
+	if (MyEnv::$IS_ORACLE) {
+		return "$field";
+	}
     return "`$field`";
   }
   public static function sqlToCamel($str, $capitalizeFirstChar = false) {
@@ -1190,7 +1300,9 @@ abstract class SqlRec extends Rec {
     return preg_replace_callback('/_([a-z])/', $func, $str);
   }
   protected static function getClassFromSqlField($field) {
+    Logger::debug('ClassFromSQL: got field ' . print_r($field, true));
     $a = explode('.', $field);
+	Logger::debug('classFromSQL: returning ' . $a[0]);
     return $a[0];
   }
   protected static function isTableFid($fid) {

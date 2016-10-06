@@ -63,6 +63,34 @@ class LoginSession extends Rec {
     if ($this->User && $this->User->isOnTrial())
       $o->trial = 1;
   }
+  
+  //ORACLE CONNECTIONS ONLY
+    public function checkOracleLogin($uid, $pw) {
+		try {
+			$conn = oci_connect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
+			if(!$conn) {
+				$err = oci_error();
+				throw new RuntimeException($err['message']);	
+			}
+			echo 'checkOracleLogin: Running oracle function with ' . $uid . ' and ' . $pw . '<br>';
+			$stid = oci_parse($conn, 'select FN_AUTHENTICATE_USER1(:userid, :pw) as "result" from dual');
+			oci_bind_by_name($stid, ":userid", $uid);
+			oci_bind_by_name($stid, ":pw", $pw);
+			oci_execute($stid);
+
+			$array = oci_fetch_assoc($stid);
+			oci_free_statement($stid);
+			oci_close($conn);
+			
+			//print_r($array);
+
+			return $array['result'] == '1';
+		}
+		catch (Exception $e) {
+			echo $e->getMessage();
+			return false;
+		}
+	}
   //
   public function asJson() {
     if ($this->json == null)
@@ -238,14 +266,17 @@ class LoginSession extends Rec {
    * @param string $uid
    * @param string $ptpw
    * @param string $sessionId (optional)
+   * @param isAutomatedLogin - Set this to true if we are doing a 'fake' login where nobody is actually logging in. This is useful for process logins such as the analytics batch processing thing.
    * @return LoginSession
    * @throws LoginInvalidException
    * @throws LoginDisallowedException
    */
-  static function login($uid, $ptpw, $sessionId = null) {
+  static function login($uid, $ptpw, $sessionId = null, $isAutomatedLogin = false) {
     if ($uid == 'pspc')
       $uid = '846_pspc';
-    $user = static::fetchUser_withLogging($uid, $ptpw);
+	//echo 'LoginSession login function: Entered!<br>';
+    $user = static::fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin);
+	//echo 'Got user!<br>';
     $me = new static();
     $me->userGroupId = $user->userGroupId;
     $me->cerberus = ApiIdXref_Cerberus::lookupPracticeId($user->userGroupId);
@@ -255,7 +286,9 @@ class LoginSession extends Rec {
     $me->ip = $_SERVER['REMOTE_ADDR'];
     $me->uid = $uid;
     $me->ptpw = $ptpw;
-    $me->setUserFields($user);
+	
+	if (!$isAutomatedLogin) $me->setUserFields($user); //We did this check because when we do an automated login, the database for some reason wants to update the user's information, and when it does it wants to update the user's admin status and subscription status to the user's password hash. No idea why, but it stops us from making progress and I've decided to disable it for now.
+	
     if ($user->isLoginDisallowed()) {
       UserLogins::log_asDisallow($user);
       throw new LoginDisallowedException();
@@ -418,6 +451,7 @@ class LoginSession extends Rec {
       $this->docId = $user->userId;
     else
       $this->docId = $user->getNcPartnerId() ?: $user->fetchDocId();
+  
     $this->setActiveStatus();
     $this->Role = UserRole::from($user, $this->cerberus);
     if ($user->userGroupId == 2645/*john richards*/) {
@@ -472,28 +506,47 @@ class LoginSession extends Rec {
     return $user;
   }
   //
-  protected static function fetchUser($uid, $ptpw, $logging = false) {
+  protected static function fetchUser($uid, $ptpw, $logging = false, $isAutomatedLogin = false) {
+    //echo 'LoginSession fetchUser: Entered with ' . $uid . ' and ' . $ptpw . '<br>';
     $user = UserLogin::fetchByUid($uid);
     if ($user) {
       if (! $user->isPasswordCorrect($ptpw)) {
         if ($logging) {
-          $attempts = UserLogins::log_asBadPw($user);
+		  //echo '<b>User password not correct. logging.</b><br>';
+		  //var_dump(debug_print_backtrace());
+		  if ($isAutomatedLogin) {
+			$attempts = new Attempts();
+		  }
+		  else {
+			$attempts = UserLogins::log_asBadPw($user);
+		  }
           throw new LoginInvalidException($attempts);
         }
         return null;
       }
     } else {
       if ($logging) {
-        if (static::isEmrUid($uid))
+        if (static::isEmrUid($uid)) {
           throw new LoginEmrException();
-        $attempts = UserLogins::log_asBadUid($uid);
+		}
+		//echo '<b>No user! Logging.</b><br>';
+		 if ($isAutomatedLogin) {
+			$attempts = new Attempts();
+		 }
+		  else {
+			$attempts = UserLogins::log_asBadUid($uid);
+			
+		 }
+        
         throw new LoginInvalidException($attempts);
       }
     }
+	
     return $user;
   }
-  protected static function fetchUser_withLogging($uid, $ptpw) {
-    return static::fetchUser($uid, $ptpw, true);
+  protected static function fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin = false) {
+    //echo 'fetch user with logging...';
+    return static::fetchUser($uid, $ptpw, true, $isAutomatedLogin);
   }
   protected static function isEmrUid($uid) {
     $sql = "SELECT * FROM users WHERE uid='$uid'";
@@ -660,14 +713,17 @@ class CerberusLogin extends CachedRec {
     return $me;
   }
   static function cache($ugid, $loginInfo, $practiceId = null) {
+	echo 'LoginCache started...';
     $me = static::from($ugid, $loginInfo, $practiceId);
     $me->save();
   }
   static function from($ugid, $loginInfo, $practiceId = null) {
+	echo 'LoginSession.php: doing from with ' . $ugid . ' | ' . '. The practice ID is ' . $practiceId;
     if ($practiceId == null)
       $practiceId = ApiIdXref_Cerberus::lookupPracticeId($ugid);
-    if ($practiceId == null)
-      throw new CerberusPracticeNotFound($ugid);
+    if ($practiceId == null) {
+      throw new CerberusPracticeNotFound('LoginSession: Invalid ugid ' . $ugid);
+	}
     $me = new static(
       $ugid,
       $practiceId,

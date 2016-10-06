@@ -98,6 +98,7 @@ class Attempts extends Rec {
  */
 class Login extends SqlRec implements NoAuthenticate {
   //
+  //If you add a public property here it will show up in the insert query that is generated.
   public $loginId;
   public $time;
   public $ipAddress;
@@ -123,23 +124,28 @@ class Login extends SqlRec implements NoAuthenticate {
   }
   //
   static function log_asOk($loginSession) {
-    return static::log($loginSession->sessionId, $loginSession->uid, $loginSession->userId, $loginSession->userGroupId, static::RESULT_OK);
+    echo 'Logging as OK!';
+    return static::log($loginSession->sessionId, $loginSession->uid, $loginSession->userId, $loginSession->userGroupId, static::RESULT_OK, $user->name);
   }
   static function log_asBadPw($user) {
-    return static::log(null, $user->uid, $user->userId, $user->userGroupId, static::RESULT_BAD_PW);
+    return static::log(null, $user->uid, $user->userId, $user->userGroupId, static::RESULT_BAD_PW, $user->name);
   }
   static function log_asBadUid($uid) {
-    return static::log(null, $uid, null, null, static::RESULT_BAD_UID);
+    return static::log(null, $uid, null, null, static::RESULT_BAD_UID, $user->name);
   }
   static function log_asDisallow($user) {
-    return static::log(null, $user->uid, $user->userId, $user->userGroupId, static::RESULT_DISALLOW);
+    return static::log(null, $user->uid, $user->userId, $user->userGroupId, static::RESULT_DISALLOW, $user->name);
   }
-  protected static function log($sid, $uid, $userId, $ugid, $result) {
+  protected static function log($sid, $uid, $userId, $ugid, $result, $username = null) { //Assign the values for an insert statement.
     $me = new static();
-    $me->time = nowNoQuotes();
+	if ($username) {
+		$me->uid = $username;
+	}
+	//$me->time = 'sysdate';
+    //$me->time = nowNoQuotes();
     $me->ipAddress = $_SERVER['REMOTE_ADDR'];
     $me->sessionId = $sid ?: session_id();
-    $me->uid = $uid;
+    //$me->uid = ;//'Happy go Lucky';//$uid;
     $me->userId = $userId;
     $me->userGroupId = $ugid;
     $me->result = $result;
@@ -273,8 +279,14 @@ class UserLogin extends UserRec implements NoAuthenticate {
     }
   }
   public function isPasswordCorrect($ptpw) {
-    $pw = static::generateHash($ptpw, $this->pw);
-    return ($this->pw == $pw); 
+	echo 'isPasswordCorrect: Check ' . $this->name . ' and ' . $ptpw;
+	if (MyEnv::$IS_ORACLE) {
+		return LoginSession::checkOracleLogin($this->name, $ptpw);
+	}
+	else {
+		$pw = static::generateHash($ptpw, $this->pw);
+		return ($this->pw == $pw); 
+	}
   }
   public function isPasswordExpired() {
     if ($this->pwExpires)
@@ -296,7 +308,12 @@ class UserLogin extends UserRec implements NoAuthenticate {
   }
   public function fetchDocId() {
     $ugid = $this->userGroupId;
-    $sql = "SELECT user_id FROM users WHERE user_group_id=$ugid AND user_type=1 AND active=1 LIMIT 1";
+	if (MyEnv::$IS_ORACLE) {
+		$sql = "SELECT user_id FROM users WHERE user_group_id=$ugid AND user_type=1 AND active=1";
+	}
+	else {
+		$sql = "SELECT user_id FROM users WHERE user_group_id=$ugid AND user_type=1 AND active=1 LIMIT 1";
+	}
     return Dao::fetchValue($sql); 
   }
   public function hasTrialExpired() {
@@ -383,6 +400,8 @@ class UserLogin extends UserRec implements NoAuthenticate {
   static function fetchByUid($uid) {
     $c = static::asCriteria($uid);
     $me = static::fetchOneBy($c);
+	//echo 'fetchByUID: ME is ';
+	//var_dump($me);
     return $me;
   }
   static function fetchByEmail($email) {
@@ -390,6 +409,7 @@ class UserLogin extends UserRec implements NoAuthenticate {
     $c->email = $email;
     $c->active = true;
     $me = static::fetchOneBy($c);
+	
     return $me;
   }
   static function fetchByResetHash($hash) {
