@@ -16,7 +16,11 @@ class LoginDao {
   }
   public static function throwSecurityError($code, $id) {
     global $login;
-    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId)");
+	 ob_start();
+        debug_print_backtrace();
+    $trace = ob_get_contents();
+    ob_end_clean();
+    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId). Trace = "  . $trace);
   }
   // Group authentications
   // If authenticated, user can make updates to group entities

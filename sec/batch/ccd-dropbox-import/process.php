@@ -126,6 +126,8 @@
 			//$postStr = 'operation=ccdupload&filename=' . $rowEntry['NAME'] . '&filepath=' . $folderName . '&sessionId=' . $sessionId;
 			$postStr = 'operation=ccdupload&filename=sample_cda.xml&filepath=uploads/&sessionId=kba6m0i3pqdbs56bfkp8uahhr2';
 			blog('Calling ' . MyEnv::$BASE_URL . '/api/cerberus.php with post string ' . $postStr);
+			
+			//$IS_BATCH = true;
 
 			curl_setopt($handle, CURLOPT_URL, 'http://127.0.0.1:80/analytics/api/cerberus.php');
 			curl_setopt($handle, CURLOPT_HEADER, 0);
@@ -135,7 +137,8 @@
 																			'filename' => 'sample_cda.xml',
 																			'filepath' => 'uploads/',
 																			'sessionId' => 'kba6m0i3pqdbs56bfkp8uahhr2',
-																			'userGroupId' => 706)
+																			'userGroupId' => 706,
+																			'IS_BATCH' => '1')
 																		)
 			);
 			

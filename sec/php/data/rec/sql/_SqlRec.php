@@ -170,7 +170,9 @@ abstract class SqlRec extends Rec {
    * Authenticate record as fetch criteria
    * @throws SecurityException
    */
+   
   public function authenticateAsCriteria() {
+	Logger::debug('is batch is ' . $_POST['IS_BATCH']);
     if (isset($this->_authenticated))
       return;
     if (! $this->authenticatePk(true)) {
@@ -178,7 +180,7 @@ abstract class SqlRec extends Rec {
       if (is_scalar($cid)) 
         $this->authenticateClientId($cid, true);
       else 
-        if ($this->hasUserGroupId()) 
+        if ($this->hasUserGroupId() && !$_POST['IS_BATCH']) 
           $this->authenticateUserGroupId(get($this, 'userGroupId'), true);
     }
     $this->_authenticated = true;
@@ -236,7 +238,7 @@ abstract class SqlRec extends Rec {
     return Dao::fetchValue("SELECT user_group_id FROM $table WHERE $col='$id'");
   }
   protected function authenticateUserGroupId($ugid, $forReadOnly = false) {
-    Logger::debug('Entered authenticateUserGroupId!');
+    Logger::debug('Entered authenticateUserGroupId with ' . $ugid);
 	$backtrace = debug_backtrace();
     if ($ugid == null) 
       throw new SecurityException('User group ID required in ' . $this->getMyName() . '. Backtrace is ' . print_r($backtrace, true));
@@ -291,6 +293,7 @@ abstract class SqlRec extends Rec {
       if (! $login->admin)
         throw new SqlRecException($rec, 'Invalid operation');  
     }
+	
     if ($ugid) 
       $this->userGroupId = $ugid;
     if ($mode != SaveModes::UPDATE_NO_VALIDATE)
@@ -302,7 +305,8 @@ abstract class SqlRec extends Rec {
         $mode = SaveModes::INSERT_ON_DUPE_UPDATE;
       else  
         $mode = ($this->getPkValue() == null) ? SaveModes::INSERT : SaveModes::UPDATE;
-    $this->authenticate($mode);
+	
+	if (!$_POST['IS_BATCH']) $this->authenticate($mode);
     switch ($mode) {
       case SaveModes::INSERT:  
         $sql = $this->getSqlInsert();
@@ -569,7 +573,7 @@ abstract class SqlRec extends Rec {
       $infos = self::buildSqlSelectInfos($ci);
     } 
     if ($infos['where'][0] == null) {
-      if (! $this instanceof NoAuthenticate && $this->hasUserGroupId())
+      if (! $this instanceof NoAuthenticate && $this->hasUserGroupId() && $_POST['IS_BATCH'] !== '1')
         throw new InvalidCriteriaException($this, 'No user group set as criteria');
       else
         $infos['where'][0] = '1=1';
@@ -769,6 +773,7 @@ abstract class SqlRec extends Rec {
     return $lfid;
   }
   public function hasUserGroupId() {
+  
     static $hasUgid;
     if ($hasUgid === null) 
       $hasUgid = array_key_exists('userGroupId', $this);

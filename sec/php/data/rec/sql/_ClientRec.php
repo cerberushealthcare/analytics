@@ -165,15 +165,28 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
   public function save() {
     $this->setHuid();
     $this->throwIfDupeUid();
-    Dao::begin();
-    try {
-      SqlRec::save();
-      $this->saveRefs();
-      Dao::commit();
-    } catch (Exception $e) {
-      Dao::rollback();
-      throw $e;
-    }
+	
+	if (MyEnv::$IS_ORACLE) {
+		try {
+		  SqlRec::save();
+		  $this->saveRefs();
+		  Dao::commit();
+		} catch (Exception $e) {
+		  Dao::rollback();
+		  throw $e;
+		}
+	}
+	else {
+		Dao::begin();
+		try {
+		  SqlRec::save();
+		  $this->saveRefs();
+		  Dao::commit();
+		} catch (Exception $e) {
+		  Dao::rollback();
+		  throw $e;
+		}
+	}
     return $this;
   }
   //
