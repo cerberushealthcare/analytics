@@ -72,7 +72,15 @@ class Rec {
     return $this;
   }
   public function setScalar($fid, $value) {
-    $this->$fid = $value;
+   // var_dump(debug_print_backtrace());
+	if (strlen($fid) > 0) {
+		try {
+			$this->$fid = $value;
+		}
+		catch (Exception $e) {
+			echo 'EXCEPTION: ' . $e->getMessage() . '. Trace: ' . $e->getTraceAsString();
+		}
+	}
   }
   public function setObject($fid, $value) {
     $class = $this->getClassFromJsonField($fid);

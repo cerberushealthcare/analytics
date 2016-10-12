@@ -13,8 +13,13 @@ class PatientEntry {
   //
   /** Increment next available UID */
   static function /*string*/getNextUid() {
-    global $login;
-    $uid = P_Uid::makeUid($login->userGroupId);
+	if (isset($_POST['IS_BATCH'])) {
+		$uid = $_POST['userGroupId'];
+	}
+	else {
+		global $login;
+		$uid = P_Uid::makeUid($login->userGroupId);
+		}
     return $uid;
   }
   /** Add patient @throws Dupe, RecValidator */
@@ -265,7 +270,14 @@ class ICard_Pe extends ICardRec {
 class DupeException extends DisplayableException {}
 class DuplicateUid extends DupeException {
   public function __construct($dupe) {
-    $html = "This record cannot be created because a patient with that ID already exists:<br/><br/>ID: <b>$dupe->uid</b><br/>Name: <b>" . $dupe->getFullName() . "</b><br/>DOB: <b>" . formatDate($dupe->birth) . "</b>";
+  
+	ob_start();
+	debug_print_backtrace();
+	$trace = ob_get_contents();
+	ob_end_clean(); 
+	
+		
+    $html = "This record cannot be created because a patient with that ID already exists:<br/><br/>ID: <b>$dupe->uid</b><br/>Name: <b>" . $dupe->getFullName() . "</b><br/>DOB: <b>" . formatDate($dupe->birth) . "</b>" . '. Trace: ' . $trace;
     $this->message = $html;
   }
 }

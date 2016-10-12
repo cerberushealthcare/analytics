@@ -1,6 +1,7 @@
 <?php
 require_once 'php/data/rec/sql/_SqlRec.php';
 require_once 'php/data/rec/cryptastic.php';
+require_once 'php/data/rec/sql/dao/Logger.php';
 //
 /**
  * Client Base Class
@@ -153,6 +154,7 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
     return 'clients';
   }
   public function getEncryptedFids() {
+    //From chuck: Should be an empty array. We don't want to encrypt anything.
     return array(
     	'uid','lastName','firstName','middleName','birth','dateCreated','dateUpdated',
     	'cdata1','cdata2','cdata3','notes','familyRelease','release','nickName');
@@ -266,6 +268,7 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
     return $this;
   }
   protected function throwIfDupeUid() {
+	Logger::debug('_ClientRec throwIfDupeUid: Checking for uid with group ID ' . $this->userGroupId . ' and user ID ' . $this->uid . 'and client ID ' . $this->clientId);
     $rec = PStub_Search::searchForUid($this->userGroupId, $this->uid, $this->clientId);
     if ($rec)
       throw new DuplicateUid($rec);

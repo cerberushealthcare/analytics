@@ -123,7 +123,7 @@ abstract class SqlRec extends Rec {
     //logit_r("$fid=$value", 'set');
     if ($value !== null) {
       if (is_array($value)) {
-		Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . print_r($value, true));
+		//Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . print_r($value, true));
         $this->setSqlArray($fid, $value);
 	  }
       else {
@@ -333,7 +333,7 @@ abstract class SqlRec extends Rec {
       //logit_r('should audit');
       switch ($mode) {
         case SaveModes::INSERT:
-          $rec = Auditing::logCreateRec($this);
+          if (!$_POST['IS_BATCH']) $rec = Auditing::logCreateRec($this);
           break;
         case SaveModes::UPDATE:
         case SaveModes::UPDATE_NO_VALIDATE:
@@ -525,13 +525,38 @@ abstract class SqlRec extends Rec {
     $table = $this->getSqlTable();
     $fields = $this->getSqlFields();
     $values = $this->getSqlValues();  
+	
+	
+		
     $ifields = implode(',', $fields);
     $ivalues = implode(',', $values);
     $uvalues = array();
     foreach ($fields as $field) 
       $uvalues[$field] = "VALUES($field)";
     $values = implode_with_keys(',', array_combine($fields, $uvalues));
-    $sql = "INSERT INTO $table ($ifields) VALUES($ivalues) ON DUPLICATE KEY UPDATE $values";
+	
+	if (MyEnv::$IS_ORACLE) {
+		//INSERT INTO hdata1 (t,i,d) VALUES(null,null,'-530154000') ON DUPLICATE KEY UPDATE t=VALUES(t),i=VALUES(i),d=VALUES(d)
+		
+		
+		$sql = "merge into $table dest
+				using (select t t, i i, d d from dual) src
+				on (dest.d = src.d)
+				when matched then
+				   update set t = src.t, i = src.i
+				when not matched then
+					insert ($ifields)
+					values ($ivalues)";
+		/*$sql = "insert into $table ($ifields)
+				values ($ivalues) exception
+				when dup_val_on_index then
+					 update $table ($ifields)
+						values($ivalues)
+					  where id = 1;";*/
+	}
+	else {
+		$sql = "INSERT INTO $table ($ifields) VALUES($ivalues) ON DUPLICATE KEY UPDATE $values";
+	}
     return $sql;
   }
   /**
@@ -850,7 +875,7 @@ abstract class SqlRec extends Rec {
     $values = array();
     $lfid = $this->getLastFid();
     foreach ($this as $fid => &$value) {
-	  //echo 'SqlRec getSqlValues: ' . $this->getSqlValue($fid, $efids) . '<br>';
+	  echo 'SqlRec getSqlValues: ' . gettype($this->getSqlValue($fid, $efids)) . ' ' . $this->getSqlValue($fid, $efids) . '<br>';
       $values[] = $this->getSqlValue($fid, $efids);
       if ($fid == $lfid)
         break;
@@ -922,8 +947,14 @@ abstract class SqlRec extends Rec {
   static function fetch() {
     $values = array_flatten(func_get_args());
     $rec = new static($values);
+	
+	/*ob_start();
+	debug_print_backtrace();
+	$trace = ob_get_contents();
+	ob_end_clean();*/
+	
     if (empty($values))
-      throw new SqlRecException($rec, 'No fetch args supplied');
+      throw new SqlRecException($rec, 'No fetch args supplied. Trace is ' . $trace);
     return static::fetchOneBy($rec->setFetchCriteria(), 1);
   }
   /**
@@ -966,6 +997,7 @@ abstract class SqlRec extends Rec {
       else
         $sql .= " LIMIT $limit";
     }
+	Logger::debug('fetchAllAndFlatten: Running query ' . $sql);
     $rows = static::fetchRows($sql);
     $frows = ($ci['ct'] == 1) ? $rows : self::unflattenRows($rows, $infos, $ci['ct'], $criteria);
     $recs = $class::fromRows($frows, $keyFid);
