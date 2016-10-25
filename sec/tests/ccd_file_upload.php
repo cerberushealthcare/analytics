@@ -70,7 +70,7 @@
 	$resultStr = substr($result, 0, 2);
 	
 	if ($resultStr !== 'OK') {
-		echo 'ERROR: Could not log in with that result! cannot continue! Got result ' . gettype($result) . ' ' . $result . '<br>';
+		echo 'ERROR: Could not log in with that result! cannot continue! Got result <b>' . gettype($result) . ' ' . $result . '</b><br>';
 		var_dump(debug_print_backtrace());
 		//continue;
 		exit;
@@ -79,7 +79,7 @@
 	echo 'Login successful! Initializing and executing cURL. session ID is ' . $sessionId . '<br>';
 	
 	$handle = curl_init();
-	$postStr = 'operation=ccdupload&filename=Driver_3909_CCD.XML&filepath=' . $folderName . '&sessionId=' . $sessionId;
+	$postStr = 'operation=ccdupload&filename=' . $filename . '&filepath=' . $folderName . '&sessionId=' . $sessionId;
 	//$postStr = 'operation=ccdupload&filename=sample_cda.xml&filepath=uploads/&sessionId=' . $sessionId; //used to be kba6m0i3pqdbs56bfkp8uahhr2';
 	echo 'Calling ' . MyEnv::$BASE_URL . '/api/cerberus.php with post string ' . $postStr . '<br>';
 
@@ -112,16 +112,14 @@
 	echo 'Our cURL result is ' . gettype($result) . ' ' . $result;
 	echo '</pre>';
 	
-	$testPassed = false;
 	
-	if (strlen($result) == 0) {
-		$testPassed = true;
-	}
 	
 	//Cleanup
-	
 	//oci_free_statement($stid);
 	oci_close($conn);
 	
+	
+	$testPassed = false;
+	if (strlen($result) == 0) $testPassed = true;
 	include('postTestProcedures.php');
 ?>

@@ -162,6 +162,7 @@ class Login extends SqlRec implements NoAuthenticate {
     return static::countRecentBadLogins(null, $uid, '5 DAY');
   }
   protected static function countRecentBadLogins($ip, $uid = null, $interval = '10 MINUTE') {
+    if ($interval == '10 MINUTE' && MyEnv::$IS_ORACLE) $interval = '"10" MINUTE';
     $me = new static();
     $me->ipAddress = $ip;
     $me->uid = $uid;
@@ -400,9 +401,19 @@ class UserLogin extends UserRec implements NoAuthenticate {
   static function fetchByUid($uid) {
     $c = static::asCriteria($uid);
     $me = static::fetchOneBy($c);
+	echo 'fetchByUid called with ' . $uid . ': We will return ' . gettype($me) . ' ' . $me . '. print_red: <span style="color: blue;"><b>' . print_r($me) . '</b></span><br>';
 	//echo 'fetchByUID: ME is ';
 	//var_dump($me);
+	echo '<pre>';
+	var_dump(debug_backtrace());
+	echo '</pre>';
     return $me;
+  }
+  static function fetchByUidTest($uid) {
+    $c = static::asCriteria($uid);
+	$sql = 'SELECT T0.user_id AS "UserLogin.T0.0", uid_, T0.pw AS "UserLogin.T0.1", T0.name AS "UserLogin.T0.2", T0.admin AS "UserLogin.T0.3", T0.subscription AS "UserLogin.T0.4", T0.active AS "UserLogin.T0.5", T0.reg_id AS "UserLogin.T0.6", T0.trial_expdt AS "UserLogin.T0.7", T0.user_group_id AS "UserLogin.T0.8", T0.user_type AS "UserLogin.T0.9", T0.license_state AS "UserLogin.T0.10", T0.license AS "UserLogin.T0.11", T0.dea AS "UserLogin.T0.12", T0.npi AS "UserLogin.T0.13", T0.email AS "UserLogin.T0.14", T0.expiration AS "UserLogin.T0.15", T0.expire_reason AS "UserLogin.T0.16", T0.pw_expires AS "UserLogin.T0.17", T0.tos_accepted AS "UserLogin.T0.18", T0.role_type AS "UserLogin.T0.19", T0.mixins AS "UserLogin.T0.20", T0.reset_hash AS "UserLogin.T0.21", T1.user_group_id AS "UserGroup_Login.T1.0", T1.name AS "UserGroup_Login.T1.1", T1.usage_level AS "UserGroup_Login.T1.2", T1.est_tz_adj AS "UserGroup_Login.T1.3", T1.session_timeout AS "UserGroup_Login.T1.4", T1.demo AS "UserGroup_Login.T1.5", T2.address_id AS "AddressUserGroup_Login.T2.0", T2.table_code AS "AddressUserGroup_Login.T2.1", T2.table_id AS "AddressUserGroup_Login.T2.2", T2.type AS "AddressUserGroup_Login.T2.3", T2.addr1 AS "AddressUserGroup_Login.T2.4", T2.addr2 AS "AddressUserGroup_Login.T2.5", T2.addr3 AS "AddressUserGroup_Login.T2.6", T2.city AS "AddressUserGroup_Login.T2.7", T2.state AS "AddressUserGroup_Login.T2.8", T2.zip AS "AddressUserGroup_Login.T2.9", T2.country AS "AddressUserGroup_Login.T2.10", T2.phone1 AS "AddressUserGroup_Login.T2.11", T2.phone1_type AS "AddressUserGroup_Login.T2.12", T2.phone2 AS "AddressUserGroup_Login.T2.13", T2.phone2_type AS "AddressUserGroup_Login.T2.14", T2.phone3 AS "AddressUserGroup_Login.T2.15", T2.phone3_type AS "AddressUserGroup_Login.T2.16", T2.email1 AS "AddressUserGroup_Login.T2.17", T2.email2 AS "AddressUserGroup_Login.T2.18", T2.name AS "AddressUserGroup_Login.T2.19", T2.county AS "AddressUserGroup_Login.T2.20", T3.user_id AS "BillInfo_Login.T3.0", T3.exp_month AS "BillInfo_Login.T3.1", T3.exp_year AS "BillInfo_Login.T3.2", T3.last_bill_status AS "BillInfo_Login.T3.3", T4.user_id AS "NcUser_Login.T4.0", T4.user_type AS "NcUser_Login.T4.1", T4.role_type AS "NcUser_Login.T4.2", T4.partner_id AS "NcUser_Login.T4.3", T4.name_last AS "NcUser_Login.T4.4", T4.name_first AS "NcUser_Login.T4.5", T4.name_middle AS "NcUser_Login.T4.6", T4.name_prefix AS "NcUser_Login.T4.7", T4.name_suffix AS "NcUser_Login.T4.8", T4.freeform_cred AS "NcUser_Login.T4.9" FROM users T0  JOIN (user_groups T1 LEFT JOIN (addresses T2) ON T2.table_code=\'G\' AND T2.type=\'0\' AND T1.user_group_id=T2.table_id) ON T0.user_group_id=T1.user_group_id LEFT JOIN (billinfo T3) ON T0.user_id=T3.user_id LEFT JOIN (nc_users T4) ON T0.user_id=T4.user_id WHERE T0.uid_=\'' . $uid . '\' ORDER BY T0.user_id, T1.user_group_id, T2.address_id, T4.user_id';
+	Logger::debug('fetchByUidTest with uid ' . $uid . ': Returning.');
+	return static::fetchOneBy_Test($sql, $c);
   }
   static function fetchByEmail($email) {
     $c = new static();

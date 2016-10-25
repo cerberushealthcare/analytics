@@ -1,5 +1,4 @@
 <?php
-//error_reporting(E_ALL); ini_set('display_errors', '1');
 require_once 'ClinicalImport_Sql.php';
 require_once 'ClinicalImport_Ccd.php';
 require_once 'ClinicalImport_Ccr.php';
@@ -8,7 +7,6 @@ require_once 'php/data/xml/clinical/ccd/ContinuityCareDocument.php';
 require_once 'php/data/xml/clinical/ccr/ContinuityCareRecord.php';
 require_once 'php/data/rec/sql/Scanning.php';
 require_once 'php/data/rec/sql/Procedures_Admin.php';
-require_once 'php/data/rec/sql/dao/Logger.php'; //analytics/sec/logs/log.txt
 //
 /**
  * Clinical Data Import
@@ -58,7 +56,7 @@ class ClinicalImporter {
     return $ci;
   }
   
-  static function importFromFile($file, $cid = null) {
+   static function importFromFile($file, $cid = null) {
     $ci = ClinicalImport::fromFile($file);
     try {
       $cid = $ci->import($cid);
@@ -89,33 +87,11 @@ class ClinicalImport extends BasicRec {
   public /*ClinicalXml*/$Xml;
   public /*Client_Ci*/$Client;
   //
-  
-  static function fromFile(/*ClinicalFile*/$file, $cid = null) {
-    $xml = $file->getContent();
-	//$backtrace = debug_backtrace();
-	//Logger::debug(print_r($backtrace, true));
-	//Logger::debug('xml is ' . $xml);
-    $filename = $file->getFilename();
-    $type = ClinicalXml::getDocType($xml);
-	Logger::debug('type is ' . gettype($type) . ' ' . $type);
-    switch ($type) {
-      case ClinicalXml::TYPE_CCD:
-        return ClinicalImport_Ccd::create(706, $filename, $xml); //706 = group ID of the user that we defined that will do the import. We need this to match. McKinley
-      case ClinicalXml::TYPE_CCR:
-        return ClinicalImport_Ccr::create(1, $filename, $xml);
-    }
-    if ($type == ClinicalXml::TYPE_CCR)
-      return ClinicalImport_Ccr::create(1, $filename, $xml);
-    else
-      throw new XmlParseException('Clinical document type not recognized [2].');
-  }
-  
   static function from(/*ClinicalFile*/$file, $cid = null) {
     global $login;
     $xml = $file->getContent();
     $filename = $file->getFilename();
     $type = ClinicalXml::getDocType($xml);
-	echo 'type is ' . gettype($type) . ' ' . $type;
     switch ($type) {
       case ClinicalXml::TYPE_CCD:
         return ClinicalImport_Ccd::create($login->userGroupId, $filename, $xml);
@@ -124,6 +100,22 @@ class ClinicalImport extends BasicRec {
     }
     if ($type == ClinicalXml::TYPE_CCR)
       return ClinicalImport_Ccr::create($login->userGroupId, $filename, $xml);
+    else
+      throw new XmlParseException('Clinical document type not recognized.');
+  }
+  
+  static function fromFile(/*ClinicalFile*/$file, $cid = null) {
+    $xml = $file->getContent();
+    $filename = $file->getFilename();
+    $type = ClinicalXml::getDocType($xml);
+    switch ($type) {
+      case ClinicalXml::TYPE_CCD:
+        return ClinicalImport_Ccd::create(706, $filename, $xml); //706 = group ID of the user that we defined that will do the import. We need this to match. McKinley
+      case ClinicalXml::TYPE_CCR:
+        return ClinicalImport_Ccr::create(1, $filename, $xml);
+    }
+    if ($type == ClinicalXml::TYPE_CCR)
+      return ClinicalImport_Ccr::create(1, $filename, $xml);
     else
       throw new XmlParseException('Clinical document type not recognized.');
   }
@@ -151,7 +143,6 @@ class ClinicalImport extends BasicRec {
     return Rec::sort($recs, new RecSort('agent'));
   }
   protected static function create($ugid, $filename, $type, $Xml) {
-    Logger::debug('Creating...');
     $me = new static();
     $me->ugid = $ugid;
     $me->filename = $filename;
@@ -168,7 +159,6 @@ class ClinicalImport_Ccd extends ClinicalImport {
   //
   protected static function create($ugid, $filename, $xml) {
     $ccd = ContinuityCareDocument::fromXml($xml);
-	Logger::debug('Creating CCD.....');
     return parent::create($ugid, $filename, ClinicalXml::TYPE_CCD, $ccd);
   }
 }

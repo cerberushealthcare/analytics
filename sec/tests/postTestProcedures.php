@@ -6,6 +6,7 @@
 		echo '<span style="color: green;">Test passed!</span>';
 	}
 	else {
+		http_response_code(401);
 		echo '<span style="color: red;">Test failed!</span>';
 	}
 ?>

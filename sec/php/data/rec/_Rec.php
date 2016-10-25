@@ -732,7 +732,10 @@ class RecValidatorException extends DisplayableException {
    */
   public function __construct($rv) {
     $this->rec = $rv->rec->getMyName();
-    $this->errors = $rv->errors;
-    $this->message = 'Please correct the following validation error(s):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ul><li>' . implode('</li><li>', array_values($rv->errors)) . '</li></ul>';
+//	var_dump(debug_backtrace());
+	$this->errors = $rv->errors;
+	//echo 'data/rec/_Rec: Backtrace is ';
+	//var_dump(debug_backtrace());
+	$this->message = 'Please correct the following validation error(s):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<ul><li>' . implode('</li><li>', array_values($rv->errors)) . '</li></ul>.';
   }
 }

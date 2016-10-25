@@ -313,6 +313,7 @@ class Proc extends ProcRec {
         $this->userId = $login->userId;
       }
     }
+	
     parent::save($ugid);
     if ($this->ProcResults) {
       self::setParentage($this->ProcResults);

@@ -49,7 +49,15 @@ class Scanning {
   static function saveClinicalXml($cid, $filename) {
     global $login;
     $index = ScanIndex_Xml::from($filename, $cid);
-    $index->save($login->userGroupId);
+	
+	if ($_POST['IS_BATCH']) {
+		$groupId = $_POST['userGroupId'];
+	}
+	else {
+		$groupId = $login->userGroupId;
+	}
+	
+    $index->save($groupId);
   }
   /**
    * @deprecated
@@ -790,7 +798,13 @@ class ScanIndex_Xml extends ScanIndex {
     $me->recipient = $recipient;
     $me->reviewed = $reviewed ?: 0;
     $me->withImage = 0;
-    $me->ScanFiles = array(ScanFile_Xml::from($filename));
+	
+	if ($_POST['IS_BATCH']) {
+		$me->ScanFiles = array(ScanFile_Xml::fromFormattedDate($filename));
+	}
+    else {
+		$me->ScanFiles = array(ScanFile_Xml::from($filename));
+	}
     return $me;
   }
   static function fetch($sxid) {
@@ -810,4 +824,14 @@ class ScanFile_Xml extends ScanFile {
     $me->dateCreated = nowNoQuotes();
     return $me;
   } 
+  
+  //Sprout that uses the SAME code as above but fixes a bug where an incorrect date format (2016-10-01 6:03:44) was created. The correct format that the scan_files table wants is 10-OCT-16.
+  static function fromFormattedDate($filename) {
+	$me = new static();
+	$me->filename = $filename;
+	$me->origFilename = $filename;
+	$me->mime = 'application/xml';
+	$me->dateCreated = date('d-M-y');
+	return $me;
+  }
 }

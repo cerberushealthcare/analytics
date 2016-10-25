@@ -172,7 +172,7 @@ abstract class SqlRec extends Rec {
    */
    
   public function authenticateAsCriteria() {
-	Logger::debug('is batch is ' . $_POST['IS_BATCH']);
+	@Logger::debug('is batch is ' . $_POST['IS_BATCH']);
     if (isset($this->_authenticated))
       return;
     if (! $this->authenticatePk(true)) {
@@ -296,8 +296,12 @@ abstract class SqlRec extends Rec {
 	
     if ($ugid) 
       $this->userGroupId = $ugid;
-    if ($mode != SaveModes::UPDATE_NO_VALIDATE)
-      $this->validateThrow();
+    if ($mode != SaveModes::UPDATE_NO_VALIDATE) {
+		if (!$_POST['IS_BATCH'] == '1') {
+			$this->validateThrow();
+		}
+	}
+  
     if (isset($this->dateUpdated))
       $this->dateUpdated = nowNoQuotes();
     if ($mode == null) 
@@ -329,11 +333,11 @@ abstract class SqlRec extends Rec {
         Dao::update($sql);
         break;
     }
-    if ($this->shouldAudit()) {
+    if ($this->shouldAudit() && !$_POST['IS_BATCH']) {
       //logit_r('should audit');
       switch ($mode) {
         case SaveModes::INSERT:
-          if (!$_POST['IS_BATCH']) $rec = Auditing::logCreateRec($this);
+          $rec = Auditing::logCreateRec($this);
           break;
         case SaveModes::UPDATE:
         case SaveModes::UPDATE_NO_VALIDATE:
@@ -483,7 +487,7 @@ abstract class SqlRec extends Rec {
 			unset($valueArray[0]);
 			unset($valueArray[1]);
 			$values = implode(',', $valueArray);
-			$sql = 'BEGIN :returnVal := LIKE FN_INSERTLOGIN(' . $values . '); END;';
+			$sql = 'BEGIN :returnVal := FN_INSERTLOGIN(' . $values . '); END;';
 		}
 		else {
 			$fields = implode(',', $fields);
@@ -540,7 +544,7 @@ abstract class SqlRec extends Rec {
 		
 		
 		$sql = "merge into $table dest
-				using (select t t, i i, d d from dual) src
+				using (select t t, i i, d d from $table) src
 				on (dest.d = src.d)
 				when matched then
 				   update set t = src.t, i = src.i
@@ -650,6 +654,9 @@ abstract class SqlRec extends Rec {
     }
     //p_r($infos);
     //p_r($sqljoins);
+	
+	Logger::debug('_SqlRec: infos fields is an array:' . print_r($infos['fields'], true));
+	
     $fields = ($asCount) ? 'COUNT(*)' : implode(', ', array_filter($infos['fields']));
     $table = self::implodeTables($infos);
     $where = self::combineWheres($infos);
@@ -875,7 +882,7 @@ abstract class SqlRec extends Rec {
     $values = array();
     $lfid = $this->getLastFid();
     foreach ($this as $fid => &$value) {
-	  echo 'SqlRec getSqlValues: ' . gettype($this->getSqlValue($fid, $efids)) . ' ' . $this->getSqlValue($fid, $efids) . '<br>';
+	 // echo 'SqlRec getSqlValues: ' . gettype($this->getSqlValue($fid, $efids)) . ' ' . $this->getSqlValue($fid, $efids) . '<br>';
       $values[] = $this->getSqlValue($fid, $efids);
       if ($fid == $lfid)
         break;
@@ -976,6 +983,8 @@ abstract class SqlRec extends Rec {
    */
   static function fetchAllBy($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
     $a = static::fetchAllAndFlatten($criteria, $order, $limit, $keyFid, $sortBy, $page, $groupBy);
+	echo 'fetchAllBy: We are returning a ' . gettype($a[0]) . ' ' . print_r($a[0]);
+	Logger::debug('fetchAllBy: We are returning a ' . gettype($a[0]));
     return $a[0];
   }
   /**
@@ -997,14 +1006,36 @@ abstract class SqlRec extends Rec {
       else
         $sql .= " LIMIT $limit";
     }
+	
 	Logger::debug('fetchAllAndFlatten: Running query ' . $sql);
-    $rows = static::fetchRows($sql);
+	
+	$rows = static::fetchAllAndFlatten_Process($sql, $criteria);
     $frows = ($ci['ct'] == 1) ? $rows : self::unflattenRows($rows, $infos, $ci['ct'], $criteria);
     $recs = $class::fromRows($frows, $keyFid);
     if ($order)
       Rec::sort($recs, $order, ($keyFid != null));
     return array($recs, $rows, $limit);
   }
+  
+  static function fetchAllAndFlatten_Process($sql) {
+	return static::fetchRows($sql);
+  }
+  
+  static function fetchOneBy_Test($sql, $criteria) {
+    $ci = $criteria->getRecsFromCriteria();
+    $infos = self::buildSqlSelectInfos($ci);
+    $class = $criteria->getMyName();
+	Logger::debug('fetchOneByTest: About to get rows....');
+	$rows = static::fetchAllAndFlatten_Process($sql);
+	Logger::debug('fetchOneByTest: Got rows.');
+	$frows = ($ci['ct'] == 1) ? $rows : self::unflattenRows($rows, $infos, $ci['ct'], $criteria);
+	//we may want to do the if ($order) Rec::sort() call from fetchAllAndFlatten here.
+	Logger::debug('fetchOneByTest: Returning.');
+	$rec = $class::fromRows($frows, null);  //must return the recs array that we make in FetchAllAndFlatten!
+	Logger::debug('fetchOneBy_Test: Returning rec which is a ' . gettype($rec));
+	return $rec[0];
+  }
+  
   protected static function fetchRows($sql) {
     return Dao::fetchRows($sql);
   }
@@ -1052,6 +1083,7 @@ abstract class SqlRec extends Rec {
   static function fetchOneBy($criteria, $limit = 500) {
   Logger::debug('_SqlRec::fetchOneBy: Got criteria ' . gettype($criteria));
     $recs = self::fetchAllBy($criteria, null, $limit);
+	echo 'fetchOneBy: We are returning a ' . gettype($recs) . ' ' . print_r($recs) . '<br>';
     if (! empty($recs))
       return current($recs);
   }

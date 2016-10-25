@@ -84,6 +84,10 @@ class Proc_AdminSaveAlways extends Proc_Admin implements NoAudit {
   //
   static function record($cid, $date = null, $userId = null, $ipc = null) {
     $me = static::from($cid, $date, $userId, $ipc);
+	if ($_POST['BATCH']) {
+		Logger::debug('Proc_AdminSaveAlways: Deleting property procId.');
+		unset($me->procId);
+	}
     $me->save();
   }
 }

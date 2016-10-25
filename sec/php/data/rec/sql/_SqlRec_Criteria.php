@@ -49,10 +49,16 @@ class CriteriaValue {
     }
   }
   public function _toString($fid) {
-    if ($this->isValueArray())
-      $value = array_map('addslashes', $this->value);
-    else
-      $value = addslashes($this->value);
+  
+    if (MyEnv::$IS_ORACLE) {
+		$value = $this->value;
+	}
+	else {
+		if ($this->isValueArray())
+		  $value = array_map('addslashes', $this->value);
+		else
+		  $value = addslashes($this->value);
+	}
     switch ($this->comparator) {
       case self::EQ:
         return "$fid='$value'";
@@ -278,6 +284,10 @@ class CriteriaValue {
    * @param string $interval e.g. '5 MINUTE'
    */
   static function withinInterval($interval) {
+	if (MyEnv::$IS_ORACLE) {
+		return self::greaterThanNumeric("sysdate + interval $interval");
+	}
+	
     return self::greaterThanNumeric("DATE_SUB(NOW(), INTERVAL $interval)");
   }
   //

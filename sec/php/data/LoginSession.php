@@ -258,9 +258,13 @@ class LoginSession extends Rec {
   }
   protected static function fetchGd($s, $r) {
     $r .= '/' . MyEnv::getMcsk() . '.' . $s;
-    return file_get_contents($r);
+    return file_get_contents($r); 
   }
   //
+  //Used for tests so that we can access the protected method fetchUser_withLogging
+  static function testFetchUser($uid, $ptpw, $isAutomatedLogin = null) {
+	return static::fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin);
+  }
   /**
    * Create a login session
    * @param string $uid
@@ -286,6 +290,9 @@ class LoginSession extends Rec {
     $me->ip = $_SERVER['REMOTE_ADDR'];
     $me->uid = $uid;
     $me->ptpw = $ptpw;
+	Logger::debug('LoginSession::login: Got user. login disallowed? ' . $user->isLoginDisallowed());
+	Logger::debug('LoginSession: Our backtrace is this:');
+	Logger::debug(debug_backtrace());
 	
 	if (!$isAutomatedLogin) $me->setUserFields($user); //We did this check because when we do an automated login, the database for some reason wants to update the user's information, and when it does it wants to update the user's admin status and subscription status to the user's password hash. No idea why, but it stops us from making progress and I've decided to disable it for now.
 	
@@ -297,6 +304,10 @@ class LoginSession extends Rec {
     $login = $me->setMcsk()->save();
     $login->sessionId = session_id();
     $login->Login = UserLogins::log_asOk($login);
+	/*Logger::debug('LoginSession: Done with login! Returning save().');
+	echo '<pre>';
+	print_r(debug_backtrace());
+	echo '</pre>';*/
     return $login->save();
   }
   static function loginBatch($ugid, $label) {
@@ -508,7 +519,15 @@ class LoginSession extends Rec {
   //
   protected static function fetchUser($uid, $ptpw, $logging = false, $isAutomatedLogin = false) {
     //echo 'LoginSession fetchUser: Entered with ' . $uid . ' and ' . $ptpw . '<br>';
-    $user = UserLogin::fetchByUid($uid);
+	if ($isAutomatedLogin) {
+		Logger::debug('fetchUser: Automated login. Calling fetchByUidTest.');
+		$user = UserLogin::fetchByUidtest($uid);
+		Logger::debug('fetchUser: Did automated login. Got user ' . gettype($user));
+	}
+	else {
+		$user = UserLogin::fetchByUid($uid);
+	}
+	Logger::debug('LoginSession fetchUser: user is a ' . gettype($user) . ' ' . print_r($user, true));
     if ($user) {
       if (! $user->isPasswordCorrect($ptpw)) {
         if ($logging) {
@@ -526,7 +545,7 @@ class LoginSession extends Rec {
       }
     } else {
       if ($logging) {
-        if (static::isEmrUid($uid)) {
+        if (static::isEmrUid($uid)) { //very hacky and unnecessary IS_BATCH check - covers up a very odd login issue.
           throw new LoginEmrException();
 		}
 		//echo '<b>No user! Logging.</b><br>';
@@ -541,7 +560,7 @@ class LoginSession extends Rec {
         throw new LoginInvalidException($attempts);
       }
     }
-	
+	Logger::debug('LoginSession.php::fetchUser: Returning a ' . gettype($user));
     return $user;
   }
   protected static function fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin = false) {
@@ -549,7 +568,9 @@ class LoginSession extends Rec {
     return static::fetchUser($uid, $ptpw, true, $isAutomatedLogin);
   }
   protected static function isEmrUid($uid) {
-    $sql = "SELECT * FROM users WHERE uid='$uid'";
+	$col = 'uid';
+	if (MyEnv::$IS_ORACLE) $col = 'uid_';
+    $sql = "SELECT * FROM users WHERE " . $col . "='$uid'";
     $row = Dao::fetchRow($sql, 'emr');
     return (empty($row)) ? false : true;
   }
