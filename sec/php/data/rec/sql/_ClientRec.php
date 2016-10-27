@@ -155,9 +155,10 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
   }
   public function getEncryptedFids() {
     //From chuck: Should be an empty array. We don't want to encrypt anything.
-    return array(
+    /*return array(
     	'uid','lastName','firstName','middleName','birth','dateCreated','dateUpdated',
-    	'cdata1','cdata2','cdata3','notes','familyRelease','release','nickName');
+    	'cdata1','cdata2','cdata3','notes','familyRelease','release','nickName');*/
+		return array();
   }
   public function toJsonObject(&$o) {
     if (isset($o->clientId)) 
@@ -166,12 +167,12 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
   }
   public function save() {
     $this->setHuid();
-    $this->throwIfDupeUid();
+//    $this->throwIfDupeUid();
 	
 	if (MyEnv::$IS_ORACLE) {
 		try {
 		  SqlRec::save();
-		  $this->saveRefs();
+		  //$this->saveRefs();
 		  Dao::commit();
 		} catch (Exception $e) {
 		  Dao::rollback();
@@ -252,7 +253,7 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
     $this->ageYears = $cage['y']; 
   }
   protected function saveRefs() {
-    $this->saveHdatas();
+    //$this->saveHdatas();
     $this->saveEmrId();
   }
   protected function saveHdatas() {
@@ -270,6 +271,13 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
   protected function throwIfDupeUid() {
 	Logger::debug('_ClientRec throwIfDupeUid: Checking for uid with group ID ' . $this->userGroupId . ' and user ID ' . $this->uid . 'and client ID ' . $this->clientId);
     $rec = PStub_Search::searchForUid($this->userGroupId, $this->uid, $this->clientId);
+	
+	/*ob_start();
+	debug_print_backtrace();
+	$trace = ob_get_contents();
+	ob_end_clean();
+	Logger::debug('_ClientRec throwIfDupeUid: Got trace ' . $trace);*/
+	
     if ($rec)
       throw new DuplicateUid($rec);
   }

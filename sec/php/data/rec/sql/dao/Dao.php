@@ -69,8 +69,8 @@ class Dao {
 			Logger::debug('Dao::query: Got return val as ' . $returnValue);
 		}
 		
-		if ($table == 'scan_files') {
-			Logger::debug('Scan files! trace is ' . print_r(debug_backtrace(), true));
+		if ($table == 'addresses' || $table == 'data_meds') {
+			Logger::debug('Address or data meds table! trace is ' . print_r(debug_backtrace(), true));
 		}
 		
 		//print_r($res);

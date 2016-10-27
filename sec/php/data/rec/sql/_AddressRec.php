@@ -114,7 +114,7 @@ abstract class AddressRec extends SqlRec implements AutoEncrypt {
     return 'addresses';
   }
   public function getEncryptedFids() {
-    return array('addr1','addr2','addr3','city','zip','phone1','phone2','phone3','email1','email2','name');
+    return array('addr2','addr3','city','zip','phone1','phone2','phone3','email1','email2','name');
   }
   public function setPrimaryPhone($phone) {
     $this->setPhone1(self::PHONE_TYPE_PRIMARY, $phone);

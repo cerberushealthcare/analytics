@@ -92,24 +92,40 @@ abstract class SqlRec extends Rec {
 	
 	You should only need this function if the environment is Oracle.
 	
-	Words that are reserved in both SQL and Oracle (e.g., ADD, ALL, SELECT) are not included - they wouldn't be there anyway because SQL forbids them too.
-	
 	@param string $word
 	
 	returns string $word
   */
-  public function convertReservedOracleWords($word) {
-	$reservedWords = array('ACCESS', 'AUDIT', 'CHAR', 'CLUSTER', 'COMMENT', 'COMPRESS', 'CONNECT', 'DATE', 'DECIMAL', 'EXCLUSIVE', 'FLOAT', 'IDENTIFIED', 'IMMEDIATE', 'INCREMENT', 'INITIAL', 'INTEGER',  'LEVEL', 'LOCK', 'LONG', 'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOWAIT', 'NUMBER', 'OFFLINE', 'ONLINE', 'PCTFREE', 'PRIOR', 'PRIVILEGES', 'RAW', 'RENAME', 'RESOURCE', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SESSION', 'SHARE', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TRIGGER', 'UID', 'VALIDATE', 'VARCHAR', 'VARCHAR2', 'WHENEVER');
+  public function convertReservedOracleColumnWords($word, $includeSqlWords = false) {
+	//Logger::debug('oracleWords: Received word ' . $word);
+  
+	$reservedWords = array('ACCESS', 'AUDIT', 'CHAR', 'CLUSTER', 'COMMENT', 'COMPRESS', 'CONNECT', 'DATE', 'DECIMAL', 'EXCLUSIVE', 'FLOAT', 'IDENTIFIED', 'IMMEDIATE', 'INCREMENT', 'INITIAL', 'INTEGER', 'INDEX', 'LEVEL', 'LOCK', 'LONG', 'MAXEXTENTS', 'MINUS', 'MLSLABEL', 'MODE', 'MODIFY', 'NOAUDIT', 'NOCOMPRESS', 'NOWAIT', 'NUMBER', 'OFFLINE', 'ONLINE', 'PCTFREE', 'PRIOR', 'PRIVILEGES', 'RAW', 'RENAME', 'RESOURCE', 'ROW', 'ROWID', 'ROWNUM', 'ROWS', 'SESSION', 'SHARE', 'SIZE', 'SMALLINT', 'START', 'SUCCESSFUL', 'SYNONYM', 'SYSDATE', 'TRIGGER', 'UID', 'VALIDATE', 'VARCHAR', 'VARCHAR2', 'WHENEVER'); //May have to add 'UID' later.
+	
+	/*if ($includeSqlWords) {
+		array_push($reservedWords, 'ACCOUNT', 'ACTIVATE', 'ADD', 'ADMIN', 'ADVISE', 'AFTER', 'ALL', 'ALL_ROWS', 'ALLOCATE', 'ALTER', 'ANALYZE', 'AND', 'ANY', 'ARCHIVE', 'ARCHIVELOG', 'ARRAY', 'AS', 'ASC', 'AT', 'AUTHENTICATED', 'AUTHORIZATION', 'AUTOEXTEND', 'AUTOMATIC', 'BACKUP', 'BECOME', 'BEFORE', 'BEGIN', 'BETWEEN', 'BFILE', 'BITMAP', 'BLOB', 'BLOCK', 'BODY', 'BY', 'CACHE', 'CACHE_INSTANCES', 'CANCEL', 'CASCADE', 'CAST', 'CFILE', 'CHAINED', 'CHANGE', 'CHAR_CS', 'CHARACTER', 'CHECK', 'CHECKPOINT', 'CHOOSE', 'CHUNK', 'CLEAR', 'CLOB', 'CLONE', 'CLOSE', 'CLOSE_CACHED_OPEN_CURSORS', 'COALESCE', 'COLUMN', 'COLUMNS', 'COMMIT', 'COMMITTED', 'COMPATIBILITY', 'COMPILE', 'COMPLETE', 'COMPOSITE_LIMIT', 'COMPUTE', 'CONNECT_TIME', 'CONSTRAINT', 'CONSTRAINTS', 'CONTENTS', 'CONTINUE', 'CONTROLFILE', 'CONVERT', 'COST', 'CPU_PER_CALL', 'CPU_PER_SESSION', 'CREATE', 'CURRENT', 'CURRENT_SCHEMA', 'CURREN_USER', 'CURSOR', 'CYCLE', 'DANGLING', 'DATABASE', 'DATAFILE', 'DATAFILES', 'DATAOBJNO', 'DBA', 'DBHIGH', 'DBLOW', 'DBMAC', 'DEALLOCATE', 'DEBUG', 'DEC', 'DECLARE', 'DEFAULT', 'DEFERRABLE', 'DEFERRED', 'DEGREE', 'DELETE', 'DEREF', 'DESC', 'DIRECTORY', 'DISABLE', 'DISCONNECT', 'DISMOUNT', 'DISTINCT', 'DISTRIBUTED', 'DML', 'DOUBLE', 'DROP', 'DUMP', 'EACH', 'ELSE', 'ENABLE', 'END', 'ENFORCE', 'ENTRY', 'ESCAPE', 'EXCEPT', 'EXCEPTIONS', 'EXCHANGE', 'EXCLUDING', 'EXECUTE', 'EXISTS', 'EXPIRE', 'EXPLAIN', 'EXTENT', 'EXTENTS', 'EXTERNALLY', 'FAILED_LOGIN_ATTEMPTS', 'FALSE', 'FAST', 'FILE', 'FIRST_ROWS', 'FLAGGER', 'FLOB', 'FLUSH', 'FOR', 'FORCE', 'FOREIGN', 'FREELIST', 'FREELISTS', 'FROM', 'FULL', 'FUNCTION', 'GLOBAL', 'GLOBALLY', 'GLOBAL_NAME', 'GRANT', 'GROUP', 'GROUPS', 'HASH', 'HASHKEYS', 'HAVING', 'HEADER', 'HEAP', 'IDENTIFIED', 'IDGENERATORS', 'IDLE_TIME', 'IF', 'IN', 'INCLUDING', 'INDEX', 'INDEXED', 'INDEXES', 'INDICATOR', 'IND_PARTITION', 'INITIALLY', 'INITRANS', 'INSERT', 'INSTANCE', 'INSTANCES', 'INSTEAD', 'INT', 'INTERMEDIATE', 'INTERSECT', 'INTO', 'IS', 'ISOLATION', 'ISOLATION_LEVEL', 'KEEP', 'KEY', 'KILL', 'LABEL', 'LAYER', 'LESS', 'LIBRARY', 'LIKE', 'LIMIT', 'LINK', 'LIST', 'LOB', 'LOCAL', 'LOCKED', 'LOG', 'LOGFILE', 'LOGGING', 'LOGICAL_READS_PER_CALL', 'LOGICAL_READS_PER_SESSION', 'LONG', 'MANAGE', 'MASTER', 'MAX', 'MAXARCHLOGS', 'MAXDATAFILES', 'MAXINSTANCES', 'MAXLOGFILES', 'MAXLOGHISTORY', 'MAXLOGMEMBERS', 'MAXSIZE', 'MAXTRANS', 'MAXVALUE', 'MIN', 'MEMBER', 'MINIMUM', 'MINEXTENTS', 'MINVALUE', 'MLS_LABEL_FORMAT', 'MOUNT', 'MOVE', 'MTS_DISPATCHERS', 'MULTISET', 'NATIONAL', 'NCHAR', 'NCHAR_CS', 'NCLOB', 'NEEDED', 'NESTED', 'NETWORK', 'NEW', 'NEXT', 'NOARCHIVELOG', 'NOCACHE', 'NOCYCLE', 'NOFORCE', 'NOLOGGING', 'NOMAXVALUE', 'NOMINVALUE', 'NONE', 'NOORDER', 'NOOVERRIDE', 'NOPARALLEL', 'NOPARALLEL', 'NOREVERSE', 'NORMAL', 'NOSORT', 'NOT', 'NOTHING', 'NULL', 'NUMERIC', 'NVARCHAR2', 'OBJECT', 'OBJNO', 'OBJNO_REUSE', 'OF', 'OFF', 'OID', 'OIDINDEX', 'OLD', 'ON', 'ONLY', 'OPCODE', 'OPEN', 'OPTIMAL', 'OPTIMIZER_GOAL', 'OPTION', 'OR', 'ORDER', 'ORGANIZATION', 'OSLABEL', 'OVERFLOW', 'OWN', 'PACKAGE', 'PARALLEL', 'PARTITION', 'PASSWORD', 'PASSWORD_GRACE_TIME', 'PASSWORD_LIFE_TIME', 'PASSWORD_LOCK_TIME', 'PASSWORD_REUSE_MAX', 'PASSWORD_REUSE_TIME', 'PASSWORD_VERIFY_FUNCTION', 'PCTINCREASE', 'PCTTHRESHOLD', 'PCTUSED', 'PCTVERSION', 'PERCENT', 'PERMANENT', 'PLAN', 'PLSQL_DEBUG', 'POST_TRANSACTION', 'PRECISION', 'PRESERVE', 'PRIMARY', 'PRIVATE', 'PRIVATE_SGA', 'PRIVILEGE', 'PROCEDURE', 'PROFILE', 'PUBLIC', 'PURGE', 'QUEUE', 'QUOTA', 'RANGE', 'RBA', 'READ', 'READUP', 'REAL', 'REBUILD', 'RECOVER', 'RECOVERABLE', 'RECOVERY', 'REF', 'REFERENCES', 'REFERENCING', 'REFRESH', 'REPLACE', 'RESET', 'RESETLOGS', 'RESIZE', 'RESTRICTED', 'RETURN', 'RETURNING', 'REUSE', 'REVERSE', 'REVOKE', 'ROLE', 'ROLES', 'ROLLBACK', 'RULE', 'SAMPLE', 'SAVEPOINT', 'SB4', 'SCAN_INSTANCES', 'SCHEMA', 'SCN', 'SCOPE', 'SD_ALL', 'SD_INHIBIT', 'SD_SHOW', 'SEGMENT', 'SEG_BLOCK', 'SEG_FILE', 'SELECT', 'SEQUENCE', 'SERIALIZABLE', 'SESSION_CACHED_CURSORS', 'SESSIONS_PER_USER', 'SET', 'SHARED', 'SHARED_POOL', 'SHRINK', 'SKIP', 'SKIP_UNUSABLE_INDEXES', 'SNAPSHOT', 'SOME', 'SORT', 'SPECIFICATION', 'SPLIT', 'SQL_TRACE', 'STANDBY', 'STATEMENT_ID', 'STATISTICS', 'STOP', 'STORAGE', 'STORE', 'STRUCTURE', 'SWITCH', 'SYS_OP_ENFORCE_NOT_NULL$', 'SYS_OP_NTCIMG$', 'SYSDBA', 'SYSOPER', 'SYSTEM', 'TABLE', 'TABLES', 'TABLESPACE', 'TABLESPACE_NO', 'TABNO', 'TEMPORARY', 'THAN', 'THE', 'THEN', 'THREAD', 'TIMESTAMP', 'TIME', 'TO', 'TOPLEVEL', 'TRACE', 'TRACING', 'TRANSACTION', 'TRANSITIONAL', 'TRIGGERS', 'TRUE', 'TRUNCATE', 'TX', 'TYPE', 'UB2', 'UBA', 'UNARCHIVED', 'UNDO', 'UNION', 'UNIQUE', 'UNLIMITED', 'UNLOCK', 'UNRECOVERABLE', 'UNTIL', 'UNUSABLE', 'UNUSED', 'UPDATABLE', 'UPDATE', 'USAGE', 'USE', 'USER', 'USING', 'VALIDATION', 'VALUE', 'VALUES', 'VARYING', 'VIEW', 'WHEN', 'WHERE', 'WITH', 'WITHOUT', 'WORK', 'WRITE', 'WRITEDOWN', 'WRITEUP', 'XID', 'YEAR', 'ZONE');
+	}*/
+	
+	//if ($word == 'index') $word = 'index_';
 	
 	$upper = strtoupper($word);
 	
+	
+	//Logger::debug('upper is ' . $upper);
+	
 	foreach ($reservedWords as &$reservedWord) {
+		//Logger::debug('Is ' . $upper . ' equal to ' . $reservedWord . '?');
 		if ($upper === $reservedWord) {
-			$word = $word . '_';
+			//Logger::debug('YES, changing ' . $word . '...');
+			$underscore = '';
+			if ($word[strlen($upper) - 1] !== '_' && $upper !== 'UID') $underscore = '_';
+			$word = '"' . $upper . $underscore . '"';
+			//Logger::debug('into ' . $word);
 			break;
 		}
 	}
 	
+	
+	Logger::debug('oracleWords: Returning ' . $word);
 	return $word;
   }
   /**
@@ -134,13 +150,13 @@ abstract class SqlRec extends Rec {
   }
   public function setSqlArray($fid, $value) {
     //logit_r($value, 'setsqlarray');
-	Logger::debug('setSqlArray: Got ' . print_r($value, true) . ' as value.');
+	//Logger::debug('setSqlArray: Got ' . print_r($value, true) . ' as value.');
     if (substr(key($value), 0, 1) == '@') {  /*indicates came from join (see unflatten)*/
       $field = key(current($value));
       if (strpos($field, '.') == false) {
         parent::set($fid, $value);
       } else {
-		Logger::debug('setSqlArray: getClassFromSqlField(' . $field . ')');
+		//Logger::debug('setSqlArray: getClassFromSqlField(' . $field . ')');
         $class = self::getClassFromSqlField($field);
         $recs = array();
         foreach ($value as $v) 
@@ -475,10 +491,15 @@ abstract class SqlRec extends Rec {
     $fields = $this->getSqlFields();
 	
 	if (MyEnv::$IS_ORACLE) {
-		foreach ($fields as &$currField) {
-			$currField = $this->convertReservedOracleWords($currField);
+		foreach ($fields as $key => $value) {
+			//$field = SqlRec::convertReservedOracleColumnWords($field, true);
+			//Logger::debug('_SqlRec getSqlInsert: Looking at field ' . $value);
+			//if ($value == 'uid') $value = 'uid_';
+			$converted = '"' . strtoupper($value) . '"';//SqlRec::convertReservedOracleWords($value, true, array('type'));
+			$converted = SqlRec::convertReservedOracleColumnWords($value, true);
+			unset($fields[$key]);
+			$fields[$converted] = $converted;
 		}
-		//echo 'After converting, got array ' . print_r($fields, true);
 		//$fields = implode(',', $fields);
 		
 		//var_dump(debug_backtrace());
@@ -722,6 +743,7 @@ abstract class SqlRec extends Rec {
    * @return string 'field_name=field_value AND..'
    */
   protected function getSqlWhere($tableAlias = null) {
+	//Logger::debug('We hit getSqlWhere. Backtrace is ' . print_r(debug_backtrace(), true));
     $fields = $this->getSqlFields();
     if ($tableAlias == null) 
       $tableAlias = $this->getSqlTable();
@@ -731,7 +753,7 @@ abstract class SqlRec extends Rec {
       if ($value !== null) {
         if (is_scalar($value)) 
           $value = CriteriaValue::equals($value);
-        $field = $tableAlias . '.' . $this->convertReservedOracleWords(current($fields));
+        $field = $tableAlias . '."' . current($fields) . '"';
         $values[$field] = $value;
       }
       if ($fid == $lfid)
@@ -750,10 +772,9 @@ abstract class SqlRec extends Rec {
       $fields = array();
       $fids = $this->getSqlFids();
       foreach ($fids as $fid) {
-		//This was commented out before. Not sure why.
-		if (MyEnv::$IS_ORACLE) {
-			$fid = $this->convertReservedOracleWords($fid);
-		}
+		/*if (MyEnv::$IS_ORACLE) {
+			$fid = $this->convertReservedOracleWords($fid, true);
+		}*/
 		
         $fields[$fid] = self::camelToSql($fid);
 		
@@ -900,7 +921,8 @@ abstract class SqlRec extends Rec {
       $field = geta($fields, $fid);
       if ($field) {
 		if (MyEnv::$IS_ORACLE) {
-			$field = $this->convertReservedOracleWords($field); //Look at a list of reserved words that Oracle has for field names and if this word is reserved, add a _ to the end.
+			$field = '"' . strtoupper($field) . '"';//$this->convertReservedOracleWords($field); //Look at a list of reserved words that Oracle has for field names and if this word is reserved, add a _ to the end.
+			if ($field == 'UID') $field == 'UID_';
 		}
 		
 		//$as = "$class.$fid";
