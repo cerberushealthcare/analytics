@@ -125,7 +125,7 @@ abstract class SqlRec extends Rec {
 	}
 	
 	
-	Logger::debug('oracleWords: Returning ' . $word);
+	//Logger::debug('oracleWords: Returning ' . $word);
 	return $word;
   }
   /**

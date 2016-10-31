@@ -149,7 +149,10 @@
 				curl_close($handle);
 				
 				$err = error_get_last();
-				echo 'CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']';
+				if ($curlErrNo > 0) {
+					echo 'Filename ' . $rowEntry['NAME'] . ': CURL error #' . $curlErrNo . ': ' . $curlErrMsg . '. See the log file in /logs/log.txt and /api/blog.txt for more details! Continuing...';
+				}
+				//
 				//throw new RuntimeException('CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']');
 			}
 			//curl_close($handle);

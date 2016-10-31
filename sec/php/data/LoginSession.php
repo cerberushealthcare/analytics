@@ -527,7 +527,7 @@ class LoginSession extends Rec {
 	else {
 		$user = UserLogin::fetchByUid($uid);
 	}
-	Logger::debug('LoginSession fetchUser: user is a ' . gettype($user) . ' ' . print_r($user, true));
+	//Logger::debug('LoginSession fetchUser: user is a ' . gettype($user) . ' ' . print_r($user, true));
     if ($user) {
       if (! $user->isPasswordCorrect($ptpw)) {
         if ($logging) {

@@ -90,8 +90,8 @@
 	curl_setopt($handle, CURLOPT_POSTFIELDS, http_build_query(array('operation' => 'ccdupload',
 																	'filename' => $filename, //was sample_cda.xml before.
 																	'filepath' => 'uploads/',
-																	'sessionId' => $sessionId, //used to be 'kba6m0i3pqdbs56bfkp8uahhr2',
-																	'userGroupId' => 706,
+																	'sessionId' => $sessionId,
+																	'userGroupId' => 712, //This will go directly into CLIENTS.USER_GROUP_ID. It used to go into CLIENTS.UID but that was changed.
 																	'IS_BATCH' => '1')
 																)
 	);

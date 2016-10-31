@@ -69,9 +69,9 @@ class Dao {
 			Logger::debug('Dao::query: Got return val as ' . $returnValue);
 		}
 		
-		if ($table == 'addresses' || $table == 'data_meds') {
-			Logger::debug('Address or data meds table! trace is ' . print_r(debug_backtrace(), true));
-		}
+		/*if ($table == 'clients') {
+			Logger::debug('Dao::query: Clients table! Trace is ' . print_r(debug_backtrace(), true));
+		}*/
 		
 		//print_r($res);
 		//echo 'Res is ' . gettype($res) . ' ' . $res;
@@ -85,7 +85,7 @@ class Dao {
 		$err = oci_error($res);
 		if (!empty($err)) {
 			Logger::debug('ERROR in Dao::query: ' . $err['message']);
-			throw static::buildException(htmlentities('Dao::query: Error in Oracle query: ' . $err['message'] . '. Query is ' . $sql . '. Stack trace is ' . print_r(debug_backtrace(), true), ENT_QUOTES), E_USER_ERROR);
+			throw static::buildException(htmlentities('Dao::query: Error in Oracle query: ' . $err['message'] . '. Query is ' . $sql, ENT_QUOTES), E_USER_ERROR);
 		}
 		
 		if ($table == 'logins') return $returnValue;

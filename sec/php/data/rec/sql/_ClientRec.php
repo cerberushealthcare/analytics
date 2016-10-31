@@ -171,6 +171,15 @@ abstract class ClientRec extends SqlRec implements AutoEncrypt {
 	
 	if (MyEnv::$IS_ORACLE) {
 		try {
+		  //We are doing the ugid and uid swap because in the INSERT INTO CLIENTS query, we somehow got them flip flopped - the ugid is trying to be inserted into the UID column
+		  //and vice versa. This creates problems because the UID should be unique.
+		  //We may want to reswap them after we're done with this function if problems arise.
+		  $ugid = $this->userGroupId;
+		  $uid = $this->uid;
+		  
+		  
+		  $this->userGroupId = $uid;
+		  $this->uid = $ugid;
 		  SqlRec::save();
 		  //$this->saveRefs();
 		  Dao::commit();

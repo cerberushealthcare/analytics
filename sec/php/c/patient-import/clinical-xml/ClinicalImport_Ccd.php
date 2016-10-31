@@ -57,6 +57,7 @@ class Address_Ci_Ccd extends Address_Ci {
       $this->state = $addr->state;
       $this->zip = $addr->postalCode;
     }
+	echo 'ClinicalImport_Ccd setFrom: Got data ' . $this->type;// . '|' . $this->addr2 . '|' . $city . '|' . $state . '|' . $zip;
     $phone = $patientRole->first('telecom');
     if ($phone) {
       $this->phone1 = $phone->getValue();
@@ -80,8 +81,8 @@ class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
       $me->save();
   }
   static function from($ugid, $cid, /*Ccd_ProblemEntry*/$problem, /*Ccd_Text*/$text) {
-    logit_r($problem, 'problem');
-    logit_r($text, 'text');
+    //logit_r($problem, 'problem');
+    //logit_r($text, 'text');
     $date = $problem->getSqlDate();
     $cd = $problem->getIcdCode();
     logit_r($cd, 'geticdcode');

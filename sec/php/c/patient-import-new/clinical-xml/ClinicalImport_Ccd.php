@@ -80,8 +80,8 @@ class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
       $me->save();
   }
   static function from($ugid, $cid, /*Ccd_ProblemEntry*/$problem, /*Ccd_Text*/$text) {
-    logit_r($problem, 'problem');
-    logit_r($text, 'text');
+    //logit_r($problem, 'problem');
+    //logit_r($text, 'text');
     $date = $problem->getSqlDate();
     $cd = $problem->getIcdCode();
     logit_r($cd, 'geticdcode');

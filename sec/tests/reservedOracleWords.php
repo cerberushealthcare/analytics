@@ -15,15 +15,15 @@
 				);
 	
 	foreach ($fields as $key => $value) {
-		echo 'getSqlInsert: Converting word ' . $value . '<br>';
+		//echo 'getSqlInsert: Converting word ' . $value . '<br>';
 		//$field = SqlRec::convertReservedOracleWords($field, true);
 		$converted = SqlRec::convertReservedOracleWords($value, true, array('rowid'));
 		unset($fields[$key]);
 		$fields[$converted] = $converted;
-		echo 'Changed the word to ' . $fields[$converted] . '<br>';
+		//echo 'Changed the word to ' . $fields[$converted] . '<br>';
 	}
 	
-	echo 'final array: ' . print_r($fields, true);
+	//echo 'final array: ' . print_r($fields, true);
 	
 	if (array_key_exists('index_', $fields)) {
 		if ($fields['index_'] == 'index_' && array_key_exists('rowid', $fields)) $testPassed = true;
