@@ -8,19 +8,19 @@ LoginSession::verify_forUser()->requires($login->super);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Practice Database', 'PracticesPage') ?>
+    <?php HEAD('Practice Database', 'PracticesPage') ?>
   </head>
   <body>
-    <? BODY() ?>
-      <? TITLE('Practice Database') ?>
-      <? _TITLE() ?>
-      <? BOX() ?>
+    <?php BODY() ?>
+      <?php TITLE('Practice Database') ?>
+      <?php _TITLE() ?>
+      <?php BOX() ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? _BOX() ?>
-    <? _BODY() ?>
+      <?php _BOX() ?>
+    <?php _BODY() ?>
   </body>
-  <? //CONSTANTS('Client') ?>
-  <? START() ?>  
+  <?php //CONSTANTS('Client') ?>
+  <?php START() ?>  
 </html>

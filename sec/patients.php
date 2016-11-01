@@ -8,7 +8,7 @@ LoginSession::verify_forUser()->requires($login->Role->Patient->any());
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Patient Database', 'PatientsPage') ?>
+    <?php HEAD('Patient Database', 'PatientsPage') ?>
     <style>
 TABLE.tpage {
   width:100%;
@@ -22,11 +22,11 @@ TABLE.tpage TD.tdfilter {
     </style>
   </head>
   <body>
-    <? BODY() ?>
-      <? TITLE('Patient Database') ?>
+    <?php BODY() ?>
+      <?php TITLE('Patient Database') ?>
         <a href="javascript:" onclick="PatientSelector.pop();" class="icon search">Search for patient</a>
-      <? _TITLE() ?>
-      <? BOX() ?>
+      <?php _TITLE() ?>
+      <?php BOX() ?>
         <div id='test'></div>
         <table class='tpage'>
           <tr>
@@ -40,10 +40,10 @@ TABLE.tpage TD.tdfilter {
             </td>
           </tr>
         </table>
-      <? _BOX() ?>
-    <? _BODY() ?>
+      <?php _BOX() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Client') ?>
-  <? START() ?>  
+  <?php CONSTANTS('Client') ?>
+  <?php START() ?>  
 </html>
 

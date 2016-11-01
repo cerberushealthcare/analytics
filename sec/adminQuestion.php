@@ -159,10 +159,10 @@ TR.dn {
       <input type="hidden" name="mix" value="<?=$form->mix ?>">
       <input type="hidden" name="mix2" value="<?=$form->mix2 ?>">
       <?php require_once "inc/errors.php" ?>
-      <? if ($noValidateSave) { ?>
+      <?php if ($noValidateSave) { ?>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="submit" name="action" value="Save Anyway" onclick="ignoreDirty()">
         <br><br>
-      <? } ?>
+      <?php } ?>
       <div id="breadcrumb">
         <?=$form->breadcrumb ?><br>
         <h1><?=($update) ? "" : "New " ?>Question <?=$form->uid ?></h1>
@@ -197,9 +197,9 @@ TR.dn {
               <td class="label">Sync</td>
               <td width=5></td>
               <td><input type="text" size="15" name="sync" value="<?=$form->sync ?>" onchange="makeDirty()"></td>
-              <? if ($form->sync != "") { ?>
+              <?php if ($form->sync != "") { ?>
               <td><a class="hover" style="margin-left:3px;" href="javascript:showPopAdmin('qsyncSearch','<?=$form->sync ?>')">Ref?</a></td>
-              <? } ?>
+              <?php } ?>
               <td width=15></td>
               <td class="label">Data Sync</td>
               <td width=5></td>
@@ -426,7 +426,7 @@ TR.dn {
                   <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optCpt[<?= $ix ?>]" value="<?=$optionLine->cpt ?>" onchange="makeDirty()"></td>
                   <td><?php renderCombo("optTrack[$ix]", $form->trackCats, $optionLine->trackCat, "onchange=\"makeDirty()\"") ?></td>
                   <td><input type="text" class="<?=isBlank($optionLine->uid) ? "expand blue" : "expand" ?>" size="15" name="optSync[<?= $ix ?>]" value="<?=$optionLine->sync ?>" onchange="makeDirty()"></td>
-                  <td><? if (! isBlank($optionLine->uid)) { ?><input type="submit" name="insert[<?=$ix ?>]" value="Insert" onclick="ignoreDirty()" style="font-family:Calibri;font-size:8pt"><? } ?></td>
+                  <td><?php if (! isBlank($optionLine->uid)) { ?><input type="submit" name="insert[<?=$ix ?>]" value="Insert" onclick="ignoreDirty()" style="font-family:Calibri;font-size:8pt"><?php } ?></td>
                 </tr>
                 <tr class="blue1 dn" id="pxi">
                   <th colspan="2" style="border:none;text-align:right">Px Instructions</td>
@@ -434,7 +434,7 @@ TR.dn {
                   <td colspan="4"></td>
                 </tr>
                 <?php if ($optionLine->coords != '') $hascoords=true; ?>
-              <? $ix++ ?>
+              <?php $ix++ ?>
               <?php } ?>
             </table>
           </div>
@@ -449,16 +449,16 @@ TR.dn {
 </html>
 <script>
 var c = $('chkPxi');
-<? if ($hascoords) { ?>
+<?php if ($hascoords) { ?>
 c.checked = true;
 showPxi();
-<? } ?>
+<?php } ?>
 function showPxi() {
   var rows = $$('pxi');
   for (var i = 0; i < rows.length; i++)
     rows[i].className = (c.checked) ? 'blue1' : 'blue1 dn';
 }
-<? if ($sorted) { ?>
+<?php if ($sorted) { ?>
 makeDirty();
-<? } ?>
+<?php } ?>
 </script>

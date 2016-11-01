@@ -3,10 +3,10 @@ set_include_path('sec');
 require_once "sec/inc/uiFunctions.php";
 set_include_path('.');
 require_once "sec/php/dao/HomeDao.php";
-$tips = HomeDao::getLatestMikeTips();
+//$tips = HomeDao::getLatestMikeTips();
 ?>
-<? $title = 'Medical office SOAP notes - Web-based EMR - Easy-to-use and affordable - Clicktate' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Medical office SOAP notes - Web-based EMR - Easy-to-use and affordable - Clicktate' ?>
+<?php include "inc/hheader.php" ?>
 <div id="belt">
   <div class="content">
     <table cellpadding="0" cellspacing="0">
@@ -160,7 +160,7 @@ $tips = HomeDao::getLatestMikeTips();
     </div>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>
 <?php
 try {
 $f = @fopen("page-hits.csv", "a");

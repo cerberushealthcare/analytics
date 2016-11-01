@@ -30,18 +30,18 @@ LoginSession::verify_forUser();
     <script language='JavaScript1.2' src='js/components/CmdBar.js?<?=Version::getUrlSuffix() ?>'></script>
     <script language='JavaScript1.2' src='js/components/EntryForm.js?<?=Version::getUrlSuffix() ?>'></script>
     <script language='JavaScript1.2' src='js/components/DateInput.js?<?=Version::getUrlSuffix() ?>'></script>
-    <? HEAD_RichText() ?>
+    <?php HEAD_RichText() ?>
   </head>
   <body>
     <div id='bodyContainer'>
       <div id='curtain'></div>
-      <? include 'inc/header.php' ?>
+      <?php include 'inc/header.php' ?>
       <div id='bodyContent' class='content'>
         <h1>Tester</h1>
-        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
           <a href='javascript:test()'>Test</a>
           <div id='tile'></div>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
       </div>
       <div id='bottom'><img src='img/brb.png' /></div>
     </div>      

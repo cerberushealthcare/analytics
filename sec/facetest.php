@@ -17,7 +17,7 @@ $pop = isset($_GET['pop']);
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Facesheet") ?>
+    <?php renderHead("Facesheet") ?>
     <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
     <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
     <link rel="stylesheet" type="text/css" href="css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>" />
@@ -34,10 +34,10 @@ $pop = isset($_GET['pop']);
     <script language="JavaScript1.2" src="js/template-pops.js?<?=Version::getUrlSuffix() ?>"></script>
     <script language="JavaScript1.2" src="js/components/TableLoader.js?<?=Version::getUrlSuffix() ?>"></script>
   </head>
-  <body onload="start()" <? if ($pop) { ?>style='background-color:white'<? } ?>>
+  <body onload="start()" <?php if ($pop) { ?>style='background-color:white'<?php } ?>>
     <div id="bodyContainer">
       <div id="curtain"></div>
-      <? include "inc/header.php" ?>
+      <?php include "inc/header.php" ?>
       <div id='bodyContent' class="content">
                   <div id="his-div">
                   </div>

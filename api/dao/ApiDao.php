@@ -1,5 +1,5 @@
 <?php
-set_include_path('../sec/');
+set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/sec/');
 require_once 'php/data/LoginSession.php';
 require_once 'php/dao/_util.php';
 require_once 'php/dao/RegistrationDao.php';
@@ -9,8 +9,8 @@ require_once 'php/data/db/UserGroup.php';
 require_once 'php/data/rec/sql/Messaging.php';
 require_once 'php/data/rec/sql/Messaging_DocStubReview.php';
 require_once 'php/c/patient-billing/CerberusBilling.php';
-require_once '../api/dao/data/ApiPatient.php';
-require_once '../api/dao/ApiLogger.php';
+require_once 'data/ApiPatient.php';
+//require_once 'ApiLogger.php';
 /**
  * API DAO
  * Partner data accessor
@@ -40,9 +40,11 @@ class ApiDao {
    * @param ApiLogin $login
    * @return array(int session_id, int unread_msgs, int unreviewed, string msg_url, string review_url, string doc_url, string status_url, string pharm_url, string scan_url, string track_url, string report_url)
    */
-  public function login($login) {
+   
+  public function login($login, $isAutomatedLogin = false) {
     $this->lookupUserId($login, ApiDao::REQUIRED);
     try {
+	  //echo 'ApiDao: ID Looked up! Logging user in......';
       session_start();
       unset($_SESSION["mylogin"]);
       session_regenerate_id(true);
@@ -51,13 +53,18 @@ class ApiDao {
       $pappw = $login->password;
       $papsess = $login->session;
       $papcookie = $login->cookie;
-      $r = LoginSession::login($login->getUserUid(), $login->password, $sid)->setUi(false);  // TODO get tablet setting
+	  //echo 'Starting LoginSession for login with ' . $login->getUserUid() . ' and ' . $login->password;
+	  $r = LoginSession::login($login->getUserUid(), $login->password, $sid, $isAutomatedLogin)->setUi(false);  // TODO get tablet setting
+	  //echo 'Done with LoginSession';
       $_SESSION['mylogin'] = $login;
       session_write_close();
       global $login;
       $login = $r;
-      $unread = Messaging::getMyUnreadCt();
-      $unreviewed = Messaging_DocStubReview::getUnreviewedCt();
+	  
+	  if (!$isAutomatedLogin) {
+		  $unread = Messaging::getMyUnreadCt();
+		  $unreviewed = Messaging_DocStubReview::getUnreviewedCt();
+	  }
       $urlMsg = $this->buildUrl("messages.php", $sid);
       $urlReview = $this->buildUrl("review.php", $sid);
       $urlDoc = $this->buildUrl("documents.php", $sid);
@@ -69,10 +76,13 @@ class ApiDao {
       $urlDash = $this->buildUrl("welcome.php", $sid);
       $urlFace = $this->buildUrl("face.php", $sid, "aid=");
       //CerberusBilling::login($login->userGroupId, $papuid, $pappw);
-      CerberusBilling::activateSession($r->userGroupId, $papuid, $pappw, $papsess, $papcookie);
-      return array($sid, $unread, $unreviewed, $urlMsg, $urlReview, $urlDoc, $urlStatus, $urlPharm, $urlScan, $urlTrack, $urlReport, $urlDash, $urlFace, 'dummy');
+	  //echo 'login: Before billing...';
+      if (!$isAutomatedLogin) CerberusBilling::activateSession($r->userGroupId, $papuid, $pappw, $papsess, $papcookie);
+	  //echo 'CerberusBilling done in ApiDao. Returning an array';
+      return array($sid);//, $unread, $unreviewed, $urlMsg, $urlReview, $urlDoc, $urlStatus, $urlPharm, $urlScan, $urlTrack, $urlReport, $urlDash, $urlFace, 'dummy');
     } catch (LoginInvalidException $e) {
-      $login->throwApiException('ID or password not recognized.');
+      $login->throwApiException('ID or password not recognized! We got message ' . $e->getMessage() . ', login is ' . print_r($login));
+	  //var_dump(debug_backtrace());
     }
   }
   /**
@@ -333,15 +343,24 @@ eos;
    */
   public function lookupUserId($record, $required = false) {
     $uid = $record->getUserUid();
+	//echo 'uid is "' . $uid . '"';
     $sql = <<<eos
 SELECT user_id
 FROM users
-WHERE uid='$uid'
+WHERE uid_='$uid'
 eos;
-    $id = fetchField($sql);
+	if (MyEnv::$IS_ORACLE) {
+		//echo 'lookupUserId: this is ORACLE! Adding user_id as argument.';
+		$id = fetchField($sql, 'user_id');
+	}
+    else {
+		$id = fetchField($sql);
+	}
+	//echo 'lookupUserId: required is ' . $required . ' and id is ' . $id;
     if ($required && $id == null) {
       $record->throwApiException('User ID does not exist');
     }
+	//echo 'lookupUserId: Returning ' . $id;
     return $id;
   }
   /**

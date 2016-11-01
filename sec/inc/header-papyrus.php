@@ -1,4 +1,4 @@
-<? 
+<?php 
 require_once "php/data/Version.php";
 require_once "php/data/rec/sql/Messaging.php";
 require_once "php/data/rec/sql/Messaging_DocStubReview.php";
@@ -29,14 +29,14 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
               <td><a class='logo' href="welcome.php"></a></td>
               <td class="logo-right">
                 <div class="loginfo tf-header">
-                  <? if (isset($login)) { ?>
+                  <?php if (isset($login)) { ?>
                     Logged in as <b><?=$login->uid ?></b>
-                    <? if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><? } else { ?>| <a href="profile.php?cp=1">Change Password</a><? } ?>
+                    <?php if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><?php } else { ?>| <a href="profile.php?cp=1">Change Password</a><?php } ?>
                     | <a href="javascript:Header.icdLook()">ICD</a>
-                    <? if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><? } ?>
-                    <? if (1==2) { ?>| <a class='action tpdf' href="https://www.clicktate.com/ClicktateUserGuide.pdf">User Guide</a><? } ?>
+                    <?php if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><?php } ?>
+                    <?php if (1==2) { ?>| <a class='action tpdf' href="https://www.clicktate.com/ClicktateUserGuide.pdf">User Guide</a><?php } ?>
                     | <a href="javascript:Header.logout()">Logout</a>
-                  <? } ?>
+                  <?php } ?>
                 </div>
               </td>
             </tr>
@@ -73,16 +73,16 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
                     <tr>
                       <td style="vertical-align:top">
                         <div class="loginfo2">
-                          <? if (isset($login)) { ?>
+                          <?php if (isset($login)) { ?>
                             <a href="welcome.php">Home</a>
-                            <? if ($login->Role->Patient->any()) { ?>| <a href="patients.php" title="Patient Database">Patients</a><? } ?>
-                            <? if ($login->Role->Artifact->noteRead) { ?>| <a href="documents.php"title="Document Manager">Documents</a><? } ?>
-                            <? if ($login->Role->Patient->sched) { ?>| <a href="schedule.php" title="Scheduling">Sched</a><? } ?>
-                            <? if ($login->Role->Patient->track) { ?>| <a href="tracking.php" title="Order Tracking Sheet">Track</a><? } ?>
-                            <? if ($login->Role->Artifact->scan) { ?>| <a href="scanning.php" title="Scanning">Scan</a><? } ?>
-                            <? if ($login->Role->Report->any()) { ?>| <a href="reporting.php" title="Reporting">Report</a><? } ?>
-                            <? if ($login->Role->Cerberus->superbill) { ?>| <a href="superbills.php" title="Billing">Billing</a><? } ?>
-                          <? } ?>
+                            <?php if ($login->Role->Patient->any()) { ?>| <a href="patients.php" title="Patient Database">Patients</a><?php } ?>
+                            <?php if ($login->Role->Artifact->noteRead) { ?>| <a href="documents.php"title="Document Manager">Documents</a><?php } ?>
+                            <?php if ($login->Role->Patient->sched) { ?>| <a href="schedule.php" title="Scheduling">Sched</a><?php } ?>
+                            <?php if ($login->Role->Patient->track) { ?>| <a href="tracking.php" title="Order Tracking Sheet">Track</a><?php } ?>
+                            <?php if ($login->Role->Artifact->scan) { ?>| <a href="scanning.php" title="Scanning">Scan</a><?php } ?>
+                            <?php if ($login->Role->Report->any()) { ?>| <a href="reporting.php" title="Reporting">Report</a><?php } ?>
+                            <?php if ($login->Role->Cerberus->superbill) { ?>| <a href="superbills.php" title="Billing">Billing</a><?php } ?>
+                          <?php } ?>
                         </div>
                       </td>
                     </tr>
@@ -95,59 +95,59 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
       </div>
     </div>
     <div id="stickies" <?=$popstyle?>>
-      <? if (! $login->isPapyrus()) { ?>
-        <? if ($page == 'welcome.php' && 0 == 1) { ?>
-          <? STICKY('downnote') ?>
+      <?php if (! $login->isPapyrus()) { ?>
+        <?php if ($page == 'welcome.php' && 0 == 1) { ?>
+          <?php STICKY('downnote') ?>
             <b>Note</b>: Clicktate will be down at 8:00PM EST (5PM PST) Friday night (11/16) for maintenance.<br/>
             The website will be down for approximately 30 minutes.
-          <? _STICKY('downnote') ?>
-        <? } ?>
-        <? if (1 == 2) { ?>
-          <? STICKY('downnote') ?>
+          <?php _STICKY('downnote') ?>
+        <?php } ?>
+        <?php if (1 == 2) { ?>
+          <?php STICKY('downnote') ?>
             <b>Note</b>: Clicktate will undergo scheduled maintenance at 9:30PM EST tonight.
             <br/>
             The website will be down for approximately 2-3 hours.
-          <? _STICKY('downnote') ?>
-        <? } ?>
-        <? if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
-          <? STICKY('countdown') ?>
+          <?php _STICKY('downnote') ?>
+        <?php } ?>
+        <?php if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
+          <?php STICKY('countdown') ?>
             Your trial account has <?=daysLeft($login->daysLeft) ?> remaining.
             <a href="registerCard.php">Activate now &gt;</a>
-          <? _STICKY('countdown', false) ?>
-        <? } else if (! $noAlert && $login->isInactive()) { ?>
-          <? STICKY('countdown') ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } else if (! $noAlert && $login->isInactive()) { ?>
+          <?php STICKY('countdown') ?>
             <?=$login->expireReason ?><br/> 
             At present you have limited (read-only) access to your information.<br/>
             <a href="registerCard.php">Update billing info and restore full access &gt;</a>
-          <? _STICKY('countdown', false) ?>
-        <? } else if (! $noAlert && $login->User->isPaying() && $login->daysLeft < 60) { ?>   
-          <? STICKY('countdown') ?>
-            <? if ($login->daysLeft < 0) { ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } else if (! $noAlert && $login->User->isPaying() && $login->daysLeft < 60) { ?>   
+          <?php STICKY('countdown') ?>
+            <?php if ($login->daysLeft < 0) { ?>
               Your credit card has expired. 
-            <? } else { ?>
+            <?php } else { ?>
               Your credit card on file expires in <?=daysLeft($login->daysLeft) ?>.
-            <? } ?>
+            <?php } ?>
             <a href="registerCard.php">Update card &gt;</a>
-          <? _STICKY('countdown', false) ?>
-        <? } ?>
-        <? if ($login->LoginReqs && ! $login->User->isOnTrial()) { ?>
-          <? foreach ($login->LoginReqs as $action => $reqs) { ?>
-            <? foreach ($reqs as $req) { ?>
-              <? $stid = 'req' . $req->userLoginReqId ?>
-              <? STICKY($stid) ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } ?>
+        <?php if ($login->LoginReqs && ! $login->User->isOnTrial()) { ?>
+          <?php foreach ($login->LoginReqs as $action => $reqs) { ?>
+            <?php foreach ($reqs as $req) { ?>
+              <?php $stid = 'req' . $req->userLoginReqId ?>
+              <?php STICKY($stid) ?>
                 <?=daysLeft($req->_daysLeft, true) ?> left for
                 <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?=$req->LoginReq->name ?> &gt;</a>
-              <? _STICKY($stid) ?>
-            <? } ?>
-          <? } ?>
-        <? } ?>
-        <? STICKY('legacy-sticky', 'display:none') ?>
+              <?php _STICKY($stid) ?>
+            <?php } ?>
+          <?php } ?>
+        <?php } ?>
+        <?php STICKY('legacy-sticky', 'display:none') ?>
           This patient has <i>legacy medications/allergies</i> that may need to be transferred to our partner ePrescribing system.
           <br><a href='javascript:Facesheet.pNewCrop("medentry")'>Click here to do this now</a>
-        <? _STICKY('legacy-sticky', false) ?>
-      <? } ?>
+        <?php _STICKY('legacy-sticky', false) ?>
+      <?php } ?>
     </div>
-    <? if ($login->LoginReqs) { ?>
+    <?php if ($login->LoginReqs) { ?>
       <div id="pop-not" class="pop" onmousedown="event.cancelBubble = true" style='width:680px; background:white'>
         <div id="pop-not-cap" class="pop-cap">
           <div id="pop-not-cap-text">
@@ -156,20 +156,20 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
           <a href="javascript:Pop.close()" class="pop-close"></a>
         </div>
         <div class="pop-content">
-          <? foreach ($login->LoginReqs as $action => $reqs) { ?>
-            <? foreach ($reqs as $req) { ?>
-              <? renderBoxStart('wide min-pad push') ?>
+          <?php foreach ($login->LoginReqs as $action => $reqs) { ?>
+            <?php foreach ($reqs as $req) { ?>
+              <?php renderBoxStart('wide min-pad push') ?>
                 <h4 style='color:red;margin-bottom:-0.5em'><?=$action . ': ' . $req->LoginReq->name ?></h4>
                 <div><?=$req->LoginReq->notifyText ?></div>
-              <? renderBoxEnd() ?>
-            <? } ?>
-          <? } ?>
+              <?php renderBoxEnd() ?>
+            <?php } ?>
+          <?php } ?>
           <div class="pop-cmd">
             <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
           </div>
         </div>
       </div>
-    <? } ?>
+    <?php } ?>
 <?
 function daysLeft($amt, $cap = false) {
 	$s = round($amt);
@@ -192,7 +192,7 @@ Header.load(
   <?=Messaging::getMyUnreadCt()?>, 
   <?=Messaging_DocStubReview::getUnreviewedCt()?>,
   <?=HL7_Labs::getInboxCt()?>);
-<? if ($sessId) { ?>
+<?php if ($sessId) { ?>
 Ajax.setSessionId('<?=$sessId ?>');
-<? } ?>
+<?php } ?>
 </script>

@@ -1,5 +1,5 @@
-<? $title = 'Clicktate - Tour' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Tour' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body">
   <div class="content center">
     <h1>Feature Tour and Screenshots</h1>
@@ -68,4 +68,4 @@ function video() {
   window.open("video.php", null, "height=600,width=850,resizable=0,statusbar=0");
 }
 </script>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>

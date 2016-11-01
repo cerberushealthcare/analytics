@@ -19,6 +19,7 @@ class Dao {
     //Logger::debug('| We entered Dao::query with the query ' . $sql . '|');
     $conn = static::open($db);
 	Logger::debug('Dao::query: Database has been opened. Running query ' . $sql);
+	Logger::debug('Dao::query: Users table detected Backtrace is ' . print_r(debug_backtrace(), true));
 	if (MyEnv::$IS_ORACLE) {
 		
 		//Oracle does not like backticks, but SQL does. Substitute them for a single quote before doing the query.
@@ -74,11 +75,9 @@ class Dao {
 		}*/
 		
 		//print_r($res);
-		//echo 'Res is ' . gettype($res) . ' ' . $res;
-		//Logger::debug('Dao::query: Backtrace is ' . print_r(debug_backtrace(), true));
-		/*echo '<pre>';
-		var_dump(debug_backtrace());
-		echo '</pre>';*/
+		Logger::debug('Dao.php: Res is ' . gettype($res) . ' ' . print_r($res, true));
+		
+		
 		//echo '<hr>';
 		oci_execute($res);
 		//echo '<br>Got resource.';

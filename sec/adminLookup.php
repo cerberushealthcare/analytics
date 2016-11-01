@@ -7,7 +7,7 @@ LoginSession::verify_forUser()->requires($login->admin);
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Lookup Configuration") ?>
+    <?php renderHead("Lookup Configuration") ?>
     <link rel="stylesheet" type="text/css" href="css/clicktate.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/schedule.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
@@ -79,7 +79,7 @@ UL.entry LABEL {
     <div id="curtain"></div>
     <form id="frm" method="post" action="facesheet.php">
     <div id="bodyContainer">
-      <? include "inc/header.php" ?>
+      <?php include "inc/header.php" ?>
       <div class="content">
         <h1 id="h1">Lookup Configuration</h1>
         <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -142,7 +142,7 @@ UL.entry LABEL {
               <h4 id="lde-table">Table</h4>
             </li>
             <li>
-              <label class="first2">Level</label><? renderCombo("lde-level123", LookupAdminDao::getLevels()) ?>
+              <label class="first2">Level</label><?php renderCombo("lde-level123", LookupAdminDao::getLevels()) ?>
               <input type="text" id="lde-level-id" size="2" />
               <span id="lde-level-name">APPLICATION</span>
             </li>
@@ -167,7 +167,7 @@ UL.entry LABEL {
       </div>
     </div>
     </form>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/footer.php" ?>
   </body>
 </html>
 <script>

@@ -8,17 +8,17 @@ $myUser = UserDao::getMyUser();
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Support: FAQ") ?>
+    <?php renderHead("Support: FAQ") ?>
     <link rel="stylesheet" type="text/css" href="css/clicktate.css?3" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/schedule.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/data-tables.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
-    <? if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
+    <?php if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
     <link rel="stylesheet" type="text/css" href="css/clicktate-font.css?3" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/pop-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/schedule-font.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/data-tables-font.css" media="screen" />
-    <? } ?>
+    <?php } ?>
 <!--[if lte IE 6]>    
     <link rel="stylesheet" type="text/css" href="css/pop-ie6.css?<?=Version::getUrlSuffix() ?>" />
 <![endif]-->    
@@ -31,7 +31,7 @@ $myUser = UserDao::getMyUser();
   <body>
     <form id="frm" method="post" action="welcome.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div class="content">
           <table border="0" cellpadding="0" cellspacing="0">
             <tr>
@@ -45,7 +45,7 @@ $myUser = UserDao::getMyUser();
           </table>
         </div>
       </div>
-      <? include "inc/footer.php" ?>
+      <?php include "inc/footer.php" ?>
     </form>
   </body>
 </html>

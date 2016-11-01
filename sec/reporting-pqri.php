@@ -7,8 +7,8 @@ LoginSession::verify_forUser()->requires($login->Role->Report->pqri);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Clinical Quality Measures', 'PqriPage') ?>
-    <? HEAD_UserSelector() ?>
+    <?php HEAD('Clinical Quality Measures', 'PqriPage') ?>
+    <?php HEAD_UserSelector() ?>
     <script language="JavaScript1.2" src="js/_ui/CcdDownloader.js"></script>
     <style>
 DIV.PageTile {
@@ -33,15 +33,15 @@ A.rep {
     </style>
   </head>
   <body onload='start()'>
-    <? BODY() ?>
+    <?php BODY() ?>
       <h1>Clinical Quality Measures</h1>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='tile'>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Doctors', 'Users') ?>
+  <?php CONSTANTS('Doctors', 'Users') ?>
 <script type='text/javascript'>
 function start() {
   PqriPage.load();

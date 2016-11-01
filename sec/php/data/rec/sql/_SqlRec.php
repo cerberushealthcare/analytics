@@ -116,9 +116,20 @@ abstract class SqlRec extends Rec {
 		//Logger::debug('Is ' . $upper . ' equal to ' . $reservedWord . '?');
 		if ($upper === $reservedWord) {
 			//Logger::debug('YES, changing ' . $word . '...');
-			$underscore = '';
-			if ($word[strlen($upper) - 1] !== '_' && $upper !== 'UID') $underscore = '_';
-			$word = '"' . $upper . $underscore . '"';
+			//$underscore = '';
+			//if ($word[strlen($upper) - 1] !== '_' && $upper !== 'UID') $underscore = '_';
+			if ($this->getSqlTable() == 'CLIENTS') {
+				if ($upper == 'UID') {
+					$word = 'UID';
+				}
+				else {
+					$word = $upper . '_';
+				}
+			}
+			else {
+				$word = $upper . '_';
+			}
+			//$word = '"' . $upper . $underscore . '"';
 			//Logger::debug('into ' . $word);
 			break;
 		}
@@ -313,7 +324,7 @@ abstract class SqlRec extends Rec {
     if ($ugid) 
       $this->userGroupId = $ugid;
     if ($mode != SaveModes::UPDATE_NO_VALIDATE) {
-		if (!$_POST['IS_BATCH'] == '1') {
+		if (isset($_POST['IS_BATCH']) && !$_POST['IS_BATCH'] == '1') {
 			$this->validateThrow();
 		}
 	}
@@ -326,7 +337,7 @@ abstract class SqlRec extends Rec {
       else  
         $mode = ($this->getPkValue() == null) ? SaveModes::INSERT : SaveModes::UPDATE;
 	
-	if (!$_POST['IS_BATCH']) $this->authenticate($mode);
+	if (isset($_POST['IS_BATCH']) && !$_POST['IS_BATCH']) $this->authenticate($mode);
     switch ($mode) {
       case SaveModes::INSERT:  
         $sql = $this->getSqlInsert();
@@ -340,6 +351,7 @@ abstract class SqlRec extends Rec {
         if ($this->shouldAudit()) 
           $before = AuditImage::from($this);
         $sql = $this->getSqlUpdate();
+		Logger::debug('_SqlRec::save(): Got the update SQL, about to do the query!');
         Dao::query($sql);
         break;
       case SaveModes::INSERT_ON_DUPE_UPDATE:
@@ -495,7 +507,7 @@ abstract class SqlRec extends Rec {
 			//$field = SqlRec::convertReservedOracleColumnWords($field, true);
 			//Logger::debug('_SqlRec getSqlInsert: Looking at field ' . $value);
 			//if ($value == 'uid') $value = 'uid_';
-			$converted = '"' . strtoupper($value) . '"';//SqlRec::convertReservedOracleWords($value, true, array('type'));
+			$converted = strtoupper($value);//SqlRec::convertReservedOracleWords($value, true, array('type'));
 			$converted = SqlRec::convertReservedOracleColumnWords($value, true);
 			unset($fields[$key]);
 			$fields[$converted] = $converted;
@@ -751,9 +763,16 @@ abstract class SqlRec extends Rec {
     $lfid = $this->getLastFid();
     foreach ($this as $fid => &$value) {
       if ($value !== null) {
-        if (is_scalar($value)) 
+        if (is_scalar($value)) {
           $value = CriteriaValue::equals($value);
-        $field = $tableAlias . '."' . current($fields) . '"';
+		}
+		
+		if (MyEnv::$IS_ORACLE) {
+			$field = $tableAlias . '."' . SqlRec::convertReservedOracleColumnWords(current($fields)) . '"';
+		}
+		else {
+			$field = $tableAlias . '."' . current($fields) . '"';
+		}
         $values[$field] = $value;
       }
       if ($fid == $lfid)
@@ -772,15 +791,51 @@ abstract class SqlRec extends Rec {
       $fields = array();
       $fids = $this->getSqlFids();
       foreach ($fids as $fid) {
-		/*if (MyEnv::$IS_ORACLE) {
-			$fid = $this->convertReservedOracleWords($fid, true);
-		}*/
+		//if (MyEnv::$IS_ORACLE) {
+		    //Logger::debug('_SqlRec::getSqlFields: Converting fid ' . $fid);
+			//$fid = $this->convertReservedOracleColumnWords($fid, true); //This was commented out before, no idea why but we need to do this so that oracle words are converted correctly.
+		//}
 		
         $fields[$fid] = self::camelToSql($fid);
+		
+		/*
+		 $fields = $this->getSqlFields();
+			if ($tableAlias == null) 
+			  $tableAlias = $this->getSqlTable();
+			$values = array();
+			$lfid = $this->getLastFid();
+			foreach ($this as $fid => &$value) {
+			  if ($value !== null) {
+				if (is_scalar($value)) {
+				  $value = CriteriaValue::equals($value);
+				}
+				
+				if (MyEnv::$IS_ORACLE) {
+					$field = $tableAlias . '."' . SqlRec::convertReservedOracleColumnWords(current($fields)) . '"';
+				}
+				else {
+					$field = $tableAlias . '."' . current($fields) . '"';
+				}
+				$values[$field] = $value;
+			  }
+			  if ($fid == $lfid)
+				break;
+			  next($fields);        
+			}
+			$values = count($values) ? CriteriaValue::_toSql($values) : null;
+			return $values;
+		*/
 		
 		
 	  }
     }
+	
+	if (MyEnv::$IS_ORACLE) {
+		foreach ($fields as $key => $value) {
+			$fields[$key] = SqlRec::convertReservedOracleColumnWords($value);
+		}
+	}
+	//Logger::debug('_SqlRec::getSqlFields: Returning ' . print_r($fields, true));
     return $fields;
   }
   /**
@@ -921,8 +976,9 @@ abstract class SqlRec extends Rec {
       $field = geta($fields, $fid);
       if ($field) {
 		if (MyEnv::$IS_ORACLE) {
-			$field = '"' . strtoupper($field) . '"';//$this->convertReservedOracleWords($field); //Look at a list of reserved words that Oracle has for field names and if this word is reserved, add a _ to the end.
-			if ($field == 'UID') $field == 'UID_';
+			$field = SqlRec::convertReservedOracleColumnWords($field, true);
+			//$field = '"' . strtoupper($field) . '"';//$this->convertReservedOracleWords($field); //Look at a list of reserved words that Oracle has for field names and if this word is reserved, add a _ to the end.
+			//if ($field == 'UID') $field == 'UID_';
 		}
 		
 		//$as = "$class.$fid";

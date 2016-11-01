@@ -10,8 +10,8 @@ LoginSession::verify_forUser();
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Profile & Settings', 'ProfilePage') ?>
-    <? HEAD_Profile() ?>
+    <?php HEAD('Profile & Settings', 'ProfilePage') ?>
+    <?php HEAD_Profile() ?>
     <style>
 H2 {
 font-size:13pt;
@@ -49,15 +49,15 @@ SPAN.ft {
     </style>
  </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <h1>Profile & Settings</h1>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Profile') ?>
-  <? START() ?>
+  <?php CONSTANTS('Profile') ?>
+  <?php START() ?>
 </html>

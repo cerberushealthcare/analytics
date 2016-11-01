@@ -5,14 +5,14 @@ $tos = MyEnv::$TOS_VERSION;
 set_include_path('../');
 ?>
 //
-<? $title = 'Clicktate - Terms of Service' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Terms of Service' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body" style="background:white">
   <div class="content center">
     <h1>Terms of Service</h1>
   </div>
   <div class="wm">      
-    <? include "sec/tos/$tos.html" ?>
+    <?php include "sec/tos/$tos.html" ?>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>

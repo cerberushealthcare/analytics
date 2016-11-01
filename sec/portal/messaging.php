@@ -7,17 +7,17 @@ require_once 'php/data/rec/sql/PortalMessaging.php';
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <? PHEAD('Messages', 'messaging.css') ?>
-    <? PHEAD_DATA('Messaging') ?>
+    <?php PHEAD('Messages', 'messaging.css') ?>
+    <?php PHEAD_DATA('Messaging') ?>
   </head>
   <body>
-    <? PPAGEHEAD($me) ?>
+    <?php PPAGEHEAD($me) ?>
     <div id='page'></div>
-    <? PPAGEFOOT() ?>
+    <?php PPAGEFOOT() ?>
   </body>
-  <? JsonConstants::writeGlobals('MsgThread','MsgPost','MsgInbox','DocStub') ?>
+  <?php JsonConstants::writeGlobals('MsgThread','MsgPost','MsgInbox','DocStub') ?>
   <script type='text/javascript'>
     C_MsgTypes = <?=jsonencode(PortalMessaging::getMyMsgTypes()) ?>;
   </script>
-  <? PPAGE('MessagingPage', $me) ?>
+  <?php PPAGE('MessagingPage', $me) ?>
 </html>

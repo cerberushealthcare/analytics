@@ -162,13 +162,26 @@ class Login extends SqlRec implements NoAuthenticate {
     return static::countRecentBadLogins(null, $uid, '5 DAY');
   }
   protected static function countRecentBadLogins($ip, $uid = null, $interval = '10 MINUTE') {
-    if ($interval == '10 MINUTE' && MyEnv::$IS_ORACLE) $interval = '"10" MINUTE';
-    $me = new static();
-    $me->ipAddress = $ip;
-    $me->uid = $uid;
-    $me->time = CriteriaValue::withinInterval($interval);
-    $me->result = CriteriaValue::greaterThan(static::RESULT_OK);
-    return static::count($me);
+    if (MyEnv::$IS_ORACLE) {
+		$query = "SELECT COUNT(*)
+					FROM logins T0
+					WHERE T0.time > sysdate + interval '10'  MINUTE
+					AND T0.ip_address = '" . $ip . "'
+					AND T0.result > 1;";
+		$res = Dao::query($query);
+		$arr = oci_fetch_assoc($res);
+		Logger::debug('UserLogins::countRecentBadLogins for Oracle: Got result array ' . print_r($arr, true));
+		return $arr[0]['COUNT(*)'];
+	}
+    //if ($interval == '10 MINUTE' && MyEnv::$IS_ORACLE) $interval = '"10" MINUTE';
+    else {
+		$me = new static();
+		$me->ipAddress = $ip;
+		$me->uid = $uid;
+		$me->time = CriteriaValue::withinInterval($interval);
+		$me->result = CriteriaValue::greaterThan(static::RESULT_OK);
+		return static::count($me);
+	}
   }
   static function getLastGoodLoginTime($uid) {
     $sql = "SELECT MAX(time) FROM logins WHERE uid='$uid' AND result=1";
@@ -401,12 +414,9 @@ class UserLogin extends UserRec implements NoAuthenticate {
   static function fetchByUid($uid) {
     $c = static::asCriteria($uid);
     $me = static::fetchOneBy($c);
-	echo 'fetchByUid called with ' . $uid . ': We will return ' . gettype($me) . ' ' . $me . '. print_red: <span style="color: blue;"><b>' . print_r($me) . '</b></span><br>';
+	Logger::debug('fetchByUid called with ' . $uid . ': We will return ' . print_r($me, true));
 	//echo 'fetchByUID: ME is ';
 	//var_dump($me);
-	echo '<pre>';
-	var_dump(debug_backtrace());
-	echo '</pre>';
     return $me;
   }
   static function fetchByUidTest($uid) {

@@ -12,7 +12,7 @@ $lu_print = LookupDao::getPrintCustom();
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Facesheet") ?>
+    <?php renderHead("Facesheet") ?>
     <link rel="stylesheet" type="text/css" href="css/clicktate.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/schedule.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/data-tables.css?<?=Version::getUrlSuffix() ?>" />
@@ -20,14 +20,14 @@ $lu_print = LookupDao::getPrintCustom();
     <link rel="stylesheet" type="text/css" href="css/template-pops.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/TabBar.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/pop.css?<?=Version::getUrlSuffix() ?>" />
-    <? if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
+    <?php if (! $myLogin->vistaFonts || $myLogin->ie == "6") { ?>
     <link rel="stylesheet" type="text/css" href="css/clicktate-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/schedule-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/pop-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/data-tables-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/facesheet-font.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/template-pops-font.css?<?=Version::getUrlSuffix() ?>" />
-    <? } ?>
+    <?php } ?>
 <!--[if lte IE 6]>    
     <link rel="stylesheet" type="text/css" href="css/pop-ie6.css?<?=Version::getUrlSuffix() ?>" />
 <![endif]-->    
@@ -84,7 +84,7 @@ $lu_print = LookupDao::getPrintCustom();
     <div id="curtain"></div>
     <form id="frm" method="post" action="facesheet.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div class="content">
           <div id="print">
             <table border="0" cellpadding="0" cellspacing="0" style="width:100%">
@@ -104,7 +104,7 @@ $lu_print = LookupDao::getPrintCustom();
           <div id="fs-refresh" style="display:none">
             <a href="javascript:refreshFs()">Facesheet has been updated. Click to refresh page.</a>
           </div>
-          <? renderBoxStart("wide min-pad") ?>
+          <?php renderBoxStart("wide min-pad") ?>
             <div id="print">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
@@ -227,11 +227,11 @@ $lu_print = LookupDao::getPrintCustom();
                 </td>
               </tr>
             </table>
-          <? renderBoxEnd() ?>
+          <?php renderBoxEnd() ?>
           <table border="0" cellpadding="0" cellspacing="0" width="100%" class="push">
             <tr>
               <td style="width:38%; vertical-align:top">
-                <? renderBoxStart("wide min-pad", "", "dia-box", "dia-boxc") ?>
+                <?php renderBoxStart("wide min-pad", "", "dia-box", "dia-boxc") ?>
                   <div id="print">
                     <a href="javascript:" onclick="showFspDia()" class="fscap">Diagnoses</a>
                     <div id="dia-div" class="fstab noscroll">
@@ -244,11 +244,11 @@ $lu_print = LookupDao::getPrintCustom();
                       </table>
                     </div>
                   </div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
               <td style="width:7px;" nowrap="nowrap"></td>
               <td style="width:62%; vertical-align:top">
-                <? renderBoxStart("wide min-pad", "", "med-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "med-box") ?>
                   <a href="javascript:" onclick="showFspMed()" class="fscap">Current Meds</a>
                   <div id="med-div" class="fstab noscroll">
                     <table id="med-tbl" class="fsb">
@@ -276,7 +276,7 @@ $lu_print = LookupDao::getPrintCustom();
                     <span>&nbsp;</span>
                   </div>
                   -->
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
             </tr>
           </table>
@@ -284,36 +284,36 @@ $lu_print = LookupDao::getPrintCustom();
             <table border="0" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td style="width:36%; text-align:center">
-                  <? renderBoxStart("wide min-pad push", null, "medhx-box") ?>
+                  <?php renderBoxStart("wide min-pad push", null, "medhx-box") ?>
                     <a href="javascript:" onclick="showFspHx(0)" class="fscap">Medical / Surgical History</a>
                     <table>
                       <tr>
                         <td><div id="fshx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td style="width:5px" nowrap="nowrap"></td>
                 <td style="width:28%; text-align:center">
-                  <? renderBoxStart("wide min-pad push", null, "famhx-box") ?>
+                  <?php renderBoxStart("wide min-pad push", null, "famhx-box") ?>
                     <a href="javascript:" onclick="showFspFamhx()" class="fscap">Family History</a>
                     <table>
                       <tr>
                         <td><div id="famhx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td style="width:5px" nowrap="nowrap"></td>
                 <td style="width:36%; text-align:center">
-                  <? renderBoxStart("wide min-pad push", null, "sochx-box") ?>
+                  <?php renderBoxStart("wide min-pad push", null, "sochx-box") ?>
                     <a href="javascript:" onclick="showFspSochx()" class="fscap">Psycho-Social History</a>
                     <table>
                       <tr>
                         <td><div id="sochx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
               </tr>
             </table>
@@ -345,7 +345,7 @@ $lu_print = LookupDao::getPrintCustom();
               </table>
             </div>
           </div>
-          <? renderBoxStart("wide min-pad push", "", "hm-box") ?>
+          <?php renderBoxStart("wide min-pad push", "", "hm-box") ?>
             <div id="print" class="no-widow">
               <a id="hmcap" href="javascript:" onclick="showFspHm()" class="fscap">Health Maintenance / Recurring Tests / Procedures</a>
             </div>
@@ -382,11 +382,11 @@ $lu_print = LookupDao::getPrintCustom();
               <a href="javascript:editHm()" class="cmd new disabled" disabled="disabled">Add Health Maintenance...</a>
             </div>
             -->
-          <? renderBoxEnd() ?>
+          <?php renderBoxEnd() ?>
           <table border="0" cellpadding="0" cellspacing="0" width="100%" class="push">
             <tr>
               <td id="td-his-1" style="width:60%; vertical-align:top">
-                <? renderBoxStart("wide min-pad", "", "his-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "his-box") ?>
                   <a href="javascript:" onclick="showFspHis()" class="fscap">Documentation / Visit History</a>
                   <div id="his-div" class="fstab doc-vit">
                     <table id="his-tbl" class="fsgr single">
@@ -394,11 +394,11 @@ $lu_print = LookupDao::getPrintCustom();
                       </tbody>
                     </table>
                   </div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
               <td id="td-his-2" style="width:7px;" nowrap="nowrap"></td>
               <td id="td-vit" style="width:40%; vertical-align:top">
-                <? renderBoxStart("wide min-pad", "", "vit-box", "vit-boxc") ?>
+                <?php renderBoxStart("wide min-pad", "", "vit-box", "vit-boxc") ?>
                   <div id="print" class="no-widow">
                     <a href="javascript:" onclick="showFspVit()" class="fscap">Vitals</a>
                   </div>
@@ -410,7 +410,7 @@ $lu_print = LookupDao::getPrintCustom();
                       </table>
                     </div>
                   </div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
             </tr>
           </table>
@@ -966,7 +966,7 @@ $lu_print = LookupDao::getPrintCustom();
                         <label>Interval</label>
                         <span class="q qd"><a id="hme-interval" href="javascript:" onclick="editHmeInterval()" class="df">_______</a></span>
                         <label>Next Due</label>
-                        <? renderQuestionField("hme-next-due", "hmNextDateCallback", null, "q qd") ?>
+                        <?php renderQuestionField("hme-next-due", "hmNextDateCallback", null, "q qd") ?>
                       </li>
                     </ul>
                   </div>
@@ -1234,7 +1234,7 @@ $lu_print = LookupDao::getPrintCustom();
           <ul class="entry q">
             <li>
               <label class="first">Date</label>
-              <? renderCalendar("ve-date") ?>
+              <?php renderCalendar("ve-date") ?>
             </li>
           </ul>
           <ul id="ul-ve-fields" class="entry">
@@ -1313,13 +1313,13 @@ $lu_print = LookupDao::getPrintCustom();
         </div>
       </div>
     </form>
-    <? include "inc/footer.php" ?>
-    <? include "inc/ajax-pops/new-open.php" ?>
-    <? include "inc/ajax-pops/calendar.php" ?>
-    <? include "inc/ajax-pops/working-confirm.php" ?>
-    <? include "inc/ajax-pops/doc-viewer.php" ?>
-    <? include "inc/ajax-pops/template-pops.php" ?>
-    <? include "inc/engine-download-form.html" ?>
+    <?php include "inc/footer.php" ?>
+    <?php include "inc/ajax-pops/new-open.php" ?>
+    <?php include "inc/ajax-pops/calendar.php" ?>
+    <?php include "inc/ajax-pops/working-confirm.php" ?>
+    <?php include "inc/ajax-pops/doc-viewer.php" ?>
+    <?php include "inc/ajax-pops/template-pops.php" ?>
+    <?php include "inc/engine-download-form.html" ?>
   </body>
 </html>
 <?
@@ -1355,7 +1355,7 @@ setTimeout("getFacesheet(<?=$_GET["id"] ?>)", 50);
 var fs;
 loadSelect($("hmcint-int"), intComboArray(), null, "");
 // registerBodyFocus(pageFocus);
-<? timeoutCallbackJs("overlayWorking(false);") ?>
+<?php timeoutCallbackJs("overlayWorking(false);") ?>
 function showClient(id) {
   window.location.href = "facesheet.php?id=" + id;
 }

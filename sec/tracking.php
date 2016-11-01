@@ -11,9 +11,9 @@ LoginSession::verify_forUser()->requires($login->Role->Patient->track);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Tracking', 'TrackingPage') ?>
-    <? HEAD_OrderEntry() ?>
-    <? HEAD_DocPreview() ?>
+    <?php HEAD('Tracking', 'TrackingPage') ?>
+    <?php HEAD_OrderEntry() ?>
+    <?php HEAD_DocPreview() ?>
     <script language='JavaScript1.2' src='js/ui.js?<?=Version::getUrlSuffix() ?>'></script>
     <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
     <link rel="stylesheet" type="text/css" href="css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>" />
@@ -42,7 +42,7 @@ LoginSession::verify_forUser()->requires($login->Role->Patient->track);
   <body onload='start()'>
     <div id='bodyContainer'>
       <div id='curtain'></div>
-      <? include 'inc/header.php' ?>
+      <?php include 'inc/header.php' ?>
       <div id='bodyContent' class='content'>
         <table class='h'>
           <tr>
@@ -50,17 +50,17 @@ LoginSession::verify_forUser()->requires($login->Role->Patient->track);
             <td></td>
           </tr>
         </table>
-        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
           <div id='tracking-table-tile'>
             &nbsp; <!-- TrackingTable -->
           </div>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
       </div>
       <div id='bottom'><img src='img/brb.png' /></div>
     </div>      
-    <? include 'inc/footer.php' ?>
+    <?php include 'inc/footer.php' ?>
   </body>
-  <? CONSTANTS('Tracking') ?>
+  <?php CONSTANTS('Tracking') ?>
 <script type='text/javascript'>
 C_Lookups = <?=LookupRec::getJsonLists(LookupAreas::get())?>;
 function start() {

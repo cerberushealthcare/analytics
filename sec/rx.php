@@ -1,4 +1,4 @@
-<? 
+<?php 
 require_once "inc/requireLogin.php";
 require_once "inc/uiFunctions.php";
 ?>

@@ -76,7 +76,7 @@ $focus="id";
         <table border='0' cellpadding='0' cellspacing'0'>
           <tr>
             <td class='wm'>
-              <? renderBoxStart() ?>
+              <?php renderBoxStart() ?>
                 <div id="login">
                   <form id="frm" method="post" action="forgot-pw.php">
                     <div class="l" style="margin-top:10px">
@@ -89,7 +89,7 @@ $focus="id";
                           <td width="10"></td>
                           <td>
                             <label>State</label><br/>
-                            <? renderCombo("state", $form->states, $form->state) ?>
+                            <?php renderCombo("state", $form->states, $form->state) ?>
                           </td>
                         </tr>
                       </table>
@@ -99,7 +99,7 @@ $focus="id";
                     </div>
                   </form>
                 </div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>

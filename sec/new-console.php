@@ -50,10 +50,10 @@ if ($strict)
     <link rel='stylesheet' type='text/css' href='js/_ui/DocPreview.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='js/_ui/ProcResultHistory.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='js/_ui/LabMessagePop.css?<?=Version::getUrlSuffix() ?>' />
-    <? if (! get($login->ui, 'tablet')) { ?>
+    <?php if (! get($login->ui, 'tablet')) { ?>
       <link rel="stylesheet" type="text/css" href="css/xb/_hover.css?<?=Version::getUrlSuffix() ?>" />
       <link rel="stylesheet" type="text/css" href="css/xb/console_hover.css?<?=Version::getUrlSuffix() ?>" media="screen" />
-    <? } ?>    
+    <?php } ?>    
     <script language='JavaScript1.2' src='js/_lcd_core.js?<?=Version::getUrlSuffix() ?>'></script>
     <script language='JavaScript1.2' src='js/_lcd_html.js?<?=Version::getUrlSuffix() ?>'></script>
     <script language="JavaScript1.2" src="js/_ui/Console.js?<?=Version::getUrlSuffix() ?>"></script>
@@ -103,14 +103,14 @@ if ($strict)
     <script type='text/javascript' src='js/_ui/Scanning.js?<?=Version::getUrlSuffix() ?>'></script>
     <script type='text/javascript' src='js/_rec/Procedures.js?<?=Version::getUrlSuffix() ?>'></script>
     <script type="text/javascript" src="../tiny_mce/tiny_mce.js"></script>
-    <? if ($login->admin) { ?>
+    <?php if ($login->admin) { ?>
     <style>
 DIV.h2 {
   display:block;
   background-color:#c0c0c0;
 }
     </style>
-    <? } ?>
+    <?php } ?>
   </head>
   <body id="console-body" onscroll="bodyScroll()" onmousedown="bodyMouseDown()" ontouchend="bodyMouseDown()" onorientationchange="resize()" onresize="resize()">
     <div id="curtain" style='visibility:hidden'></div>
@@ -176,7 +176,7 @@ DIV.h2 {
           <ul>
             <li><a href="javascript:" id="actionManual" hidefocus="hidefocus">Download User Manual</a></li>
           </ul>
-        </div><a id="menu-help" href="javascript:" hidefocus="hidefocus">Help</a><? if ($login->admin) { ?><div id="dropmenu-admin" class="dropmenu">
+        </div><a id="menu-help" href="javascript:" hidefocus="hidefocus">Help</a><?php if ($login->admin) { ?><div id="dropmenu-admin" class="dropmenu">
           <ul>
             <li><a href="javascript:" id="actionViewTags" class="check-off" hidefocus="hidefocus">Show ID Tags</a></li>
             <li class="break"></li>
@@ -188,7 +188,7 @@ DIV.h2 {
             <li class="break"></li>
             <li><a href="javascript:" id="actionTabletResize" hidefocus="hidefocus">Resize as Tablet</a></li>
           </ul>
-        </div><a id="menu-admin" href="javascript:" hidefocus="hidefocus">Admin</a><? } ?>
+        </div><a id="menu-admin" href="javascript:" hidefocus="hidefocus">Admin</a><?php } ?>
       </div>
       <div id="toolbar" onmousedown="toolPush()" onmouseup="toolRelease()" onmouseout="toolRelease()" onclick="toolClick()">
       <!-- 
@@ -203,19 +203,19 @@ DIV.h2 {
         <a href="javascript:" id="actionOrder" hidefocus="hidefocus" title="Generate order sheet">Orders</a><!-- <a href="javascript:" id="actionVisitSum" hidefocus="hidefocus" title="Generate patient visit summary">Visit Summary</a> -->
         </span>
         <span class='sep'>
-        <a href="javascript:" id="actionDownloadPdf" hidefocus="hidefocus" title="Download note as PDF document">Download</a><? if (1==2) {?><a href="javascript:" id="actionDownload" hidefocus="hidefocus" title="Download note as Word document">Download</a><? } ?><a href="javascript:" id="actionCopy" hidefocus="hidefocus" title="Copy note to clipboard">Clipboard</a>
+        <a href="javascript:" id="actionDownloadPdf" hidefocus="hidefocus" title="Download note as PDF document">Download</a><?php if (1==2) {?><a href="javascript:" id="actionDownload" hidefocus="hidefocus" title="Download note as Word document">Download</a><?php } ?><a href="javascript:" id="actionCopy" hidefocus="hidefocus" title="Copy note to clipboard">Clipboard</a>
         </span>
         <span class='sep'>
         <a href="javascript:" id="actionClear" hidefocus="hidefocus" title="Clear document">Clear</a>
         </span>
         <span class='sep'>
         <a href="javascript:" id="actionUndo" hidefocus="hidefocus" title="Undo last action">Undo</a><a href="javascript:" id="actionDel" hidefocus="hidefocus" title="Delete selected text">Delete</a><a href="javascript:" id="actionFree" hidefocus="hidefocus" title="Toggle freetext tags on/off">Freetext</a>
-        <? if (1==2 && $login->admin) { ?>
+        <?php if (1==2 && $login->admin) { ?>
           <span id="admin">
             <span class="sep"></span>
             <a href="javascript:" id="actionViewTags" class="check-off" class="on" hidefocus="hidefocus">Tags</a><a href="javascript:" id="actionActions" hidefocus="hidefocus">Actions</a><a href="javascript:" id="actionHtml" hidefocus="hidefocus">HTML</a><a href="javascript:" id="actionTimer" hidefocus="hidefocus">Log</a>
           </span>
-        <? } ?>
+        <?php } ?>
         </span>
         <span>
         <a href="javascript:" id="actionExit" hidefocus="hidefocus" title="Exit console">Exit Console</a>
@@ -366,13 +366,13 @@ DIV.h2 {
         </div>
       </div>
     </div>
-    <? include "inc/ajax-pops/template-pops.php" ?>
-    <? include "inc/ajax-pops/icd-pop.php" ?>
-    <? include "inc/ajax-pops/new-open.php" ?>
-    <? include "inc/ajax-pops/custom-console.php" ?>
-    <? include "inc/ajax-pops/template-explorer.php" ?>
-    <? include "js/pops/inc/OrderSheet.php" ?>
-    <form style="margin:0" id="docForm" method="post" action="serverDoc<? if ($login->userGroupId == 24) { ?>_Lidagoster<? } ?>.php">
+    <?php include "inc/ajax-pops/template-pops.php" ?>
+    <?php include "inc/ajax-pops/icd-pop.php" ?>
+    <?php include "inc/ajax-pops/new-open.php" ?>
+    <?php include "inc/ajax-pops/custom-console.php" ?>
+    <?php include "inc/ajax-pops/template-explorer.php" ?>
+    <?php include "js/pops/inc/OrderSheet.php" ?>
+    <form style="margin:0" id="docForm" method="post" action="serverDoc<?php if ($login->userGroupId == 24) { ?>_Lidagoster<?php } ?>.php">
       <input id="docDos" type="hidden" name="docDos" />
       <input id="docText" type="hidden" name="doc" />
       <input id="docHead" type="hidden" name="head" />
@@ -386,9 +386,9 @@ DIV.h2 {
       <input id="docLeftHead" type="hidden" name="lefthead" />
     </form>
     <button id="but" style="display:none"></button>
-    <? if ($login->admin) { ?>
-      <? include "inc/ajax-pops/debug.php" ?>
-    <? } ?>
+    <?php if ($login->admin) { ?>
+      <?php include "inc/ajax-pops/debug.php" ?>
+    <?php } ?>
 <div id='pop-ss' class='pop' onmousedown='event.cancelBubble=true' style='width:300px'>
   <div id='pop-ss-cap' class='pop-cap'>
     <div>
@@ -416,8 +416,8 @@ DIV.h2 {
     <div id="page-includes"></div>
   </body>
 </html>
-<? CONSTANTS('Templates') ?>
-<? JsonConstants::writeGlobals('Address','Client','PortalUser','DocStub','ScanIndex','MsgInbox','MsgPost','MsgThread') ?>
+<?php CONSTANTS('Templates') ?>
+<?php JsonConstants::writeGlobals('Address','Client','PortalUser','DocStub','ScanIndex','MsgInbox','MsgPost','MsgThread') ?>
 <script>
 //window.moveTo(0,0);
 //window.resizeTo(screen.width,screen.height);
@@ -584,10 +584,10 @@ var perm = {
     "pap":<?=toString($login->isPapyrus()) ?>,
     "ro":<?=toString(! $login->Role->Artifact->noteCreate) ?>};
 var toolUndo = menu$$("actionUndo")[1];
-<? if (! $login->User->isDoctor()) { ?>
+<?php if (! $login->User->isDoctor()) { ?>
 disable("actionSign");
 disable("actionDelete");
-<? } ?>
+<?php } ?>
 resetSearch();
 //Html.Window.scrollable = function() {}
 doWork("startup()", "Initializing", null, true);
@@ -602,7 +602,7 @@ function startup() {
 function bodyScroll() {
   scroll(0, 0);
 }
-<? if ($login->admin) { ?>
+<?php if ($login->admin) { ?>
 document.styleSheets[document.styleSheets.length - 1].disabled = true;
 function actionHtml() { 
   setText("pop-debug-content", $("doc").innerHTML);
@@ -716,11 +716,11 @@ function tlog(msg, startProc) {
   }
   tmsgs += ("000" + e.toFixed(2)).slice(-6) + " +" + ("   " + ec.toFixed(2)).slice(-6) + "): " + msg + "<br/>";
 }
-<? } else { ?>
+<?php } else { ?>
 function cloga() {}
 function clog() {}
 function tlog() {}
-<? } ?>
+<?php } ?>
 function parlist_onmouseover() {
   var e = event.srcElement;
   if (e && e.tagName == 'A')

@@ -74,7 +74,7 @@ require_once "inc/uiFunctions.php";
     <ul class="entry">
       <li>
         <label class="first6">Date of Service</label>
-        <? renderCalendar("rn-dos") ?>
+        <?php renderCalendar("rn-dos") ?>
       </li>
       <li>
         <label class="first6">Send To</label>
@@ -84,7 +84,7 @@ require_once "inc/uiFunctions.php";
       </li>
       <li>
         <label class="first6">Override Facesheet?</label>
-        <? renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
+        <?php renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
       </li>
     </ul>
     <div class="pop-cmd" style="">
@@ -119,7 +119,7 @@ require_once "inc/uiFunctions.php";
     <ul class="entry">
       <li>
         <label class="first2">Date of Service</label>
-        <? renderCalendar("nn-dos") ?>
+        <?php renderCalendar("nn-dos") ?>
       </li>
       <li>
         <label class="first2">Send To</label>

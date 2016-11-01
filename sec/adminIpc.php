@@ -9,7 +9,7 @@ LoginSession::verify_forUser()->requires($login->admin);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? renderHead('IProcCodes') ?>
+    <?php renderHead('IProcCodes') ?>
     <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>' />
@@ -36,7 +36,7 @@ LoginSession::verify_forUser()->requires($login->admin);
   <body onload="start()"> 
     <div id='bodyContainer'>
       <div id='curtain'></div>
-      <? include 'inc/header.php' ?>
+      <?php include 'inc/header.php' ?>
       <div id='bodyContent' class='content'>
         <table class='h'>
           <tr>
@@ -44,15 +44,15 @@ LoginSession::verify_forUser()->requires($login->admin);
             <td></td>
           </tr>
         </table>
-        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
           <div id='ipc-list'>
             <div class='spacer'>&nbsp;</div>
           </div>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
       </div>
       <div id='bottom'><img src='img/brb.png' /></div>
     </div>      
-    <? include 'inc/footer.php' ?>
+    <?php include 'inc/footer.php' ?>
   </body>
 <script type='text/javascript'>
 var C_Ipc = <?=Ipc::getStaticJson() ?>;

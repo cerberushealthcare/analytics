@@ -1,5 +1,5 @@
-<? $title = 'Clicktate - Pricing' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Pricing' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body">
   <div class="content center">
     <h1>Pricing</h1>
@@ -162,7 +162,7 @@
     </p>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>
 
 
 

@@ -1,4 +1,4 @@
-<? // Customize Appt Type ?>
+<?php // Customize Appt Type ?>
 <div id="pop-cat" class="pop" onmousedown="event.cancelBubble = true">
   <div id="pop-cat-cap" class="pop-cap">
     <div id="pop-cat-cap-text"> 
@@ -20,7 +20,7 @@
     </div>
   </div>
 </div>
-<? // Customize Sched Status ?>
+<?php // Customize Sched Status ?>
 <div id="pop-css" class="pop" onmousedown="event.cancelBubble = true">
   <div id="pop-css-cap" class="pop-cap">
     <div id="pop-css-cap-text"> 
@@ -42,8 +42,8 @@
     </div>
   </div>
 </div>
-<? // Color Palette ?>
-<? $colors = LookupDao::getApptColors(); ?>
+<?php // Color Palette ?>
+<?php $colors = LookupDao::getApptColors(); ?>
 <div id="pop-cc" class="pop" onmousedown="event.cancelBubble = true">
   <div id="pop-cc-cap" class="pop-cap">
     <div id="pop-cc-cap-text"> 
@@ -56,9 +56,9 @@
       <div class="pop-frame-content">
         <ul class="entry" onclick="cssUlClick()">
           <li id="pop-cc-li">
-            <? for ($i = 0; $i < count($colors); $i++) { ?>
+            <?php for ($i = 0; $i < count($colors); $i++) { ?>
               <a class="cmd none" style="background-color:<?=$colors[$i] ?>" href="javascript:setColor('<?=$colors[$i] ?>')" >&nbsp;&nbsp;&nbsp;&nbsp;</a>
-            <? } ?>
+            <?php } ?>
           </li>  
         </ul>
       </div>
@@ -68,7 +68,7 @@
     </div>
   </div>
 </div>
-<? // Customize Sched Profile ?>
+<?php // Customize Sched Profile ?>
 <div id="pop-csp" class="pop" onmousedown="event.cancelBubble = true">
   <div id="pop-csp-cap" class="pop-cap">
     <div id="pop-csp-cap-text"> 
@@ -111,9 +111,9 @@
           </li>
           <li>
             <label class="first3">From</label>
-            <? renderClock("csp-start", "", true) ?>
+            <?php renderClock("csp-start", "", true) ?>
             <label>To</label>
-            <? renderClock("csp-end", "", true) ?>
+            <?php renderClock("csp-end", "", true) ?>
             <label>Size</label>
             <select id="csp-size">
               <option value="10">10 minute</option>

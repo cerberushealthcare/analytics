@@ -85,46 +85,46 @@ function showPars() {
     var eff = (p.effective == "0000-00-00 00:00:00") ? "" : " (" + p.effective + ")";
     var desc = (p.current) ? p.desc + eff : "<span style='color:#a9a9a9'>" + p.desc + eff + "</span>";
     var sty = (p.current) ? "" : " style='color:#a9a9a9'";
-    <? if ($level == "2") { ?>
+    <?php if ($level == "2") { ?>
       h += "<tr>";
       h += "<td><input name=chk value='" + p.uid + "' type=checkbox></td><td width=2></td>";
       h += "<td nowrap>P:<b>" + p.uid + "</b></td><td width=15 nowrap></td><td nowrap>" + desc + "</td>";
       h += "</tr>";
-    <? } else { ?>
+    <?php } else { ?>
       var href = "javascript:getQuestions(" + pid + ")";
       h += "<tr style='padding-bottom:2px'>";
       h += "<td><a href='" + href + "'><img src='img/folder.gif'></a></td><td width=2 nowrap></td>";
       h += "<td nowrap><a href='" + href + "'" + sty + ">P:<b>" + p.uid + "</b></a></td><td width=15 nowrap></td><td nowrap>" + desc + "</td>";
       h += "</tr>";
-    <? } ?>
+    <?php } ?>
   }
   document.getElementById("content").innerHTML = h;
-  <? if ($level == "2") { ?>
+  <?php if ($level == "2") { ?>
     copy.style.display = "inline";
-  <? } ?>
+  <?php } ?>
 }
 function showQuestions() {
   doBreadcrumb();
   var h ="<table border=0 cellpadding=0 cellspacing=0>";
   for (var qid in par.questions) {
     var q = par.questions[qid];
-    <? if ($level == "3") { ?>
+    <?php if ($level == "3") { ?>
       h += "<tr>";
       h += "<td><input name=chk value='" + <?if($method){?>q.uid<?}else{?>q.id<?}?> + "' type=checkbox></td><td width=2></td>";
       h += "<td nowrap>Q:<b>" + q.uid + "</b></td><td width=15 nowrap></td><td nowrap>" + q.desc + "</td>";
       h += "</tr>";
-    <? } else { ?>
+    <?php } else { ?>
       var href = "javascript:getQuestion(" + qid + ")";
       h += "<tr style='padding-bottom:2px'>";
       h += "<td><a href='" + href + "'><img src='img/folder.gif'></a></td><td width=2 nowrap></td>";
       h += "<td nowrap><a href='" + href + "'>Q:<b>" + q.uid + "</b></a></td><td width=15 nowrap></td><td nowrap>" + q.desc + "</td>";
       h += "</tr>";
-    <? } ?>
+    <?php } ?>
   }
   document.getElementById("content").innerHTML = h;
-  <? if ($level == "3") { ?>
+  <?php if ($level == "3") { ?>
     copy.style.display = "inline";
-  <? } ?>
+  <?php } ?>
 }
 function showOptions() {
   doBreadcrumb();
@@ -154,40 +154,40 @@ function copyToParent() {
   if (action != "") {
     action += "<?=$delim ?>";
   }
-  <? if ($method) { ?>
+  <?php if ($method) { ?>
     action += "<?=$method ?>(";
-  <? } else { ?>
+  <?php } else { ?>
     action += "[";
-  <? } ?>
+  <?php } ?>
   var first = true;
   for (var i = 0; i < chks.length; i++) {
     if (chks[i].checked) {
       if (! first) {
-        <? if ($method) { ?>
+        <?php if ($method) { ?>
           action += ")<?=$delim ?><?=$method ?>(";
-        <? } else { ?>
+        <?php } else { ?>
           action += '<?=$delim?>';
-        <? } ?>
+        <?php } ?>
       }
-      <? if ($method) { ?>
-        <? if ($level == 2) { ?>
+      <?php if ($method) { ?>
+        <?php if ($level == 2) { ?>
           action += section.uid + "." + chks[i].value;
-        <? } else if ($level == 3) { ?>
+        <?php } else if ($level == 3) { ?>
           action += section.uid + "." + par.uid + "." + chks[i].value;
-        <? } else { ?>
+        <?php } else { ?>
           action += section.uid + "." + par.uid + "." + question.uid + "." + chks[i].value;
-        <? } ?>
-      <? } else { ?>
+        <?php } ?>
+      <?php } else { ?>
         action += chks[i].value;
-      <? } ?>
+      <?php } ?>
       first = false;
     }
   }
-  <? if ($method) { ?>
+  <?php if ($method) { ?>
     action += ")";
-  <? } else { ?>
+  <?php } else { ?>
     action += ']';
-  <? } ?>
+  <?php } ?>
   fld.value = action;
   if (window.opener.makeDirty)
     window.opener.makeDirty();

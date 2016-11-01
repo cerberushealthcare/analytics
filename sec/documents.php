@@ -11,16 +11,16 @@ $form = new DocumentsForm("documents.php");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Document Manager") ?>
+    <?php renderHead("Document Manager") ?>
     <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" media="screen" />
     <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/EntryForm.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/template-pops.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/data-tables.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/documents.css?<?=Version::getUrlSuffix() ?>' />
-    <? if ($login->isPapyrus()) { ?>
+    <?php if ($login->isPapyrus()) { ?>
     <link rel="stylesheet" type="text/css" href="css/papyrus.css?<?=Version::getUrlSuffix() ?>" />
-    <? } ?>
+    <?php } ?>
     <script type='text/javascript' src='js/pages/Pop.js?<?=Version::getUrlSuffix() ?>'></script>
     <script language="JavaScript1.2" src="js/old-ajax.js?<?=Version::getUrlSuffix() ?>"></script>
     <script language="JavaScript1.2" src="js/yahoo-min.js?<?=Version::getUrlSuffix() ?>"></script>
@@ -47,7 +47,7 @@ $form = new DocumentsForm("documents.php");
     <div id="curtain"></div>
     <form id="frm" method="post" action="documents.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div id='bodyContent' class="content">
           <table border="0" cellpadding="0" cellspacing="0" style="width:100%">
             <tr>
@@ -59,36 +59,36 @@ $form = new DocumentsForm("documents.php");
                 </table>
                 <div id="searching">
                   Showing:
-                  <? if ($form->isNotesView()) { ?>
-                    <? if (! $form->isUnsignedView()) { ?>
+                  <?php if ($form->isNotesView()) { ?>
+                    <?php if (! $form->isUnsignedView()) { ?>
                       <em>All notes for</em>
-                    <? } else { ?>
+                    <?php } else { ?>
                       <em>Unsigned notes for</em>
-                    <? } ?>
-                    <? renderCombo("users", $form->users, $form->userId, "onchange='userChange()'") ?>
+                    <?php } ?>
+                    <?php renderCombo("users", $form->users, $form->userId, "onchange='userChange()'") ?>
                     &nbsp;
-                    <? if (! $form->isUnsignedView()) { ?>
+                    <?php if (! $form->isUnsignedView()) { ?>
                       <a href="documents.php?pf1=closed&pfv1=0&pfe1=2&u=<?=$form->userId ?>" class="icon big view">Show <b>unsigned notes only</b></a>
-                    <? } else { ?>
+                    <?php } else { ?>
                       <a href="documents.php?u=<?=$form->userId ?>" class="icon big view">Show <b>all notes</b></a>
-                    <? } ?>
-                  <? } else { ?>
+                    <?php } ?>
+                  <?php } else { ?>
                     <em>Customized templates</em>
-                  <? } ?>
+                  <?php } ?>
                 </div>
               </td>
               <td style="text-align:right; vertical-align:bottom; padding-bottom:2px">
-                <? if ($form->isNotesView()) { ?>
-                  <? if ($login->Role->Artifact->templates) { ?>
+                <?php if ($form->isNotesView()) { ?>
+                  <?php if ($login->Role->Artifact->templates) { ?>
                     <a class="icon big go" href="documents.php?v=1">Manage <b>custom templates</b></a>
-                  <? } ?>
-                <? } else { ?>
+                  <?php } ?>
+                <?php } else { ?>
                   <a class="icon big go" href="documents.php?v=0">Manage <b>notes</b></a>
-                <? } ?>
+                <?php } ?>
               </td>
             </tr>
           </table>
-          <? renderBoxStart("wide small-pad") ?>
+          <?php renderBoxStart("wide small-pad") ?>
             <div class="nav">
               <table cellpadding="0" cellspacing="0">
                 <tr>
@@ -105,7 +105,7 @@ $form = new DocumentsForm("documents.php");
               </table>
             </div>
             <div class="gridsheet">
-              <? if ($form->isNotesView()) { ?>
+              <?php if ($form->isNotesView()) { ?>
                 <table>
                   <tr>
                     <?=$form->sortableHeader("title", "Document") ?>
@@ -115,20 +115,20 @@ $form = new DocumentsForm("documents.php");
                     <?=$form->sortableHeader("date_updated", "Last Updated") ?>
                     <?=$form->sortableHeader("send_to_name", "Send To") ?>
                   </tr>
-                  <? foreach ($form->rows as $row) { ?>
+                  <?php foreach ($form->rows as $row) { ?>
                     <tr class="<?=$row->trClass ?>">
                       <td width="20%" class="last">
                         <?=$row->noteAnchorHtml ?>
                       </td>
                       <td width="10%" class="last"><?=$row->dos ?></td>
                       <td width="20%" class="last">
-                        <? if ($login->Role->Patient->facesheet) { ?>
+                        <?php if ($login->Role->Patient->facesheet) { ?>
                           <a href="javascript:showClient(<?=$row->stub->cid ?>)" class="icon <?=echoIf($row->stub->clientSex == Client0::MALE, "umale", "ufemale") ?>">
                             <?=$row->stub->clientName ?>
                           </a>
-                        <? } else { ?>
+                        <?php } else { ?>
                           <?=$row->stub->clientName ?>
-                        <? } ?>
+                        <?php } ?>
                       </td>
                       <td width="25%" class="last">
                         <?=$row->createdText ?>
@@ -140,9 +140,9 @@ $form = new DocumentsForm("documents.php");
                         <?=User0::getInits($row->stub->sendTo) ?>
                       </td>
                     </tr>
-                  <? } ?>
+                  <?php } ?>
                 </table>
-              <? } else { ?>
+              <?php } else { ?>
                 <table>
                   <tr>
                     <?=$form->sortableHeader("name", "Custom Template") ?>
@@ -150,7 +150,7 @@ $form = new DocumentsForm("documents.php");
                     <?=$form->sortableHeader("date_created", "Created") ?>
                     <?=$form->sortableHeader("date_updated", "Last Updated") ?>
                   </tr>
-                  <? foreach ($form->rows as $row) { ?>
+                  <?php foreach ($form->rows as $row) { ?>
                     <tr class="<?=$row->trClass ?>">
                       <td width="30%" class="last">
                         <a href="javascript:goPreset(<?=$row->preset->id ?>)" class="icon edit-red">
@@ -165,41 +165,41 @@ $form = new DocumentsForm("documents.php");
                         <?=$row->updatedText ?>
                       </td>
                     </tr>
-                  <? } ?>
+                  <?php } ?>
                 </table>
-              <? } ?>
+              <?php } ?>
             </div>
             <div style="padding:10px 0 0 5px; text-align:center">
-              <? if ($form->isNotesView()) { ?>
-                <? if ($login->Role->Artifact->noteCreate) { ?>
+              <?php if ($form->isNotesView()) { ?>
+                <?php if ($login->Role->Artifact->noteCreate) { ?>
                   <a href="javascript:newDocument()" class="cmd new">Create New Document...</a>
-                <? } ?>
-              <? } else { ?>
-                <? if ($login->Role->Artifact->templates) { ?>
+                <?php } ?>
+              <?php } else { ?>
+                <?php if ($login->Role->Artifact->templates) { ?>
                   <a href="javascript:newTemplate()" class="cmd new">Create New Custom Template</a>
-                <? } ?>
-              <? } ?>
+                <?php } ?>
+              <?php } ?>
             </div>
-          <? renderBoxEnd() ?>
+          <?php renderBoxEnd() ?>
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>
-    <? include "inc/ajax-pops/working-confirm.php" ?>
-    <? include "inc/ajax-pops/calendar.php" ?>
-    <? include "js/pops/inc/PatientSelector.php" ?>
-    <? include "inc/ajax-pops/new-open.php" ?>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/ajax-pops/working-confirm.php" ?>
+    <?php include "inc/ajax-pops/calendar.php" ?>
+    <?php include "js/pops/inc/PatientSelector.php" ?>
+    <?php include "inc/ajax-pops/new-open.php" ?>
+    <?php include "inc/footer.php" ?>
     </form>
   </body>
-  <? CONSTANTS('Client') ?>
+  <?php CONSTANTS('Client') ?>
 <script>
 Page.setEvents();
-<? timeoutCallbackJs() ?>
+<?php timeoutCallbackJs() ?>
 var refreshOnFocus = false;
 var curl = "<?=$form->getCurrentUrl() ?>";
-<? if ($form->pop != null) { ?>
+<?php if ($form->pop != null) { ?>
 newDocument();
-<? } ?>
+<?php } ?>
 function newDocument() {
   PatientSelector.pop(function(c) {
     showNewNote(c.clientId, c.name);

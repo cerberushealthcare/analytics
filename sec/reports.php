@@ -8,7 +8,7 @@ LoginSession::verify_forUser()->requires($login->Role->Report->any());
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Reporting') ?>
+    <?php HEAD('Reporting') ?>
     <style>
 TABLE.rp TH {
   padding-left:10px;
@@ -19,20 +19,20 @@ TABLE.rp TD {
     </style>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <h1>Reporting</h1>
-      <? BOX() ?>
-        <? RPANEL(1, 'Patient', 'General ad-hoc patient reporting.') ?>
-        <? RPANEL(2, 'Meaningful Use', 'Reports to apply for meaningful use incentives.') ?>
-        <? RPANEL(3, 'Clinical Decision Support', '') ?>
-        <? RPANEL(4, 'Audit Logs', 'For reporting audit records of patient data modification.') ?>
-      <? _BOX() ?>
-    <? _BODY() ?>
+      <?php BOX() ?>
+        <?php RPANEL(1, 'Patient', 'General ad-hoc patient reporting.') ?>
+        <?php RPANEL(2, 'Meaningful Use', 'Reports to apply for meaningful use incentives.') ?>
+        <?php RPANEL(3, 'Clinical Decision Support', '') ?>
+        <?php RPANEL(4, 'Audit Logs', 'For reporting audit records of patient data modification.') ?>
+      <?php _BOX() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Reporting') ?>
-  <? START() ?>  
+  <?php CONSTANTS('Reporting') ?>
+  <?php START() ?>  
 </html>
-<? 
+<?php 
 function RPANEL($i, $name, $desc) {
   echo <<<END
   <table class='rp'>

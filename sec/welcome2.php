@@ -9,7 +9,7 @@ exit;
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Welcome") ?>
+    <?php renderHead("Welcome") ?>
     <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/xb/welcome.css?<?=Version::getUrlSuffix() ?>" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/xb/Pop.css?<?=Version::getUrlSuffix() ?>" media="screen" />
@@ -26,7 +26,7 @@ exit;
     <div id="curtain"></div>
     <form id="frm" method="post" action="welcome.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div id='bodyContent' class="content">
           <div class="abstract">
             <h1>Welcome, <?=$myUser->name ?>!</h1>
@@ -35,9 +35,9 @@ exit;
                 <td>
                   <h2 class="mt5 mb10">
                     <?=$myUser->userGroup->name ?>
-                    <? if ($myUser->userGroup->address != null) { ?>
+                    <?php if ($myUser->userGroup->address != null) { ?>
                       &bull; <?=$myUser->userGroup->address->city ?>, <?=$myUser->userGroup->address->state ?>
-                    <? } ?>
+                    <?php } ?>
                   </h2>
                 </td>
                 <td width="10"></td>
@@ -50,12 +50,12 @@ exit;
             <table cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td width="33%" valign="top">
-                  <? renderBoxStart("wide small-pad") ?>
+                  <?php renderBoxStart("wide small-pad") ?>
                     <div class="welcome-box">
                       <div class="welcome-head">
                         <a class="patients" href="patients.php">Patients</a>
                       </div>
-                      <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
+                      <?php if ($myLogin->permissions->accessPatients > Permissions::ACCESS_NONE) { ?>
                         <ul>
                           <li>
                             <a class="icon go" href="patients.php">List all patients</a>
@@ -84,13 +84,13 @@ exit;
                               </tr>
                             </table>
                           </li>
-                          <? if ($myLogin->permissions->accessPatients > Permissions::ACCESS_READ) { ?>
+                          <?php if ($myLogin->permissions->accessPatients > Permissions::ACCESS_READ) { ?>
                             <li style="padding-top:1em">
                               <a class="icon go" href="patients.php?pn=1">Create a new patient...</a>
                             </li>
-                          <? } ?>
+                          <?php } ?>
                         </ul>
-                      <? } else { ?>
+                      <?php } else { ?>
                         <ul>
                           <li style="padding-bottom:10px">
                             <span style="text-align:center">
@@ -98,50 +98,50 @@ exit;
                             </span>
                           </li>
                         </ul>
-                      <? } ?>
+                      <?php } ?>
                     </div>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td width="10" nowrap="nowrap"></td>
                 <td width="33%" valign="top">
-                  <? renderBoxStart("wide small-pad") ?>
+                  <?php renderBoxStart("wide small-pad") ?>
                     <div class="welcome-box">
                       <div class="welcome-head">
                         <a class="documents" href="documents.php">Documents</a>
                       </div>
                       <h5>Patient Notes</h5>
-                      <? if ($myLogin->permissions->accessMyNotes > Permissions::ACCESS_NONE) { ?>
+                      <?php if ($myLogin->permissions->accessMyNotes > Permissions::ACCESS_NONE) { ?>
                         <ul>
-                          <? if ($myLogin->permissions->canSignNotes) { ?>
+                          <?php if ($myLogin->permissions->canSignNotes) { ?>
                             <li>
                               <a class="icon go" href="documents.php?u=<?=$myUserId ?>&pf1=closed&pfv1=0&pfe2=2">List unsigned notes for me</a>
                             </li>
-                          <? } ?>
-                          <? if ($myLogin->permissions->accessOfficeNotes > Permissions::ACCESS_NONE) { ?>
+                          <?php } ?>
+                          <?php if ($myLogin->permissions->accessOfficeNotes > Permissions::ACCESS_NONE) { ?>
                             <li>
                               <a class="icon go" href="documents.php">List all notes</a>
                             </li>
-                          <? } ?>
-                          <? if (! $myLogin->permissions->canSignNotes) { ?>
+                          <?php } ?>
+                          <?php if (! $myLogin->permissions->canSignNotes) { ?>
                             <li>
                               <a class="icon go" href="documents.php?u=<?=$myUserId ?>">List all notes addressed to me</a>
                             </li>
-                          <? } ?>
-                          <? if ($myLogin->permissions->accessMyNotes >= Permissions::ACCESS_INSERT) { ?>
+                          <?php } ?>
+                          <?php if ($myLogin->permissions->accessMyNotes >= Permissions::ACCESS_INSERT) { ?>
                             <li>
                               <a class="icon go" href="documents.php?pop=0">Start a new note for patient...</a>
                             </li>
-                          <? } ?>
+                          <?php } ?>
                         </ul>
-                        <? if ($myLogin->permissions->accessTemplates > Permissions::ACCESS_READ) { ?>
+                        <?php if ($myLogin->permissions->accessTemplates > Permissions::ACCESS_READ) { ?>
                           <h5 style="margin-top:1.5em">Custom Templates</h5>
                           <ul>
                             <li>
                               <a class="icon go" href="documents.php?v=1">Manage my templates</a>
                             </li>
                           </ul>
-                        <? } ?>
-                      <? } else { ?>
+                        <?php } ?>
+                      <?php } else { ?>
                         <ul>
                           <li style="padding-bottom:10px">
                             <span style="text-align:center">
@@ -149,27 +149,27 @@ exit;
                             </span>
                           </li>
                         </ul>
-                      <? } ?>
+                      <?php } ?>
                     </div>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td width="10" nowrap></td>
                 <td width="33%" valign="top">
-                  <? renderBoxStart("wide small-pad") ?>
+                  <?php renderBoxStart("wide small-pad") ?>
                     <div class="welcome-box">
                       <div class="welcome-head">
                         <a class="scheduling" href="schedule.php">Scheduling</a>
                       </div>
                       <ul style="padding-top:0.5em">
-                        <? if ($myLogin->permissions->accessSchedule > Permissions::ACCESS_NONE) { ?>
-                          <? if ($myLogin->isBasic()) { ?>
+                        <?php if ($myLogin->permissions->accessSchedule > Permissions::ACCESS_NONE) { ?>
+                          <?php if ($myLogin->isBasic()) { ?>
                             <li style="padding-bottom:10px">
                               <b>Note</b>
                               <span>
                                 Scheduling features are available only to Clicktate EMR subscribers.<br/><br/>
                               </span>
                             </li>
-                          <? } ?>
+                          <?php } ?>
                           <li>
                             <a class="icon go" href="schedule.php">Open today's schedule</a>
                           </li>
@@ -179,21 +179,21 @@ exit;
                           <li style="margin-top:0.5em">
                             <a class="icon go" href="schedule.php?pc=1">Open for date...</a>
                           </li>
-                        <? } else { ?>
+                        <?php } else { ?>
                           <li style="padding-bottom:10px">
                             <span style="text-align:center">
                               <br/>This feature is not available<br/>for this account.<br/><br/>
                             </span>
                           </li>
-                        <? } ?>
+                        <?php } ?>
                       </ul>
                     </div>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
               </tr>
                 <tr>
                   <td colspan="5" style="padding:10px 0 0 0">
-                    <? renderBoxStart("wide small-pad center") ?>
+                    <?php renderBoxStart("wide small-pad center") ?>
                       <div class="welcome-box" style="height:auto">
                         <table border="0" cellpadding="0" cellspacing="0" style="margin:0 auto">
                           <tr>
@@ -202,7 +202,7 @@ exit;
                                 <a class="profile" href="profile.php">My Profile</a>
                               </div>
                             </td>
-                            <? if ($myLogin->permissions->accessProfile > Permissions::ACCESS_NONE) { ?>
+                            <?php if ($myLogin->permissions->accessProfile > Permissions::ACCESS_NONE) { ?>
                               <td>
                                 <ul>
                                   <li>
@@ -223,7 +223,7 @@ exit;
                                   </li>
                                 </ul>
                               </td>
-                            <? } else { ?>
+                            <?php } else { ?>
                               <td style="padding-left:20px">
                                 <ul>
                                   <li>
@@ -231,11 +231,11 @@ exit;
                                   </li>
                                 </ul>
                               </td>
-                            <? } ?>
+                            <?php } ?>
                           </tr>
                         </table>
                       </div>
-                    <? renderBoxEnd() ?>
+                    <?php renderBoxEnd() ?>
                   </td>
                 </tr>
             </table>
@@ -243,14 +243,14 @@ exit;
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>
-      <? include "inc/footer.php" ?>
+      <?php include "inc/footer.php" ?>
     </form>
   </body>
 <script type="text/javascript">
 Page.setEvents();
-<? if (isset($_GET["qh"])) { ?>
+<?php if (isset($_GET["qh"])) { ?>
 quickhelp();
-<? } ?>
+<?php } ?>
 function testCr(field) {
   var kc = event.keyCode;
   if (kc == 13) {
@@ -269,9 +269,9 @@ function printThis() {
   window.frames["help"].focus();
   window.frames["help"].print();
 }
-<? if ($myLogin->showReqs) { ?>
+<?php if ($myLogin->showReqs) { ?>
 Pop.show('pop-not');
-  <? $myLogin->showReqs = false ?>
-<? } ?>
+  <?php $myLogin->showReqs = false ?>
+<?php } ?>
 </script>
 </html>

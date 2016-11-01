@@ -55,9 +55,9 @@
     </table>
   </div>
 </div>
-<? if ($lu_print->quick) { ?>
+<?php if ($lu_print->quick) { ?>
 <OBJECT ID="Helper" CLASSID="CLSID:7E9FB91B-9FB9-426A-895C-9FB914536CB5" CODEBASE="Clicktate.CAB#version=1,0,0,7"></OBJECT>
-<? } ?>
+<?php } ?>
 <script type="text/javascript">
 var dvStubs;
 var dvNav;
@@ -96,12 +96,12 @@ function dvBuildDoc(sid) {
   sendRequest(4, "action=getDocView&sid=" + sid);  
 }
 function dvPrint() {
-  <? if ($lu_print->quick) { ?>
+  <?php if ($lu_print->quick) { ?>
     download($("pop-dv-body").children, session.updatedBy, true);
     VBPrint();
-  <? } else { ?>
+  <?php } else { ?>
     download($("pop-dv-body").children, session.updatedBy);
-  <? } ?>
+  <?php } ?>
 }
 function getDocViewCallback(dv) {
   if (dv.html) {
@@ -146,7 +146,7 @@ function dvCopy() {
   showReplicate(stub.cid, stub.id, stub.tid);
 }
 </script>
-<? if ($lu_print->quick) { ?>
+<?php if ($lu_print->quick) { ?>
 <script language="VBScript">
 Function VBPrint()
   Dim xml, word, wdoc
@@ -171,4 +171,4 @@ Function VBPrint()
   Helper.PrintRtf sRtf, sLocal
 End Function
 </script>
-<? } ?>
+<?php } ?>

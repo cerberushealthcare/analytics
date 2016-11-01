@@ -25,16 +25,16 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
     <div id="header">
       <div id="logo-head" <?=$popstyle?>>
         <div style='background:#D2E3E0;'>
-<? /*  ***** crs 6/29/2016
-        <? if ($baiju) { ?>
+<?php /*  ***** crs 6/29/2016
+        <?php if ($baiju) { ?>
             <img src='img/baiju70.png' class='baiju' />
-          <? } else if ($login->super) { ?>
+          <?php } else if ($login->super) { ?>
             <img src='img/papy-pyr.png' class='pyr' />
             <div id='paptext'>Papyrus Analytics<small><small><small> &trade;</small></small></small></div>
-          <? } else if ($login->cerberus) { ?>
+          <?php } else if ($login->cerberus) { ?>
             <img src='img/papy-pyr.png' class='pyr' />
             <div id='paptext'>Papyrus<small><small><small> &trade;</small></small></small></div>
-          <? } ?>
+          <?php } ?>
 */ ?>
             <img src='img/papy-pyr.png' class='pyr' />
             <div id='paptext'>Papyrus Clinical Information Network<small><small><small> &trade;</small></small></small></div>
@@ -45,20 +45,20 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
               <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" <?if ( !$login->super  || $login->cerberus || $login->super || $baiju) {?>style="visibility:hidden" <?}?>/></a></td>
               <td class="logo-right">
                 <div class="loginfo tf-header">
-                  <? if (isset($login)) { ?>
+                  <?php if (isset($login)) { ?>
                     Logged in as <b><?=$login->uid ?></b>
-                    <? if (! $login->super) { ?>
-                      <? if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><? } else { ?>| <a href="profile.php?cp=1">Change Password</a><? } ?>
-                      <? if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><? } ?>
-                      <? if (1==2) { ?>| <a class='action tpdf' href="https://www.clicktate.com/ClicktateUserGuide.pdf">User Guide</a><? } ?>
-                    <? } ?>
+                    <?php if (! $login->super) { ?>
+                      <?php if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><?php } else { ?>| <a href="profile.php?cp=1">Change Password</a><?php } ?>
+                      <?php if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><?php } ?>
+                      <?php if (1==2) { ?>| <a class='action tpdf' href="https://www.clicktate.com/ClicktateUserGuide.pdf">User Guide</a><?php } ?>
+                    <?php } ?>
                     |
-                    <? if ($login->cerberus) { ?>
+                    <?php if ($login->cerberus) { ?>
                       <a href="<?=$clogin->url?>102:<?=$clogin->sessionId?>::::APP_HOME_PAGE_CHOICE:PMS">Return to PMS</a>
-                    <? } else { ?>
+                    <?php } else { ?>
                       <a href="javascript:Header.logout()">Logout</a>
-                    <? } ?>
-                  <? } ?>
+                    <?php } ?>
+                  <?php } ?>
                 </div>
               </td>
             </tr>
@@ -90,42 +90,42 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
           <div<?if ($login->cerberus || $login->super || $baiju) {?> class='edge2'<?}?>>
             <table id='logo-bot' border=0 cellpadding=0 cellspacing=0>
               <tr>
-                <? // ***** crs 6/29/2016 if ($login->cerberus || $login->super || $baiju) { ?>
-                <? if (1==1 || $login->cerberus || $login->super || $baiju) { ?>
+                <?php // ***** crs 6/29/2016 if ($login->cerberus || $login->super || $baiju) { ?>
+                <?php if (1==1 || $login->cerberus || $login->super || $baiju) { ?>
                   <td></td>
-                <? } else { ?>
+                <?php } else { ?>
                   <td class="logoBottom">
                     <a href="welcome.php"><img src="img/lhdLogoBottomL.png" /></a>
                   </td>
-                <? } ?>
+                <?php } ?>
                 <td id='page-nav' class="loginfo2">
                   <table border=0 cellpadding=0 cellspacing=0 width="100%">
                     <tr>
                       <td style="vertical-align:top">
                         <div class="loginfo2">
-                          <? if (isset($login)) { ?>
-                            <? if ($login->super) { ?>
+                          <?php if (isset($login)) { ?>
+                            <?php if ($login->super) { ?>
                               <a href="reporting.php" title="Reporting">Reporting</a>
                               | <a href="practices.php" title="Practice Database">Practices</a>
-                            <? } else { ?>
+                            <?php } else { ?>
                        <!-- ****** crs 6/29/2016
                               <a href="welcome.php">Home</a>
-                              <? if ($login->Role->Patient->any()) { ?>| <a href="patients.php" title="Patient Database">Patients</a><? } ?>
+                              <?php if ($login->Role->Patient->any()) { ?>| <a href="patients.php" title="Patient Database">Patients</a><?php } ?>
                        ****** crs 6/29/2016 -->
-                              <? if ($login->Role->Patient->any()) { ?> <a href="patients.php" title="Patient Database">Patients</a><? } ?>
+                              <?php if ($login->Role->Patient->any()) { ?> <a href="patients.php" title="Patient Database">Patients</a><?php } ?>
                        <!-- ****** crs 6/29/2016
-                              <? if ($login->Role->Artifact->noteRead) { ?>| <a href="documents.php"title="Document Manager">Documents</a><? } ?>
-                              <? if (! $login->cerberus && $login->Role->Patient->sched) { ?>| <a href="schedule.php" title="Scheduling">Sched</a><? } ?>
-                              <? if ($login->Role->Patient->track) { ?>| <a href="tracking.php" title="Order Tracking Sheet">Track</a><? } ?>
-                              <? if ($login->Role->Artifact->scan) { ?>| <a href="scanning.php" title="Scanning">Scan</a><? } ?>
+                              <?php if ($login->Role->Artifact->noteRead) { ?>| <a href="documents.php"title="Document Manager">Documents</a><?php } ?>
+                              <?php if (! $login->cerberus && $login->Role->Patient->sched) { ?>| <a href="schedule.php" title="Scheduling">Sched</a><?php } ?>
+                              <?php if ($login->Role->Patient->track) { ?>| <a href="tracking.php" title="Order Tracking Sheet">Track</a><?php } ?>
+                              <?php if ($login->Role->Artifact->scan) { ?>| <a href="scanning.php" title="Scanning">Scan</a><?php } ?>
                        ****** crs 6/29/2016 -->
-                              <? if ($login->Role->Report->any()) { ?>| <a href="reporting.php" title="Reporting">Report</a><? } ?>
-                              <? if ($login->Role->Report->pqri) { ?>| <a href="reporting-pqri.php" title="Clinical Quality Measures">CQM</a><? } ?>
+                              <?php if ($login->Role->Report->any()) { ?>| <a href="reporting.php" title="Reporting">Report</a><?php } ?>
+                              <?php if ($login->Role->Report->pqri) { ?>| <a href="reporting-pqri.php" title="Clinical Quality Measures">CQM</a><?php } ?>
                        <!-- ****** crs 6/29/2016
-                              <? if ($login->Role->Cerberus->superbill) { ?>| <a href="javascript:billing()" title="Billing">Billing</a><? } ?>
+                              <?php if ($login->Role->Cerberus->superbill) { ?>| <a href="javascript:billing()" title="Billing">Billing</a><?php } ?>
                        ****** crs 6/29/2016 -->
-                            <? } ?>
-                          <? } ?>
+                            <?php } ?>
+                          <?php } ?>
                         </div>
                       </td>
                       <td style='text-align:right'>
@@ -142,58 +142,58 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
       </div>
     </div>
     <div id="stickies" <?=$popstyle?>>
-      <? if (! $login->isPapyrus()) { ?>
-        <? if ($page == 'welcome.php' && 1 == 0) { ?>
-          <? STICKY('downnote') ?>
+      <?php if (! $login->isPapyrus()) { ?>
+        <?php if ($page == 'welcome.php' && 1 == 0) { ?>
+          <?php STICKY('downnote') ?>
             <b>Note</b>: Clicktate will be down at 10:00PM EST tonight (7/19) for maintenance.<br/>
             The website will be down for approximately 30 minutes.
-          <? _STICKY('downnote') ?>
-        <? } ?>
-        <? if (1 == 2) { ?>
-          <? STICKY('downnote') ?>
+          <?php _STICKY('downnote') ?>
+        <?php } ?>
+        <?php if (1 == 2) { ?>
+          <?php STICKY('downnote') ?>
             <b>Note</b>: Clicktate will undergo scheduled maintenance at 9:30PM EST tonight.
             <br/>
             The website will be down for approximately 2-3 hours.
-          <? _STICKY('downnote') ?>
-        <? } ?>
-        <? if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
-          <? STICKY('countdown') ?>
+          <?php _STICKY('downnote') ?>
+        <?php } ?>
+        <?php if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
+          <?php STICKY('countdown') ?>
             Your trial account has <?=daysLeft($login->daysLeft) ?> remaining.
             <!-- <a href="registerCard.php">Activate now &gt;</a> -->
-          <? _STICKY('countdown', false) ?>
-        <? } else if (! $noAlert && $login->isInactive()) { ?>
-          <? STICKY('countdown') ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } else if (! $noAlert && $login->isInactive()) { ?>
+          <?php STICKY('countdown') ?>
             <?=$login->expireReason ?><br/>
             At present you have limited (read-only) access to your information.<br/>
             <a href="registerCard.php">Update billing info and restore full access &gt;</a>
-          <? _STICKY('countdown', false) ?>
-        <? } else if (! $noAlert && $login->User->isPaying() && $login->daysLeft < 60) { ?>
-          <? STICKY('countdown') ?>
-            <? if ($login->daysLeft < 0) { ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } else if (! $noAlert && $login->User->isPaying() && $login->daysLeft < 60) { ?>
+          <?php STICKY('countdown') ?>
+            <?php if ($login->daysLeft < 0) { ?>
               Your credit card has expired.
-            <? } else { ?>
+            <?php } else { ?>
               Your credit card on file expires in <?=daysLeft($login->daysLeft) ?>.
-            <? } ?>
+            <?php } ?>
             <a href="registerCard.php">Update card &gt;</a>
-          <? _STICKY('countdown', false) ?>
-        <? } ?>
-        <? if ($login->LoginReqs && ! $login->User->isOnTrial()) { ?>
-          <? $reqs = $login->getStickyLoginReqs(); ?>
-          <? foreach ($reqs as $req) { ?>
-            <? $stid = 'req' . $req->userLoginReqId ?>
-            <? STICKY($stid) ?>
+          <?php _STICKY('countdown', false) ?>
+        <?php } ?>
+        <?php if ($login->LoginReqs && ! $login->User->isOnTrial()) { ?>
+          <?php $reqs = $login->getStickyLoginReqs(); ?>
+          <?php foreach ($reqs as $req) { ?>
+            <?php $stid = 'req' . $req->userLoginReqId ?>
+            <?php STICKY($stid) ?>
               <?=daysLeft($req->_daysLeft, true) ?> left for
               <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?=$req->LoginReq->name ?> &gt;</a>
-            <? _STICKY($stid) ?>
-          <? } ?>
-        <? } ?>
-        <? STICKY('legacy-sticky', 'display:none') ?>
+            <?php _STICKY($stid) ?>
+          <?php } ?>
+        <?php } ?>
+        <?php STICKY('legacy-sticky', 'display:none') ?>
           This patient has <i>legacy medications/allergies</i> that may need to be transferred to our partner ePrescribing system.
           <br><a href='javascript:Facesheet.pNewCrop("medentry")'>Click here to do this now</a>
-        <? _STICKY('legacy-sticky', false) ?>
-      <? } ?>
+        <?php _STICKY('legacy-sticky', false) ?>
+      <?php } ?>
     </div>
-    <? if ($login->LoginReqs) { ?>
+    <?php if ($login->LoginReqs) { ?>
       <div id="pop-not" class="pop" onmousedown="event.cancelBubble = true" style='width:680px; background:white'>
         <div id="pop-not-cap" class="pop-cap">
           <div id="pop-not-cap-text">
@@ -202,20 +202,20 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
           <a href="javascript:Pop.close()" class="pop-close"></a>
         </div>
         <div class="pop-content">
-          <? foreach ($login->LoginReqs as $action => $reqs) { ?>
-            <? foreach ($reqs as $req) { ?>
-              <? renderBoxStart('wide min-pad push') ?>
+          <?php foreach ($login->LoginReqs as $action => $reqs) { ?>
+            <?php foreach ($reqs as $req) { ?>
+              <?php renderBoxStart('wide min-pad push') ?>
                 <h4 style='color:red;margin-bottom:-0.5em'><?=$action . ': ' . $req->LoginReq->name ?></h4>
                 <div><?=$req->LoginReq->notifyText ?></div>
-              <? renderBoxEnd() ?>
-            <? } ?>
-          <? } ?>
+              <?php renderBoxEnd() ?>
+            <?php } ?>
+          <?php } ?>
           <div class="pop-cmd">
             <a href="javascript:Pop.close()" class="cmd none">&nbsp;&nbsp;&nbsp;Exit&nbsp;&nbsp;&nbsp;</a>
           </div>
         </div>
       </div>
-    <? } ?>
+    <?php } ?>
 <?
 function daysLeft($amt, $cap = false) {
 	$s = round($amt);
@@ -238,12 +238,12 @@ Header.load(
   <?=Messaging::getMyUnreadCt()?>,
   <?=Messaging_DocStubReview::getUnreviewedCt()?>,
   <?=HL7_Labs::getInboxCt()?>);
-<? if ($sessId) { ?>
+<?php if ($sessId) { ?>
 Ajax.setSessionId('<?=$sessId ?>');
-<? } ?>
-<? if ($login->Role->Cerberus->superbill) { ?>
+<?php } ?>
+<?php if ($login->Role->Cerberus->superbill) { ?>
 function billing() {
   CerberusPop.pop_asUnsigned();
 }
-<? } ?>
+<?php } ?>
 </script>

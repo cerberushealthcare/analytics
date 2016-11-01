@@ -11,7 +11,7 @@ $form = new PatientsForm("patients.php");
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Patient Database") ?>
+    <?php renderHead("Patient Database") ?>
     <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/xb/Pop.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/xb/template-pops.css?<?=Version::getUrlSuffix() ?>" />
@@ -50,18 +50,18 @@ $form = new PatientsForm("patients.php");
     <div id="curtain"></div>
     <form id="frm" method="post" action="patients.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div id='bodyContent' class="content">
           <table class="h">
             <tr>
               <th>
                 <h1>Patient Database</h1>
-                <? if ($form->isSearching()) { ?>
+                <?php if ($form->isSearching()) { ?>
                   <div id="searching">
                     <?=$form->searchingText() ?>&nbsp;
                     <a href="patients.php" class="icon big view">Show <b>all patients</b></a>
                   </div>
-                <? } ?>
+                <?php } ?>
               </th>
               <td>
                 <!-- <a href="javascript:refreshPage()" class="icon big refresh">Refresh page</a> -->
@@ -71,7 +71,7 @@ $form = new PatientsForm("patients.php");
               </td>
             </tr>
           </table>
-          <? renderBoxStart("wide small-pad") ?>
+          <?php renderBoxStart("wide small-pad") ?>
             <div class="nav">
               <table cellpadding="0" cellspacing="0">
                 <tr>
@@ -94,7 +94,7 @@ $form = new PatientsForm("patients.php");
                   <?=$form->sortableHeader("uid*1", "Patient ID (Birth)") ?>
                   <?=$form->sortableHeader("date", "Most Recent Activity", 2) ?>
                 </tr>
-                <? foreach ($form->rows as $row) { ?>
+                <?php foreach ($form->rows as $row) { ?>
                   <tr class="<?=$row->trClass ?>">
                     <td width="30%" class="last"> 
                       <a href="face.php?id=<?=$row->client->clientId ?>" class="icon <?=echoIf($row->client->sex == Client0::MALE, "umale", "ufemale") ?>">
@@ -105,19 +105,19 @@ $form = new PatientsForm("patients.php");
                     <td width="10%" class="last"><?=$row->event->futs ?></td>
                     <td width="40%" class="last"><?=$row->eventAnchor ?></td>
                   </tr>
-                <? } ?>
+                <?php } ?>
               </table>
             </div>
-            <? if ($login->Role->Patient->create) { ?>
+            <?php if ($login->Role->Patient->create) { ?>
               <div style="padding:10px 0 0 5px; text-align:center" class="noprt">
                 <a href="javascript:newPatientPop()" class="cmd new">Create a New Patient...</a>
               </div>
-            <? } ?>
-          <? renderBoxEnd() ?>
+            <?php } ?>
+          <?php renderBoxEnd() ?>
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>      
-      <? include "inc/ajax-pops/new-open.php" ?>
+      <?php include "inc/ajax-pops/new-open.php" ?>
       <div id="pop-p" class="pop">
         <div id="pop-p-cap" class="pop-cap">
           <div id="pop-p-cap-text">
@@ -131,11 +131,11 @@ $form = new PatientsForm("patients.php");
               <div>
                 <span id="pop-client-name"></span>
               </div>
-              <? if ($login->Role->Patient->demo) { ?>
+              <?php if ($login->Role->Patient->demo) { ?>
                 <a class="pencil" href="javascript:editPatient()">Edit</a>
-              <? } else { ?>
+              <?php } else { ?>
                 <a>&nbsp;</a>
-              <? } ?>
+              <?php } ?>
             </div>
             <label class="first">ID:</label><span id="pop-client-id"></span>&nbsp;
             <label>DOB:</label><span id="pop-client-dob"></span><br/>
@@ -166,19 +166,19 @@ $form = new PatientsForm("patients.php");
           </div>
         </div>
       </div>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/footer.php" ?>
     </form>
   </body>
 <script type="text/javascript">
 var C_Client = <?=Client::getStaticJson()?>;
 Page.setEvents();
 var me = <?=UserDao::getMyUserAsJson() ?>;
-<? timeoutCallbackJs() ?>
+<?php timeoutCallbackJs() ?>
 var curl = "<?=$form->getCurrentUrl() ?>";
-<? if ($form->popNew) { ?>
+<?php if ($form->popNew) { ?>
 newPatientPop();
-<? } else if ($form->popId != null) { ?>
+<?php } else if ($form->popId != null) { ?>
 showClient(<?=$form->popId ?>);
-<? } ?>
+<?php } ?>
 </script>        
 </html>

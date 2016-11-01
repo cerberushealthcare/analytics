@@ -188,7 +188,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                   <tr>
                     <td>
                       State<br>
-                      <? renderCombo("state", $form->states, $form->state) ?>
+                      <?php renderCombo("state", $form->states, $form->state) ?>
                     </td>
                     <td width=5></td>
                     <td>
@@ -271,7 +271,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                   <tr style="padding-top:15px">
                     <td>
                       How did you hear about us?<br>
-                      <? renderCombo("found", $form->foundMethods, $form->found) ?>
+                      <?php renderCombo("found", $form->foundMethods, $form->found) ?>
                     </td>
                     <td width=5></td>
                     <td class="help">
@@ -294,7 +294,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                 <table border=0 cellpadding=0 cellspacing=0>
                   <tr>
                     <td>
-                      <img src="inc/captchaGen.php?<? echo time() ?>">
+                      <img src="inc/captchaGen.php?<?php echo time() ?>">
                     </td>
                   </tr>
                 </table>

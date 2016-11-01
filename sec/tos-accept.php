@@ -14,9 +14,9 @@ if (isset($_GET['acc'])) {
   }
 }
 ?>
-<? $title = 'Clicktate - Terms of Service' ?>
-<? if (! $redirect) { ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Terms of Service' ?>
+<?php if (! $redirect) { ?>
+<?php include "inc/hheader.php" ?>
 <style>
 P {font-size:10pt}
 H3 {margin-top:1.5em}
@@ -31,7 +31,7 @@ INPUT.cb {height:40px;padding:0 10px}
   </div>
   <div class="wm">
     <div class="tos">
-      <? include "tos/$version.html" ?>
+      <?php include "tos/$version.html" ?>
     </div>
   </div>
     <div style="text-align:center;padding-bottom:30px">
@@ -40,8 +40,8 @@ INPUT.cb {height:40px;padding:0 10px}
     </div>
   </form>
 </div>
-<? } else { ?>
+<?php } else { ?>
 <script>
 window.location = 'welcome.php';
 </script>
-<? } ?>
+<?php } ?>

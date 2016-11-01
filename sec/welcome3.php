@@ -8,7 +8,7 @@ $addr = Address::formatCsz($login->User->UserGroup->Address);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Welcome') ?>
+    <?php HEAD('Welcome') ?>
     <style>
 DIV.bc {
 background-color:white;
@@ -64,7 +64,7 @@ background-position:-1px top;
     </style>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th>
@@ -76,7 +76,7 @@ background-position:-1px top;
           </td>
         </tr>
       </table class='b'>
-      <? // renderBoxStart('wide', null, null, 'box') ?>
+      <?php // renderBoxStart('wide', null, null, 'box') ?>
         <div class='bc2'>
           <div class='link'>
             <table>
@@ -176,7 +176,7 @@ background-position:-1px top;
             </table>
           </div>
         </div>
-      <? // renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php // renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
 </html>

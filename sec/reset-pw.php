@@ -54,7 +54,7 @@ DIV#message-div {
         <table border='0' cellpadding='0' cellspacing'0'>
           <tr>
             <td class='wm'>
-              <? renderBoxStart() ?>
+              <?php renderBoxStart() ?>
                 <div style="height:160px; width:380px; font-family:Arial;">
                   <h2 style='margin-bottom:1em'>This reset password request has expired.</h2>
                   <p style='font-size:10pt'>
@@ -64,7 +64,7 @@ DIV#message-div {
                   If you still need to reset your password, <a class='gb' href="index.php">go back to login page</a> and click the "forgot password" link. 
                   </p>
                 </div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>

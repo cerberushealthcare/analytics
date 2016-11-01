@@ -1,8 +1,9 @@
-<?
+<?php
 require_once "inc/uiFunctions.php";
 require_once "php/data/LoginSession.php";
 require_once "php/data/Version.php";
 require_once "inc/captchaValue.php";
+require_once 'php/data/rec/sql/dao/Logger.php';
 //
 //import_request_variables("p", "p_");
 $p_id = geta($_POST, 'id');
@@ -42,7 +43,9 @@ if (! isset($p_id)) {
     sleep(2);
   } else {
     try {
-      $login = LoginSession::login($p_id, $p_pw);  //->setUi($p_tablet == '1');
+	  Logger::debug('analytics/sec/index.php: Trying login');
+      $login = LoginSession::login($p_id, $p_pw);
+	  Logger::debug('analytics/sec/index.php: Login success!');
       if ($login->User->needsNewBilling()) {
         $url = 'registerCard.php';
       } else {
@@ -52,12 +55,15 @@ if (! isset($p_id)) {
         // $url = 'welcome.php';  // crs 6/29/2016
          $url = 'patients.php';
       }
+	  Logger::debug('analytics/sec/index.php: Redirect to ' . $url);
       header("Location: $url");
       exit;
     } catch (LoginEmrException $e) {
       $_SESSION['post2'] = $_POST;
       //header('Location: ../../prod-clicktate/sec');
-      header('Location: ../../sec/index.php');
+      //header('Location: ../../sec/index.php'); 11/1/16
+	  //header('Location: ');
+	  header('Location: index.php');
       exit;
     } catch (LoginInvalidException $e) {
       if ($e->locked)
@@ -69,18 +75,17 @@ if (! isset($p_id)) {
         $_SESSION["captcha"] = genImageValue();
       }
     } catch (LoginDisallowedException $e) {
-      $errors = array("This account is currently inactive.<BR>Please call 1-888-425-8258 for more information.");
+      $errors = array("This account is currently inactive.<BR>Please call 888-825-4258 for more information.");
     } catch (AppUnavailableException $e) {
-      $errors = array("The system is currently unavailable.<BR>Please try your request later.<br>Call 1-888-425-8258 if you continue to have problems.");
+      $errors = array("The system is currently unavailable.<BR>Please try your request later.<br>Call 888-825-4258 if you continue to have problems.");
     } catch (Exception $e) {
       logit_r($e);
-      $errors = array("This ID cannot be logged into at this time.<BR>Please call 1-888-425-8258 if you continue to have problems.");
+      $errors = array("This ID cannot be logged into at this time.<BR>Please call 888-825-4258 if you continue to have problems.");
     }
   }
 }
 session_write_close();
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <!-- Copyright (c)2012 by Cerberus Healthcare, Inc.  All rights reserved. -->
   <!-- http://www.clicktate.com -->
@@ -91,6 +96,8 @@ session_write_close();
     <title>
       Papyrus - Login
     </title>
+
+
     <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
    <!-- ****** crs 6/29/2016  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> ****** crs 6/29/2016   -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -133,6 +140,88 @@ session_write_close();
     <script type='text/javascript' src='js/components/CmdBar.js'></script>
     <script type="text/javascript" src="js/alertpop.js"></script>
     <style>a.tour{background-color:#008C7B !important;border-radius:30px;color:#FFFFFF !important;}a.tour:hover{background-color:#FFFFFF !important;}</style>
+	
+		<script type='text/javascript'>
+var tablet = 0;//Boolean.toInt(document.ontouchstart === null);
+Html.Input.$('tablet').setValue(tablet);
+<?php if ($login && isset($g_cp)) { ?>
+ChangePasswordPop_Expired.pop(<?php echo $login->userId; ?>, tablet);
+<?php } ?>
+Cookies.expire('NC_STATUS');
+function setpw() {
+  hide("pop-cp-errors");
+  if (validpw()) {
+    var u = {pw:value("pop-cp-pw")};
+    postRequest(4, "action=updateMyPw&obj=" + jsonUrl(u));
+    Pop.Working.show();
+  }
+}
+function updateMyUserCallback(errorMsg) {
+  Pop.Working.close();
+  if (errorMsg == null) {
+    Pop.close();
+    Pop.Working.show();
+    window.location = "welcome.php";
+  } else {
+    Pop.Msg.showCritical(errorMsg, updateErrorCallback, true);
+  }
+}
+function updateErrorCallback() {
+  focus("pop-cp-pw");
+}
+function validpw() {
+  var errs = [];
+  validateRequired(errs, "pop-cp-pw", "New Password");
+  validateRequired(errs, "pop-cp-pw2", "New Password (Repeat)");
+  var pw = value("pop-cp-pw");
+  if (errs.length == 0) {
+    if (pw != value("pop-cp-pw2")) {
+      errs.push(errMsg("pop-cp-pw", "New password fields do not match."));
+    }
+  }
+  if (errs.length == 0) {
+    if (pw.length < 6) {
+      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
+    }
+    if (pw.length < 6) {
+      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
+    }
+    if (pw.match(/[0-9]/) == null) {
+      errs.push(errMsg("pop-cp-pw", "New password must contain at least 1 numeric character."));
+    }
+  }
+  if (errs.length > 0) {
+    showErrors("pop-cp-errors", errs);
+    focus(errs[0].id);
+    return false;
+  }
+  return true;
+}
+function working() {
+  var a = document.getElementById('alog');
+  a.className = 'tour working';
+  a.innerText = "";
+}
+function sub() {
+  working();
+  setTimeout('sub2()',1);
+}
+function sub2() {
+  document.getElementById('frm').submit();
+}
+function initfocus() {
+<?php if (! isset($g_cp)) { ?>
+  Html.InputText.$('uid').setFocus();
+<?php } ?>
+}
+var me = null;
+var td = _$('td');
+var msg = _$('msg');
+var h = td.getHeight();
+//msg.setHeight(h - 10);
+</script>
+
+
   </head>
   <body style='background-color:#000000;' onload="initfocus()">
   <div id="alertpop">
@@ -168,9 +257,9 @@ session_write_close();
 		 </h1>
                 <div class="login" style=''>
                   <?php require_once "inc/errors.php" ?>
-                <? if (isset($g_timeout)) { ?>
+                <?php if (isset($g_timeout)) { ?>
                 <div style='padding-bottom:1em;font-family:Arial;font-weight:bold;color:red'>Your session has expired from inactivity.<br>Please login to continue.</div>
-                <? } ?>
+                <?php } ?>
                 </div>
                 <table cellpadding='0' cellspacing='0'>
                   <tr>
@@ -194,13 +283,13 @@ session_write_close();
                               <label>Password</label><br/>
                               <input name="pw" id='pw' type="password" size="20" autocomplete="off" onkeydown="if ((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)) {sub();return false;} else return true;" />
                             </div>
-                            <? if ($captcha) { ?>
+                            <?php if ($captcha) { ?>
                             <div class="l" style="margin-top:10px;padding-top:10px;border:1px solid #c0c0c0; background-color:white;text-align:center">
-                              <img src="inc/captchaGen.php?sid=captcha&<? echo time() ?>"><br/><br/>
+                              <img src="inc/captchaGen.php?sid=captcha&<?php echo time() ?>"><br/><br/>
                               <label>Enter the text above</label><br/>
                               <input name="cap" id='cap' type="text" size="20" onkeydown="if ((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)) {sub();return false;} else return true;" />
                             </div>
-                            <? } ?>
+                            <?php } ?>
 
                             <div id="trial" style="padding-bottom:10px">
                               <a id="alog" href="javascript:sub()" class="tour">Login ></a>
@@ -546,82 +635,3 @@ session_write_close();
                   </div>
   </body>
 </html>
-<script type='text/javascript'>
-var tablet = 0;//Boolean.toInt(document.ontouchstart === null);
-Html.Input.$('tablet').setValue(tablet);
-<? if ($login && isset($g_cp)) { ?>
-ChangePasswordPop_Expired.pop(<?=$login->userId?>, tablet);
-<? } ?>
-Cookies.expire('NC_STATUS');
-function setpw() {
-  hide("pop-cp-errors");
-  if (validpw()) {
-    var u = {pw:value("pop-cp-pw")};
-    postRequest(4, "action=updateMyPw&obj=" + jsonUrl(u));
-    Pop.Working.show();
-  }
-}
-function updateMyUserCallback(errorMsg) {
-  Pop.Working.close();
-  if (errorMsg == null) {
-    Pop.close();
-    Pop.Working.show();
-    window.location = "welcome.php";
-  } else {
-    Pop.Msg.showCritical(errorMsg, updateErrorCallback, true);
-  }
-}
-function updateErrorCallback() {
-  focus("pop-cp-pw");
-}
-function validpw() {
-  var errs = [];
-  validateRequired(errs, "pop-cp-pw", "New Password");
-  validateRequired(errs, "pop-cp-pw2", "New Password (Repeat)");
-  var pw = value("pop-cp-pw");
-  if (errs.length == 0) {
-    if (pw != value("pop-cp-pw2")) {
-      errs.push(errMsg("pop-cp-pw", "New password fields do not match."));
-    }
-  }
-  if (errs.length == 0) {
-    if (pw.length < 6) {
-      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
-    }
-    if (pw.length < 6) {
-      errs.push(errMsg("pop-cp-pw", "New password must be at least 6 characters long."));
-    }
-    if (pw.match(/[0-9]/) == null) {
-      errs.push(errMsg("pop-cp-pw", "New password must contain at least 1 numeric character."));
-    }
-  }
-  if (errs.length > 0) {
-    showErrors("pop-cp-errors", errs);
-    focus(errs[0].id);
-    return false;
-  }
-  return true;
-}
-function working() {
-  var a = document.getElementById('alog');
-  a.className = 'tour working';
-  a.innerText = "";
-}
-function sub() {
-  working();
-  setTimeout('sub2()',1);
-}
-function sub2() {
-  document.getElementById('frm').submit();
-}
-function initfocus() {
-<? if (! isset($g_cp)) { ?>
-  Html.InputText.$('uid').setFocus();
-<? } ?>
-}
-var me = null;
-var td = _$('td');
-var msg = _$('msg');
-var h = td.getHeight();
-//msg.setHeight(h - 10);
-</script>

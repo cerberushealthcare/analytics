@@ -13,7 +13,7 @@
 		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';
 	}
 	
-	echo 'User is a ' . gettype($user) . ' ' . $user;
+	echo 'User is a ' . gettype($user) . ' ' . var_dump($user);
 	
 	$testPassed = false;
 	

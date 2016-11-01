@@ -8,7 +8,7 @@ LoginSession::verify_forUser()->requires($login->admin);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? renderHead('Admin Login Reqs') ?>
+    <?php renderHead('Admin Login Reqs') ?>
     <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>' />
@@ -38,7 +38,7 @@ LoginSession::verify_forUser()->requires($login->admin);
   <body onload='start()'>
     <div id='bodyContainer'>
       <div id='curtain'></div>
-      <? include 'inc/header.php' ?>
+      <?php include 'inc/header.php' ?>
       <div id='bodyContent' class='content'>
         <table class='h'>
           <tr>
@@ -46,7 +46,7 @@ LoginSession::verify_forUser()->requires($login->admin);
             <td></td>
           </tr>
         </table>
-        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
           <div id='topbar' class='mb5'>
             <ul id='topbar-filter' class='topfilter'></ul>
           </div>
@@ -65,11 +65,11 @@ LoginSession::verify_forUser()->requires($login->admin);
               </tbody>
             </table>
           </div>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
       </div>
       <div id='bottom'><img src='img/brb.png' /></div>
     </div>      
-    <? include 'inc/footer.php' ?>
+    <?php include 'inc/footer.php' ?>
   </body>
 <script>
 var C_UserLoginReq = <?=UserLoginReq::getStaticJson() ?>;

@@ -54,14 +54,14 @@ header("Content-Disposition: attachment; filename=\"" . $_POST["cn"] . "." . $fm
 ?>
 {\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\froman\fprq2\fcharset0 Times New Roman;}{\f1\fswiss\fcharset0 Arial;}{\colortbl;\red0\green0\blue0;\red128\green128\blue128;\cbackgroundone\ctint255\cshade217\red217\green217\blue217;}}
 {\widowctrl}
-<? if ($img != "") { ?>
-\titlepg {\headerf \pard\qr\plain\f0\fs18 \qc <?=$imgrtf ?>\par\pard\plain\f0\fs18 Specializing in Pain Management and Addiction Medicine\pard\par\pard<?=$headAlign ?> <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<? if ($img2 != "") { ?>{\header\pard\qr\plain\f0\fs18 \qc <?=$imgrtf2 ?>\par\pard<?=$headAlign ?> <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<? } else { ?>{\header\pard<?=$headAlign ?>\plain\f0\fs18 <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<? } ?>
-<? } else { ?>
+<?php if ($img != "") { ?>
+\titlepg {\headerf \pard\qr\plain\f0\fs18 \qc <?=$imgrtf ?>\par\pard\plain\f0\fs18 Specializing in Pain Management and Addiction Medicine\pard\par\pard<?=$headAlign ?> <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<?php if ($img2 != "") { ?>{\header\pard\qr\plain\f0\fs18 \qc <?=$imgrtf2 ?>\par\pard<?=$headAlign ?> <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<?php } else { ?>{\header\pard<?=$headAlign ?>\plain\f0\fs18 <?=stripslashes($_POST["head"]) ?>\pard\par\pard}<?php } ?>
+<?php } else { ?>
 {\header\pard<?=$headAlign ?>\plain\f0\fs18 <?=stripslashes($_POST["head"]) ?>\pard\par\pard}
-<? } ?>
-<? if (! $noTag) { ?>
+<?php } ?>
+<?php if (! $noTag) { ?>
 {\footer\pard\qc\plain\f0\fs15 This note created at clicktate.com\par\p\pard\par\pard}
-<? } ?>
+<?php } ?>
 \viewkind4\uc1\pard\lang1033\f0\fs22
 <?=stripslashes($_POST["doc"]) ?>
 \par \par <?=$sigimgrtf ?> \par \par <?=$signame ?>

@@ -1,4 +1,4 @@
-<? 
+<?php 
 require_once "php/data/LoginSession.php";
 require_once "inc/uiFunctions.php";
 require_once "php/forms/ProfileForm.php";
@@ -10,7 +10,7 @@ $form = new ProfileForm();
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("My Profile") ?>
+    <?php renderHead("My Profile") ?>
     <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/xb/profile.css?<?=Version::getUrlSuffix() ?>" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/xb/Pop.css?<?=Version::getUrlSuffix() ?>" media="screen" />
@@ -40,19 +40,19 @@ H6 {
   font-size:13pt;
 }
     </style>
-    <? HEAD_UI('PasswordEntry') ?>
+    <?php HEAD_UI('PasswordEntry') ?>
   </head>
   <body onload='load()'>
     <div id="curtain"></div>  
     <form id="frm" method="post" action="profile.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div id='bodyContent' class="content">
           <?php require_once "inc/errors.php" ?>
           <div class="abstract">
             <h1 class="sched">My Profile</h1>
           </div>
-          <? renderBoxStart("wide small-pad") ?>
+          <?php renderBoxStart("wide small-pad") ?>
           <table class='prof'>
             <tr>
               <th>
@@ -63,9 +63,9 @@ H6 {
                       <span class="ro" style="width:195px; height:35px">
                         <?=$form->htmlMyNameEmail ?>
                       </span>
-                      <? if ($login->Role->Profile->license) { ?>
+                      <?php if ($login->Role->Profile->license) { ?>
                         <a class="pencil smar" href="javascript:showEditProfile(0)">Edit</a>
-                      <? } ?>
+                      <?php } ?>
                     </li>
                     <li>
                       <label class="first">Password</label>
@@ -74,7 +74,7 @@ H6 {
                       </span>
                       <a class="pencil smar" href="javascript:" onclick="ChangePasswordPop.pop(<?=$login->userId?>)">Edit</a>
                     </li>
-                    <? if ($login->Role->Profile->license) { ?>
+                    <?php if ($login->Role->Profile->license) { ?>
                       <li>
                         <label class="first">License: State<br/>DEA<br/>NPI</label>
                         <span class="ro" style="width:195px; height:52px">
@@ -82,9 +82,9 @@ H6 {
                         </span>
                         <a class="pencil smar" href="javascript:showEditProfile(2)">Edit</a>
                       </li>
-                    <? } ?>
+                    <?php } ?>
                   </ul>
-                <? if ($login->Role->Profile->practice) { ?>
+                <?php if ($login->Role->Profile->practice) { ?>
               </td>
             </tr>
           </table>
@@ -127,21 +127,21 @@ H6 {
                         <label class="first">&nbsp;</label>
                         <span class="ro bold" style="width:550px;">
                           <table cellpadding="0" cellspacing="0" class="list">
-                            <? foreach ($form->docAccts as $doc) { ?>
+                            <?php foreach ($form->docAccts as $doc) { ?>
                               <tr>
-                                <? if ($doc != null) { ?>
+                                <?php if ($doc != null) { ?>
                                   <td><?=$doc->name ?></td>
-                                <? } else { ?>
+                                <?php } else { ?>
                                   <td>&nbsp;</td>
-                                <? } ?>
+                                <?php } ?>
                               </tr>
-                            <? } ?>
+                            <?php } ?>
                           </table>
                         </span>
                       </li>
                     </ul>
-                  <? } ?>
-                <? if ($login->Role->Account->manage) { ?>
+                  <?php } ?>
+                <?php if ($login->Role->Account->manage) { ?>
               </td>
             </tr>
           </table>
@@ -164,9 +164,9 @@ H6 {
                             <tr>
                               <td height="4"></td>
                             </tr>
-                            <? foreach ($form->supportAccts as $acct) { ?>
+                            <?php foreach ($form->supportAccts as $acct) { ?>
                               <tr>
-                                <? if ($acct != null) { ?>
+                                <?php if ($acct != null) { ?>
                                   <td style="vertical-align:top">
                                     <a href="javascript:showEditAccount(<?=$acct->id ?>)" class="icon <?=echoIf($acct->active, "user bold", "user-fade strike") ?>">
                                       <?=$acct->uid ?>
@@ -180,11 +180,11 @@ H6 {
                                   <td style="vertical-align:top">
                                     <?=echoIf($acct->active, $acct->userTypeDesc, "[Inactive]") ?>
                                   </td>
-                                <? } else { ?>
+                                <?php } else { ?>
                                   <td>&nbsp;</td>
-                                <? } ?>
+                                <?php } ?>
                               </tr>
-                            <? } ?>
+                            <?php } ?>
                           </table>
                         </span>
                       </li>
@@ -193,8 +193,8 @@ H6 {
                       <a href="javascript:showEditAccount()" class="cmd none">New Support Account...</a>
                     </div>
               </td>
-              <? } ?>
-              <? if ($login->Role->Account->portal) { ?>
+              <?php } ?>
+              <?php if ($login->Role->Account->portal) { ?>
             </tr>
           </table>
           <table class='prof'>
@@ -205,8 +205,8 @@ H6 {
                     <a href='accounts.php'>Update Portal Accounts...</a>
                     </div>
                 </td>
-              <? } ?>
-              <? if ($login->Role->Profile->billing) { ?>
+              <?php } ?>
+              <?php if ($login->Role->Profile->billing) { ?>
               </td>
             </tr>
           </table>
@@ -222,7 +222,7 @@ H6 {
                         </span>
                       </li>
                     </ul>
-                    <? if ($form->me->billInfo != null) { ?>
+                    <?php if ($form->me->billInfo != null) { ?>
               </td>
             </tr>
           </table>
@@ -239,11 +239,11 @@ H6 {
                           <a class="pencil smar" href="registerCard.php">Edit</a>
                         </li>
                        </ul>
-                     <? } ?>
-                   <? } ?>
+                     <?php } ?>
+                   <?php } ?>
             </tr>
           </table>
-          <? renderBoxEnd() ?>
+          <?php renderBoxEnd() ?>
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>
@@ -289,7 +289,7 @@ H6 {
             </li>
             <li style="margin-top:0.5em">
               <label class="first">Active?</label>
-              <? renderLabelCheck("pop-ea-active", "Yes") ?>
+              <?php renderLabelCheck("pop-ea-active", "Yes") ?>
             </li>
           </ul>
           <div class="pop-cmd">
@@ -419,7 +419,7 @@ function updateSupportUserCallback(dupe) {
           <ul id="pop-ep-myLic" class="entry ro">
             <li>
               <label class="first">License: State</label>
-              <? renderCombo("pop-ep-myLicState", CommonCombos::states()) ?>
+              <?php renderCombo("pop-ep-myLicState", CommonCombos::states()) ?>
               <input id="pop-ep-myLicense" size="18" />
             </li>
             <li>
@@ -456,7 +456,7 @@ function updateSupportUserCallback(dupe) {
             </li>
             <li>
               <label class="first">State, Zip</label>
-              <? renderCombo("pop-ep-pState", CommonCombos::states(), "", "onchange='settz()'") ?>
+              <?php renderCombo("pop-ep-pState", CommonCombos::states(), "", "onchange='settz()'") ?>
               <input id="pop-ep-pZip" size="10" />
             </li>
             <li>
@@ -466,16 +466,16 @@ function updateSupportUserCallback(dupe) {
             <li>
               <label class="first">Phone</label>
               <input id="pop-ep-pPhone2" size="22" />
-              <? renderCombo("pop-ep-pPhone2Type", CommonCombos::phoneTypes()) ?>
+              <?php renderCombo("pop-ep-pPhone2Type", CommonCombos::phoneTypes()) ?>
             </li>
             <li>
               <label class="first">Phone</label>
               <input id="pop-ep-pPhone3" size="22" />
-              <? renderCombo("pop-ep-pPhone3Type", CommonCombos::phoneTypes()) ?>
+              <?php renderCombo("pop-ep-pPhone3Type", CommonCombos::phoneTypes()) ?>
             </li>
             <li style="margin-top:0.5em">
               <label class="first">Timezone</label>
-              <? renderCombo("pop-ep-tz", CommonCombos::timezones()) ?>
+              <?php renderCombo("pop-ep-tz", CommonCombos::timezones()) ?>
             </li>
           </ul>
           <div class="pop-cmd">
@@ -488,11 +488,11 @@ function updateSupportUserCallback(dupe) {
         </div>      
       </div>
 <script type="text/javascript">
-<? if ($form->popMsg != null) { ?>
+<?php if ($form->popMsg != null) { ?>
   Pop.Msg.showInfo("<?=$form->popMsg ?>");
-<? } else if ($form->popEdit != null) { ?>
+<?php } else if ($form->popEdit != null) { ?>
   ChangePasswordPop.pop(<?=$login->userId?>);
-<? } ?>
+<?php } ?>
 var epType;
 var epUser;
 var epUserGroup;
@@ -661,7 +661,7 @@ function updateMyUserGroupCallback() {
 }
 
 </script>
-      <? include "inc/footer.php" ?>
+      <?php include "inc/footer.php" ?>
     </form>
   </body>
 </html>

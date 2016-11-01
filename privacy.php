@@ -1,5 +1,5 @@
-<? $title = 'Clicktate - Privacy Policy' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Privacy Policy' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body" style="background:white">
   <div class="content center">
     <h1>Privacy Policy</h1>
@@ -58,4 +58,4 @@
     </ol>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>

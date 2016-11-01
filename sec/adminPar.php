@@ -131,8 +131,8 @@ $focus = "uid";
       <div class="action">
         <input type="submit" value=" Save ">
         <?php if ($update) { ?>
-          <? // <input type="submit" name="action" value="Publish"> ?>
-          <? // <span></span> ?>
+          <?php // <input type="submit" name="action" value="Publish"> ?>
+          <?php // <span></span> ?>
           <input type="submit" name="action" value="Copy New Version" onclick="if (versionCancelled()) return false">
           <?php if (isset($form->questions) && sizeof($form->questions) == 0) { ?>
             <span></span>

@@ -13,9 +13,9 @@ if (isset($_POST['acc'])) {
   }
 }
 ?>
-<? $title = 'Clicktate - Migration Notice' ?>
-<? if (! $redirect) { ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Migration Notice' ?>
+<?php if (! $redirect) { ?>
+<?php include "inc/hheader.php" ?>
 <style>
 BODY {font-family:Arial}
 TABLE {font-size:10pt}
@@ -126,8 +126,8 @@ We know you have many choices, and we truly appreciate your continued use of Cli
   </div>
   </form>
 </div>
-<? } else { ?>
+<?php } else { ?>
 <script>
 window.location = 'welcome.php';
 </script>
-<? } ?>
+<?php } ?>

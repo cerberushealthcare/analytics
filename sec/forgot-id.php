@@ -75,7 +75,7 @@ $focus="email";
         <table border='0' cellpadding='0' cellspacing'0'>
           <tr>
             <td class='wm'>
-              <? renderBoxStart() ?>
+              <?php renderBoxStart() ?>
                 <div id="login">
                   <form id="frm" method="post" action="forgot-id.php">
                     <div class="l" style="margin-top:10px">
@@ -87,7 +87,7 @@ $focus="email";
                     </div>
                   </form>
                 </div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>

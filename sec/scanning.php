@@ -15,24 +15,24 @@ LoginSession::verify_forUser()->requires($login->Role->Artifact->scan);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Scanning') ?>
-    <? HEAD_Scanning() ?>
+    <?php HEAD('Scanning') ?>
+    <?php HEAD_Scanning() ?>
     <link rel='stylesheet' type='text/css' href='css/scanning.css?<?=Version::getUrlSuffix() ?>' />
     <script language="JavaScript1.2" src="js/pages/ScanningPage.js?4<?=Version::getUrlSuffix() ?>"></script>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th><h1 id='h1'>Scanning Center</h1></th>
           <td></td>
         </tr>
       </table>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='scan-indexing'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
+      <?php renderBoxEnd() ?>
       <div id="pop-upload-xml" class="pop">
         <div class="pop-cap">
           <div>
@@ -48,7 +48,7 @@ LoginSession::verify_forUser()->requires($login->Role->Artifact->scan);
                 <input type="hidden" name="XML" value="1" />
                 <input class='file' name="scanfile[]" type="file" /><br>
                 <div style='padding-top:4px;padding-left:1em'>
-                  <? renderLabelCheck('lc_enc', 'Encrypted?', false, null, 'showDecrypt()') ?>
+                  <?php renderLabelCheck('lc_enc', 'Encrypted?', false, null, 'showDecrypt()') ?>
                   <span id='dec' style='visibility:hidden;margin-left:1em'>
                     <label style='color:black'>Password</label>&nbsp;<input id='pw' name='pw' type='password' size='30' style='vertical-align:bottom'/>
                   </span>
@@ -62,9 +62,9 @@ LoginSession::verify_forUser()->requires($login->Role->Artifact->scan);
           </div>
         </div>
       </div>
-    <? _BODY() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Scanning') ?>
+  <?php CONSTANTS('Scanning') ?>
 <script type='text/javascript'>
 function uploadXml() {
   $('frm-upload-xml').submit();

@@ -8,9 +8,9 @@ LoginSession::verify_forUser()->requires($login->Role->Account->portal);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Accounts', 'AccountsPage') ?>
-    <? HEAD_PortalUserEntry() ?>
-    <? HEAD_UserSelector() ?>
+    <?php HEAD('Accounts', 'AccountsPage') ?>
+    <?php HEAD_PortalUserEntry() ?>
+    <?php HEAD_UserSelector() ?>
     <style>
 DIV.CustomForm INPUT {
   font-size:9pt;
@@ -24,14 +24,14 @@ DIV.CustomForm TR.another TD {
     </style>
   </head>
   <body onload='start()'>
-    <? BODY() ?>
+    <?php BODY() ?>
       <h1>Portal User Accounts</h1>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
 <script type='text/javascript'>
 C_Docs = <?=UserGroups::getDocsJsonList()?>;

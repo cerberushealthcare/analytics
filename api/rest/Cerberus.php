@@ -15,6 +15,8 @@ require_once 'dao/data/ApiUser.php';
 require_once 'dao/data/Xml.php';
 //require_once 'dao/ApiLogger.php';
 require_once 'php/data/LoginSession.php';
+require_once 'batch/_batch.php'; //Simply include this in order to use blog()
+require_once 'php/data/rec/sql/dao/Logger.php'; //analytics/sec/logs/log.txt
 
 
 //These two needed for clinical file import.
@@ -41,6 +43,7 @@ class Cerberus {
    * @throws CerberusApiException
    */
   public function request($rest) {
+	blog('Cerberus.php: Entered request');
     try {
       log2_r($rest, 'Cerberus::request');
       $op = strtolower(Data::get($rest->data, 'operation'));
@@ -57,13 +60,13 @@ class Cerberus {
 			throw new ApiException('Session required.');
 		}*/
 		
-		log2('The op is ' . $op);
-        ApiDao::requireLogin($sessionId);
+		blog('analytics/api/Cerberus.php: The op is ' . $op);
+        //ApiDao::requireLogin($sessionId);
         switch ($op) {
           case 'practice':
             $response = $this->requestPractice($rest);
             break;
-          case 'patient':
+			case 'patient':
             $response = $this->requestPatient($rest);
             break;
           case 'mappatient':
@@ -83,6 +86,9 @@ class Cerberus {
             break;
 		  case 'ccdupload':
 			$response = $this->requestCCD_UPLOAD($rest);
+			break;
+		  case 'ccdupload_custom':
+			$response = $this->requestCCD_UPLOAD_test($rest);
 			break;
           default:
             header('Request not recognized.', true, 405);
@@ -106,18 +112,32 @@ class Cerberus {
    * @return 'OK,session_id,unread_count,unreviewed_count,msg_url,review_url,doc_url,status_url,pharm_url,scan_url,track_url,report_url'
    */
   public function requestCCD_UPLOAD($rest) {
+	blog('rest/Cerberus.php: CCDUPLOAD triggered.');
 	try {
-	
 		try {
 			$sessionId = Data::get($rest->data, 'sessionId');
 		}
 		catch (Exception $e) {
 			throw new ApiException('Session required.');
 		}
+		
+		//Hacky workaround: When we call this process from a web service, $_GET is empty. And some of the functions below, most notably the clinical file upload process,
+		//depends on $_GET having certain values, otherwise it will choke.
+		
+		//To work around this, populate the $_GET variables it needs manually if we detect that they're empty. If they're empty it means we must be using a web service.
+		if (!isset($_GET['userGroupId'])) {
+			blog('User group ID is empty! Set the GET var to ' .  Data::get($rest->data, 'userGroupId'));
+			$_GET['userGroupId'] = Data::get($rest->data, 'userGroupId');
+			blog('rest/Cerberus.php:GET userGroupID is now ' .  $_GET['userGroupId']);
+		}
+		
+		echo 'rest/Cerberus.php:Entered requestCCDUpload session ID is ' . $sessionId;
 		//$sessionId = $rest->data['sessionId'];
 		//LoginSession::login('mm', 'clicktate1');
 		
-		$fileQualifiedPath = $rest->data['filepath'] . '/' . $rest->data['filename'];
+		$fileQualifiedPath = MyEnv::$BASE_PATH . '/analytics/' . $rest->data['filepath'] . $rest->data['filename'];
+		
+		blog('rest/Cerberus.php:Looking at the file path ' . $fileQualifiedPath);
 		
 		if (!file_exists($fileQualifiedPath)) {
 			throw new RuntimeException('File does not exist: ' . htmlentities($fileQualifiedPath));
@@ -125,14 +145,92 @@ class Cerberus {
 		
 		$file = new ClinicalFile;
 		
-		$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
+		//$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
+		$file->setContent(file_get_contents($fileQualifiedPath));
 		$file->setFilename($rest->data['filename']);
 
 		if (gettype($file) !== 'object') {
 			throw new RuntimeException("Can't import anything that isn't a <b>ClinicalFile</b> object. I got a(n) " . gettype($file));
 		}
+		
+		blog('rest/Cerberus.php: Importing file name ' . $rest->data['filename'] . '. Path is ' . $fileQualifiedPath);
+		try {
+			$result = ClinicalImporter::importFromFile($file);
+			blog('cerberus.php: Successfully imported ' . $fileQualifiedPath . '!!');
+		}
+		catch (Exception $e) {
 			
-		$result = ClinicalImporter::importFromFile($file);
+			throw new RuntimeException('cerberus.php: Could not import the file: ' . $e->getMessage());
+		}
+		blog('Imported ' . $fileQualifiedPath . ' successfully!');
+		echo 'OK. ' . $rest->data['sessionId'];
+	}
+	catch (Exception $e) {
+		//$errorLog->log($e->getMessage()) for debugging
+		blog('cerberus.php ERROR: Could not import the file: ' . $e->getMessage());
+		echo 'ERROR, ' . $e->getMessage();
+	}
+	blog('------');
+  }
+  
+  
+  
+   /**
+	 Mainly used for a test.
+   * Login request
+   * @param Rest $rest
+   * @return 'OK,session_id,unread_count,unreviewed_count,msg_url,review_url,doc_url,status_url,pharm_url,scan_url,track_url,report_url'
+   */
+  public function requestCCD_UPLOAD_test($rest) {
+	Logger::debug('rest/Cerberus.php: CCDUPLOAD TEST triggered.');
+	try {
+		try {
+			$sessionId = Data::get($rest->data, 'sessionId');
+		}
+		catch (Exception $e) {
+			throw new ApiException('Session required.');
+		}
+		
+		//Hacky workaround: When we call this process from a web service, $_GET is empty. And some of the functions below, most notably the clinical file upload process,
+		//depends on $_GET having certain values, otherwise it will choke.
+		
+		//To work around this, populate the $_GET variables it needs manually if we detect that they're empty. If they're empty it means we must be using a web service.
+		if (!isset($_GET['userGroupId'])) {
+			Logger::debug('User group ID is empty! Set the GET var to ' .  Data::get($rest->data, 'userGroupId'));
+			$_GET['userGroupId'] = Data::get($rest->data, 'userGroupId');
+			Logger::debug('rest/Cerberus.php:GET userGroupID is now ' .  $_GET['userGroupId']);
+		}
+		
+		echo 'rest/Cerberus.php:Entered requestCCDUpload_test session ID is ' . $sessionId;
+		//$sessionId = $rest->data['sessionId'];
+		//LoginSession::login('mm', 'clicktate1');
+		
+		$fileQualifiedPath = MyEnv::$BASE_PATH . '/analytics/' . $rest->data['filepath'] . $rest->data['filename'];
+		
+		Logger::debug('rest/Cerberus.php:Looking at the file path ' . $fileQualifiedPath);
+		
+		if (!file_exists($fileQualifiedPath)) {
+			throw new RuntimeException('File does not exist: ' . htmlentities($fileQualifiedPath));
+		}
+		
+		$file = new ClinicalFile;
+		
+		//$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
+		$file->setContent(file_get_contents($fileQualifiedPath));
+		$file->setFilename($rest->data['filename']);
+
+		if (gettype($file) !== 'object') {
+			throw new RuntimeException("Can't import anything that isn't a <b>ClinicalFile</b> object. I got a(n) " . gettype($file));
+		}
+		
+		Logger::debug('rest/Cerberus.php: Importing file name ' . $rest->data['filename'] . '. Path is ' . $fileQualifiedPath);
+		try {
+			$result = ClinicalImporter::importFromFile($file);
+			blog('cerberus.php: Successfully imported ' . $fileQualifiedPath . '!!');
+		}
+		catch (Exception $e) {
+			throw new RuntimeException('cerberus.php: Could not import the file: ' . $e->getMessage());
+		}
 		echo 'OK. ' . $rest->data['sessionId'];
 	}
 	catch (Exception $e) {
@@ -169,11 +267,13 @@ class Cerberus {
    * @return 'OK,session_id,unread_count,unreviewed_count,msg_url,review_url,doc_url,status_url,pharm_url,scan_url,track_url,report_url'
    */
   public function requestLogin($rest) {
-    $login = new ApiLogin($rest->data);
-	//echo '-------------';
-    $params = $this->dao->login($login);
+	//echo 'requestLogin for rest triggered.';
+			
+	$login = new ApiLogin($rest->data);
+	Logger::debug('rest/Cerberus:273: this is ' . var_dump($this, true));
+	$params = $this->dao->login($login, true);
 	echo 'requestLogin in Cerberus.php: done';
-    return $this->response('OK', $params);
+    return $this->response('OK....', $params);
   }
   /**
    * Poll status request 

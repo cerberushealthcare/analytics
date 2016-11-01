@@ -97,9 +97,9 @@
       <a class="cmd delete" href="javascript:" onclick="pqClear(); return false">Clear</a>
     </div>
     <div id='disp-declbs'>
-      <? renderLabelRadio2('disp-dec', 'lbsdec', 'Decimal', true, null, 'lbsdecClick()') ?>
+      <?php renderLabelRadio2('disp-dec', 'lbsdec', 'Decimal', true, null, 'lbsdecClick()') ?>
       &nbsp;
-      <? renderLabelRadio2('disp-lbs', 'lbsdec', 'Lbs/Oz', null, null, 'lbsdecClick()') ?>
+      <?php renderLabelRadio2('disp-lbs', 'lbsdec', 'Lbs/Oz', null, null, 'lbsdecClick()') ?>
     </div>
     <div id="pop-calc-display" style="width:210px;">0</div>
     <div id="pop-calc-entry">
@@ -533,9 +533,9 @@
             <td></td>
             <td><input id="medFreq" type="text" size="15" onfocus="medShow(2)"></td>
             <td></td>
-            <td><? renderLabelCheck2('medAsNeed', 'As needed') ?></td>
+            <td><?php renderLabelCheck2('medAsNeed', 'As needed') ?></td>
             <td></td>
-            <td><? renderLabelCheck2('medMeals', 'With meals') ?></td>
+            <td><?php renderLabelCheck2('medMeals', 'With meals') ?></td>
           </tr>
         </table>
         <table border=0 cellpadding=0 cellspacing=0>

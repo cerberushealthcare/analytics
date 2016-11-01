@@ -10,20 +10,20 @@ LoginSession::verify_forUser()->requires($login->Role->Artifact->markReview);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Item Review', 'ReviewPage') ?>
-    <? HEAD_UI('DocHistory', 'Scanning') ?>
-    <? HEAD_PortalUserEntry() ?>
+    <?php HEAD('Item Review', 'ReviewPage') ?>
+    <?php HEAD_UI('DocHistory', 'Scanning') ?>
+    <?php HEAD_PortalUserEntry() ?>
  </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <h1>Item Review</h1>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('DocHistory', 'Scanning', 'Templates') ?>
-  <? START() ?>
+  <?php CONSTANTS('DocHistory', 'Scanning', 'Templates') ?>
+  <?php START() ?>
 </html>

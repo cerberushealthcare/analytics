@@ -63,7 +63,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead("Welcome") ?>
+    <?php renderHead("Welcome") ?>
     <link rel="stylesheet" type="text/css" href="css/page.css?" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/clicktate.css?" media="screen" />
     <link rel="stylesheet" type="text/css" href="css/schedule.css?" media="screen" />
@@ -89,10 +89,10 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
               <td><img src="img/lhdLogoTop2.png" /></td>
               <td class="logo-right" />
                 <div class="loginfo">
-                  <? if (isset($login)) { ?>
+                  <?php if (isset($login)) { ?>
                     Logged in as <b><?=$login->uid ?></b>
                     | <a href=".?logout=Y">Logout</a>
-                  <? } ?>
+                  <?php } ?>
                 </div>
               </td>
             </tr>
@@ -188,7 +188,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                     <tr>
                       <td>
                         <label>State</label><br>
-                        <? renderCombo("state", $form->states, $form->state) ?>
+                        <?php renderCombo("state", $form->states, $form->state) ?>
                       </td>
                       <td width=5></td>
                       <td>
@@ -266,7 +266,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                   <table border=0 cellpadding=0 cellspacing=0 style='display:none'>
                     <tr style="padding-top:15px">
                       <td>
-                        <? renderCombo("found", $form->foundMethods, $form->found) ?>
+                        <?php renderCombo("found", $form->foundMethods, $form->found) ?>
                       </td>
                       <td width=5></td>
                       <td class="help pt5">
@@ -296,7 +296,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
                     <tr>
                       <td>
                         <br><br>
-                        <img src="inc/captchaGen.php?<? echo time() ?>">
+                        <img src="inc/captchaGen.php?<?php echo time() ?>">
                       </td>
                     </tr>
                   </table>
@@ -351,7 +351,7 @@ $prac2 = "form.practice_name.disabled = false; form.practice_id.disabled = true;
       </div> 
     <div id='bottom'><img src='img/brb.png' /></div>
     </div>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/footer.php" ?>
 <script type="text/javascript">
 var capterra_vkey = "22cd5473e244a97176451f74a5cd7775";
 var capterra_vid = "2049522";

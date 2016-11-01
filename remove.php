@@ -19,8 +19,8 @@ if ($email) {
   }
 } 
 ?>
-<? $title = 'Clicktate - Email Management' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Email Management' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body" style="background:white">
   <div class="content center">
     <h1>Email Subscription Management</h1>
@@ -48,4 +48,4 @@ if ($email) {
     </form>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>

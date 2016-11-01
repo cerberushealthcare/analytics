@@ -487,7 +487,7 @@ eos;
 // Will shortcircuit javascript if user is basic (non-EMR) or $ro=true (read-only); otherwise $jscall is rendered
 // Example usage:
 // function addSchedPop(userId, date, time) {
-//   <? permCheck($myLogin->permissions->accessSchedule >= Permissions::ACCESS_UPDATE, "addSchedPop2(userId, date, time)") ? > 
+//   <?php permCheck($myLogin->permissions->accessSchedule >= Permissions::ACCESS_UPDATE, "addSchedPop2(userId, date, time)") ? > 
 // }
 function permContinue($test, $jscall) {
   //if (premiumOnlyJs()) {

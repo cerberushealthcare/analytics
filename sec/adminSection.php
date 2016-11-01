@@ -1,4 +1,4 @@
-<? 
+<?php 
 require_once "inc/noCache.php";
 require_once "php/data/LoginSession.php";
 require_once "php/dao/TemplateAdminDao.php";
@@ -92,23 +92,23 @@ $focus = "uid";
     <script language='JavaScript1.2' src='js/_lcd_html.js?'></script>
   </head>
   <body>
-    <? include "inc/banner.php" ?>
+    <?php include "inc/banner.php" ?>
     <form method="post" action="adminSection.php">
       <input type="hidden" name="id" value="<?=$form->id ?>">
       <input type="hidden" name="templateId" value="<?=$form->templateId ?>">
-      <? require_once "inc/errors.php" ?>
+      <?php require_once "inc/errors.php" ?>
       <div id="breadcrumb">
         <?=$form->breadcrumb ?><br>
         <h1><?=($update) ? "" : "New " ?>Section <?=$form->uid ?></h1>
       </div>
       <div class="action">
         <input type="submit" value=" Save ">
-        <? if ($update) { ?>
-          <? if (isset($form->pars) && sizeof($form->pars) == 0) { ?>
+        <?php if ($update) { ?>
+          <?php if (isset($form->pars) && sizeof($form->pars) == 0) { ?>
             <span></span>
             <input type="submit" name="action" value="Delete Section" onclick="if (deleteCancelled()) return false">
-          <? } ?>
-        <? } ?> 
+          <?php } ?>
+        <?php } ?> 
         <span></span>
         <input type="submit" name="action" value=" Exit ">
       </div>
@@ -128,7 +128,7 @@ $focus = "uid";
               <td class="label">Sort Position</td>
               <td width=5></td>
               <td>
-                <? renderCombo("sortOrder", $form->sortOrders, $form->sortOrder) ?>
+                <?php renderCombo("sortOrder", $form->sortOrders, $form->sortOrder) ?>
               </td>
             </tr>
           </table>
@@ -146,7 +146,7 @@ $focus = "uid";
         </div>
         <div class="roundBottom"><img src="img/bl.gif"></div>
       </div>
-      <? if (isset($form->pars)) { ?>
+      <?php if (isset($form->pars)) { ?>
         <div class="roundBox">
          <div class="roundTitle">
             Paragraphs of This Section
@@ -163,18 +163,18 @@ $focus = "uid";
                   <th>Hidden?</th>
                   <th class="noDivider">Sort Order</th>
                 </tr>
-                <? $altColor = true ?>
-                <? $lastUid = "" ?>
-                <? foreach ($form->pars as $k => $par) { ?>
-                  <? $new = ($lastUid != $par->uid) ?>
-                  <? if ($new) {$altColor = ! $altColor; $lastUid = $par->uid;} ?>
-                  <? $cls = ($altColor) ? "class=gray" : "" ?>
-                  <? if ($par->id == $focId) {$cls = "class=yellow";} ?>
-                  <tr id="td<?=$par->id ?>" <?=$cls?> <? if (! $par->current) {?>style="color:#707070"<?} else if ($par->injectOnly) { ?>style="color:green"<? } else if (! $par->major) { ?>style="color:blue"<? } ?>>
+                <?php $altColor = true ?>
+                <?php $lastUid = "" ?>
+                <?php foreach ($form->pars as $k => $par) { ?>
+                  <?php $new = ($lastUid != $par->uid) ?>
+                  <?php if ($new) {$altColor = ! $altColor; $lastUid = $par->uid;} ?>
+                  <?php $cls = ($altColor) ? "class=gray" : "" ?>
+                  <?php if ($par->id == $focId) {$cls = "class=yellow";} ?>
+                  <tr id="td<?=$par->id ?>" <?=$cls?> <?php if (! $par->current) {?>style="color:#707070"<?} else if ($par->injectOnly) { ?>style="color:green"<?php } else if (! $par->major) { ?>style="color:blue"<?php } ?>>
                     <td class="control">
-                      <? if ($new) { ?>
-                      <input type="checkbox" name="done[]" value="<?=$par->id ?>" <? checkedIf($par->noBreak) ?> <? echoIf($par->noBreak, "", "style='border:1px solid red'") ?> title="Done">
-                      <? } ?>
+                      <?php if ($new) { ?>
+                      <input type="checkbox" name="done[]" value="<?=$par->id ?>" <?php checkedIf($par->noBreak) ?> <?php echoIf($par->noBreak, "", "style='border:1px solid red'") ?> title="Done">
+                      <?php } ?>
                       <a href="adminPar.php?id=<?=$par->id ?>&tid=<?=$form->templateId ?><?=rnd() ?>" title="Edit this record"><img src="img/pencil.gif"></a>
                     </td>
                     <td><?=($new) ? $par->uid : ""?></td>
@@ -184,7 +184,7 @@ $focus = "uid";
                     <td><?=$par->injectOnly ? "Yes" : "" ?></td>
                     <td><?=($par->sortOrder == 32767) ? "" : $par->sortOrder ?></td>
                   </tr>
-                <? } ?>
+                <?php } ?>
               </table>
             </div>
             <div class="action nopad"> 
@@ -196,13 +196,13 @@ $focus = "uid";
           </div>
           <div class="roundBottom"><img src="img/bl.gif"></div>
         </div>
-      <? } ?>
+      <?php } ?>
     </form>
   </body>
 </html>
-<? if ($focId) { ?>
+<?php if ($focId) { ?>
 <script>
 scrollTo("st", "td<?=$focId ?>", 20);
 </script>
-<? } ?>
-<? require_once "inc/focus.php" ?>
+<?php } ?>
+<?php require_once "inc/focus.php" ?>
