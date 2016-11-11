@@ -61,10 +61,10 @@ DIV#message-div {
         <table border='0' cellpadding='0' cellspacing'0'>
           <tr>
             <td class='wm'>
-              <? renderBoxStart() ?>
+              <?php renderBoxStart() ?>
                 <div id="login" style="height:160px; width:310px">
                   <?php require_once "inc/errors.php" ?>
-                  <? if (! isset($msg)) { ?>
+                  <?php if (! isset($msg)) { ?>
                   <form id="frm" method="post" action="forgot-login.php">
                     <div class="l" style="margin-top:10px">
                       <table border="0" cellpadding="0" cellspacing="0">
@@ -80,20 +80,20 @@ DIV#message-div {
                       <a id='asub' href="." class="tour">Submit ></a>
                     </div>
                   </form>
-                  <? } ?>
+                  <?php } ?>
                 </div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>
         <div id="forgot">
-          <? if (! $locked) { ?>
-            <? if (! isset($msg)) { ?>
+          <?php if (! $locked) { ?>
+            <?php if (! isset($msg)) { ?>
               Never mind, <a class='gb' href="index.php">go back to login page</a>
-            <? } else { ?>
+            <?php } else { ?>
               <a class='gb' href="index.php">Go back to login page</a>
-            <? } ?>
-          <? } ?>
+            <?php } ?>
+          <?php } ?>
         </div>
       </div>
     </div>

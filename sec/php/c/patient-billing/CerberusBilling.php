@@ -19,9 +19,11 @@ class CerberusBilling {
     return $loginInfo;
   }
   /** Login to an already established Cerberus session */
-  static function /*CQ_LoginInfo*/activateSession($ugid, $user, $pw, $session, $cookie, $url) {
-    $loginInfo = CQ_LoginInfo::from($user, $pw, $cookie, $session, $url);
+  static function /*CQ_LoginInfo*/activateSession($ugid, $user, $pw, $session = null, $cookie = null, $url = null) {
+    $loginInfo = CQ_LoginInfo::from($user, $pw);
+	echo 'CerberusBilling.php: CQ_Login done!!';
     CerberusLogin::cache($ugid, $loginInfo);
+	echo 'Done with the cache. Returning...';
     return $loginInfo;
   }
   /** Send updated client information to Cerberus */

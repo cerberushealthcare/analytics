@@ -1,4 +1,4 @@
-<? 
+<?php 
 require_once "inc/requireLogin.php";
 require_once "php/dao/LookupDao.php";
 require_once "php/data/rec/sql/MedsLegacy.php";
@@ -211,27 +211,27 @@ DIV#sig SPAN {
     </style>
   </head>
   <body>
-    <? if ($docType == 0 || $docType == 2) { ?>
-      <? foreach ($pages as $page) { ?>
+    <?php if ($docType == 0 || $docType == 2) { ?>
+      <?php foreach ($pages as $page) { ?>
         <div id="body" class="<?=($page->last && $docType == 0) ? "" : "brk" ?>">
           <table border="0" cellpadding="0" cellspacing="0">
-            <? $ix = 1 ?>
-            <? foreach ($page->rows as $row) { ?>
+            <?php $ix = 1 ?>
+            <?php foreach ($page->rows as $row) { ?>
               <tr>
-                <? foreach ($row as $rx) { ?>
+                <?php foreach ($row as $rx) { ?>
                   <td id="td<?=$ix++ ?>">
-                    <? renderRx($head, $rx) ?>
+                    <?php renderRx($head, $rx) ?>
                   </td>
-                <? } ?>
+                <?php } ?>
               </tr>
-            <? } ?>
+            <?php } ?>
           </table>
         </div>
-      <? } ?>
-    <? } ?>
-    <? if ($docType >= 1) { ?>
+      <?php } ?>
+    <?php } ?>
+    <?php if ($docType >= 1) { ?>
       <div id="body">
-        <? renderMedListHead($head, $client) ?>
+        <?php renderMedListHead($head, $client) ?>
         <div id="medlist">
           <table border="0" cellpadding="0" cellspacing="0">
             <thead>
@@ -241,14 +241,14 @@ DIV#sig SPAN {
               </tr>
             </thead>
             <tbody>
-              <? foreach ($rxs as $rx) { ?>
-                <? renderMedListRow($rx) ?>
-              <? } ?>
+              <?php foreach ($rxs as $rx) { ?>
+                <?php renderMedListRow($rx) ?>
+              <?php } ?>
             </tbody>
           </table>
         </div>
       </div>
-    <? } ?>
+    <?php } ?>
   </body>
 </html>
 <?

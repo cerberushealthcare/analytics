@@ -8,7 +8,7 @@ LoginSession::verify_forUser()->requires($login->admin);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? renderHead('Drug Classification') ?>
+    <?php renderHead('Drug Classification') ?>
     <link rel='stylesheet' type='text/css' href='css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/Pop.css?<?=Version::getUrlSuffix() ?>' />
     <link rel='stylesheet' type='text/css' href='css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>' />
@@ -52,7 +52,7 @@ A.new-folder {
   <body onload="start()"> 
     <div id='bodyContainer'>
       <div id='curtain'></div>
-      <? include 'inc/header.php' ?>
+      <?php include 'inc/header.php' ?>
       <div id='bodyContent' class='content'>
         <table class='h'>
           <tr>
@@ -60,15 +60,15 @@ A.new-folder {
             <td></td>
           </tr>
         </table>
-        <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+        <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
           <div id='tile'>
             <div class='spacer'>&nbsp;</div>
           </div>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
       </div>
       <div id='bottom'><img src='img/brb.png' /></div>
     </div>      
-    <? include 'inc/footer.php' ?>
+    <?php include 'inc/footer.php' ?>
   </body>
 <script type='text/javascript'>
 function start() {

@@ -177,7 +177,7 @@ require_once "php/forms/utils/CommonCombos.php";
             <label class="first">City</label>
             <input id="pa-city" type="text" size="30" value="" />
             <label>State</label>
-            <? renderCombo("pa-state", CommonCombos::states()) ?>
+            <?php renderCombo("pa-state", CommonCombos::states()) ?>
             <label>Zip</label>
             <input id="pa-zip" type="text" size="8" value="" />
           </li>
@@ -190,18 +190,18 @@ require_once "php/forms/utils/CommonCombos.php";
           <li>
             <label class="first">Phone 1</label>
             <input id="pa-phone1" type="text" size="20" value="" />
-            <? $phoneTypes = CommonCombos::phoneTypes() ?>
-            <? renderCombo("pa-phone1Type", $phoneTypes) ?>
+            <?php $phoneTypes = CommonCombos::phoneTypes() ?>
+            <?php renderCombo("pa-phone1Type", $phoneTypes) ?>
           </li>
           <li>
             <label class="first">Phone 2</label>
             <input id="pa-phone2" type="text" size="20" value="" />
-            <? renderCombo("pa-phone2Type", $phoneTypes) ?>
+            <?php renderCombo("pa-phone2Type", $phoneTypes) ?>
           </li>
           <li>
             <label class="first">Phone 3</label>
             <input id="pa-phone3" type="text" size="20" value="" />
-            <? renderCombo("pa-phone3Type", $phoneTypes) ?>
+            <?php renderCombo("pa-phone3Type", $phoneTypes) ?>
           </li>
         </ul>
         <ul class="entry">
@@ -254,7 +254,7 @@ require_once "php/forms/utils/CommonCombos.php";
           </li>
           <li class="push">
             <label class="first">Effective</label>
-            <? renderCalendar("pic-ic-effective", "", false) ?>
+            <?php renderCalendar("pic-ic-effective", "", false) ?>
           </li>
         </ul>
       </div>

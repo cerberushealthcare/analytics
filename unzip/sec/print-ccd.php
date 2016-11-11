@@ -47,7 +47,7 @@ TABLE.demo TH {
 </head>
 <body>
 <div class='ViewXml'>
-<? echo $xml->asHtml($cid) ?>
+<?php echo $xml->asHtml($cid) ?>
 </div>
 </body>
 </html>

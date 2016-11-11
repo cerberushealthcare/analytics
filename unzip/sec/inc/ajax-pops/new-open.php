@@ -22,7 +22,7 @@
     <ul class="entry">
       <li>
         <label class="first2">Date of Service</label>
-        <? renderCalendar("nn-dos") ?>
+        <?php renderCalendar("nn-dos") ?>
       </li>
       <li>
         <label class="first2">Send To</label>
@@ -78,7 +78,7 @@
     <ul class="entry">
       <li>
         <label class="first6">Date of Service</label>
-        <? renderCalendar("rn-dos") ?>
+        <?php renderCalendar("rn-dos") ?>
       </li>
       <li>
         <label class="first6">Send To</label>
@@ -88,7 +88,7 @@
       </li>
       <li>
         <label class="first6">Override Facesheet?</label>
-        <? renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
+        <?php renderLabelCheck("rn-ovfs", "Yes (e.g. include meds/allergies from note)") ?>
       </li>
     </ul>
     <div class="pop-cmd" style="">
@@ -124,11 +124,11 @@
       </li>
       <li>
         <label class="first2">Date of Service</label>
-        <? renderCalendar("sv-dos") ?>
+        <?php renderCalendar("sv-dos") ?>
       </li>
       <li>
         <label class="first2"></label>
-        <? renderLabelCheck("sv-standard", "Use as patient's standard note", false, null,  null, "sv-use") ?>
+        <?php renderLabelCheck("sv-standard", "Use as patient's standard note", false, null,  null, "sv-use") ?>
       </li>
     </ul>
     <div class="pop-cmd">
@@ -159,7 +159,7 @@
     <ul class="entry">
       <li style="display:none">
         <label class="first2">Date of Service</label>
-        <? renderCalendar("eh-dos") ?>
+        <?php renderCalendar("eh-dos") ?>
       </li>
       <li>
         <label class="nopad">Send To</label>
@@ -202,10 +202,10 @@
       </table>
     </div>
     <div class="pop-cmd">
-      <? if ($login->Role->Artifact->noteCreate) { ?>
+      <?php if ($login->Role->Artifact->noteCreate) { ?>
         <a href="javascript:newNoteFromOpen()" class="cmd note">New Document...</a>
         <span>&nbsp;</span>
-      <? } ?>
+      <?php } ?>
       <a href="javascript:Pop.close()" class="cmd none">Cancel</a>
     </div>
   </div>

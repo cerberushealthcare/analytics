@@ -194,7 +194,9 @@ abstract class File extends FileSpec {
   }
   protected function file_get_contents() {
     $filename = $this->getFullFilename();
-    if (($content = file_get_contents($filename, FILE_USE_INCLUDE_PATH)) == false)
+	$content = file_get_contents($filename, FILE_USE_INCLUDE_PATH);
+	Logger::debug('php/data/file/_File.php: Content is ' . gettype($content) . ' ' . $content);
+    if ($content == false)
       throw new FileCannotOpen($filename);
     return /*string*/$content;
   } 

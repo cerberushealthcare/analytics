@@ -10,7 +10,7 @@ $welcome = Welcome::fetch();
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Welcome') ?>
+    <?php HEAD('Welcome') ?>
     <style>
 DIV.bc {
 background-color:white;
@@ -79,7 +79,7 @@ color:blue;
     </style>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th>
@@ -91,7 +91,7 @@ color:blue;
           </td>
         </tr>
       </table class='b'>
-      <? // renderBoxStart('wide', null, null, 'box') ?>
+      <?php // renderBoxStart('wide', null, null, 'box') ?>
         <div class='bc2'>
           <div class='link'>
             <table>
@@ -118,15 +118,15 @@ color:blue;
                 <td class='img'><a href="documents.php"><img src='img/welcome/2documents.png' /></a></td>
                 <td class='w'>
                   <div class='st'>
-                    <? if ($welcome->docUnreviewed) { ?>
-                      <a href='review.php' class='red'><?=plural($welcome->docUnreviewed, 'item')?> to review</a><? if ($welcome->docUnsigned) { ?> and <? } ?>
-                    <? } ?>
-                    <? if ($welcome->docUnsigned) { ?>
+                    <?php if ($welcome->docUnreviewed) { ?>
+                      <a href='review.php' class='red'><?=plural($welcome->docUnreviewed, 'item')?> to review</a><?php if ($welcome->docUnsigned) { ?> and <?php } ?>
+                    <?php } ?>
+                    <?php if ($welcome->docUnsigned) { ?>
                       <a href='documents.php?pf1=closed&pfv1=0&pfe1=2&u=-1' class='red'><?=plural($welcome->docUnsigned, 'unsigned document')?></a>
-                    <? } ?> 
-                    <? if (empty($welcome->docUnsigned) && empty($welcome->docUnreviewed)) { ?>
+                    <?php } ?> 
+                    <?php if (empty($welcome->docUnsigned) && empty($welcome->docUnreviewed)) { ?>
                       <a href='documents.php' class='blue'>Documents</a>
-                    <? } ?>
+                    <?php } ?>
                   </div>
                 </td>
               </tr>
@@ -139,11 +139,11 @@ color:blue;
                 <td class='img'><a href="messages.php"><img src='img/welcome/8messages.png' /></a></td>
                 <td class='w'>
                   <div class='st'>
-                    <? if ($welcome->msgUnread) { ?>
+                    <?php if ($welcome->msgUnread) { ?>
                       <a href='messages.php' class='red'><?=plural($welcome->msgUnread, 'unread message')?></a>
-                    <? } else { ?>
+                    <?php } else { ?>
                       <a href='messages.php' class='blue'>Messages</a>
-                    <? } ?>
+                    <?php } ?>
                   </div>
                   <div class='act'>
                     <a class='action msg' href='message.php'>Compose</a>
@@ -177,11 +177,11 @@ color:blue;
                 <td class='img'><a href="tracking.php"><img src='img/welcome/4tracking.png' /></a></td>
                 <td class='w'>
                   <div class='st'>
-                    <? if ($welcome->orderUnsched) { ?>
+                    <?php if ($welcome->orderUnsched) { ?>
                       <a href='tracking.php?pix=1' class='red'><?=plural($welcome->orderUnsched, 'unscheduled order')?></a>
-                    <? } else { ?>
+                    <?php } else { ?>
                       <a href='tracking.php' class='blue'>Order Tracking</a>
-                    <? } ?>
+                    <?php } ?>
                   </div>
                 </td>
               </tr>
@@ -234,7 +234,7 @@ color:blue;
             Note... this is not where this will be.... but <a href='income.php' class='red'>click here</a>
           </div>
         </div>
-      <? // renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php // renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
 </html>

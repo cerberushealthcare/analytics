@@ -40,6 +40,7 @@ abstract class SqlRec extends Rec {
   public function __construct() {
     $args = func_get_args();
     if (count($args) == 1) {
+	  Logger::debug('SqlRec::__construct: Received arg ' . gettype($args) . ' ' . print_r($args, true));
       if (is_assoc($args[0])) {  
         $this->__constructFromSqlArray($args[0]);
         $args = null;
@@ -1096,11 +1097,21 @@ abstract class SqlRec extends Rec {
   }
   
   static function fetchAllAndFlatten_Process($sql) {
+    Logger::debug('_SqlRec::fetchAllAndFlatten_Process called.');
 	return static::fetchRows($sql);
   }
   
   static function fetchOneBy_Test($sql, $criteria) {
-    $ci = $criteria->getRecsFromCriteria();
+    /*Logger::debug('_SqlRec::fetchOneBy_Test: Entered.');
+	$a = static::fetchAllAndFlatten($criteria, null, $limit); //fetchAllAndFlatten returns an array
+    $recs = $a[0];
+	Logger::debug('_SqlRec::fetchOneBy_Test: Got recs as ' . gettype($recs) . '. Empty? ' . empty($recs));
+	
+	if (! empty($recs)) return current($recs);*/
+	  
+    
+	// $recs = self::fetchAllBy($criteria, null, $limit); //We probably need this
+    $ci = $criteria->getRecsFromCriteria(); //We may not even need this because we are already supplied $c....
     $infos = self::buildSqlSelectInfos($ci);
     $class = $criteria->getMyName();
 	Logger::debug('fetchOneByTest: About to get rows....');
@@ -1108,27 +1119,36 @@ abstract class SqlRec extends Rec {
 	Logger::debug('fetchOneByTest: Got rows.');
 	$frows = ($ci['ct'] == 1) ? $rows : self::unflattenRows($rows, $infos, $ci['ct'], $criteria);
 	//we may want to do the if ($order) Rec::sort() call from fetchAllAndFlatten here.
-	Logger::debug('fetchOneByTest: Returning.');
+	Logger::debug('fetchOneByTest: class is a(n) ' . gettype($class) . ' ' . print_r($class, true));
 	$rec = $class::fromRows($frows, null);  //must return the recs array that we make in FetchAllAndFlatten!
-	Logger::debug('fetchOneBy_Test: Returning rec which is a ' . gettype($rec));
+	Logger::debug('fetchOneBy_Test: Returning rec 0 which is a ' . gettype($rec[0]) . ' ' . print_r($rec[0], true)); //$rec is an array. We don't know what rec[0] is yet.
 	return $rec[0];
   }
   
   protected static function fetchRows($sql) {
+  	Logger::debug('SqlRec::fetchRows: Entering Dao::fetchRows with ' . $sql);
     return Dao::fetchRows($sql);
   }
   protected static function fromSql($sql) {
     return static::fromRows(Dao::fetchRows($sql));
   }
   protected static function fromRows($rows, $keyFid = null) {
+    Logger::debug('fromRows debug backtrace:');
+	Logger::debug(print_r(debug_backtrace(), true));
+    Logger::debug('In SqlRec::fromRows. This is probably the seam! We received rows which is a(n) ' . gettype($rows) . ' ' . print_r($rows, true));
     $recs = array();
     foreach ($rows as &$row) {
       $rec = new static($row);
-      if ($keyFid)
+      if ($keyFid) {
+		Logger::debug('fromRows: recs[' . $rec->$keyFid . '] being set to ' . gettype($rec) . ' ' . print_r($rec));
         $recs[$rec->$keyFid] = $rec;
-      else
+	  }
+      else {
+	    Logger::debug('No keyFid. Setting recs (an array) to ' . print_r($rec, true));
         $recs[] = $rec;
+	  }
     }
+	Logger::debug('fromRows: Returning rec which is a ' . gettype($recs) . ' ' . print_r($recs, true));
     return $recs;
   }
   /**

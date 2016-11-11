@@ -41,9 +41,9 @@
             <td></td>
             <td><input id="medFreq" type="text" size="15" onfocus="QPopLegacyMed.$.medShow('medFreq', 2)"></td>
             <td></td>
-            <td><? renderLabelCheck2('medAsNeed', 'As needed') ?></td>
+            <td><?php renderLabelCheck2('medAsNeed', 'As needed') ?></td>
             <td></td>
-            <td><? renderLabelCheck2('medMeals', 'With meals') ?></td>
+            <td><?php renderLabelCheck2('medMeals', 'With meals') ?></td>
           </tr>
         </table>
         <table border=0 cellpadding=0 cellspacing=0>

@@ -8,10 +8,10 @@ $addr = Address::formatCsz($login->User->UserGroup->Address);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Welcome') ?>
+    <?php HEAD('Welcome') ?>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th>
@@ -26,7 +26,7 @@ $addr = Address::formatCsz($login->User->UserGroup->Address);
       <div id='output' style='height:500px'>
         <input type='button' value='Request' onclick='request()' />
       </div>
-    <? _BODY() ?>
+    <?php _BODY() ?>
   </body>
 </html>
 <script>

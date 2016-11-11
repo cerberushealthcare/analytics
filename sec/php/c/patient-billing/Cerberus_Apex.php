@@ -103,7 +103,7 @@ class CQ_LoginInfo extends Rec {
   public $sessionId;
   public $url;
   //
-  static function from($user, $pw, $cookieValue, $sessionId, $url) {
+  static function from($user, $pw, $cookieValue = null, $sessionId = null, $url = null) {
     $me = new static();
     $me->user = $user;
     $me->pw = $pw;

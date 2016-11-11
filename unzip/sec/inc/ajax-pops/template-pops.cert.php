@@ -97,9 +97,9 @@
       <a class="cmd delete" href="javascript:" onclick="pqClear(); return false">Clear</a>
     </div>
     <div id='disp-declbs'>
-      <? renderLabelRadio2('disp-dec', 'lbsdec', 'Decimal', true, null, 'lbsdecClick()') ?>
+      <?php renderLabelRadio2('disp-dec', 'lbsdec', 'Decimal', true, null, 'lbsdecClick()') ?>
       &nbsp;
-      <? renderLabelRadio2('disp-lbs', 'lbsdec', 'Lbs/Oz', null, null, 'lbsdecClick()') ?>
+      <?php renderLabelRadio2('disp-lbs', 'lbsdec', 'Lbs/Oz', null, null, 'lbsdecClick()') ?>
     </div>
     <div id="pop-calc-display" style="width:210px;">0</div>
     <div id="pop-calc-entry">

@@ -20,6 +20,7 @@ class Rec {
    */
   public function __construct() {
     $args = func_get_args();
+	Logger::debug('_Rec: Got args which is a ' . gettype($args) . print_r($args, true));
     if (count($args) == 1)
       if (is_array($args[0])) {
         $this->__constructFromArray($args[0]);

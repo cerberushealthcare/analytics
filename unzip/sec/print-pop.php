@@ -75,9 +75,9 @@ H2 {
   <div id='bodyContainer'>
   <div id='curtain'></div>
     <div id='body'>
-      <? if ($title) { ?>
+      <?php if ($title) { ?>
         <div class='cj mb10'><h4><?=$title?></h4></div>
-      <? } else { ?>
+      <?php } else { ?>
         <table class='h'>
           <tr>
             <th>
@@ -88,11 +88,11 @@ H2 {
             </td>
           </tr>
         </table>
-      <? } ?>
+      <?php } ?>
       <div id='out' class='fstab noscroll'></div>
     </div>
   </div>
-  <? include "js/pops/inc/$pop.php" ?>
+  <?php include "js/pops/inc/$pop.php" ?>
   </body>
   <script>
 var Facesheet = Object.Rec.extend({});

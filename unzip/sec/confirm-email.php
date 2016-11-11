@@ -12,9 +12,9 @@ if (isset($_POST['acc'])) {
   $_POST['email'] = $login->User->email;
 }
 ?>
-<? $title = 'Clicktate - Confirm Email' ?>
-<? if (! $redirect) { ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Confirm Email' ?>
+<?php if (! $redirect) { ?>
+<?php include "inc/hheader.php" ?>
 <style>
 BODY {font-family:Arial}
 TABLE {font-size:10pt}
@@ -90,17 +90,17 @@ display:inline-block;
   </div>
   </form>
 </div>
-  <? if ($errors) { ?>
+  <?php if ($errors) { ?>
   <script>
   window.setTimeout(function() {
     window.scrollTo(0, document.documentElement.scrollHeight);
   }, 100)
   </script>
-  <? } ?>
-<? $focus = 'email'; ?>
+  <?php } ?>
+<?php $focus = 'email'; ?>
 <?php require_once "inc/focus.php" ?>
-<? } else { ?>
+<?php } else { ?>
 <script>
 window.location = 'welcome.php';
 </script>
-<? } ?>
+<?php } ?>

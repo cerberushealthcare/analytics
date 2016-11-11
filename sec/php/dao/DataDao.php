@@ -430,7 +430,8 @@ class DataDao {
   private static function saveOutputData($out) {
     $tables = DataDao::getOutDataTables();
     logit_r($out, 'saveOutputData');
-    static::saveOutputProcs($out);
+	//echo 'php dao DataDao::saveOutputData: Skipping output procs and continuing to vitals, allergies, etc....'; //this line never executes....
+    //static::saveOutputProcs($out);
     static::saveOutputVitals($out);
     static::saveOutputAllergies($out);
     static::saveOutputDiagnoses($out);

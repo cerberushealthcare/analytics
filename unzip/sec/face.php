@@ -33,7 +33,7 @@ $pop = isset($_GP['pop']);
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? HEAD('Facesheet', 'FacesheetPage') ?>
+    <?php HEAD('Facesheet', 'FacesheetPage') ?>
     <link rel="stylesheet" type="text/css" href="css/xb/facesheet.css?<?=Version::getUrlSuffix() ?>" />
     <script language="JavaScript1.2" src="js/rx-writer.js?<?=Version::getUrlSuffix() ?>"></script>
     <script language="JavaScript1.2" src="js/template-pops.js?<?=Version::getUrlSuffix() ?>"></script>
@@ -53,7 +53,7 @@ $pop = isset($_GP['pop']);
     <script language="JavaScript1.2" src="js/old-ajax.js?<?=Version::getUrlSuffix() ?>"></script>
     <script language="JavaScript1.2" src="js/json.js?<?=Version::getUrlSuffix() ?>"></script>
     <script src="js/_rec/InfoButton.js?<?=Version::getUrlSuffix() ?>"></script>
-    <? HEAD_UI('Facesheet') ?>
+    <?php HEAD_UI('Facesheet') ?>
     <style>
 DIV.EntryFolderList {
   border:1px solid #c0c0c0;
@@ -65,10 +65,10 @@ DIV.EntryFolderList {
 }
     </style>
   </head>
-  <body onload="start()" <? if ($pop) { ?>style='background-color:white'<? } ?>>
+  <body onload="start()" <?php if ($pop) { ?>style='background-color:white'<?php } ?>>
     <div id="bodyContainer">
       <div id="curtain"></div>
-      <? include "inc/header.php" ?>
+      <?php include "inc/header.php" ?>
       <div id='bodyContent' class="content">
         <table class='h'>
           <tr>
@@ -76,22 +76,22 @@ DIV.EntryFolderList {
               <h1><span id="h1-name" class='tf-heading'></span>&nbsp;</h1>
             </th>
             <td>
-              <? if ($pop) { ?>
+              <?php if ($pop) { ?>
                 <a href="javascript:window.close()" class="icon big mt10">Close Window</a>
-              <? } else { ?>
+              <?php } else { ?>
                 <a href="javascript:" onclick="page.pDownload()" class="icon download">Download/Print</a>
                 <span class='psearch'>
                   &nbsp;
                   <a href="javascript:" onclick="PatientSelector.pop()" class="icon search">Search for patient</a>
                 </span>
-              <? } ?>
+              <?php } ?>
             </td>
           </tr>
         </table>
         <div id="fs-refresh" style="display:none">  <!-- refreshTile -->
           <a href="javascript:page.pRefresh()">Facesheet has been updated. Click to refresh page.</a>
         </div>
-        <? renderBoxStart("wide min-pad") ?>
+        <?php renderBoxStart("wide min-pad") ?>
           <table class='w100'>
             <tr>
               <td class='vtop' style="padding-right:4px;width:75%">
@@ -200,22 +200,22 @@ DIV.EntryFolderList {
               </td>
             </tr>
           </table>
-        <? renderBoxEnd() ?>
+        <?php renderBoxEnd() ?>
         <div class="mt5">
           <table id='dia-med' class="w100">
             <tr>
               <td id='td-dia' class='vtop' style="width:38%;">  <!-- diagTile -->
-                <? renderBoxStart("wide min-pad", "", "dia-box", "dia-boxc") ?>
+                <?php renderBoxStart("wide min-pad", "", "dia-box", "dia-boxc") ?>
                   <a href="javascript:" onclick="page.pPopDiagnoses()" title="Open this section" class="fscap">Diagnoses</a>
                   <div id="DiagTile"></div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
               <td class='w5' nowrap='nowrap'></td>
               <td id='td-med' class='vtop' style="width:62%;">  <!-- medTile -->
-                <? renderBoxStart("wide min-pad", "", "med-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "med-box") ?>
                   <a href="javascript:" onclick="page.pPopMeds()" title="Open this section" class="fscap">Medications</a>
                   <div id="MedTile"></div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
             </tr>
           </table>
@@ -225,36 +225,36 @@ DIV.EntryFolderList {
             <table border="0" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td class='cj' style="width:36%">
-                  <? renderBoxStart("wide min-pad mt5", null, "medhx-box") ?>
+                  <?php renderBoxStart("wide min-pad mt5", null, "medhx-box") ?>
                     <a href="javascript:" onclick="page.pPopMedSurgHx()" title="Open this section" class="fscap">Medical / Surgical History</a>
                     <table>
                       <tr>
                         <td><div id="fshx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td class='w5' nowrap='nowrap'></td>
                 <td class='cj' style="width:28%">
-                  <? renderBoxStart("wide min-pad mt5", null, "famhx-box") ?>
+                  <?php renderBoxStart("wide min-pad mt5", null, "famhx-box") ?>
                     <a href="javascript:" onclick="page.pPopFamHx()" title="Open this section" class="fscap">Family History</a>
                     <table>
                       <tr>
                         <td><div id="famhx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
                 <td class='w5' nowrap='nowrap'></td>
                 <td class='cj' style="width:36%">
-                  <? renderBoxStart("wide min-pad mt5", null, "sochx-box") ?>
+                  <?php renderBoxStart("wide min-pad mt5", null, "sochx-box") ?>
                     <a href="javascript:" onclick="page.pPopSocHx()" class="fscap">Psycho-Social History</a>
                     <table>
                       <tr>
                         <td><div id="sochx-sum" class="hxsum"></div></td>
                       </tr>
                     </table>
-                  <? renderBoxEnd() ?>
+                  <?php renderBoxEnd() ?>
                 </td>
               </tr>
             </table>
@@ -264,49 +264,49 @@ DIV.EntryFolderList {
           <table class="w100">
             <tr>
               <td class='vtop' style="width:50%;">  
-                <? renderBoxStart("wide min-pad", "", "imm-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "imm-box") ?>
                   <a href="javascript:" onclick="page.pPopImmun()" class="fscap">Immunizations</a>
                   <table>
                     <tr>
                       <td><div id="imm-sum" class="hxsum"></div></td>
                     </tr>
                   </table>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
               <td class='w5' nowrap='nowrap'></td>
               <td class='vtop' style="width:50%;">  
-                <? renderBoxStart("wide min-pad", "", "track-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "track-box") ?>
                   <a href="javascript:" onclick="page.pPopTrack()" class="fscap">Order Entry & Tracking</a>
                   <table>
                     <tr>
                       <td><div id="trk-sum" class="hxsum"></div></td>
                     </tr>
                   </table>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
             </tr>
           </table>
         </div>
         <div id="hm">  <!-- hmTile -->
           <div class='screen'>
-            <? renderBoxStart("wide min-pad mt5", "", "hm-box") ?>
+            <?php renderBoxStart("wide min-pad mt5", "", "hm-box") ?>
               <a id="hmcap" href="javascript:" onclick="page.pPopHm()" class="fscap">Clinical Decision Support</a>
               <div id="CdsTile"></div>
-            <? renderBoxEnd() ?>
+            <?php renderBoxEnd() ?>
           </div>
         </div>
         <div class="screen">
           <table class="w100 mt5">
             <tr>
               <td id="td-his-1" class='vtop' style="width:60%;">  <!-- docTile -->
-                <? renderBoxStart("wide min-pad", "", "his-box") ?>
+                <?php renderBoxStart("wide min-pad", "", "his-box") ?>
                   <a href="javascript:" onclick="page.pPopDocHx()" class="fscap">Clinical Data and Documentation</a>
                   <div id="DocTile"></div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
               <td id="td-his-2" class='w5' nowrap='nowrap'></td>
               <td id="td-vit" class='vtop' style="width:40%;">  <!-- vitalTile -->
-                <? renderBoxStart("wide min-pad", "", "vit-box", "vit-boxc") ?>
+                <?php renderBoxStart("wide min-pad", "", "vit-box", "vit-boxc") ?>
                   <a href="javascript:" onclick="page.pPopVitals()" class="fscap">Vital Signs</a>
                   <div id="vit-div" class="fstab doc-vit">
                     <table id="vit-tbl" class="fsg">
@@ -314,7 +314,7 @@ DIV.EntryFolderList {
                       </tbody>
                     </table>
                   </div>
-                <? renderBoxEnd() ?>
+                <?php renderBoxEnd() ?>
               </td>
             </tr>
           </table>
@@ -322,24 +322,24 @@ DIV.EntryFolderList {
         <table class="w100 mt5">
           <tr>
             <td class='vtop' style="width:30%;"> 
-              <? renderBoxStart("wide min-pad", "", "proc-box") ?>
+              <?php renderBoxStart("wide min-pad", "", "proc-box") ?>
                 <a href="javascript:" onclick="page.pPopProcs()" class="fscap">All Procedures / Results</a>
                 <div id="ProcTile"></div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
             <td class='w5' nowrap='nowrap'></td>
             <td class='vtop' style="width:40%;"> 
-              <? renderBoxStart("wide min-pad", "", "portal-box") ?>
+              <?php renderBoxStart("wide min-pad", "", "portal-box") ?>
                 <a href="javascript:" onclick="page.pPopPortal()" class="fscap">Patient Portal Access</a>
                 <div id="PortalTile"></div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
             <td class='w5' nowrap='nowrap'></td>
             <td class='vtop' style="width:30%;"> 
-              <? renderBoxStart("wide min-pad", "", "bill-box") ?>
+              <?php renderBoxStart("wide min-pad", "", "bill-box") ?>
                 <a href="javascript:" onclick="page.pPopBilling()" class="fscap">Billing</a>
                 <div id="BillingTile"></div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>
@@ -366,25 +366,25 @@ DIV.EntryFolderList {
         </div>
       </div>
     </div>
-    <? include "inc/ajax-pops/template-pops.php" ?>
-    <? if (! $pop) { ?>
-      <? include "inc/footer.php" ?>
-    <? } else { ?>
+    <?php include "inc/ajax-pops/template-pops.php" ?>
+    <?php if (! $pop) { ?>
+      <?php include "inc/footer.php" ?>
+    <?php } else { ?>
     <div id="page-includes"></div>
-    <? } ?>
+    <?php } ?>
   </body>
-  <? CONSTANTS('Face') ?>
+  <?php CONSTANTS('Face') ?>
 <script type="text/javascript">
 function start() {
   var query = <?=jsonencode($_GP)?>;
   page.load(query);
 }
 function popUpload() {
-  <? if (1==0 && $login->User->isOnTrial()) { ?>
+  <?php if (1==0 && $login->User->isOnTrial()) { ?>
   alert("This feature is only available for registered users.");
-  <? } else { ?>
+  <?php } else { ?>
   FaceUploadPop.pop(page.fs).bubble('oncomplete', page.refreshFacesheet);
-  <? } ?>
+  <?php } ?>
 }
 </script>      
 </html>

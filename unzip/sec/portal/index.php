@@ -13,15 +13,15 @@ if (isset($_GET['logout'])) {
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <? PHEAD('Patient Portal', 'login.css') ?>
-    <? PHEAD_DATA('PortalSession') ?>
+    <?php PHEAD('Patient Portal', 'login.css') ?>
+    <?php PHEAD_DATA('PortalSession') ?>
   </head>
   <body>
     <div id='page'>
       <div id='loginc'>
         <div id='login'>
           <h1>Patient Login</h1>
-          <? PBOX() ?>
+          <?php PBOX() ?>
             <div>
               <label>User ID</label>
               <input type='text' size='20' id='id' name='id' />
@@ -33,7 +33,7 @@ if (isset($_GET['logout'])) {
             <div>
               <a class='big' id='alog' href="javascript:login_onclick()">Login ></a>
             </div>
-          <? _PBOX() ?>
+          <?php _PBOX() ?>
           <div id='links'>
             <div style='display:none'>
               Forgot your <a href='.'>login ID</a> or <a href='.'>password</a>?
@@ -44,16 +44,16 @@ if (isset($_GET['logout'])) {
           <div id='auth' style='display:none'>
             <h1>Patient Portal</h1>
             <p id='auth-msg'>To continue with your login, please answer the following security questions.</p>
-            <? PBOX() ?>
+            <?php PBOX() ?>
               <div id='auth-tile'></div>
-            <? _PBOX() ?>
+            <?php _PBOX() ?>
           </div>
           <div id='pass' style='display:none'>
             <h1>Patient Portal</h1>
             <p id='auth-msg'>A new password is required to continue.</p>
-            <? PBOX() ?>
+            <?php PBOX() ?>
               <div id='pass-tile'></div>
-            <? _PBOX() ?>
+            <?php _PBOX() ?>
           </div>
           <div id='tos' style='display:none'>
             <h1>Patient Portal</h1>
@@ -80,6 +80,6 @@ if (isset($_GET['logout'])) {
       </div>
     </div>
   </body>
-  <? JsonConstants::writeGlobals('PortalUser') ?>
-  <? PPAGE('LoginPage') ?>
+  <?php JsonConstants::writeGlobals('PortalUser') ?>
+  <?php PPAGE('LoginPage') ?>
 </html>

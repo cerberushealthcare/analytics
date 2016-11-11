@@ -16,9 +16,9 @@ if (isset($_POST['acc'])) {
   }
 }
 ?>
-<? $title = 'Clicktate - Business Associate Agreement' ?>
-<? if (! $redirect) { ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Business Associate Agreement' ?>
+<?php if (! $redirect) { ?>
+<?php include "inc/hheader.php" ?>
 <style>
 BODY {font-family:Arial}
 TABLE {font-size:10pt}
@@ -77,7 +77,7 @@ display:inline-block;
   </div>
   <div class="wm">
     <div class="tos">
-      <? include "baa/$version.html" ?>
+      <?php include "baa/$version.html" ?>
     </div>
   </div>
     <div class="fm">
@@ -103,15 +103,15 @@ display:inline-block;
     </div>
   </form>
 </div>
-  <? if ($errors) { ?>
+  <?php if ($errors) { ?>
   <script>
   window.setTimeout(function() {
     window.scrollTo(0, document.documentElement.scrollHeight);
   }, 100)
   </script>
-  <? } ?>
-<? } else { ?>
+  <?php } ?>
+<?php } else { ?>
 <script>
 window.location = 'welcome.php';
 </script>
-<? } ?>
+<?php } ?>

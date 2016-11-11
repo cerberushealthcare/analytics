@@ -433,7 +433,8 @@ function castRowsAsDate(&$rows, $fields) {
 }
 // Returns resource for SQL statements and an associative array if it's Oracle.
 function query($sql, $logging = true) {
-  Logger::debug('Entered _util query function');
+  Logger::debug('sec/php/dao/_util.php: Entered _util query function with query ' . $sql);
+  Logger::debug('Trace is ' . print_r(debug_backtrace(), true));
   if ($logging) logit($sql);
   if (MyEnv::$IS_ORACLE) {
 	try {
@@ -442,7 +443,7 @@ function query($sql, $logging = true) {
 		
 		$sql = str_replace('`', "'", $sql);
 		
-		Logger::debug('Util Query: Doing query ' . $sql);
+		Logger::debug('sec/php/dao/_util.php: Util Query: Doing query ' . $sql);
 		
 		/*
 			This works!
@@ -462,6 +463,7 @@ function query($sql, $logging = true) {
 	}
   }
   else {
+	  Logger::debug('sec/php/dao/_util: We are NOT using oracle. Run SQL version.');
 	  $conn = open();
 	  $res = mysql_query($sql) or die("Query failure: " . mysql_error());
   }
@@ -527,6 +529,7 @@ function decr($value, $decrypt = true) {
   return ($decrypt) ? MyCrypt_Auto::decrypt($value) : $value; 
 }
 function quote($field, $escape = false) {
+   //echo 'dao _util.php::quote: Got field ' . gettype($field) . ' ' . $field . '<br>';
   //$field = str_replace(array("\r", "\n"), " ", $field);
   $value = ($escape) ? addslashes($field) : $field;
   return (isNull($field)) ?  "null" : "'" . $value . "'";

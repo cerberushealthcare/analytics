@@ -117,7 +117,7 @@ require_once "inc/uiFunctions.php";
           </li>
           <li class="push">
             <label class="first2"><b>Include in Search</b></label>
-            <? renderLabelCheck("ccs-inc-address", "Address") ?>
+            <?php renderLabelCheck("ccs-inc-address", "Address") ?>
             <label>&nbsp;</label>
             <label>&nbsp;</label>
             <label>&nbsp;</label>
@@ -126,15 +126,15 @@ require_once "inc/uiFunctions.php";
           </li>
           <li class="pull">
             <label class="first2">&nbsp;</label>
-            <? renderLabelCheck("ccs-inc-phone", "Phone") ?>
+            <?php renderLabelCheck("ccs-inc-phone", "Phone") ?>
           </li>
           <li class="pull">
             <label class="first2">&nbsp;</label>
-            <? renderLabelCheck("ccs-inc-email", "Email") ?>
+            <?php renderLabelCheck("ccs-inc-email", "Email") ?>
           </li>
           <li class="pull">
             <label class="first2">&nbsp;</label>
-            <? renderLabelCheck("ccs-inc-custom", "Custom") ?>
+            <?php renderLabelCheck("ccs-inc-custom", "Custom") ?>
           </li>
         </ul>
       </div>

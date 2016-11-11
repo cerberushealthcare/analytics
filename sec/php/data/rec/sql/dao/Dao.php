@@ -179,7 +179,7 @@ class Dao {
 	
 	if (MyEnv::$IS_ORACLE) {
 		$rows = array();
-		while (($row = oci_fetch_array($res, OCI_BOTH)) != false) {
+		while (($row = oci_fetch_array($res, OCI_ASSOC)) != false) {
 			$rows [] = $row;
 		}
 	}

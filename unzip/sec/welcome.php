@@ -16,11 +16,11 @@ $ct = Login::countRecentBadLogins_forUid('lcdadmin4');
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Dashboard', 'DashboardPage', 'dashboard.css') ?>
-    <? HEAD_UI('Dashboard') ?>
+    <?php HEAD('Dashboard', 'DashboardPage', 'dashboard.css') ?>
+    <?php HEAD_UI('Dashboard') ?>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th>
@@ -41,25 +41,25 @@ $ct = Login::countRecentBadLogins_forUid('lcdadmin4');
       <table id='boxes' class='boxes'>
         <tr>
           <td class='w50'>
-            <? DPANEL('sched', 'schedule.php', 'img/welcome/scheduling.png') ?>
+            <?php DPANEL('sched', 'schedule.php', 'img/welcome/scheduling.png') ?>
           </td>
           <td class='w50'>
-            <? DPANEL('patient', 'patients.php', 'img/welcome/1patients.png') ?>
+            <?php DPANEL('patient', 'patients.php', 'img/welcome/1patients.png') ?>
           </td>
         </tr>
         <tr>
           <td>
-            <? DPANEL('message', 'messages.php', 'img/welcome/email-open.png') ?>
+            <?php DPANEL('message', 'messages.php', 'img/welcome/email-open.png') ?>
           </td>
           <td>
-            <? DPANEL('review', 'review.php', 'img/welcome/2documents.png') ?>
+            <?php DPANEL('review', 'review.php', 'img/welcome/2documents.png') ?>
           </td>
         </tr>
       </table>
-    <? _BODY() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Messaging', 'Client', 'Doctors', 'Users', 'Templates') ?>
-  <? START() ?>
+  <?php CONSTANTS('Messaging', 'Client', 'Doctors', 'Users', 'Templates') ?>
+  <?php START() ?>
 </html>
 <?
 function DPANEL($id, $url, $img) {

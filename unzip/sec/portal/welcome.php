@@ -7,14 +7,14 @@ require_once 'php/data/rec/sql/PortalMessaging.php';
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <? PHEAD('Welcome', 'welcome.css') ?>
+    <?php PHEAD('Welcome', 'welcome.css') ?>
   </head>
   <body>
-    <? PPAGEHEAD($me) ?>
+    <?php PPAGEHEAD($me) ?>
     <div id='page'></div>
-    <? PPAGEFOOT() ?>
+    <?php PPAGEFOOT() ?>
   </body>
-  <? PPAGE('WelcomePage', $me) ?>
+  <?php PPAGE('WelcomePage', $me) ?>
   <script type='text/javascript'>
   C_Unread = <?=PortalMessaging::getMyUnreadCt() ?>;
   </script>

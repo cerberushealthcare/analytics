@@ -17,7 +17,7 @@ header("Location: index.php");
   </head>
   <body>
     <div id="bodyContainer">
-      <? include "inc/header.php" ?>
+      <?php include "inc/header.php" ?>
       <div class="content">
         <div class="abstract">
           <div id="breadcrumb">
@@ -191,6 +191,6 @@ header("Location: index.php");
       </div>
     </div>
   </body>
-  <? include "inc/footer.php" ?>
+  <?php include "inc/footer.php" ?>
 </html>
 

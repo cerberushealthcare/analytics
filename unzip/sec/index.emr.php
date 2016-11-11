@@ -114,7 +114,7 @@ $focus = "id";
         <table border='0' cellpadding='0' cellspacing'0'>
           <tr>
             <td class='wm' style='padding-right:1em'>
-              <? renderBoxStart() ?>
+              <?php renderBoxStart() ?>
                 <div id="login">
                   <form id="frm" method="post" action="index.php">
                     <input name="vista" id="vista" type="hidden" value="" />
@@ -132,7 +132,7 @@ $focus = "id";
                     </div>
                   </form>
                 </div>
-              <? renderBoxEnd() ?>
+              <?php renderBoxEnd() ?>
             </td>
           </tr>
         </table>
@@ -165,7 +165,7 @@ $focus = "id";
         </div>
       </div>
     </div>
-    <? include "inc/ajax-pops/working-confirm.php" ?>
+    <?php include "inc/ajax-pops/working-confirm.php" ?>
     <div id="pop-cp" class="pop" onmousedown="event.cancelBubble = true">
       <div id="pop-cp-cap" class="pop-cap">
         <div id="pop-cp-cap-text">
@@ -203,12 +203,12 @@ $focus = "id";
   </body>
 </html>
 <script type='text/javascript'>
-<? if (isset($g_cp)) { ?>
+<?php if (isset($g_cp)) { ?>
 showPop("pop-cp", "pop-cp-pw");
-<? } ?>
-<? if (isset($g_timeout)) { ?>
+<?php } ?>
+<?php if (isset($g_timeout)) { ?>
     alert("We're sorry, but your session has timed out from inactivity.");
-<? } ?>
+<?php } ?>
 Cookies.expire('NC_STATUS');
 function setpw() {
   hide("pop-cp-errors");

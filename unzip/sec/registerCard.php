@@ -88,14 +88,14 @@ A.button:hover {
     <body>
       <div id="curtain"></div>
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div class="content">
           <div id="col3">
             <form id="frm" name="trial" method="post" action="registerCard.php" onSubmit="return CheckTrial(this)">
               <h1 style='margin:0.7em 0 0.4em 0'><?=$form->modeHeader ?></h1>
-              <? if (! isset($errors)) { ?>
+              <?php if (! isset($errors)) { ?>
               <?= $form->modeCaption ?>
-              <? } ?>
+              <?php } ?>
               <table class="box" cellpadding=0 cellspacing=0 width="100%">
                 <tr>
                   <td class="tl"></td>
@@ -140,7 +140,7 @@ A.button:hover {
                         maxlength="35" value="<?=$form->city ?>" /></td>
                       <th>State</th>
                       <td>
-                      <? renderCombo("state", $form->states, $form->state) ?></td>
+                      <?php renderCombo("state", $form->states, $form->state) ?></td>
                       <th>Zip</th><td>
                       <input id="zip" name="zip" type="text" size="10" maxlength="10"
                         value="<?=$form->zip ?>" /></td>
@@ -164,11 +164,11 @@ A.button:hover {
                       <th class='f'>Card Type</th><td>
                       <select name="card_type" id="card_type">
                         <option id="" value="1"
-                        <? selectedIf($form->card_type=="1"); ?>>MasterCard</option>
+                        <?php selectedIf($form->card_type=="1"); ?>>MasterCard</option>
                         <option id="" value="2"
-                        <? selectedIf($form->card_type=="2"); ?>>VISA</option>
+                        <?php selectedIf($form->card_type=="2"); ?>>VISA</option>
                         <option id="" value="3"
-                        <? selectedIf($form->card_type=="3"); ?>>AmEx</option>
+                        <?php selectedIf($form->card_type=="3"); ?>>AmEx</option>
                       </select></td>
                       <th>Number</th><td>
                       <input id="card_number" name="card_number" type="text" size="16"
@@ -176,50 +176,50 @@ A.button:hover {
                       <th >Expires</th><td>
                       <select name="exp_month" id="exp_month">
                         <option id="" value="01"
-                        <? selectedIf($form->exp_month=="01"); ?>>01</option>
+                        <?php selectedIf($form->exp_month=="01"); ?>>01</option>
                         <option id="" value="02"
-                        <? selectedIf($form->exp_month=="02"); ?>>02</option>
+                        <?php selectedIf($form->exp_month=="02"); ?>>02</option>
                         <option id="" value="03"
-                        <? selectedIf($form->exp_month=="03"); ?>>03</option>
+                        <?php selectedIf($form->exp_month=="03"); ?>>03</option>
                         <option id="" value="04"
-                        <? selectedIf($form->exp_month=="04"); ?>>04</option>
+                        <?php selectedIf($form->exp_month=="04"); ?>>04</option>
                         <option id="" value="05"
-                        <? selectedIf($form->exp_month=="05"); ?>>05</option>
+                        <?php selectedIf($form->exp_month=="05"); ?>>05</option>
                         <option id="" value="06"
-                        <? selectedIf($form->exp_month=="06"); ?>>06</option>
+                        <?php selectedIf($form->exp_month=="06"); ?>>06</option>
                         <option id="" value="07"
-                        <? selectedIf($form->exp_month=="07"); ?>>07</option>
+                        <?php selectedIf($form->exp_month=="07"); ?>>07</option>
                         <option id="" value="08"
-                        <? selectedIf($form->exp_month=="08"); ?>>08</option>
+                        <?php selectedIf($form->exp_month=="08"); ?>>08</option>
                         <option id="" value="09"
-                        <? selectedIf($form->exp_month=="09"); ?>>09</option>
+                        <?php selectedIf($form->exp_month=="09"); ?>>09</option>
                         <option id="" value="10"
-                        <? selectedIf($form->exp_month=="10"); ?>>10</option>
+                        <?php selectedIf($form->exp_month=="10"); ?>>10</option>
                         <option id="" value="11"
-                        <? selectedIf($form->exp_month=="11"); ?>>11</option>
+                        <?php selectedIf($form->exp_month=="11"); ?>>11</option>
                         <option id="" value="12"
-                        <? selectedIf($form->exp_month=="12"); ?>>12</option>
+                        <?php selectedIf($form->exp_month=="12"); ?>>12</option>
                       </select> / <select name="exp_year" id="exp_year">
                         <option id="" value="2011"
-                        <? selectedIf($form->exp_year=="2011"); ?>>2011</option>
+                        <?php selectedIf($form->exp_year=="2011"); ?>>2011</option>
                         <option id="" value="2012"
-                        <? selectedIf($form->exp_year=="2012"); ?>>2012</option>
+                        <?php selectedIf($form->exp_year=="2012"); ?>>2012</option>
                         <option id="" value="2013"
-                        <? selectedIf($form->exp_year=="2013"); ?>>2013</option>
+                        <?php selectedIf($form->exp_year=="2013"); ?>>2013</option>
                         <option id="" value="2014"
-                        <? selectedIf($form->exp_year=="2014"); ?>>2014</option>
+                        <?php selectedIf($form->exp_year=="2014"); ?>>2014</option>
                         <option id="" value="2015"
-                        <? selectedIf($form->exp_year=="2015"); ?>>2015</option>
+                        <?php selectedIf($form->exp_year=="2015"); ?>>2015</option>
                         <option id="" value="2016"
-                        <? selectedIf($form->exp_year=="2016"); ?>>2016</option>
+                        <?php selectedIf($form->exp_year=="2016"); ?>>2016</option>
                         <option id="" value="2017"
-                        <? selectedIf($form->exp_year=="2017"); ?>>2017</option>
+                        <?php selectedIf($form->exp_year=="2017"); ?>>2017</option>
                         <option id="" value="2018"
-                        <? selectedIf($form->exp_year=="2018"); ?>>2018</option>
+                        <?php selectedIf($form->exp_year=="2018"); ?>>2018</option>
                                                 <option id="" value="2019"
-                        <? selectedIf($form->exp_year=="2019"); ?>>2019</option>
+                        <?php selectedIf($form->exp_year=="2019"); ?>>2019</option>
                                                 <option id="" value="2020"
-                        <? selectedIf($form->exp_year=="2020"); ?>>2020</option>
+                        <?php selectedIf($form->exp_year=="2020"); ?>>2020</option>
                                               </select></td>
                       <td width=5></td>
                       <td class="help"></td>
@@ -228,7 +228,7 @@ A.button:hover {
                     </tr>
                   </table>
 
-                  <? if ($form->mode != BillInfoForm::MODE_UPDATING) {
+                  <?php if ($form->mode != BillInfoForm::MODE_UPDATING) {
 //                    if ($form->upfront_charge > 0) {
 //                      $subtext = "Charge Me and Activate My Account";
 //                    } else {
@@ -240,7 +240,7 @@ A.button:hover {
                   }
                   $total = "$ " . number_format($form->balance, 2);
                   ?>
-                  <? if ($form->mode != BillInfoForm::MODE_UPDATING) { ?>
+                  <?php if ($form->mode != BillInfoForm::MODE_UPDATING) { ?>
                   <table class='e'>
                     <tr>
                       <th class='f'>Total Due</th>
@@ -252,29 +252,29 @@ A.button:hover {
                     <tr>
                       <th class='f' style='vertical-align:top'></th>
                       <td>
-                        <? if ($form->mode == BillInfoForm::MODE_ACTIVATING) {?>
+                        <?php if ($form->mode == BillInfoForm::MODE_ACTIVATING) {?>
                         Your trial account will be upgraded to a subscription plan immediately upon submitting the billing information above
                         and successful charge of the $99 activation fee.
                         Your first monthly subscription fee of $139 will be assessed thirty days after today's activation.
                         All billing statements will be sent electronically to the registered email address.
                         <br></br>
-                        <? } ?>
+                        <?php } ?>
                         This is a secure transaction.
                         If you have any questions, call us at 1-888-825-4258.
                       </td>
                     </tr>
                   </table>
-                  <? } ?>
+                  <?php } ?>
                   <table class='e' style='margin-top:1em'>
                     <tr>
                       <th class='f'></th>
                       <td>
-                  <? if ($form->mode != BillInfoForm::MODE_UPDATING) { ?>
+                  <?php if ($form->mode != BillInfoForm::MODE_UPDATING) { ?>
                   <a style='font-size:11pt' class="button" href="javascript:submit()"> <?=$subtext ?> ></a>
-                  <? } else { ?>
+                  <?php } else { ?>
                   <a class="button" href="javascript:submit()">Update My Billing Info ></a>
                   &nbsp;<a style='font-size:11pt' class="button" href="javascript:cancel()">Cancel</a>
-                  <? } ?>
+                  <?php } ?>
                       </td>
                     </tr>
                   </table>
@@ -298,9 +298,9 @@ A.button:hover {
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>
-      <? include "inc/ajax-pops/working-confirm.php" ?>
+      <?php include "inc/ajax-pops/working-confirm.php" ?>
     </body>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/footer.php" ?>
   </html>
   <script>
 

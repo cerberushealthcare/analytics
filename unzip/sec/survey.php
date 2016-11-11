@@ -84,9 +84,9 @@ if (isset($_GET["s"])) {
   </head>
   <body>
     <form id="frm" method="post" action="survey.php">
-      <? if ($previewOnly == "1") { ?>
+      <?php if ($previewOnly == "1") { ?>
         <div id="footer"><a href="javascript:window.close()">Close Preview</a></div>
-      <? } ?>
+      <?php } ?>
       <div id="bodyContainer">
         <table border=0 cellpadding=0 cellspacing=0>
           <tr>
@@ -99,7 +99,7 @@ if (isset($_GET["s"])) {
           </tr>
         </table>
         <div class="content">
-          <? if ($survey == null) { ?>
+          <?php if ($survey == null) { ?>
             <h1>Survey complete!</h1>
             <p>
               Thank you for taking the time to complete this survey.
@@ -110,21 +110,21 @@ if (isset($_GET["s"])) {
             </p>
             <p>
             </p>
-          <? } else { ?>
+          <?php } else { ?>
 	          <input type="hidden" name="sid" value="<?=$survey->id ?>" />
 	          <input type="hidden" name="sp" value="<?=$survey->password ?>" />
 	          <input type="hidden" name="pg" value="<?=$survey->page ?>" />
             <input type="hidden" name="pv" value="<?=$previewOnly ?>" />
 	          <input type="hidden" name="u" value="<?=$userId ?>" />
 	          <h1><?=$survey->name ?></h1>
-	          <? foreach ($survey->items as $item) { ?>
-	            <? if ($item->type == "header") { ?>
+	          <?php foreach ($survey->items as $item) { ?>
+	            <?php if ($item->type == "header") { ?>
 	              <h2><?=$item->text ?></h2>
-							<? } else if ($item->type == "paragraph") { ?>
+							<?php } else if ($item->type == "paragraph") { ?>
 	              <p><?=$item->text ?></p>
-              <? } else if ($item->type == "pagebreak") { ?>
+              <?php } else if ($item->type == "pagebreak") { ?>
                 <hr size=1 />
-	            <? } else { ?>
+	            <?php } else { ?>
 	              <p>
 	                <table border=0 cellpadding=0 cellspacing=0>
 	                  <tr class="line1">
@@ -136,40 +136,40 @@ if (isset($_GET["s"])) {
 	                    <td colspan=2 class="index2">&nbsp;</td>
 	                    <td>
 	                      <input type="hidden" name="itemId" value="<?=$item->id ?>" />
-                        <? if ($item->missing) { ?>
+                        <?php if ($item->missing) { ?>
                           <div class="error">>> A response is required here.</div>
-                        <? } ?>
-					              <? if ($item->type == "text") { ?>
+                        <?php } ?>
+					              <?php if ($item->type == "text") { ?>
 					                <input name="itemValues[<?=$item->id ?>][0]" type="text" size="80" value="<?=$itemValues[$item->id][0] ?>" />
-					              <? } else if ($item->type == "textarea") { ?>
+					              <?php } else if ($item->type == "textarea") { ?>
 	                        <textarea name="itemValues[<?=$item->id ?>][0]" cols="100" rows="3"><?=$itemValues[$item->id][0] ?></textarea>
-	                      <? } else if ($item->type == "checkboxes") { ?>
-	                        <? $j = 0 ?>
-	                        <? foreach ($item->choices as $choice) { ?>
-	                          <input type="checkbox" name="itemValues[<?=$item->id ?>][<?=$j ?>]" value="<?=$choice->id ?>"<? if (isset($itemValues[$item->id][$j])) { ?> checked<? } ?> /><?=$choice->text ?><br>
-	                          <? $j++ ?>
-	                        <? } ?>
-	                      <? } else if ($item->type == "radiobuttons") { ?>
-	                        <? foreach ($item->choices as $choice) { ?>
-	                          <input type="radio" name="itemValues[<?=$item->id ?>][0]" value="<?=$choice->id ?>"<? if (isset($itemValues[$item->id][0]) && $itemValues[$item->id][0] == $choice->id) { ?> checked<? } ?> /><?=$choice->text ?><br>
-	                        <? } ?>
-	                      <? } else if ($item->type == "dropdown") { ?>
+	                      <?php } else if ($item->type == "checkboxes") { ?>
+	                        <?php $j = 0 ?>
+	                        <?php foreach ($item->choices as $choice) { ?>
+	                          <input type="checkbox" name="itemValues[<?=$item->id ?>][<?=$j ?>]" value="<?=$choice->id ?>"<?php if (isset($itemValues[$item->id][$j])) { ?> checked<?php } ?> /><?=$choice->text ?><br>
+	                          <?php $j++ ?>
+	                        <?php } ?>
+	                      <?php } else if ($item->type == "radiobuttons") { ?>
+	                        <?php foreach ($item->choices as $choice) { ?>
+	                          <input type="radio" name="itemValues[<?=$item->id ?>][0]" value="<?=$choice->id ?>"<?php if (isset($itemValues[$item->id][0]) && $itemValues[$item->id][0] == $choice->id) { ?> checked<?php } ?> /><?=$choice->text ?><br>
+	                        <?php } ?>
+	                      <?php } else if ($item->type == "dropdown") { ?>
 	                        <select name="itemValues[<?=$item->id ?>][0]">
-	                        <? foreach ($item->choices as $choice) { ?>
-	                          <option value="<?=$choice->id ?>"<? if ($itemValues[$item->id][0] == $choice->id) { ?> selected<? } ?>><?=$choice->text ?></option>
-	                        <? } ?>
+	                        <?php foreach ($item->choices as $choice) { ?>
+	                          <option value="<?=$choice->id ?>"<?php if ($itemValues[$item->id][0] == $choice->id) { ?> selected<?php } ?>><?=$choice->text ?></option>
+	                        <?php } ?>
 	                        </select>
-	                      <? } ?>
+	                      <?php } ?>
 	                    </td>
 	                  </tr>
 	                </table>
 	              </p>
-	            <? } ?>
-	          <? } ?>
-            <? if ($print != "1") { ?>
+	            <?php } ?>
+	          <?php } ?>
+            <?php if ($print != "1") { ?>
 	          <input type="submit" value="Next Page >" />
-            <? } ?>
-          <? } ?>
+            <?php } ?>
+          <?php } ?>
         </div>
       </div>
     </form>

@@ -7,8 +7,8 @@ LoginSession::verify_forUser()->requires($login->Role->Report->any());
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Cerberus Login') ?>
-    <? // HEAD_X() ?>
+    <?php HEAD('Cerberus Login') ?>
+    <?php // HEAD_X() ?>
 <style>
 DIV#spacer {
   line-height:330px;
@@ -20,15 +20,15 @@ DIV#spacer {
 </style>    
   </head>
   <body>
-    <? BODY() ?>
-      <? BOX() ?>
+    <?php BODY() ?>
+      <?php BOX() ?>
         <div id='tile'>
           <div id='spacer' class='spacer'>
             Logging into Papyrus
           </div>
         </div>
-      <? _BOX() ?>
-    <? _BODY() ?>
+      <?php _BOX() ?>
+    <?php _BODY() ?>
   </body>
 <script>
 async(function() {

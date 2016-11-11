@@ -1,5 +1,5 @@
-<? $title = 'Clicktate - Contact Us' ?>
-<? include "inc/hheader.php" ?>
+<?php $title = 'Clicktate - Contact Us' ?>
+<?php include "inc/hheader.php" ?>
 <div id="body" style="background:white">
   <div class="content center">
     <h1>Contact Us</h1>
@@ -18,4 +18,4 @@
     <p><b>1-888-8CLICK8</b> (1-888-825-4258)</p>
   </div>
 </div>
-<? include "inc/hfooter.php" ?>
+<?php include "inc/hfooter.php" ?>

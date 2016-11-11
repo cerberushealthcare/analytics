@@ -6,7 +6,7 @@ LoginSession::verify_forUser();
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Trial Setup') ?>
+    <?php HEAD('Trial Setup') ?>
     <style>
 DIV#left {
   font-family:Arial;
@@ -17,9 +17,9 @@ DIV#left {
     </style>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <div style='padding:20px 40px 40px 40px'>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div class='cj' style='margin:4em 0'>
           <h2>
             Please wait while we complete your trial setup...
@@ -29,9 +29,9 @@ DIV#left {
           </div>
           <div id='left' style='visibility:hidden'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
+      <?php renderBoxEnd() ?>
       </div>
-    <? _BODY() ?>
+    <?php _BODY() ?>
   </body>
 </html>
 <script>

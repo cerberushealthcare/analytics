@@ -10,30 +10,30 @@ LoginSession::verify_forUser()->requires($login->Role->Report->any());
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Reporting', 'ReportingPage') ?>
-    <? HEAD_UI('Entry', 'Reporting') ?>
+    <?php HEAD('Reporting', 'ReportingPage') ?>
+    <?php HEAD_UI('Entry', 'Reporting') ?>
   </head>
   <body>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table class='h'>
         <tr>
           <th>
             <h1>Reporting</h1>
           </th>
           <td>
-          <? if (! $login->super) { ?>
+          <?php if (! $login->super) { ?>
             <a class='icon list' href='reporting-pqri.php'>NQF (Clinical Quality Measures)</a>
-          <? } ?>
+          <?php } ?>
           </td>
         </tr>
       </table>
-      <? renderBoxStart('wide min-pad', null, null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, null, 'box') ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('Reporting') ?>
-  <? START() ?>  
+  <?php CONSTANTS('Reporting') ?>
+  <?php START() ?>  
 </html>

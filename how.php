@@ -20,7 +20,7 @@ require_once "inc/getSecurePrefix.php";
   </head>
   <body>
     <div id="bodyContainer">
-      <? include "inc/header.php" ?>
+      <?php include "inc/header.php" ?>
       <div class="content">
         <div id="columns">
           <div id="col1">
@@ -95,6 +95,6 @@ require_once "inc/getSecurePrefix.php";
         </div>
       </div>
     </div>
-    <? include "inc/footer.php" ?>
+    <?php include "inc/footer.php" ?>
   </body>
 </html>

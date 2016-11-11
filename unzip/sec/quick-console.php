@@ -9,8 +9,8 @@ LoginSession::verify_forUser()->requires($login->Role->Artifact->noteCreate);
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Quick Console', 'QuickConsolePage') ?>
-    <? HEAD_UI('QuickConsole') ?>
+    <?php HEAD('Quick Console', 'QuickConsolePage') ?>
+    <?php HEAD_UI('QuickConsole') ?>
     <style>
 DIV.tuic {
   overflow-y:scroll;
@@ -129,16 +129,16 @@ DIV.tuip {
     </style>
   </head>
   <body>
-    <? BODY() ?>
-      <? TITLE('Quick Console') ?>
-      <? _TITLE() ?>
-      <? BOX() ?>
+    <?php BODY() ?>
+      <?php TITLE('Quick Console') ?>
+      <?php _TITLE() ?>
+      <?php BOX() ?>
         <div id='tile'>
           <div class='spacer'>&nbsp;</div>
         </div>
-      <? _BOX() ?>
-    <? _BODY() ?>
+      <?php _BOX() ?>
+    <?php _BODY() ?>
   </body>
-  <? CONSTANTS('QuickConsole') ?>
-  <? START() ?>  
+  <?php CONSTANTS('QuickConsole') ?>
+  <?php START() ?>  
 </html>

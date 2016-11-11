@@ -11,14 +11,14 @@ $id = geta($_GET, 'id');
 <!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Strict//EN'>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
   <head>
-    <? HEAD('Messaging Center', 'MessagePage') ?>
-    <? HEAD_Messaging() ?>
+    <?php HEAD('Messaging Center', 'MessagePage') ?>
+    <?php HEAD_Messaging() ?>
     <link rel='stylesheet' type='text/css' href='css/message.css?<?=Version::getUrlSuffix() ?>' />
     <script language="JavaScript1.2" src="js/pages/NewCrop.js?<?=Version::getUrlSuffix() ?>"></script>
     <script language='JavaScript1.2' src='js/_ui/PortalUserEntry.js?<?=Version::getUrlSuffix() ?>'></script>
   </head>
   <body onload='start()'>
-    <? BODY() ?>
+    <?php BODY() ?>
       <table border='0' cellpadding='0' cellspacing='0' style='width:100%'>
         <tr>
           <td>
@@ -29,7 +29,7 @@ $id = geta($_GET, 'id');
           </td>
         </tr>
       </table>
-      <? renderBoxStart('wide min-pad', null, 'box') ?>
+      <?php renderBoxStart('wide min-pad', null, 'box') ?>
         <div id='message-working'>&nbsp;</div>  <!-- workingTile -->
         <div id='thread' style='visibility:hidden'>  <!-- pageTile -->
           <table id='thread-cols'>
@@ -137,11 +137,11 @@ $id = geta($_GET, 'id');
             </tr>
           </table>
         </div>
-      <? renderBoxEnd() ?>
-    <? _BODY() ?>
+      <?php renderBoxEnd() ?>
+    <?php _BODY() ?>
   </body>
-<? CONSTANTS('Templates', 'Users') ?>
-<? JsonConstants::writeGlobals('Address','Client','PortalUser','DocStub','ScanIndex','MsgInbox','MsgPost','MsgThread') ?>
+<?php CONSTANTS('Templates', 'Users') ?>
+<?php JsonConstants::writeGlobals('Address','Client','PortalUser','DocStub','ScanIndex','MsgInbox','MsgPost','MsgThread') ?>
 <script>
 C_Docs = <?=UserGroups::getDocsJsonList()?>;
 Lu_Recips = <?=jsonencode(LookupDao::getRecips())?>;

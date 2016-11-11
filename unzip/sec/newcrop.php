@@ -8,13 +8,13 @@ $rf = isset($_GET['rf']);
   </head>
   <frameset rows="35px,1*" frameborder='0' framespacing='0'>
     <frame src="newcrop-title.php" />
-<? if ($rf) { ?>
+<?php if ($rf) { ?>
     <frameset cols="250px,1*" frameborder='0' framespacing='0'>
       <frame src="newcrop-refill.php?<?=$_SERVER['QUERY_STRING'] ?>" />
-<? } ?>    
+<?php } ?>    
       <frame src="newcrop-body.php?<?=$_SERVER['QUERY_STRING'] ?>" />
-<? if ($rf) { ?>
+<?php if ($rf) { ?>
     </frameset> 
-<? } ?>    
+<?php } ?>    
   </frameset>
 </html>

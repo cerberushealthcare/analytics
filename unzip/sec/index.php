@@ -68,12 +68,12 @@ if (! isset($p_id)) {
         $_SESSION["captcha"] = genImageValue();
       }
     } catch (LoginDisallowedException $e) {
-      $errors = array("This account is currently inactive.<BR>Please call 1-888-425-8258 for more information.");
+      $errors = array("This account is currently inactive.<BR>Please call 888-825-4258 for more information.");
     } catch (AppUnavailableException $e) {
-      $errors = array("The system is currently unavailable.<BR>Please try your request later.<br>Call 1-888-425-8258 if you continue to have problems.");
+      $errors = array("The system is currently unavailable.<BR>Please try your request later.<br>Call 888-825-4258 if you continue to have problems.");
     } catch (Exception $e) {
       logit_r($e);
-      $errors = array("This ID cannot be logged into at this time.<BR>Please call 1-888-425-8258 if you continue to have problems.");
+      $errors = array("This ID cannot be logged into at this time.<BR>Please call 888-825-4258 if you continue to have problems.");
     }
   }
 }
@@ -147,9 +147,9 @@ session_write_close();
 		 </h1>
                 <div class="login" style=''>
                   <?php require_once "inc/errors.php" ?>
-                <? if (isset($g_timeout)) { ?>
+                <?php if (isset($g_timeout)) { ?>
                 <div style='padding-bottom:1em;font-family:Arial;font-weight:bold;color:red'>Your session has expired from inactivity.<br>Please login to continue.</div>
-                <? } ?>
+                <?php } ?>
                 </div>
                 <table cellpadding='0' cellspacing='0'>
                   <tr>
@@ -173,13 +173,13 @@ session_write_close();
                               <label>Password</label><br/>
                               <input name="pw" id='pw' type="password" size="20" autocomplete="off" onkeydown="if ((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)) {sub();return false;} else return true;" />
                             </div>
-                            <? if ($captcha) { ?>
+                            <?php if ($captcha) { ?>
                             <div class="l" style="margin-top:10px;padding-top:10px;border:1px solid #c0c0c0; background-color:white;text-align:center">
-                              <img src="inc/captchaGen.php?sid=captcha&<? echo time() ?>"><br/><br/>
+                              <img src="inc/captchaGen.php?sid=captcha&<?php echo time() ?>"><br/><br/>
                               <label>Enter the text above</label><br/>
                               <input name="cap" id='cap' type="text" size="20" onkeydown="if ((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)) {sub();return false;} else return true;" />
                             </div>
-                            <? } ?>
+                            <?php } ?>
                             
                             <div id="trial" style="padding-bottom:10px">
                               <a id="alog" href="javascript:sub()" class="tour">Login ></a>
@@ -528,9 +528,9 @@ session_write_close();
 <script type='text/javascript'>
 var tablet = 0;//Boolean.toInt(document.ontouchstart === null);
 Html.Input.$('tablet').setValue(tablet);
-<? if ($login && isset($g_cp)) { ?>
+<?php if ($login && isset($g_cp)) { ?>
 ChangePasswordPop_Expired.pop(<?=$login->userId?>, tablet);
-<? } ?>
+<?php } ?>
 Cookies.expire('NC_STATUS');
 function setpw() {
   hide("pop-cp-errors");
@@ -594,9 +594,9 @@ function sub2() {
   document.getElementById('frm').submit();
 }
 function initfocus() {
-<? if (! isset($g_cp)) { ?>
+<?php if (! isset($g_cp)) { ?>
   Html.InputText.$('uid').setFocus();
-<? } ?>
+<?php } ?>
 }
 var me = null;
 var td = _$('td');

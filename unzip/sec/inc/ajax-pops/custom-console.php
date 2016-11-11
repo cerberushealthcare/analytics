@@ -17,7 +17,7 @@
         <label class="nopad"><b>Section</b></label>
         <select id="cmap-sections" onchange="cmapSectionChange()">
         </select>
-        <? renderLabelCheck("cmap-start", "Start up with this section", false, null, "cmapStartClick()") ?>
+        <?php renderLabelCheck("cmap-start", "Start up with this section", false, null, "cmapStartClick()") ?>
       </li>
     </ul>
     <div id="cmap-ss" class="gridsheet small scrollable" style="height:440px; width:520px">

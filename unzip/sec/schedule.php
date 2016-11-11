@@ -11,7 +11,7 @@ $forms = SchedForms::create();
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <? renderHead($forms->form->title->text) ?>
+    <?php renderHead($forms->form->title->text) ?>
     <link rel="stylesheet" type="text/css" href="css/xb/_clicktate.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/xb/schedule.css?<?=Version::getUrlSuffix() ?>" />
     <link rel="stylesheet" type="text/css" href="css/xb/EntryForm.css?<?=Version::getUrlSuffix() ?>" />
@@ -51,7 +51,7 @@ $forms = SchedForms::create();
     <div id="curtain"></div>
     <form id="frm" method="post" action="schedule.php">
       <div id="bodyContainer">
-        <? include "inc/header.php" ?>
+        <?php include "inc/header.php" ?>
         <div id='bodyContent' class="content">
           <table id="shead" border="0" cellpadding="0" cellspacing="0" style="width:100%">
             <tr>
@@ -63,9 +63,9 @@ $forms = SchedForms::create();
                     </td>
                     <td width="5"></td>
                     <td>
-                      <? if (count($forms->docs) > 1) {?>
-                        <? renderCombo("doc", $forms->docs, $forms->userId, "onchange='docChange()'") ?>
-                      <? } ?>
+                      <?php if (count($forms->docs) > 1) {?>
+                        <?php renderCombo("doc", $forms->docs, $forms->userId, "onchange='docChange()'") ?>
+                      <?php } ?>
                     </td>
                   </tr>
                 </table>
@@ -81,12 +81,12 @@ $forms = SchedForms::create();
               </td>
             </tr>
           </table>
-          <? renderBoxStart("wide small-pad") ?>
+          <?php renderBoxStart("wide small-pad") ?>
             <div style="padding-bottom:5px">
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td width="200">
-                    <!-- <span id="printDoc"><? //=$form->docs[$form->userId] ?></span> -->
+                    <!-- <span id="printDoc"><?php //=$form->docs[$form->userId] ?></span> -->
                     <?=$forms->form->anchorPrev->html("nav-prev") ?>
                   </td>
                   <td width="*" align="center">
@@ -104,69 +104,69 @@ foreach ($forms->forms as $form) {
 ?>            
              
             <table class="sched" border="0" cellpadding="0" cellspacing="0">
-              <? if (sizeof($form->columnHeads) == 1) { ?>
-                <? $head = $form->columnHeads[0] ?>
+              <?php if (sizeof($form->columnHeads) == 1) { ?>
+                <?php $head = $form->columnHeads[0] ?>
                 <tr>
                   <th colspan="6" class="<?=$head->class ?>">
                     <?=$head->anchor->html() ?>
                   </th>
                 </tr>
-              <? } else { ?>
+              <?php } else { ?>
                 <tr>
                   <td colspan="2"></td>
-                  <? foreach ($form->columnHeads as $head) { ?>
+                  <?php foreach ($form->columnHeads as $head) { ?>
                     <th class="<?=$head->class ?>">
                       <?=$head->anchor->html() ?>
                     </th>
-                  <? } ?>
+                  <?php } ?>
                 </tr>
-              <? } ?>
-              <? foreach ($form->rows as $row) { ?>
+              <?php } ?>
+              <?php foreach ($form->rows as $row) { ?>
                 <tr class="<?=$row->trClass ?>">
-                  <? $slot = $row->slot ?>
-                  <? if ($slot->rowSpan > 0) { ?>
+                  <?php $slot = $row->slot ?>
+                  <?php if ($slot->rowSpan > 0) { ?>
                     <th rowspan="<?=$slot->rowSpan ?>" class="hour"><?=$slot->hour ?></th>
-                  <? } ?>
+                  <?php } ?>
                   <th class="min"><?=$slot->min ?></th>
-                  <? $i = 0 ?>
-                  <? foreach ($row->columns as $column) { ?>
-                    <? if ($column->slot != null) { ?>
-                      <? $slot = $column->slot ?>
-                      <? if ($slot->rowSpan > 0) { ?>
-                        <th rowspan="<?=$slot->rowSpan ?>" class="hour"><?=$slot->hour ?><? if ($slot->amPm == 'PM') echo 'p' ?></th>
-                      <? } ?>
+                  <?php $i = 0 ?>
+                  <?php foreach ($row->columns as $column) { ?>
+                    <?php if ($column->slot != null) { ?>
+                      <?php $slot = $column->slot ?>
+                      <?php if ($slot->rowSpan > 0) { ?>
+                        <th rowspan="<?=$slot->rowSpan ?>" class="hour"><?=$slot->hour ?><?php if ($slot->amPm == 'PM') echo 'p' ?></th>
+                      <?php } ?>
                       <th class="min"><?=$slot->min ?></th>
-                    <? } ?>
-                    <? if ($i == 0 || sizeof($form->columnHeads) > 1) { ?>
-                      <? $head = $form->columnHeads[$i++] ?>
-                    <? } ?>
+                    <?php } ?>
+                    <?php if ($i == 0 || sizeof($form->columnHeads) > 1) { ?>
+                      <?php $head = $form->columnHeads[$i++] ?>
+                    <?php } ?>
                     <td class="slot" style="<?=$column->style ?>">
-                      <? if (sizeof($column->appts) > 0) { ?>
-                        <? foreach ($column->appts as $appt) { ?>
+                      <?php if (sizeof($column->appts) > 0) { ?>
+                        <?php foreach ($column->appts as $appt) { ?>
                           <a href="javascript:showAppt(<?=$appt->sched->schedId ?>)" class="<?=$appt->aClass ?>" style="<?=$appt->getAStyle() ?>">
                             <?=$appt->aText ?>
                           </a>
-                        <? } ?>
+                        <?php } ?>
                         &nbsp;
-                      <? } ?>
+                      <?php } ?>
                         <a href="javascript:addSchedPop('<?=$head->userId ?>', '<?=$head->date ?>', '<?=$slot->formatted ?>')" class="slotAction">
                           <span>Add <?=$slot->hour ?>:<?=$slot->min ?> appt</span>
                         </a>
                     </td>
-                  <? } ?>
+                  <?php } ?>
                 </tr>
-              <? } ?>
+              <?php } ?>
             </table>
 <?
 }
 ?>            
           </div>
-          <? renderBoxEnd() ?>
+          <?php renderBoxEnd() ?>
         </div>
         <div id='bottom'><img src='img/brb.png' /></div>
       </div>
-      <? include "inc/ajax-pops/new-open.php" ?>
-      <? include "inc/ajax-pops/custom-schedule.php" ?>
+      <?php include "inc/ajax-pops/new-open.php" ?>
+      <?php include "inc/ajax-pops/custom-schedule.php" ?>
       <div id="pop-ue" class="pop">
         <div id="pop-ue-cap" class="pop-cap">
           <div id="pop-ue-cap-text">
@@ -187,15 +187,15 @@ foreach ($forms->forms as $form) {
               <ul class="entry" style="margin-top:10px">
                 <li>
                   <label class="first">Date</label>
-                  <? renderCalendar("ue-date") ?>
+                  <?php renderCalendar("ue-date") ?>
                   <label>Time</label>
-                  <? renderClock("ue-time") ?>
+                  <?php renderClock("ue-time") ?>
                 </li>
                 <li style="padding-top:1px">
                   <label class="first">Duration</label>
-                  <? renderCombo("ue-duration-hr", $forms->form->slotLengthHrs, "", "onchange='resetMin(1)'") ?>
+                  <?php renderCombo("ue-duration-hr", $forms->form->slotLengthHrs, "", "onchange='resetMin(1)'") ?>
                   <label class="nopad">and</label>
-                  <? renderCombo("ue-duration-min", $forms->form->slotLengthMins) ?>&nbsp;
+                  <?php renderCombo("ue-duration-min", $forms->form->slotLengthMins) ?>&nbsp;
                   <a class="act" href="javascript:setAllDay()">All day</a>
                 </li>
               </ul>
@@ -233,13 +233,13 @@ foreach ($forms->forms as $form) {
                   <label id="ue-rp-every-label" class="nopad">day(s)</label>
                   <span id="ue-rp-on-span" style="display:none">
                     <label class="nopad">on</label>
-                    <? renderLabelCheck("ue-rp-on-dow", "Sun") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Mon") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Tue") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Wed") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Thu") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Fri") ?>
-                    <? renderLabelCheck("ue-rp-on-dow", "Sat") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Sun") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Mon") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Tue") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Wed") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Thu") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Fri") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow", "Sat") ?>
                   </span>
                   <span id="ue-rp-by-span" style="display:none">
                     <label class="nopad">by</label>
@@ -251,7 +251,7 @@ foreach ($forms->forms as $form) {
                 </li>
                 <li>
                   <label class="first">Until</label>
-                  <? renderCalendar("ue-rp-until"); ?>
+                  <?php renderCalendar("ue-rp-until"); ?>
                 </li>
               </ul>
               <ul class="entry" style="margin-top:10px">
@@ -290,11 +290,11 @@ foreach ($forms->forms as $form) {
               <div>
                 <div id="pop-client-name" class="bold"></div>
               </div>
-              <? if ($login->Role->Patient->demo) { ?>
+              <?php if ($login->Role->Patient->demo) { ?>
                 <a class="pencil" href="javascript:editPatient()">Edit</a>
-              <? } else { ?>
+              <?php } else { ?>
                 <a>&nbsp;</a>
-              <? } ?>
+              <?php } ?>
             </div>
             <label class="first">ID:</label><span id="pop-client-id"></span>&nbsp;
             <label class='pl10'>DOB:</label><span id="pop-client-dob"></span><br/>
@@ -310,20 +310,20 @@ foreach ($forms->forms as $form) {
             <ul class="entry">
               <li>
                 <label class="first">Date</label>
-                <? renderCalendar("appt-date") ?>
+                <?php renderCalendar("appt-date") ?>
                 <label>Time</label>
-                <? renderClock("appt-time") ?>
+                <?php renderClock("appt-time") ?>
               </li>
               <li>
                 <label class="first">Type</label>
-                <? renderCombo("appt-type", $forms->form->types, "", "onchange='setDuration(this)'") ?>
+                <?php renderCombo("appt-type", $forms->form->types, "", "onchange='setDuration(this)'") ?>
                 <a class="act" href="javascript:showCustomApptTypes()">Customize</a>
               </li>
               <li style="padding-top:1px">
                 <label class="first">Duration</label>
-                <? renderCombo("appt-duration-hr", $forms->form->slotLengthHrs, "", "onchange='resetMin()'") ?>
+                <?php renderCombo("appt-duration-hr", $forms->form->slotLengthHrs, "", "onchange='resetMin()'") ?>
                 <label class="nopad">and</label>
-                <? renderCombo("appt-duration-min", $forms->form->slotLengthMins) ?>
+                <?php renderCombo("appt-duration-min", $forms->form->slotLengthMins) ?>
               </li>
               <ul class="entry">
                 <li>
@@ -359,13 +359,13 @@ foreach ($forms->forms as $form) {
                   <label id="ue-rp-every-label2" class="nopad">day(s)</label>
                   <span id="ue-rp-on-span2" style="display:none">
                     <label class="nopad">on</label>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Sun") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Mon") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Tue") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Wed") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Thu") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Fri") ?>
-                    <? renderLabelCheck("ue-rp-on-dow2", "Sat") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Sun") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Mon") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Tue") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Wed") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Thu") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Fri") ?>
+                    <?php renderLabelCheck("ue-rp-on-dow2", "Sat") ?>
                   </span>
                   <span id="ue-rp-by-span2" style="display:none">
                     <label class="nopad">by</label>
@@ -377,14 +377,14 @@ foreach ($forms->forms as $form) {
                 </li>
                 <li>
                   <label class="first">Until</label>
-                  <? renderCalendar("ue-rp-until2"); ?>
+                  <?php renderCalendar("ue-rp-until2"); ?>
                 </li>
               </ul>
             </ul>
             <ul class="entry" style="margin-top:10px;">
               <li>
                 <label class="first">Status</label>
-                <? renderCombo("appt-status", $forms->form->statuses) ?>
+                <?php renderCombo("appt-status", $forms->form->statuses) ?>
                 <a class="act" href="javascript:showCustomSchedStatus()">Customize</a>
               </li>
               <li>
@@ -432,7 +432,7 @@ foreach ($forms->forms as $form) {
                 <label class="section">Scheduled/History</label>
               </div>
               <span>
-                <? // renderLabelCheck("htoggle", "Show notes", false, "padding-right:2px", "toggleHistory()") ?>
+                <?php // renderLabelCheck("htoggle", "Show notes", false, "padding-right:2px", "toggleHistory()") ?>
               </span>
             <!-- </div> -->
             <div id="pss" class="fstab" style="height:180px">
@@ -455,7 +455,7 @@ foreach ($forms->forms as $form) {
           </div>
         </div>
       </div>
-      <? include "inc/footer.php" ?>
+      <?php include "inc/footer.php" ?>
     </form>
   </body>
 </html>
@@ -465,25 +465,25 @@ C_Client = <?=Client::getStaticJson()?>;
 C_Docs = <?=UserGroups::getDocsJsonList()?>;
 C_Users = <?=UserGroups::getActiveUsersJsonList()?>;
 Page.setEvents();
-<? if ($forms->form->popId != null) { ?>
+<?php if ($forms->form->popId != null) { ?>
 showAppt(<?=$forms->form->popId ?>, <?=$forms->form->popAsEdit ?>);
-<? } ?>
-<? if ($forms->form->popCal) { ?>
+<?php } ?>
+<?php if ($forms->form->popCal) { ?>
 Pop.Calendar.show('<?=$forms->form->date ?>', calTitleCallback);
-<? } ?>
-<? if ($forms->form->sid) {  // preload the search results with supplied patient ?>
+<?php } ?>
+<?php if ($forms->form->sid) {  // preload the search results with supplied patient ?>
 Ajax.Facesheet.Patients.get(<?=$forms->form->sid ?>, Html.Window, function(client) {
   nnClients = [client];
 })
-<? } ?>
-<? timeoutCallbackJs() ?>
+<?php } ?>
+<?php timeoutCallbackJs() ?>
 
 var curl = "<?=$forms->form->formatCurrentUrl() ?>";
 var curl2 = "<?=$forms->form->formatCurrentUrl(false) ?>";
 var curl3 = "<?=$forms->form->formatCurrentUrl(true, false) ?>";
 var ugid = <?=$login->userGroupId ?>;
-function addSchedPop(u, d, t) {<? permContinue($login->Role->Patient->sched, "addSchedPop2(u, d, t);") ?>}
-function showAppt(i, j) {<? permContinue($login->Role->Patient->sched, "showAppt2(i,j);") ?>}
+function addSchedPop(u, d, t) {<?php permContinue($login->Role->Patient->sched, "addSchedPop2(u, d, t);") ?>}
+function showAppt(i, j) {<?php permContinue($login->Role->Patient->sched, "showAppt2(i,j);") ?>}
 var idows = $$("ue-rp-on-dow", "INPUT");
 var idows2 = $$("ue-rp-on-dow2", "INPUT");
 </script>

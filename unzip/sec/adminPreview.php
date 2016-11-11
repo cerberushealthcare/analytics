@@ -76,11 +76,11 @@ $parId = $_GET["pid"];
         </table>
       </div>
     </div>
-    <? include "inc/ajax-pops/template-pops.php" ?>
-    <? include "inc/ajax-pops/working-confirm.php" ?>
-    <? include "inc/ajax-pops/icd-pop.php" ?>
-    <? include "inc/ajax-pops/calendar.php" ?>
-    <? include "inc/ajax-pops/new-open.php" ?>
+    <?php include "inc/ajax-pops/template-pops.php" ?>
+    <?php include "inc/ajax-pops/working-confirm.php" ?>
+    <?php include "inc/ajax-pops/icd-pop.php" ?>
+    <?php include "inc/ajax-pops/calendar.php" ?>
+    <?php include "inc/ajax-pops/new-open.php" ?>
   </body>
 </html>
 <script>

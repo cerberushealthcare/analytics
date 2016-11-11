@@ -263,6 +263,8 @@ class LoginSession extends Rec {
   //
   //Used for tests so that we can access the protected method fetchUser_withLogging
   static function testFetchUser($uid, $ptpw, $isAutomatedLogin = null) {
+	Logger::debug('LoginSession: entered testFetchUser.');
+	echo 'testFetchUser initiated.<br>';
 	return static::fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin);
   }
   /**
@@ -278,9 +280,9 @@ class LoginSession extends Rec {
   static function login($uid, $ptpw, $sessionId = null, $isAutomatedLogin = false) {
     if ($uid == 'pspc')
       $uid = '846_pspc';
-	//echo 'LoginSession login function: Entered!<br>';
+	Logger::debug('LoginSession login function: Entered with params ' . $uid . '|' . $ptpw . '|' . $sessionId . '|' . $isAutomatedLogin);
     $user = static::fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin);
-	//echo 'Got user!<br>';
+	Logger::debug('LoginSession::login: Got user ' . print_r($user, true));
     $me = new static();
     $me->userGroupId = $user->userGroupId;
     $me->cerberus = ApiIdXref_Cerberus::lookupPracticeId($user->userGroupId);
@@ -292,7 +294,7 @@ class LoginSession extends Rec {
     $me->ptpw = $ptpw;
 	Logger::debug('LoginSession::login: Got user. login disallowed? ' . $user->isLoginDisallowed());
 	Logger::debug('LoginSession: Our backtrace is this:');
-	Logger::debug(debug_backtrace());
+	Logger::debug(print_r(debug_backtrace(), true));
 	
 	if (!$isAutomatedLogin) $me->setUserFields($user); //We did this check because when we do an automated login, the database for some reason wants to update the user's information, and when it does it wants to update the user's admin status and subscription status to the user's password hash. No idea why, but it stops us from making progress and I've decided to disable it for now.
 	
@@ -304,10 +306,7 @@ class LoginSession extends Rec {
     $login = $me->setMcsk()->save();
     $login->sessionId = session_id();
     $login->Login = UserLogins::log_asOk($login);
-	/*Logger::debug('LoginSession: Done with login! Returning save().');
-	echo '<pre>';
-	print_r(debug_backtrace());
-	echo '</pre>';*/
+	Logger::debug('LoginSession: Done with login! Returning save().');
     return $login->save();
   }
   static function loginBatch($ugid, $label) {
@@ -451,6 +450,7 @@ class LoginSession extends Rec {
   }
   //
   protected function setUserFields($user = null) {  // null to refresh
+	Logger::debug('LoginSession.php: entered setUserFields. user is a(n)' . gettype($user));
     if ($user == null)
       $user = UserLogin::fetchByUid($this->uid);
     $ug = $user->UserGroup;
@@ -458,12 +458,41 @@ class LoginSession extends Rec {
     $this->json = null;
     $this->admin = $user->isAdmin() ? true : null;
     $this->timeout = $ug->sessionTimeout * 60;
+	
+	Logger::debug('LoginSession::setUserFields: Getting doc ID.');
     if ($user->isDoctor())
       $this->docId = $user->userId;
     else
       $this->docId = $user->getNcPartnerId() ?: $user->fetchDocId();
-  
+    Logger::debug('LoginSession::setUserFields:setting active status.');
+	/*$this->setActiveStatus: This NEEDS to be fixed in the future. The problem is that it spits out a completely invalid query, something like this:
+		UPDATE users SET UID_='82',
+		pw='mm',
+		name='mm',
+		admin='FB78B84E04DCC80263D727F9BA8F8ABF',
+		subscription='FB78B84E04DCC80263D727F9BA8F8ABF',
+		active=0,
+		reg_id='Michael McKinney',
+		trial_expdt='0',
+		user_group_id='0',
+		user_type='2',
+		license_state='2',
+		license='1',
+		dea='1',
+		npi='707',
+		email='707',
+		expiration='1',
+		expire_reason='8',
+		pw_expires='KY ',
+		tos_accepted='KY ',
+		role_type='mm',
+		mixins='mm',
+		reset_hash='1234567890' WHERE user_id='82'
+
+		Oracle rightfully complains that we are trying to put strings into several number-only fields and refuses to do the query.
+		*/
     $this->setActiveStatus();
+	Logger::debug('LoginSession::setUserFields: Getting Role....');
     $this->Role = UserRole::from($user, $this->cerberus);
     if ($user->userGroupId == 2645/*john richards*/) {
       // $this->Role->Artifact->noteReplicate = 0; -- decided they want to keep replicate, 4/12
@@ -471,21 +500,36 @@ class LoginSession extends Rec {
         $this->Role->Artifact->noteSign = 1;
       }
     }
+	Logger::debug('LoginSession::setUserFields: Is this Cerberus?' . $this->cerberus);
     if (! $this->cerberus) {
+		Logger::debug('LoginSession::setUserFields: Setting UserLoginReqs.');
       $this->LoginReqs = UserLoginReqs::getAllFor($user, $this->Role);
     }
     $this->super = $ug->isSuper();
     $this->demo = $ug->demo;
+	
+	Logger::debug('LoginSession::setUserFields: Returning this save.');
     return $this->save();
   }
+  
   protected function setActiveStatus() {  // assigns active and daysLeft
+    Logger::debug('LoginSession::setActiveStatus: Entered. Is papyrus? ' . $this->isPapyrus() . ', active? ' . $this->User->active . ', subscription = ' . $this->User->subscription);
     if (! $this->isPapyrus()) {
       if ($this->User->active) {
         switch ($this->User->subscription) {
           case UserLogin::SUBSCRIPTION_TRIAL:
             $this->daysLeft = $this->User->getTrialDaysLeft();
-            if ($this->daysLeft < 0)
-              $this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_TRIAL_OVER);
+			Logger::debug('LoginSession::setUserFields: Subscription trial. Days left: ' . $this->daysLeft);
+            if ($this->daysLeft < 0) {
+				
+				//if (MyEnv::$IS_ORACLE) {
+					$this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_TRIAL_OVER);
+				/*}
+				else {
+					$this->expireReason = $this->User->deactivate(UserLogin::EXPIRE_TRIAL_OVER);
+				}*/
+			}
+              
             break;
           case UserLogin::SUBSCRIPTION_CREDITCARD:
             $bill = get($this->User, 'BillInfo');
@@ -498,6 +542,7 @@ class LoginSession extends Rec {
             }
             break;
           case UserLogin::SUBSCRIPTION_FREE:
+			Logger::debug('LoginSession::setUserFields: Free.');
             $this->daysLeft = 1000;
           case UserLogin::SUBSCRIPTION_INVOICE:
             $this->daysLeft = 365;  // TODO
@@ -518,19 +563,25 @@ class LoginSession extends Rec {
   }
   //
   protected static function fetchUser($uid, $ptpw, $logging = false, $isAutomatedLogin = false) {
-    //echo 'LoginSession fetchUser: Entered with ' . $uid . ' and ' . $ptpw . '<br>';
+    Logger::debug('LoginSession fetchUser: Entered with ' . $uid . ' and ' . $ptpw);
 	if ($isAutomatedLogin) {
 		Logger::debug('fetchUser: Automated login. Calling fetchByUidTest.');
-		$user = UserLogin::fetchByUidtest($uid);
+		$user = UserLogin::fetchByUidTest($uid);
 		Logger::debug('fetchUser: Did automated login. Got user ' . gettype($user));
 	}
 	else {
-		$user = UserLogin::fetchByUid($uid);
+		Logger::debug('fetchUser: MANUAL login. Calling fetchByUidtest.');
+		$user = UserLogin::fetchByUidTest($uid);
+		Logger::debug('fetchUser: Returned from fetchByUidtest.');
 	}
-	//Logger::debug('LoginSession fetchUser: user is a ' . gettype($user) . ' ' . print_r($user, true));
+	
+	Logger::debug('LoginSession fetchUser: user is a ' . gettype($user) . '. pw is ' . $user->pw);
+	
     if ($user) {
+		Logger::debug('fetchUser:Got a user!');
       if (! $user->isPasswordCorrect($ptpw)) {
         if ($logging) {
+			Logger::debug('fetchUser: Password not correct.');
 		  //echo '<b>User password not correct. logging.</b><br>';
 		  //var_dump(debug_print_backtrace());
 		  if ($isAutomatedLogin) {
@@ -543,9 +594,12 @@ class LoginSession extends Rec {
         }
         return null;
       }
-    } else {
+    }
+	else {
+		Logger::debug('fetchUser: User does not exist!');
       if ($logging) {
         if (static::isEmrUid($uid)) { //very hacky and unnecessary IS_BATCH check - covers up a very odd login issue.
+		  Logger::debug('fetchUser: Throwing LoginEmrException because we can.');
           throw new LoginEmrException();
 		}
 		//echo '<b>No user! Logging.</b><br>';
@@ -556,7 +610,7 @@ class LoginSession extends Rec {
 			$attempts = UserLogins::log_asBadUid($uid);
 			
 		 }
-        
+        Logger::debug('fetchUser: Throwing invalidLoginException because we can.');
         throw new LoginInvalidException($attempts);
       }
     }
@@ -564,7 +618,8 @@ class LoginSession extends Rec {
     return $user;
   }
   protected static function fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin = false) {
-    //echo 'fetch user with logging...';
+    Logger::debug('LoginSession.php::fetchUser_withLogging: fetch user with logging...');
+	echo 'entered fetchUser_withLogging';
     return static::fetchUser($uid, $ptpw, true, $isAutomatedLogin);
   }
   protected static function isEmrUid($uid) {

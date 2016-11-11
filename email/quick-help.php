@@ -34,25 +34,25 @@ if (isset($_GET["t"])) {
                 <table width="600" cellpadding="20" cellspacing="0" bgcolor="#FFFFFF">
                   <tr>
                     <td bgcolor="#FFFFFF" valign="top" align="left" style="font-size:10pt;color:#000000;line-height:1.5em;font-family:Arial;text-align:left">
-                      <? if ($name != null) { ?>
+                      <?php if ($name != null) { ?>
                         <h3 style="font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:13pt;font-weight:bold;color:#008C7B;margin-top:1em;margin-bottom:0">
                           Dear <?=$name ?>,
                         </h3>
                         <p style="margin-top:0.6em;margin-bottom:0.7em;">
                           Thank you for registering and welcome to Clicktate!
-                          <? if ($type == 0) { ?>
+                          <?php if ($type == 0) { ?>
                           Your trial account is now activated with thirty days of full access to the system.
-                          <? } ?>
+                          <?php } ?>
                           This <b>Quick Start Guide</b> contains some tips to help get you started.
                         </p>
-                      <? } else { ?>
+                      <?php } else { ?>
                         <h3 style="font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:13pt;font-weight:bold;color:#008C7B;margin-top:1em;margin-bottom:0">
                           Quick Start Guide
                         </h3>
                         <p style="margin-top:0.6em;margin-bottom:0.7em;">
                           This page contains some tips for getting started with Clicktate.
                         </p>                        
-                      <? } ?>
+                      <?php } ?>
                       <p style="margin-top:0.6em;margin-bottom:0.7em;">
                         First, if you haven't already done so, we recommend downloading the <b>Clicktate User Guide</b> (PDF format, 3MB).
                         which details and walks you through the major functions of Clicktate.
@@ -171,7 +171,7 @@ if (isset($_GET["t"])) {
                           <b>Profile</b> - Update personal/practice info, manage support accounts  
                         </li>
                       </ul>
-                      <? if ($type == 0) { ?>
+                      <?php if ($type == 0) { ?>
                         <h3 style="font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:13pt;font-weight:bold;color:#008C7B;margin-top:1.5em;margin-bottom:0">
                           Ready?
                         </h3>
@@ -180,14 +180,14 @@ if (isset($_GET["t"])) {
                           We encourage you to use Clicktate extensively during this trial period to become familiar with its many features.
                           Remember, if you have any problems, questions, or would like to set up an online demo with a Clicktate representative, don't hesitate to contact us.
                         </p>
-                      <? } else { ?>
+                      <?php } else { ?>
                         <h3 style="font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:13pt;font-weight:bold;color:#008C7B;margin-top:1.5em;margin-bottom:0">
                           Need more help?
                         </h3>
                         <p style="margin-top:0.6em;margin-bottom:1em;">
                           Don't forget, if you have any problems, questions, or would like to set up an online demo with a Clicktate representative, don't hesitate to contact us.
                         </p>
-                      <? } ?>                      
+                      <?php } ?>                      
                         <center>
                         <table border="0" cellpadding="0" cellspacing="0" style="text-align:center">
                           <tr>
@@ -209,14 +209,14 @@ if (isset($_GET["t"])) {
                           </tr>
                         </table>
                       </center>
-                      <? if ($name != null) { ?>
+                      <?php if ($name != null) { ?>
                         <h3 style="padding-left:400px;font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:13pt;font-weight:bold;color:#008C7B;margin-top:1.5em;margin-bottom:0">
                           Thank you,
                         </h3>
                         <h3 style="padding-left:400px;font-family:'Lucida Grande','Trebuchet MS',Arial;font-size:11pt;font-weight:bold;color:#008C7B;margin-top:0.1em;margin-bottom:0">
                           Clicktate Staff
                         </h3>
-                      <? } ?>
+                      <?php } ?>
                     </td>
                   </tr>
                 </table>
