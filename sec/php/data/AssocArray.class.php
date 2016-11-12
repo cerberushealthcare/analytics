@@ -143,7 +143,7 @@ class AssocArray extends Database {
 				else {
 					$i = 0;
 					while (($row = oci_fetch_array($stid, OCI_ASSOC)) != false) {
-					    echo 'The row is <span style="color: blue;">' . print_r($row, true) . '</span><br><br>';
+					    //echo 'The row is <span style="color: blue;">' . print_r($row, true) . '</span><br><br>';
 						$result[$i] = $row;
 						$i++;
 					}

@@ -72,7 +72,7 @@ class LoginSession extends Rec {
 				$err = oci_error();
 				throw new RuntimeException($err['message']);	
 			}
-			echo 'checkOracleLogin: Running oracle function with ' . $uid . ' and ' . $pw . '<br>';
+			//echo 'checkOracleLogin: Running oracle function with ' . $uid . ' and ' . $pw . '<br>';
 			$stid = oci_parse($conn, 'select FN_AUTHENTICATE_USER1(:userid, :pw) as "result" from dual');
 			oci_bind_by_name($stid, ":userid", $uid);
 			oci_bind_by_name($stid, ":pw", $pw);
@@ -507,7 +507,7 @@ class LoginSession extends Rec {
 	Logger::debug('LoginSession::setUserFields: Is this Cerberus?' . $this->cerberus);
     if (! $this->cerberus) {
 		Logger::debug('LoginSession::setUserFields: Setting UserLoginReqs.');
-      $this->LoginReqs = UserLoginReqs::getAllFor($user, $this->Role);
+      //$this->LoginReqs = UserLoginReqs::getAllFor($user, $this->Role);
     }
     $this->super = $ug->isSuper();
     $this->demo = $ug->demo;
@@ -625,7 +625,7 @@ class LoginSession extends Rec {
   }
   protected static function fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin = false) {
     Logger::debug('LoginSession.php::fetchUser_withLogging: fetch user with logging...');
-	echo 'entered fetchUser_withLogging';
+	//echo 'entered fetchUser_withLogging';
     return static::fetchUser($uid, $ptpw, true, $isAutomatedLogin);
   }
   protected static function isEmrUid($uid) {

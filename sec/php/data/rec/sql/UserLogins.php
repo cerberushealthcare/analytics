@@ -124,8 +124,8 @@ class Login extends SqlRec implements NoAuthenticate {
   }
   //
   static function log_asOk($loginSession) {
-    echo 'Logging as OK!';
-    return static::log($loginSession->sessionId, $loginSession->uid, $loginSession->userId, $loginSession->userGroupId, static::RESULT_OK, $user->name);
+    //echo 'Logging as OK!';
+    return static::log($loginSession->sessionId, $loginSession->uid, $loginSession->userId, $loginSession->userGroupId, static::RESULT_OK);
   }
   static function log_asBadPw($user) {
     return static::log(null, $user->uid, $user->userId, $user->userGroupId, static::RESULT_BAD_PW, $user->name);
@@ -151,8 +151,8 @@ class Login extends SqlRec implements NoAuthenticate {
     $me->result = $result;
 	
 	if (MyEnv::$IS_ORACLE) {
-		$sql = "BEGIN :returnVal := FN_INSERTLOGIN('" . $this->ipAddress . "', '" . $this->sessionId . "', '" . $this->uid . "', '" . $this->userId . "', '" . $this->userGroupId . "', '" . $this->result . "'); END;";
-		Dao::query($sql);
+		$sql = "BEGIN :returnVal := FN_INSERTLOGIN('" . $me->ipAddress . "', '" . $me->sessionId . "', '" . $uid . "', '" . $me->userId . "', '" . $me->userGroupId . "', '" . $me->result . "'); END;";
+		Dao::query($sql, null, 'logins');
 	}
     else {
 		$me->save();
@@ -300,7 +300,6 @@ class UserLogin extends UserRec implements NoAuthenticate {
     }
   }
   public function isPasswordCorrect($ptpw) {
-	echo 'isPasswordCorrect: Check ' . $this->name . ' and ' . $ptpw;
 	if (MyEnv::$IS_ORACLE) {
 		return LoginSession::checkOracleLogin($this->uid, $ptpw);
 	}

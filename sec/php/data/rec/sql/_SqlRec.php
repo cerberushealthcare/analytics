@@ -208,7 +208,7 @@ abstract class SqlRec extends Rec {
       if (is_scalar($cid)) 
         $this->authenticateClientId($cid, true);
       else 
-        if ($this->hasUserGroupId() && !$_POST['IS_BATCH']) 
+        if ($this->hasUserGroupId() && !isset($_POST['IS_BATCH'])) 
           $this->authenticateUserGroupId(get($this, 'userGroupId'), true);
     }
     $this->_authenticated = true;
@@ -1064,7 +1064,7 @@ abstract class SqlRec extends Rec {
    */
   static function fetchAllBy($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
     $a = static::fetchAllAndFlatten($criteria, $order, $limit, $keyFid, $sortBy, $page, $groupBy);
-	echo 'fetchAllBy: We are returning a ' . gettype($a[0]) . ' ' . print_r($a[0]);
+	//echo 'fetchAllBy: We are returning a ' . gettype($a[0]) . ' ' . print_r($a[0]);
 	Logger::debug('fetchAllBy: We are returning a ' . gettype($a[0]));
     return $a[0];
   }
@@ -1183,7 +1183,7 @@ abstract class SqlRec extends Rec {
   static function fetchOneBy($criteria, $limit = 500) {
   Logger::debug('_SqlRec::fetchOneBy: Got criteria ' . gettype($criteria));
     $recs = self::fetchAllBy($criteria, null, $limit);
-	echo 'fetchOneBy: We are returning a ' . gettype($recs) . ' ' . print_r($recs) . '<br>';
+	//echo 'fetchOneBy: We are returning a ' . gettype($recs) . ' ' . print_r($recs) . '<br>';
     if (! empty($recs))
       return current($recs);
   }

@@ -60,10 +60,7 @@ class Dao {
 		//echo 'Dao: Getting resource. SQL is ' . $sql;
 		
 		//echo 'Dao::query:';
-		logit_r($sql, 'PARSED SQL');
 		$res = oci_parse($conn, $sql);
-		Logit_r($res, 'Res2');
-		$returnValue = null;
 		
 		if ($table == 'logins') {
 			oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
@@ -71,6 +68,14 @@ class Dao {
 			//return $returnValue;
 			Logger::debug('Dao::query: Got return val as ' . $returnValue);
 		}
+		
+		
+		
+		logit_r($sql, 'PARSED SQL');
+		
+		Logit_r($res, 'Res2');
+		$returnValue = null;
+		
 		
 		/*if ($table == 'clients') {
 			Logger::debug('Dao::query: Clients table! Trace is ' . print_r(debug_backtrace(), true));

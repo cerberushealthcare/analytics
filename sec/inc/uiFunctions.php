@@ -8,6 +8,7 @@ require_once 'JsonConstants.php';
  * @param string $controller JS file 'ReportingPage'
  * @param string $css CSS file 'messages.css'
  */
+ 
 function HEAD($title, $controller = null, $css = null) {
   global $login;
   $v = Version::getUrlSuffix();

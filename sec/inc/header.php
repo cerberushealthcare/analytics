@@ -1,4 +1,4 @@
-<?
+<?php
 require_once "php/data/Version.php";
 require_once "php/data/rec/sql/Messaging.php";
 require_once "php/data/rec/sql/Messaging_DocStubReview.php";
@@ -15,15 +15,15 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
 if ($page != 'cerberus-login.php' && $login->cerberus)
   $clogin = CerberusLogin::fetch();
 ?>
-    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Header.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Polling.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Header.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Polling.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?php echo Version::getUrlSuffix() ?>"></script>
     <div id="header">
-      <div id="logo-head" <?=$popstyle?>>
+      <div id="logo-head" <?php echo $popstyle?>>
         <div style='background:#D2E3E0;'>
 <?php /*  ***** crs 6/29/2016
         <?php if ($baiju) { ?>
@@ -41,12 +41,12 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
           <table border="0" cellpadding="0" cellspacing="0">
             <tr>
               <!--   ***** crs 6/29/2016
-              <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" <?if ($login->cerberus || $login->super || $baiju) {?>style="visibility:hidden" <?}?>/></a></td> // ***** crs 6/29/2016 -->
-              <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" <?if ( !$login->super  || $login->cerberus || $login->super || $baiju) {?>style="visibility:hidden" <?}?>/></a></td>
+              <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" <?php if ($login->cerberus || $login->super || $baiju) {?>style="visibility:hidden" <?php }?>/></a></td> // ***** crs 6/29/2016 -->
+              <td><a class='logo' href="welcome.php"><img src="img/lhdLogoTop2.png" <?php if ( !$login->super  || $login->cerberus || $login->super || $baiju) {?>style="visibility:hidden" <?php }?>/></a></td>
               <td class="logo-right">
                 <div class="loginfo tf-header">
                   <?php if (isset($login)) { ?>
-                    Logged in as <b><?=$login->uid ?></b>
+                    Logged in as <b><?php echo $login->uid ?></b>
                     <?php if (! $login->super) { ?>
                       <?php if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><?php } else { ?>| <a href="profile.php?cp=1">Change Password</a><?php } ?>
                       <?php if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><?php } ?>
@@ -54,7 +54,7 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
                     <?php } ?>
                     |
                     <?php if ($login->cerberus) { ?>
-                      <a href="<?=$clogin->url?>102:<?=$clogin->sessionId?>::::APP_HOME_PAGE_CHOICE:PMS">Return to PMS</a>
+                      <a href="<?php echo $clogin->url?>102:<?php echo $clogin->sessionId?>::::APP_HOME_PAGE_CHOICE:PMS">Return to PMS</a>
                     <?php } else { ?>
                       <a href="javascript:Header.logout()">Logout</a>
                     <?php } ?>
@@ -87,7 +87,7 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
             </span>
           </div>
        ****** crs 6/29/2016 -->
-          <div<?if ($login->cerberus || $login->super || $baiju) {?> class='edge2'<?}?>>
+          <div<?php if ($login->cerberus || $login->super || $baiju) echo "class='edge2'"; ?>>
             <table id='logo-bot' border=0 cellpadding=0 cellspacing=0>
               <tr>
                 <?php // ***** crs 6/29/2016 if ($login->cerberus || $login->super || $baiju) { ?>
@@ -141,7 +141,7 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
         </div>
       </div>
     </div>
-    <div id="stickies" <?=$popstyle?>>
+    <div id="stickies" <?php echo $popstyle?>>
       <?php if (! $login->isPapyrus()) { ?>
         <?php if ($page == 'welcome.php' && 1 == 0) { ?>
           <?php STICKY('downnote') ?>
@@ -158,12 +158,12 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
         <?php } ?>
         <?php if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
           <?php STICKY('countdown') ?>
-            Your trial account has <?=daysLeft($login->daysLeft) ?> remaining.
+            Your trial account has <?php echo daysLeft($login->daysLeft) ?> remaining.
             <!-- <a href="registerCard.php">Activate now &gt;</a> -->
           <?php _STICKY('countdown', false) ?>
         <?php } else if (! $noAlert && $login->isInactive()) { ?>
           <?php STICKY('countdown') ?>
-            <?=$login->expireReason ?><br/>
+            <?php echo $login->expireReason ?><br/>
             At present you have limited (read-only) access to your information.<br/>
             <a href="registerCard.php">Update billing info and restore full access &gt;</a>
           <?php _STICKY('countdown', false) ?>
@@ -172,7 +172,7 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
             <?php if ($login->daysLeft < 0) { ?>
               Your credit card has expired.
             <?php } else { ?>
-              Your credit card on file expires in <?=daysLeft($login->daysLeft) ?>.
+              Your credit card on file expires in <?php echo daysLeft($login->daysLeft) ?>.
             <?php } ?>
             <a href="registerCard.php">Update card &gt;</a>
           <?php _STICKY('countdown', false) ?>
@@ -182,8 +182,8 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
           <?php foreach ($reqs as $req) { ?>
             <?php $stid = 'req' . $req->userLoginReqId ?>
             <?php STICKY($stid) ?>
-              <?=daysLeft($req->_daysLeft, true) ?> left for
-              <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?=$req->LoginReq->name ?> &gt;</a>
+              <?php echo daysLeft($req->_daysLeft, true) ?> left for
+              <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?php echo $req->LoginReq->name ?> &gt;</a>
             <?php _STICKY($stid) ?>
           <?php } ?>
         <?php } ?>
@@ -205,8 +205,8 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
           <?php foreach ($login->LoginReqs as $action => $reqs) { ?>
             <?php foreach ($reqs as $req) { ?>
               <?php renderBoxStart('wide min-pad push') ?>
-                <h4 style='color:red;margin-bottom:-0.5em'><?=$action . ': ' . $req->LoginReq->name ?></h4>
-                <div><?=$req->LoginReq->notifyText ?></div>
+                <h4 style='color:red;margin-bottom:-0.5em'><?php echo $action . ': ' . $req->LoginReq->name ?></h4>
+                <div><?php echo $req->LoginReq->notifyText ?></div>
               <?php renderBoxEnd() ?>
             <?php } ?>
           <?php } ?>
@@ -229,17 +229,17 @@ function daysLeft($amt, $cap = false) {
 }
 ?>
 <script>
-var today = "<?=date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
-var now = <?=now() ?>;
-var me = <?=$login->asJson() ?>;
+var today = "<?php echo date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
+var now = <?php echo now() ?>;
+var me = <?php echo $login->asJson() ?>;
 me.isErx = function() {return me.User.UserGroup.usageLevel == 2};
 Header.load(
-  '<?=$page ?>',
-  <?=Messaging::getMyUnreadCt()?>,
-  <?=Messaging_DocStubReview::getUnreviewedCt()?>,
-  <?=HL7_Labs::getInboxCt()?>);
+  '<?php echo $page ?>',
+  <?php echo Messaging::getMyUnreadCt()?>,
+  <?php echo Messaging_DocStubReview::getUnreviewedCt()?>,
+  <?php echo HL7_Labs::getInboxCt()?>);
 <?php if ($sessId) { ?>
-Ajax.setSessionId('<?=$sessId ?>');
+Ajax.setSessionId('<?php echo $sessId ?>');
 <?php } ?>
 <?php if ($login->Role->Cerberus->superbill) { ?>
 function billing() {

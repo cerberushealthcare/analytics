@@ -85,6 +85,8 @@ class Rec {
   }
   public function setObject($fid, $value) {
     $class = $this->getClassFromJsonField($fid);
+    Logger::debug('setObject stack trace:');
+    Logger::debug(print_r(debug_backtrace(), true));
     $this->$fid = new $class($value);
   }
   public function setObjectArray($fid, $arr) {
