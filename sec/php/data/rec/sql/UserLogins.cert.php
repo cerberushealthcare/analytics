@@ -398,9 +398,9 @@ class UserLogin extends UserRec implements NoAuthenticate {
       throw new UserLoginException('UserLogin criteria required');
     $c = new static();
     $c->uid = $uid;
-    $c->UserGroup = UserGroup_Login::asJoin();
-    $c->BillInfo = new BillInfo_Login();
-    $c->NcUser = new NcUser_Login();
+    //$c->UserGroup = UserGroup_Login::asJoin();
+    //$c->BillInfo = new BillInfo_Login();
+    //$c->NcUser = new NcUser_Login();
     return $c;
   }
 }

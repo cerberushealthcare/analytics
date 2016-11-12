@@ -18,8 +18,8 @@ class Dao {
   static function query($sql, $db = null, $table = null) {
     //Logger::debug('| We entered Dao::query with the query ' . $sql . '|');
     $conn = static::open($db);
-	Logger::debug('Dao::query: Database has been opened. Running query ' . $sql);
-	Logger::debug('Dao::query: Users table detected Backtrace is ' . print_r(debug_backtrace(), true));
+	//Logger::debug('Dao::query: Database has been opened. Running query ' . $sql);
+	//Logger::debug('Dao::query: Users table detected Backtrace is ' . print_r(debug_backtrace(), true));
 	if (MyEnv::$IS_ORACLE) {
 		
 		//Oracle does not like backticks, but SQL does. Substitute them for a single quote before doing the query.
@@ -30,7 +30,7 @@ class Dao {
 				$sql[$i] = '"';
 			}
 		}*/
-			
+		
 		//Logger::debug('Non-backticked query: ' . $sql);
 		
 		//Take out all the quotes after the from clause. In Oracle, quotes are okay in the select area (aliases) but Oracle doesn't want any quotes
@@ -60,7 +60,9 @@ class Dao {
 		//echo 'Dao: Getting resource. SQL is ' . $sql;
 		
 		//echo 'Dao::query:';
+		logit_r($sql, 'PARSED SQL');
 		$res = oci_parse($conn, $sql);
+		Logit_r($res, 'Res2');
 		$returnValue = null;
 		
 		if ($table == 'logins') {
@@ -79,7 +81,15 @@ class Dao {
 		
 		
 		//echo '<hr>';
-		oci_execute($res);
+		$ex = oci_execute($res);
+		logit_r($ex, 'Ex');
+		logit_r('executed');
+		/*
+		$rows = oci_fetch_all($res, $res2);
+		logit_r('rows='.$rows);
+		logit_r($res2, 'res2');
+		*/
+				
 		//echo '<br>Got resource.';
 		$err = oci_error($res);
 		if (!empty($err)) {
@@ -175,13 +185,17 @@ class Dao {
    */
   static function fetchRows($sql, $db = null) {
     $res = static::query($sql, $db);
-	Logger::debug('Dao::fetchRows: Got SQL ' . $sql);
+	Logger::debug('Dao::fetchRows');
 	
 	if (MyEnv::$IS_ORACLE) {
 		$rows = array();
-		while (($row = oci_fetch_array($res, OCI_ASSOC)) != false) {
-			$rows [] = $row;
+		//logit_r('looping thru orc rows');
+		while (($row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
+			//logit_r($row, 'orc row');
+			//array_push($rows, row);
+			$rows[] = $row;
 		}
+		
 	}
     else {
 		$rows = array();
@@ -189,6 +203,7 @@ class Dao {
 			$rows[] = $row; 
 		}
     }
+    //logit_r($rows, 'rows');
     return $rows;  
   }
   /**

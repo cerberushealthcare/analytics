@@ -7,6 +7,7 @@
 		<script type="text/javascript">
 			var files = [	'_SqlRec_ReservedOracleWords_ConvertsWord.php',
 								'apiLogin_ReturnsNoErrors.php',
+								'warren/loginSession_fetchUserWithLogging_ReadCorrectData.php',
 								'loginSession_FetchUser_isValidResult.php',
 								'loginSession_fetchUserWithLogging_isValidResult.php',
 								'loginSession_FetchUser_isValidResult.php',

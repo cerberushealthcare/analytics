@@ -18,7 +18,7 @@
 	
 	$testPassed = false;
 	
-	if (gettype($user) == 'Object') {
+	if (gettype($user) == 'object') {
 		$testPassed = true;
 	}
 	

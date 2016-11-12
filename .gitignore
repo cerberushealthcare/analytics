@@ -58,4 +58,4 @@ api/tiani/Tiani.php
 unzip
 sec/logs/log.txt
 sec/logs/log.txt
-*.stub*
+sec/css/ftpvc/*

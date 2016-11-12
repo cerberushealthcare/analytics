@@ -1234,7 +1234,7 @@ function open() {
 
 function openOracle() {
 	Logger::debug('openOracle: entered');
-	//echo 'openOracle: Login ' . MyEnv::$DB_USER . ' ' . MyEnv::$DB_PW . ' to server ' . MyEnv::$DB_SERVER;
+	Logger::debug('openOracle: Login ' . MyEnv::$DB_USER . ' ' . MyEnv::$DB_PW . ' to server ' . MyEnv::$DB_SERVER);
 	try {
 		$conn = oci_connect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
 	}

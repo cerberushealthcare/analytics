@@ -109,7 +109,7 @@ abstract class SqlRec extends Rec {
 	//if ($word == 'index') $word = 'index_';
 	
 	$upper = strtoupper($word);
-	
+	$word = $upper;
 	
 	//Logger::debug('upper is ' . $upper);
 	
@@ -515,7 +515,9 @@ abstract class SqlRec extends Rec {
 		}
 		//$fields = implode(',', $fields);
 		
-		//var_dump(debug_backtrace());
+		echo '<pre>';
+		var_dump(debug_backtrace());
+		echo '</pre>';
 		if ($table == 'logins') {
 			$valueArray = $this->getSqlValues();
 			unset($valueArray[0]);
@@ -1133,9 +1135,9 @@ abstract class SqlRec extends Rec {
     return static::fromRows(Dao::fetchRows($sql));
   }
   protected static function fromRows($rows, $keyFid = null) {
-    Logger::debug('fromRows debug backtrace:');
-	Logger::debug(print_r(debug_backtrace(), true));
-    Logger::debug('In SqlRec::fromRows. This is probably the seam! We received rows which is a(n) ' . gettype($rows) . ' ' . print_r($rows, true));
+    //Logger::debug('fromRows debug backtrace:');
+	//Logger::debug(print_r(debug_backtrace(), true));
+    //Logger::debug('In SqlRec::fromRows. This is probably the seam! We received rows which is a(n) ' . gettype($rows) . ' ' . print_r($rows, true));
     $recs = array();
     foreach ($rows as &$row) {
       $rec = new static($row);

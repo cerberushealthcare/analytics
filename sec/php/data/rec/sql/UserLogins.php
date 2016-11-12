@@ -149,7 +149,14 @@ class Login extends SqlRec implements NoAuthenticate {
     $me->userId = $userId;
     $me->userGroupId = $ugid;
     $me->result = $result;
-    $me->save();
+	
+	if (MyEnv::$IS_ORACLE) {
+		$sql = "BEGIN :returnVal := FN_INSERTLOGIN('" . $this->ipAddress . "', '" . $this->sessionId . "', '" . $this->uid . "', '" . $this->userId . "', '" . $this->userGroupId . "', '" . $this->result . "'); END;";
+		Dao::query($sql);
+	}
+    else {
+		$me->save();
+	}
     return $me;
   }
   static function countRecentBadLogins_forIp($login) {
@@ -295,7 +302,7 @@ class UserLogin extends UserRec implements NoAuthenticate {
   public function isPasswordCorrect($ptpw) {
 	echo 'isPasswordCorrect: Check ' . $this->name . ' and ' . $ptpw;
 	if (MyEnv::$IS_ORACLE) {
-		return LoginSession::checkOracleLogin($this->name, $ptpw);
+		return LoginSession::checkOracleLogin($this->uid, $ptpw);
 	}
 	else {
 		$pw = static::generateHash($ptpw, $this->pw);
@@ -431,7 +438,7 @@ class UserLogin extends UserRec implements NoAuthenticate {
   static function fetchByEmail($email) {
     $c = new static();
     $c->email = $email;
-    $c->active = true;
+    $c->active = true;  // select * from users where email='fred' and active=1 
     $me = static::fetchOneBy($c);
 	
     return $me;
@@ -449,7 +456,7 @@ class UserLogin extends UserRec implements NoAuthenticate {
     $c->uid = $uid;
     $c->UserGroup = UserGroup_Login::asJoin();
     $c->BillInfo = new BillInfo_Login();
-    $c->NcUser = new NcUser_Login();
+    $c->NcUser = new NcUser_Login();  // select * from users u join user_groups ug on ug.user_group_id=u.user_group_id join billinfo bi on bi.user_id = u.user_id where u.uid='blah'
     return $c;
   }
 }

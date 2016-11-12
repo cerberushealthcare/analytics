@@ -1,0 +1,1249 @@
+2016-11-12 20:28:37
+  analytics/sec/index.php: Trying login
+  LoginSession login function: Entered with params mm|clicktate1||
+  LoginSession.php::fetchUser_withLogging: fetch user with logging...
+  LoginSession fetchUser: Entered with mm and clicktate1
+  fetchUser: MANUAL login. Calling fetchByUidtest.
+  _SqlRec::fetchOneBy: Got criteria object
+  is batch is 
+  _SqlRec: call calcSQL!
+  _SqlRec: call calcSQL!
+  _SqlRec: call calcSQL!
+  _SqlRec: call calcSQL!
+  _SqlRec: infos fields is an array:Array
+    (
+        [0] => T0.USER_ID AS "UserLogin.T0.0", T0.UID_ AS "UserLogin.T0.1", T0.PW AS "UserLogin.T0.2", T0.NAME AS "UserLogin.T0.3", T0.ADMIN AS "UserLogin.T0.4", T0.SUBSCRIPTION AS "UserLogin.T0.5", T0.ACTIVE AS "UserLogin.T0.6", T0.REG_ID AS "UserLogin.T0.7", T0.TRIAL_EXPDT AS "UserLogin.T0.8", T0.USER_GROUP_ID AS "UserLogin.T0.9", T0.USER_TYPE AS "UserLogin.T0.10", T0.LICENSE_STATE AS "UserLogin.T0.11", T0.LICENSE AS "UserLogin.T0.12", T0.DEA AS "UserLogin.T0.13", T0.NPI AS "UserLogin.T0.14", T0.EMAIL AS "UserLogin.T0.15", T0.EXPIRATION AS "UserLogin.T0.16", T0.EXPIRE_REASON AS "UserLogin.T0.17", T0.PW_EXPIRES AS "UserLogin.T0.18", T0.TOS_ACCEPTED AS "UserLogin.T0.19", T0.ROLE_TYPE AS "UserLogin.T0.20", T0.MIXINS AS "UserLogin.T0.21", T0.RESET_HASH AS "UserLogin.T0.22"
+        [1] => T1.USER_GROUP_ID AS "UserGroup_Login.T1.0", T1.NAME AS "UserGroup_Login.T1.1", T1.USAGE_LEVEL AS "UserGroup_Login.T1.2", T1.EST_TZ_ADJ AS "UserGroup_Login.T1.3", T1.SESSION_TIMEOUT AS "UserGroup_Login.T1.4", T1.DEMO AS "UserGroup_Login.T1.5"
+        [2] => T2.ADDRESS_ID AS "AddressUserGroup_Login.T2.0", T2.TABLE_CODE AS "AddressUserGroup_Login.T2.1", T2.TABLE_ID AS "AddressUserGroup_Login.T2.2", T2.TYPE AS "AddressUserGroup_Login.T2.3", T2.ADDR1 AS "AddressUserGroup_Login.T2.4", T2.ADDR2 AS "AddressUserGroup_Login.T2.5", T2.ADDR3 AS "AddressUserGroup_Login.T2.6", T2.CITY AS "AddressUserGroup_Login.T2.7", T2.STATE AS "AddressUserGroup_Login.T2.8", T2.ZIP AS "AddressUserGroup_Login.T2.9", T2.COUNTRY AS "AddressUserGroup_Login.T2.10", T2.PHONE1 AS "AddressUserGroup_Login.T2.11", T2.PHONE1_TYPE AS "AddressUserGroup_Login.T2.12", T2.PHONE2 AS "AddressUserGroup_Login.T2.13", T2.PHONE2_TYPE AS "AddressUserGroup_Login.T2.14", T2.PHONE3 AS "AddressUserGroup_Login.T2.15", T2.PHONE3_TYPE AS "AddressUserGroup_Login.T2.16", T2.EMAIL1 AS "AddressUserGroup_Login.T2.17", T2.EMAIL2 AS "AddressUserGroup_Login.T2.18", T2.NAME AS "AddressUserGroup_Login.T2.19", T2.COUNTY AS "AddressUserGroup_Login.T2.20"
+        [3] => T3.USER_ID AS "BillInfo_Login.T3.0", T3.EXP_MONTH AS "BillInfo_Login.T3.1", T3.EXP_YEAR AS "BillInfo_Login.T3.2", T3.LAST_BILL_STATUS AS "BillInfo_Login.T3.3"
+        [4] => T4.USER_ID AS "NcUser_Login.T4.0", T4.USER_TYPE AS "NcUser_Login.T4.1", T4.ROLE_TYPE AS "NcUser_Login.T4.2", T4.PARTNER_ID AS "NcUser_Login.T4.3", T4.NAME_LAST AS "NcUser_Login.T4.4", T4.NAME_FIRST AS "NcUser_Login.T4.5", T4.NAME_MIDDLE AS "NcUser_Login.T4.6", T4.NAME_PREFIX AS "NcUser_Login.T4.7", T4.NAME_SUFFIX AS "NcUser_Login.T4.8", T4.FREEFORM_CRED AS "NcUser_Login.T4.9"
+    )
+    
+  fetchAllAndFlatten: Running query SELECT T0.USER_ID AS "UserLogin.T0.0", T0.UID_ AS "UserLogin.T0.1", T0.PW AS "UserLogin.T0.2", T0.NAME AS "UserLogin.T0.3", T0.ADMIN AS "UserLogin.T0.4", T0.SUBSCRIPTION AS "UserLogin.T0.5", T0.ACTIVE AS "UserLogin.T0.6", T0.REG_ID AS "UserLogin.T0.7", T0.TRIAL_EXPDT AS "UserLogin.T0.8", T0.USER_GROUP_ID AS "UserLogin.T0.9", T0.USER_TYPE AS "UserLogin.T0.10", T0.LICENSE_STATE AS "UserLogin.T0.11", T0.LICENSE AS "UserLogin.T0.12", T0.DEA AS "UserLogin.T0.13", T0.NPI AS "UserLogin.T0.14", T0.EMAIL AS "UserLogin.T0.15", T0.EXPIRATION AS "UserLogin.T0.16", T0.EXPIRE_REASON AS "UserLogin.T0.17", T0.PW_EXPIRES AS "UserLogin.T0.18", T0.TOS_ACCEPTED AS "UserLogin.T0.19", T0.ROLE_TYPE AS "UserLogin.T0.20", T0.MIXINS AS "UserLogin.T0.21", T0.RESET_HASH AS "UserLogin.T0.22", T1.USER_GROUP_ID AS "UserGroup_Login.T1.0", T1.NAME AS "UserGroup_Login.T1.1", T1.USAGE_LEVEL AS "UserGroup_Login.T1.2", T1.EST_TZ_ADJ AS "UserGroup_Login.T1.3", T1.SESSION_TIMEOUT AS "UserGroup_Login.T1.4", T1.DEMO AS "UserGroup_Login.T1.5", T2.ADDRESS_ID AS "AddressUserGroup_Login.T2.0", T2.TABLE_CODE AS "AddressUserGroup_Login.T2.1", T2.TABLE_ID AS "AddressUserGroup_Login.T2.2", T2.TYPE AS "AddressUserGroup_Login.T2.3", T2.ADDR1 AS "AddressUserGroup_Login.T2.4", T2.ADDR2 AS "AddressUserGroup_Login.T2.5", T2.ADDR3 AS "AddressUserGroup_Login.T2.6", T2.CITY AS "AddressUserGroup_Login.T2.7", T2.STATE AS "AddressUserGroup_Login.T2.8", T2.ZIP AS "AddressUserGroup_Login.T2.9", T2.COUNTRY AS "AddressUserGroup_Login.T2.10", T2.PHONE1 AS "AddressUserGroup_Login.T2.11", T2.PHONE1_TYPE AS "AddressUserGroup_Login.T2.12", T2.PHONE2 AS "AddressUserGroup_Login.T2.13", T2.PHONE2_TYPE AS "AddressUserGroup_Login.T2.14", T2.PHONE3 AS "AddressUserGroup_Login.T2.15", T2.PHONE3_TYPE AS "AddressUserGroup_Login.T2.16", T2.EMAIL1 AS "AddressUserGroup_Login.T2.17", T2.EMAIL2 AS "AddressUserGroup_Login.T2.18", T2.NAME AS "AddressUserGroup_Login.T2.19", T2.COUNTY AS "AddressUserGroup_Login.T2.20", T3.USER_ID AS "BillInfo_Login.T3.0", T3.EXP_MONTH AS "BillInfo_Login.T3.1", T3.EXP_YEAR AS "BillInfo_Login.T3.2", T3.LAST_BILL_STATUS AS "BillInfo_Login.T3.3", T4.USER_ID AS "NcUser_Login.T4.0", T4.USER_TYPE AS "NcUser_Login.T4.1", T4.ROLE_TYPE AS "NcUser_Login.T4.2", T4.PARTNER_ID AS "NcUser_Login.T4.3", T4.NAME_LAST AS "NcUser_Login.T4.4", T4.NAME_FIRST AS "NcUser_Login.T4.5", T4.NAME_MIDDLE AS "NcUser_Login.T4.6", T4.NAME_PREFIX AS "NcUser_Login.T4.7", T4.NAME_SUFFIX AS "NcUser_Login.T4.8", T4.FREEFORM_CRED AS "NcUser_Login.T4.9" FROM users T0  JOIN (user_groups T1 JOIN (addresses T2) ON T2."TABLE_CODE"='G' AND T2."TYPE"='0' AND T1.user_group_id=T2.table_id) ON T0.user_group_id=T1.user_group_id LEFT JOIN (billinfo T3) ON T0.user_id=T3.user_id LEFT JOIN (nc_users T4) ON T0.user_id=T4.user_id WHERE T0."UID_"='mm' ORDER BY T0.user_id, T1.user_group_id, T2.address_id, T4.user_id
+  _SqlRec::fetchAllAndFlatten_Process called.
+  SqlRec::fetchRows: Entering Dao::fetchRows with SELECT T0.USER_ID AS "UserLogin.T0.0", T0.UID_ AS "UserLogin.T0.1", T0.PW AS "UserLogin.T0.2", T0.NAME AS "UserLogin.T0.3", T0.ADMIN AS "UserLogin.T0.4", T0.SUBSCRIPTION AS "UserLogin.T0.5", T0.ACTIVE AS "UserLogin.T0.6", T0.REG_ID AS "UserLogin.T0.7", T0.TRIAL_EXPDT AS "UserLogin.T0.8", T0.USER_GROUP_ID AS "UserLogin.T0.9", T0.USER_TYPE AS "UserLogin.T0.10", T0.LICENSE_STATE AS "UserLogin.T0.11", T0.LICENSE AS "UserLogin.T0.12", T0.DEA AS "UserLogin.T0.13", T0.NPI AS "UserLogin.T0.14", T0.EMAIL AS "UserLogin.T0.15", T0.EXPIRATION AS "UserLogin.T0.16", T0.EXPIRE_REASON AS "UserLogin.T0.17", T0.PW_EXPIRES AS "UserLogin.T0.18", T0.TOS_ACCEPTED AS "UserLogin.T0.19", T0.ROLE_TYPE AS "UserLogin.T0.20", T0.MIXINS AS "UserLogin.T0.21", T0.RESET_HASH AS "UserLogin.T0.22", T1.USER_GROUP_ID AS "UserGroup_Login.T1.0", T1.NAME AS "UserGroup_Login.T1.1", T1.USAGE_LEVEL AS "UserGroup_Login.T1.2", T1.EST_TZ_ADJ AS "UserGroup_Login.T1.3", T1.SESSION_TIMEOUT AS "UserGroup_Login.T1.4", T1.DEMO AS "UserGroup_Login.T1.5", T2.ADDRESS_ID AS "AddressUserGroup_Login.T2.0", T2.TABLE_CODE AS "AddressUserGroup_Login.T2.1", T2.TABLE_ID AS "AddressUserGroup_Login.T2.2", T2.TYPE AS "AddressUserGroup_Login.T2.3", T2.ADDR1 AS "AddressUserGroup_Login.T2.4", T2.ADDR2 AS "AddressUserGroup_Login.T2.5", T2.ADDR3 AS "AddressUserGroup_Login.T2.6", T2.CITY AS "AddressUserGroup_Login.T2.7", T2.STATE AS "AddressUserGroup_Login.T2.8", T2.ZIP AS "AddressUserGroup_Login.T2.9", T2.COUNTRY AS "AddressUserGroup_Login.T2.10", T2.PHONE1 AS "AddressUserGroup_Login.T2.11", T2.PHONE1_TYPE AS "AddressUserGroup_Login.T2.12", T2.PHONE2 AS "AddressUserGroup_Login.T2.13", T2.PHONE2_TYPE AS "AddressUserGroup_Login.T2.14", T2.PHONE3 AS "AddressUserGroup_Login.T2.15", T2.PHONE3_TYPE AS "AddressUserGroup_Login.T2.16", T2.EMAIL1 AS "AddressUserGroup_Login.T2.17", T2.EMAIL2 AS "AddressUserGroup_Login.T2.18", T2.NAME AS "AddressUserGroup_Login.T2.19", T2.COUNTY AS "AddressUserGroup_Login.T2.20", T3.USER_ID AS "BillInfo_Login.T3.0", T3.EXP_MONTH AS "BillInfo_Login.T3.1", T3.EXP_YEAR AS "BillInfo_Login.T3.2", T3.LAST_BILL_STATUS AS "BillInfo_Login.T3.3", T4.USER_ID AS "NcUser_Login.T4.0", T4.USER_TYPE AS "NcUser_Login.T4.1", T4.ROLE_TYPE AS "NcUser_Login.T4.2", T4.PARTNER_ID AS "NcUser_Login.T4.3", T4.NAME_LAST AS "NcUser_Login.T4.4", T4.NAME_FIRST AS "NcUser_Login.T4.5", T4.NAME_MIDDLE AS "NcUser_Login.T4.6", T4.NAME_PREFIX AS "NcUser_Login.T4.7", T4.NAME_SUFFIX AS "NcUser_Login.T4.8", T4.FREEFORM_CRED AS "NcUser_Login.T4.9" FROM users T0  JOIN (user_groups T1 JOIN (addresses T2) ON T2."TABLE_CODE"='G' AND T2."TYPE"='0' AND T1.user_group_id=T2.table_id) ON T0.user_group_id=T1.user_group_id LEFT JOIN (billinfo T3) ON T0.user_id=T3.user_id LEFT JOIN (nc_users T4) ON T0.user_id=T4.user_id WHERE T0."UID_"='mm' ORDER BY T0.user_id, T1.user_group_id, T2.address_id, T4.user_id
+  Opening oracle....
+  openOracle: entered
+  openOracle: Login cin Cin123 to server 208.187.161.81
+  === PARSED SQL === SELECT T0.USER_ID AS "UserLogin.T0.0", T0.UID_ AS "UserLogin.T0.1", T0.PW AS "UserLogin.T0.2", T0.NAME AS "UserLogin.T0.3", T0.ADMIN AS "UserLogin.T0.4", T0.SUBSCRIPTION AS "UserLogin.T0.5", T0.ACTIVE AS "UserLogin.T0.6", T0.REG_ID AS "UserLogin.T0.7", T0.TRIAL_EXPDT AS "UserLogin.T0.8", T0.USER_GROUP_ID AS "UserLogin.T0.9", T0.USER_TYPE AS "UserLogin.T0.10", T0.LICENSE_STATE AS "UserLogin.T0.11", T0.LICENSE AS "UserLogin.T0.12", T0.DEA AS "UserLogin.T0.13", T0.NPI AS "UserLogin.T0.14", T0.EMAIL AS "UserLogin.T0.15", T0.EXPIRATION AS "UserLogin.T0.16", T0.EXPIRE_REASON AS "UserLogin.T0.17", T0.PW_EXPIRES AS "UserLogin.T0.18", T0.TOS_ACCEPTED AS "UserLogin.T0.19", T0.ROLE_TYPE AS "UserLogin.T0.20", T0.MIXINS AS "UserLogin.T0.21", T0.RESET_HASH AS "UserLogin.T0.22", T1.USER_GROUP_ID AS "UserGroup_Login.T1.0", T1.NAME AS "UserGroup_Login.T1.1", T1.USAGE_LEVEL AS "UserGroup_Login.T1.2", T1.EST_TZ_ADJ AS "UserGroup_Login.T1.3", T1.SESSION_TIMEOUT AS "UserGroup_Login.T1.4", T1.DEMO AS "UserGroup_Login.T1.5", T2.ADDRESS_ID AS "AddressUserGroup_Login.T2.0", T2.TABLE_CODE AS "AddressUserGroup_Login.T2.1", T2.TABLE_ID AS "AddressUserGroup_Login.T2.2", T2.TYPE AS "AddressUserGroup_Login.T2.3", T2.ADDR1 AS "AddressUserGroup_Login.T2.4", T2.ADDR2 AS "AddressUserGroup_Login.T2.5", T2.ADDR3 AS "AddressUserGroup_Login.T2.6", T2.CITY AS "AddressUserGroup_Login.T2.7", T2.STATE AS "AddressUserGroup_Login.T2.8", T2.ZIP AS "AddressUserGroup_Login.T2.9", T2.COUNTRY AS "AddressUserGroup_Login.T2.10", T2.PHONE1 AS "AddressUserGroup_Login.T2.11", T2.PHONE1_TYPE AS "AddressUserGroup_Login.T2.12", T2.PHONE2 AS "AddressUserGroup_Login.T2.13", T2.PHONE2_TYPE AS "AddressUserGroup_Login.T2.14", T2.PHONE3 AS "AddressUserGroup_Login.T2.15", T2.PHONE3_TYPE AS "AddressUserGroup_Login.T2.16", T2.EMAIL1 AS "AddressUserGroup_Login.T2.17", T2.EMAIL2 AS "AddressUserGroup_Login.T2.18", T2.NAME AS "AddressUserGroup_Login.T2.19", T2.COUNTY AS "AddressUserGroup_Login.T2.20", T3.USER_ID AS "BillInfo_Login.T3.0", T3.EXP_MONTH AS "BillInfo_Login.T3.1", T3.EXP_YEAR AS "BillInfo_Login.T3.2", T3.LAST_BILL_STATUS AS "BillInfo_Login.T3.3", T4.USER_ID AS "NcUser_Login.T4.0", T4.USER_TYPE AS "NcUser_Login.T4.1", T4.ROLE_TYPE AS "NcUser_Login.T4.2", T4.PARTNER_ID AS "NcUser_Login.T4.3", T4.NAME_LAST AS "NcUser_Login.T4.4", T4.NAME_FIRST AS "NcUser_Login.T4.5", T4.NAME_MIDDLE AS "NcUser_Login.T4.6", T4.NAME_PREFIX AS "NcUser_Login.T4.7", T4.NAME_SUFFIX AS "NcUser_Login.T4.8", T4.FREEFORM_CRED AS "NcUser_Login.T4.9"
+    FROM users T0 
+    JOIN (user_groups T1
+    JOIN (addresses T2) ON T2.TABLE_CODE ='G' AND T2.TYPE ='0' AND T1.user_group_id=T2.table_id) ON T0.user_group_id=T1.user_group_id
+    LEFT JOIN (billinfo T3) ON T0.user_id=T3.user_id
+    LEFT JOIN (nc_users T4) ON T0.user_id=T4.user_id
+    WHERE T0.UID_ ='mm'
+    ORDER BY T0.user_id, T1.user_group_id, T2.address_id, T4.user_id;=== /PARSED SQL ===
+  === Res2 === Resource id #60=== /Res2 ===
+  Dao.php: Res is resource Resource id #60
+2016-11-12 20:28:38
+  === Ex === 1=== /Ex ===
+  executed
+  res is resource
+  Dao: Returning res which is a resource
+  Dao::fetchRows
+  SqlRec::__construct: Received arg array Array
+    (
+        [0] => Array
+            (
+                [UserLogin.T0.0] => 82
+                [UserLogin.T0.1] => mm
+                [UserLogin.T0.2] => FB78B84E04DCC80263D727F9BA8F8ABF
+                [UserLogin.T0.3] => Michael McKinney
+                [UserLogin.T0.4] => 0
+                [UserLogin.T0.5] => 2
+                [UserLogin.T0.6] => 1
+                [UserLogin.T0.7] => 
+                [UserLogin.T0.8] => 
+                [UserLogin.T0.9] => 707
+                [UserLogin.T0.10] => 1
+                [UserLogin.T0.11] => KY 
+                [UserLogin.T0.12] => mm
+                [UserLogin.T0.13] => 1234567890
+                [UserLogin.T0.14] => 1234567890
+                [UserLogin.T0.15] => mmckinney@clicktatemail.com
+                [UserLogin.T0.16] => 
+                [UserLogin.T0.17] => 
+                [UserLogin.T0.18] => 
+                [UserLogin.T0.19] => 28-AUG-13
+                [UserLogin.T0.20] => 0
+                [UserLogin.T0.21] => 
+                [UserLogin.T0.22] => 
+                [UserGroup] => Array
+                    (
+                        [UserGroup_Login.T1.0] => 707
+                        [UserGroup_Login.T1.1] => Practice 7
+                        [UserGroup_Login.T1.2] => 2
+                        [UserGroup_Login.T1.3] => 0
+                        [UserGroup_Login.T1.4] => 60
+                        [UserGroup_Login.T1.5] => 0
+                        [Address] => Array
+                            (
+                                [AddressUserGroup_Login.T2.0] => 167
+                                [AddressUserGroup_Login.T2.1] => G
+                                [AddressUserGroup_Login.T2.2] => 707
+                                [AddressUserGroup_Login.T2.3] => 0
+                                [AddressUserGroup_Login.T2.4] => 
+                                [AddressUserGroup_Login.T2.5] => 
+                                [AddressUserGroup_Login.T2.6] => 
+                                [AddressUserGroup_Login.T2.7] => 
+                                [AddressUserGroup_Login.T2.8] => 
+                                [AddressUserGroup_Login.T2.9] => 
+                                [AddressUserGroup_Login.T2.10] => 
+                                [AddressUserGroup_Login.T2.11] => 
+                                [AddressUserGroup_Login.T2.12] => 
+                                [AddressUserGroup_Login.T2.13] => 
+                                [AddressUserGroup_Login.T2.14] => 
+                                [AddressUserGroup_Login.T2.15] => 
+                                [AddressUserGroup_Login.T2.16] => 
+                                [AddressUserGroup_Login.T2.17] => 
+                                [AddressUserGroup_Login.T2.18] => 
+                                [AddressUserGroup_Login.T2.19] => 
+                                [AddressUserGroup_Login.T2.20] => 
+                            )
+    
+                    )
+    
+                [BillInfo] => 
+                [NcUser] => Array
+                    (
+                        [NcUser_Login.T4.0] => 82
+                        [NcUser_Login.T4.1] => LicensedPrescriber
+                        [NcUser_Login.T4.2] => doctor
+                        [NcUser_Login.T4.3] => 
+                        [NcUser_Login.T4.4] => McKinney
+                        [NcUser_Login.T4.5] => Michael
+                        [NcUser_Login.T4.6] => 
+                        [NcUser_Login.T4.7] => 
+                        [NcUser_Login.T4.8] => MD
+                        [NcUser_Login.T4.9] => 
+                    )
+    
+            )
+    
+    )
+    
+  setSqlArray: getClassFromSqlField(UserGroup_Login.T1.0)
+  ClassFromSQL: got field UserGroup_Login.T1.0
+  classFromSQL: returning UserGroup_Login
+  SqlRec::__construct: Received arg array Array
+    (
+        [0] => Array
+            (
+                [UserGroup_Login.T1.0] => 707
+                [UserGroup_Login.T1.1] => Practice 7
+                [UserGroup_Login.T1.2] => 2
+                [UserGroup_Login.T1.3] => 0
+                [UserGroup_Login.T1.4] => 60
+                [UserGroup_Login.T1.5] => 0
+                [Address] => Array
+                    (
+                        [AddressUserGroup_Login.T2.0] => 167
+                        [AddressUserGroup_Login.T2.1] => G
+                        [AddressUserGroup_Login.T2.2] => 707
+                        [AddressUserGroup_Login.T2.3] => 0
+                        [AddressUserGroup_Login.T2.4] => 
+                        [AddressUserGroup_Login.T2.5] => 
+                        [AddressUserGroup_Login.T2.6] => 
+                        [AddressUserGroup_Login.T2.7] => 
+                        [AddressUserGroup_Login.T2.8] => 
+                        [AddressUserGroup_Login.T2.9] => 
+                        [AddressUserGroup_Login.T2.10] => 
+                        [AddressUserGroup_Login.T2.11] => 
+                        [AddressUserGroup_Login.T2.12] => 
+                        [AddressUserGroup_Login.T2.13] => 
+                        [AddressUserGroup_Login.T2.14] => 
+                        [AddressUserGroup_Login.T2.15] => 
+                        [AddressUserGroup_Login.T2.16] => 
+                        [AddressUserGroup_Login.T2.17] => 
+                        [AddressUserGroup_Login.T2.18] => 
+                        [AddressUserGroup_Login.T2.19] => 
+                        [AddressUserGroup_Login.T2.20] => 
+                    )
+    
+            )
+    
+    )
+    
+  setSqlArray: getClassFromSqlField(AddressUserGroup_Login.T2.0)
+  ClassFromSQL: got field AddressUserGroup_Login.T2.0
+  classFromSQL: returning AddressUserGroup_Login
+  SqlRec::__construct: Received arg array Array
+    (
+        [0] => Array
+            (
+                [AddressUserGroup_Login.T2.0] => 167
+                [AddressUserGroup_Login.T2.1] => G
+                [AddressUserGroup_Login.T2.2] => 707
+                [AddressUserGroup_Login.T2.3] => 0
+                [AddressUserGroup_Login.T2.4] => 
+                [AddressUserGroup_Login.T2.5] => 
+                [AddressUserGroup_Login.T2.6] => 
+                [AddressUserGroup_Login.T2.7] => 
+                [AddressUserGroup_Login.T2.8] => 
+                [AddressUserGroup_Login.T2.9] => 
+                [AddressUserGroup_Login.T2.10] => 
+                [AddressUserGroup_Login.T2.11] => 
+                [AddressUserGroup_Login.T2.12] => 
+                [AddressUserGroup_Login.T2.13] => 
+                [AddressUserGroup_Login.T2.14] => 
+                [AddressUserGroup_Login.T2.15] => 
+                [AddressUserGroup_Login.T2.16] => 
+                [AddressUserGroup_Login.T2.17] => 
+                [AddressUserGroup_Login.T2.18] => 
+                [AddressUserGroup_Login.T2.19] => 
+                [AddressUserGroup_Login.T2.20] => 
+            )
+    
+    )
+    
+  setSqlArray: getClassFromSqlField(NcUser_Login.T4.0)
+  ClassFromSQL: got field NcUser_Login.T4.0
+  classFromSQL: returning NcUser_Login
+  SqlRec::__construct: Received arg array Array
+    (
+        [0] => Array
+            (
+                [NcUser_Login.T4.0] => 82
+                [NcUser_Login.T4.1] => LicensedPrescriber
+                [NcUser_Login.T4.2] => doctor
+                [NcUser_Login.T4.3] => 
+                [NcUser_Login.T4.4] => McKinney
+                [NcUser_Login.T4.5] => Michael
+                [NcUser_Login.T4.6] => 
+                [NcUser_Login.T4.7] => 
+                [NcUser_Login.T4.8] => MD
+                [NcUser_Login.T4.9] => 
+            )
+    
+    )
+    
+  No keyFid. Setting recs (an array) to UserLogin Object
+    (
+        [userId] => 82
+        [uid] => mm
+        [pw] => FB78B84E04DCC80263D727F9BA8F8ABF
+        [name] => Michael McKinney
+        [admin] => 0
+        [subscription] => 2
+        [active] => 1
+        [regId] => 
+        [trialExpdt] => 
+        [userGroupId] => 707
+        [userType] => 1
+        [licenseState] => KY 
+        [license] => mm
+        [dea] => 1234567890
+        [npi] => 1234567890
+        [email] => mmckinney@clicktatemail.com
+        [expiration] => 
+        [expireReason] => 
+        [pwExpires] => 
+        [tosAccepted] => 28-AUG-13
+        [roleType] => 0
+        [mixins] => 
+        [resetHash] => 
+        [UserGroup] => UserGroup_Login Object
+            (
+                [userGroupId] => 707
+                [name] => Practice 7
+                [usageLevel] => 2
+                [estTzAdj] => 0
+                [sessionTimeout] => 60
+                [demo] => 0
+                [Address] => AddressUserGroup_Login Object
+                    (
+                        [addressId] => 167
+                        [tableCode] => G
+                        [tableId] => 707
+                        [type] => 0
+                        [addr1] => 
+                        [addr2] => 
+                        [addr3] => 
+                        [city] => 
+                        [state] => 
+                        [zip] => 
+                        [country] => 
+                        [phone1] => 
+                        [phone1Type] => 
+                        [phone2] => 
+                        [phone2Type] => 
+                        [phone3] => 
+                        [phone3Type] => 
+                        [email1] => 
+                        [email2] => 
+                        [name] => 
+                        [county] => 
+                    )
+    
+                [_authenticated] => 1
+            )
+    
+        [BillInfo] => 
+        [NcUser] => NcUser_Login Object
+            (
+                [userId] => 82
+                [userType] => LicensedPrescriber
+                [roleType] => doctor
+                [partnerId] => 
+                [nameLast] => McKinney
+                [nameFirst] => Michael
+                [nameMiddle] => 
+                [namePrefix] => 
+                [nameSuffix] => MD
+                [freeformCred] => 
+            )
+    
+        [_authenticated] => 1
+    )
+    
+  fromRows: Returning rec which is a array Array
+    (
+        [0] => UserLogin Object
+            (
+                [userId] => 82
+                [uid] => mm
+                [pw] => FB78B84E04DCC80263D727F9BA8F8ABF
+                [name] => Michael McKinney
+                [admin] => 0
+                [subscription] => 2
+                [active] => 1
+                [regId] => 
+                [trialExpdt] => 
+                [userGroupId] => 707
+                [userType] => 1
+                [licenseState] => KY 
+                [license] => mm
+                [dea] => 1234567890
+                [npi] => 1234567890
+                [email] => mmckinney@clicktatemail.com
+                [expiration] => 
+                [expireReason] => 
+                [pwExpires] => 
+                [tosAccepted] => 28-AUG-13
+                [roleType] => 0
+                [mixins] => 
+                [resetHash] => 
+                [UserGroup] => UserGroup_Login Object
+                    (
+                        [userGroupId] => 707
+                        [name] => Practice 7
+                        [usageLevel] => 2
+                        [estTzAdj] => 0
+                        [sessionTimeout] => 60
+                        [demo] => 0
+                        [Address] => AddressUserGroup_Login Object
+                            (
+                                [addressId] => 167
+                                [tableCode] => G
+                                [tableId] => 707
+                                [type] => 0
+                                [addr1] => 
+                                [addr2] => 
+                                [addr3] => 
+                                [city] => 
+                                [state] => 
+                                [zip] => 
+                                [country] => 
+                                [phone1] => 
+                                [phone1Type] => 
+                                [phone2] => 
+                                [phone2Type] => 
+                                [phone3] => 
+                                [phone3Type] => 
+                                [email1] => 
+                                [email2] => 
+                                [name] => 
+                                [county] => 
+                            )
+    
+                        [_authenticated] => 1
+                    )
+    
+                [BillInfo] => 
+                [NcUser] => NcUser_Login Object
+                    (
+                        [userId] => 82
+                        [userType] => LicensedPrescriber
+                        [roleType] => doctor
+                        [partnerId] => 
+                        [nameLast] => McKinney
+                        [nameFirst] => Michael
+                        [nameMiddle] => 
+                        [namePrefix] => 
+                        [nameSuffix] => MD
+                        [freeformCred] => 
+                    )
+    
+                [_authenticated] => 1
+            )
+    
+    )
+    
+  fetchAllBy: We are returning a array
+  fetchByUid called with mm: We will return UserLogin Object
+    (
+        [userId] => 82
+        [uid] => mm
+        [pw] => FB78B84E04DCC80263D727F9BA8F8ABF
+        [name] => Michael McKinney
+        [admin] => 0
+        [subscription] => 2
+        [active] => 1
+        [regId] => 
+        [trialExpdt] => 
+        [userGroupId] => 707
+        [userType] => 1
+        [licenseState] => KY 
+        [license] => mm
+        [dea] => 1234567890
+        [npi] => 1234567890
+        [email] => mmckinney@clicktatemail.com
+        [expiration] => 
+        [expireReason] => 
+        [pwExpires] => 
+        [tosAccepted] => 28-AUG-13
+        [roleType] => 0
+        [mixins] => 
+        [resetHash] => 
+        [UserGroup] => UserGroup_Login Object
+            (
+                [userGroupId] => 707
+                [name] => Practice 7
+                [usageLevel] => 2
+                [estTzAdj] => 0
+                [sessionTimeout] => 60
+                [demo] => 0
+                [Address] => AddressUserGroup_Login Object
+                    (
+                        [addressId] => 167
+                        [tableCode] => G
+                        [tableId] => 707
+                        [type] => 0
+                        [addr1] => 
+                        [addr2] => 
+                        [addr3] => 
+                        [city] => 
+                        [state] => 
+                        [zip] => 
+                        [country] => 
+                        [phone1] => 
+                        [phone1Type] => 
+                        [phone2] => 
+                        [phone2Type] => 
+                        [phone3] => 
+                        [phone3Type] => 
+                        [email1] => 
+                        [email2] => 
+                        [name] => 
+                        [county] => 
+                    )
+    
+                [_authenticated] => 1
+            )
+    
+        [BillInfo] => 
+        [NcUser] => NcUser_Login Object
+            (
+                [userId] => 82
+                [userType] => LicensedPrescriber
+                [roleType] => doctor
+                [partnerId] => 
+                [nameLast] => McKinney
+                [nameFirst] => Michael
+                [nameMiddle] => 
+                [namePrefix] => 
+                [nameSuffix] => MD
+                [freeformCred] => 
+            )
+    
+        [_authenticated] => 1
+    )
+    
+  fetchUser: Returned from fetchByUidtest.
+  LoginSession fetchUser: user is a object. pw is FB78B84E04DCC80263D727F9BA8F8ABF
+  fetchUser:Got a user!
+2016-11-12 20:28:39
+  LoginSession.php::fetchUser: Returning a object
+  === fetched user === UserLogin Object
+    (
+        [userId] => 82
+        [uid] => mm
+        [pw] => FB78B84E04DCC80263D727F9BA8F8ABF
+        [name] => Michael McKinney
+        [admin] => 0
+        [subscription] => 2
+        [active] => 1
+        [regId] => 
+        [trialExpdt] => 
+        [userGroupId] => 707
+        [userType] => 1
+        [licenseState] => KY 
+        [license] => mm
+        [dea] => 1234567890
+        [npi] => 1234567890
+        [email] => mmckinney@clicktatemail.com
+        [expiration] => 
+        [expireReason] => 
+        [pwExpires] => 
+        [tosAccepted] => 28-AUG-13
+        [roleType] => 0
+        [mixins] => 
+        [resetHash] => 
+        [UserGroup] => UserGroup_Login Object
+            (
+                [userGroupId] => 707
+                [name] => Practice 7
+                [usageLevel] => 2
+                [estTzAdj] => 0
+                [sessionTimeout] => 60
+                [demo] => 0
+                [Address] => AddressUserGroup_Login Object
+                    (
+                        [addressId] => 167
+                        [tableCode] => G
+                        [tableId] => 707
+                        [type] => 0
+                        [addr1] => 
+                        [addr2] => 
+                        [addr3] => 
+                        [city] => 
+                        [state] => 
+                        [zip] => 
+                        [country] => 
+                        [phone1] => 
+                        [phone1Type] => 
+                        [phone2] => 
+                        [phone2Type] => 
+                        [phone3] => 
+                        [phone3Type] => 
+                        [email1] => 
+                        [email2] => 
+                        [name] => 
+                        [county] => 
+                    )
+    
+                [_authenticated] => 1
+            )
+    
+        [BillInfo] => 
+        [NcUser] => NcUser_Login Object
+            (
+                [userId] => 82
+                [userType] => LicensedPrescriber
+                [roleType] => doctor
+                [partnerId] => 
+                [nameLast] => McKinney
+                [nameFirst] => Michael
+                [nameMiddle] => 
+                [namePrefix] => 
+                [nameSuffix] => MD
+                [freeformCred] => 
+            )
+    
+        [_authenticated] => 1
+    )
+    === /fetched user ===
+  LoginSession::login: Got user UserLogin Object
+    (
+        [userId] => 82
+        [uid] => mm
+        [pw] => FB78B84E04DCC80263D727F9BA8F8ABF
+        [name] => Michael McKinney
+        [admin] => 0
+        [subscription] => 2
+        [active] => 1
+        [regId] => 
+        [trialExpdt] => 
+        [userGroupId] => 707
+        [userType] => 1
+        [licenseState] => KY 
+        [license] => mm
+        [dea] => 1234567890
+        [npi] => 1234567890
+        [email] => mmckinney@clicktatemail.com
+        [expiration] => 
+        [expireReason] => 
+        [pwExpires] => 
+        [tosAccepted] => 28-AUG-13
+        [roleType] => 0
+        [mixins] => 
+        [resetHash] => 
+        [UserGroup] => UserGroup_Login Object
+            (
+                [userGroupId] => 707
+                [name] => Practice 7
+                [usageLevel] => 2
+                [estTzAdj] => 0
+                [sessionTimeout] => 60
+                [demo] => 0
+                [Address] => AddressUserGroup_Login Object
+                    (
+                        [addressId] => 167
+                        [tableCode] => G
+                        [tableId] => 707
+                        [type] => 0
+                        [addr1] => 
+                        [addr2] => 
+                        [addr3] => 
+                        [city] => 
+                        [state] => 
+                        [zip] => 
+                        [country] => 
+                        [phone1] => 
+                        [phone1Type] => 
+                        [phone2] => 
+                        [phone2Type] => 
+                        [phone3] => 
+                        [phone3Type] => 
+                        [email1] => 
+                        [email2] => 
+                        [name] => 
+                        [county] => 
+                    )
+    
+                [_authenticated] => 1
+            )
+    
+        [BillInfo] => 
+        [NcUser] => NcUser_Login Object
+            (
+                [userId] => 82
+                [userType] => LicensedPrescriber
+                [roleType] => doctor
+                [partnerId] => 
+                [nameLast] => McKinney
+                [nameFirst] => Michael
+                [nameMiddle] => 
+                [namePrefix] => 
+                [nameSuffix] => MD
+                [freeformCred] => 
+            )
+    
+        [_authenticated] => 1
+    )
+    
+  _SqlRec::fetchOneBy: Got criteria object
+  is batch is 
+  _SqlRec: infos fields is an array:Array
+    (
+        [0] => T0.USER_GROUP_ID AS "SalutopiaBatch.T0.0", T0.ACTIVE AS "SalutopiaBatch.T0.1", T0.LAST_RUN AS "SalutopiaBatch.T0.2"
+    )
+    
+  fetchAllAndFlatten: Running query SELECT T0.USER_GROUP_ID AS "SalutopiaBatch.T0.0", T0.ACTIVE AS "SalutopiaBatch.T0.1", T0.LAST_RUN AS "SalutopiaBatch.T0.2" FROM salutopia_batch T0 WHERE T0."USER_GROUP_ID"='707' AND T0."ACTIVE"='1' ORDER BY T0.user_group_id
+  _SqlRec::fetchAllAndFlatten_Process called.
+  SqlRec::fetchRows: Entering Dao::fetchRows with SELECT T0.USER_GROUP_ID AS "SalutopiaBatch.T0.0", T0.ACTIVE AS "SalutopiaBatch.T0.1", T0.LAST_RUN AS "SalutopiaBatch.T0.2" FROM salutopia_batch T0 WHERE T0."USER_GROUP_ID"='707' AND T0."ACTIVE"='1' ORDER BY T0.user_group_id
+  Opening oracle....
+  openOracle: entered
+  openOracle: Login cin Cin123 to server 208.187.161.81
+2016-11-12 20:28:40
+  === PARSED SQL === SELECT T0.USER_GROUP_ID AS "SalutopiaBatch.T0.0", T0.ACTIVE AS "SalutopiaBatch.T0.1", T0.LAST_RUN AS "SalutopiaBatch.T0.2"
+    FROM salutopia_batch T0
+    WHERE T0.USER_GROUP_ID ='707' AND T0.ACTIVE ='1'
+    ORDER BY T0.user_group_id;=== /PARSED SQL ===
+  === Res2 === Resource id #105=== /Res2 ===
+  Dao.php: Res is resource Resource id #105
+  === Ex === 1=== /Ex ===
+  executed
+  res is resource
+  Dao: Returning res which is a resource
+  Dao::fetchRows
+  fromRows: Returning rec which is a array Array
+    (
+    )
+    
+  fetchAllBy: We are returning a array
+  LoginSession::login: Got user. login disallowed? 
+  LoginSession: Our backtrace is this:
+  Array
+    (
+        [0] => Array
+            (
+                [file] => C:\Users\Darrin DeYoung\Documents\EasyPHP-Devserver-16.1\eds-www\analytics\sec\index.php
+                [line] => 47
+                [function] => login
+                [class] => LoginSession
+                [type] => ::
+                [args] => Array
+                    (
+                        [0] => mm
+                        [1] => clicktate1
+                    )
+    
+            )
+    
+    )
+    
+  LoginSession.php: entered setUserFields. user is a(n)object
+  LoginSession::setUserFields: Getting doc ID.
+  LoginSession::setUserFields:setting active status.
+  LoginSession::setActiveStatus: Entered. Is papyrus? , active? 1, subscription = 2
+  LoginSession::setUserFields: Free.
+  LoginSession::setUserFields: Getting Role....
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  === 111 role === PrimaryRole Object
+    (
+        [Profile] => Perms_Profile Object
+            (
+                [name] => 1
+                [license] => 1
+                [practice] => 1
+                [billing] => 1
+            )
+    
+        [Account] => Perms_Account Object
+            (
+                [manage] => 1
+                [portal] => 1
+            )
+    
+        [Patient] => Perms_Patient Object
+            (
+                [demo] => 1
+                [create] => 1
+                [facesheet] => 1
+                [vitals] => 1
+                [diagnoses] => 1
+                [immuns] => 1
+                [track] => 1
+                [history] => 1
+                [cds] => 1
+                [sched] => 1
+            )
+    
+        [Artifact] => Perms_Artifact Object
+            (
+                [markReview] => 1
+                [markPortal] => 1
+                [noteRead] => 1
+                [noteCreate] => 1
+                [noteSign] => 1
+                [noteAddendum] => 1
+                [noteReplicate] => 1
+                [documents] => 
+                [templates] => 1
+                [scan] => 1
+                [labs] => 1
+                [hl7] => 1
+            )
+    
+        [Report] => Perms_Report Object
+            (
+                [patient] => 1
+                [cds] => 1
+                [audit] => 1
+                [builder] => 1
+                [pqri] => 1
+            )
+    
+        [Message] => Perms_Message Object
+            (
+                [general] => 1
+                [patient] => 1
+                [portal] => 1
+            )
+    
+        [Cerberus] => Perms_Cerberus Object
+            (
+                [insurance] => 
+                [superbill] => 1
+            )
+    
+        [_name] => Provider
+        [_mixins] => Array
+            (
+                [0] => MixinRole Object
+                    (
+                        [Profile] => Perms_Profile Object
+                            (
+                                [name] => 1
+                                [license] => 
+                                [practice] => 1
+                                [billing] => 
+                            )
+    
+                        [Account] => Perms_Account Object
+                            (
+                                [manage] => 1
+                                [portal] => 1
+                            )
+    
+                        [Patient] => 
+                        [Artifact] => 
+                        [Report] => 
+                        [Message] => 
+                        [Cerberus] => 
+                        [_name] => Admin
+                    )
+    
+                [1] => MixinRole Object
+                    (
+                        [Profile] => Perms_Profile Object
+                            (
+                                [name] => 
+                                [license] => 
+                                [practice] => 
+                                [billing] => 1
+                            )
+    
+                        [Account] => 
+                        [Patient] => 
+                        [Artifact] => 
+                        [Report] => 
+                        [Message] => 
+                        [Cerberus] => 
+                        [_name] => Payer
+                    )
+    
+                [2] => MixinRole Object
+                    (
+                        [Profile] => 
+                        [Account] => 
+                        [Patient] => 
+                        [Artifact] => 
+                        [Report] => Perms_Report Object
+                            (
+                                [patient] => 
+                                [cds] => 
+                                [audit] => 1
+                                [builder] => 
+                                [pqri] => 
+                            )
+    
+                        [Message] => 
+                        [Cerberus] => 
+                        [_name] => Auditor
+                    )
+    
+                [3] => MixinRole Object
+                    (
+                        [Profile] => 
+                        [Account] => 
+                        [Patient] => 
+                        [Artifact] => 
+                        [Report] => Perms_Report Object
+                            (
+                                [patient] => 
+                                [cds] => 
+                                [audit] => 
+                                [builder] => 1
+                                [pqri] => 
+                            )
+    
+                        [Message] => 
+                        [Cerberus] => 
+                        [_name] => ReportBuilder
+                    )
+    
+                [4] => MixinRole Object
+                    (
+                        [Profile] => 
+                        [Account] => 
+                        [Patient] => 
+                        [Artifact] => 
+                        [Report] => 
+                        [Message] => 
+                        [Cerberus] => Perms_Cerberus Object
+                            (
+                                [insurance] => 
+                                [superbill] => 1
+                            )
+    
+                        [_name] => Biller
+                    )
+    
+            )
+    
+    )
+    === /111 role ===
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  === 111 me === UserRole Object
+    (
+        [Profile] => Perms_Profile Object
+            (
+                [name] => 1
+                [license] => 1
+                [practice] => 1
+                [billing] => 1
+            )
+    
+        [Account] => Perms_Account Object
+            (
+                [manage] => 1
+                [portal] => 1
+            )
+    
+        [Patient] => Perms_Patient Object
+            (
+                [demo] => 1
+                [create] => 1
+                [facesheet] => 1
+                [vitals] => 1
+                [diagnoses] => 1
+                [immuns] => 1
+                [track] => 1
+                [history] => 1
+                [cds] => 1
+                [sched] => 1
+            )
+    
+        [Artifact] => Perms_Artifact Object
+            (
+                [markReview] => 1
+                [markPortal] => 1
+                [noteRead] => 1
+                [noteCreate] => 1
+                [noteSign] => 1
+                [noteAddendum] => 1
+                [noteReplicate] => 1
+                [documents] => 
+                [templates] => 1
+                [scan] => 1
+                [labs] => 1
+                [hl7] => 1
+            )
+    
+        [Report] => Perms_Report Object
+            (
+                [patient] => 1
+                [cds] => 1
+                [audit] => 1
+                [builder] => 1
+                [pqri] => 1
+            )
+    
+        [Message] => Perms_Message Object
+            (
+                [general] => 1
+                [patient] => 1
+                [portal] => 1
+            )
+    
+        [Cerberus] => Perms_Cerberus Object
+            (
+                [insurance] => 
+                [superbill] => 1
+            )
+    
+        [_role] => PrimaryRole Object
+            (
+                [Profile] => Perms_Profile Object
+                    (
+                        [name] => 1
+                        [license] => 1
+                        [practice] => 1
+                        [billing] => 1
+                    )
+    
+                [Account] => Perms_Account Object
+                    (
+                        [manage] => 1
+                        [portal] => 1
+                    )
+    
+                [Patient] => Perms_Patient Object
+                    (
+                        [demo] => 1
+                        [create] => 1
+                        [facesheet] => 1
+                        [vitals] => 1
+                        [diagnoses] => 1
+                        [immuns] => 1
+                        [track] => 1
+                        [history] => 1
+                        [cds] => 1
+                        [sched] => 1
+                    )
+    
+                [Artifact] => Perms_Artifact Object
+                    (
+                        [markReview] => 1
+                        [markPortal] => 1
+                        [noteRead] => 1
+                        [noteCreate] => 1
+                        [noteSign] => 1
+                        [noteAddendum] => 1
+                        [noteReplicate] => 1
+                        [documents] => 
+                        [templates] => 1
+                        [scan] => 1
+                        [labs] => 1
+                        [hl7] => 1
+                    )
+    
+                [Report] => Perms_Report Object
+                    (
+                        [patient] => 1
+                        [cds] => 1
+                        [audit] => 1
+                        [builder] => 1
+                        [pqri] => 1
+                    )
+    
+                [Message] => Perms_Message Object
+                    (
+                        [general] => 1
+                        [patient] => 1
+                        [portal] => 1
+                    )
+    
+                [Cerberus] => Perms_Cerberus Object
+                    (
+                        [insurance] => 
+                        [superbill] => 1
+                    )
+    
+                [_name] => Provider
+                [_mixins] => Array
+                    (
+                        [0] => MixinRole Object
+                            (
+                                [Profile] => Perms_Profile Object
+                                    (
+                                        [name] => 1
+                                        [license] => 
+                                        [practice] => 1
+                                        [billing] => 
+                                    )
+    
+                                [Account] => Perms_Account Object
+                                    (
+                                        [manage] => 1
+                                        [portal] => 1
+                                    )
+    
+                                [Patient] => 
+                                [Artifact] => 
+                                [Report] => 
+                                [Message] => 
+                                [Cerberus] => 
+                                [_name] => Admin
+                            )
+    
+                        [1] => MixinRole Object
+                            (
+                                [Profile] => Perms_Profile Object
+                                    (
+                                        [name] => 
+                                        [license] => 
+                                        [practice] => 
+                                        [billing] => 1
+                                    )
+    
+                                [Account] => 
+                                [Patient] => 
+                                [Artifact] => 
+                                [Report] => 
+                                [Message] => 
+                                [Cerberus] => 
+                                [_name] => Payer
+                            )
+    
+                        [2] => MixinRole Object
+                            (
+                                [Profile] => 
+                                [Account] => 
+                                [Patient] => 
+                                [Artifact] => 
+                                [Report] => Perms_Report Object
+                                    (
+                                        [patient] => 
+                                        [cds] => 
+                                        [audit] => 1
+                                        [builder] => 
+                                        [pqri] => 
+                                    )
+    
+                                [Message] => 
+                                [Cerberus] => 
+                                [_name] => Auditor
+                            )
+    
+                        [3] => MixinRole Object
+                            (
+                                [Profile] => 
+                                [Account] => 
+                                [Patient] => 
+                                [Artifact] => 
+                                [Report] => Perms_Report Object
+                                    (
+                                        [patient] => 
+                                        [cds] => 
+                                        [audit] => 
+                                        [builder] => 1
+                                        [pqri] => 
+                                    )
+    
+                                [Message] => 
+                                [Cerberus] => 
+                                [_name] => ReportBuilder
+                            )
+    
+                        [4] => MixinRole Object
+                            (
+                                [Profile] => 
+                                [Account] => 
+                                [Patient] => 
+                                [Artifact] => 
+                                [Report] => 
+                                [Message] => 
+                                [Cerberus] => Perms_Cerberus Object
+                                    (
+                                        [insurance] => 
+                                        [superbill] => 1
+                                    )
+    
+                                [_name] => Biller
+                            )
+    
+                    )
+    
+            )
+    
+    )
+    === /111 me ===
+  _Rec: Got args which is a arrayArray
+    (
+    )
+    
+  LoginSession::setUserFields: Is this Cerberus?
+  LoginSession::setUserFields: Setting UserLoginReqs.
+  is batch is 
+  _SqlRec: infos fields is an array:Array
+    (
+        [0] => T0.LOGIN_REQ_ID AS "LoginReq.T0.0", T0.NAME AS "LoginReq.T0.1", T0.ACTIVE AS "LoginReq.T0.2", T0.APPLIES AS "LoginReq.T0.3", T0.GRACE AS "LoginReq.T0.4", T0.NOTIFY_TEXT AS "LoginReq.T0.5"
+    )
+    
+  fetchAllAndFlatten: Running query SELECT T0.LOGIN_REQ_ID AS "LoginReq.T0.0", T0.NAME AS "LoginReq.T0.1", T0.ACTIVE AS "LoginReq.T0.2", T0.APPLIES AS "LoginReq.T0.3", T0.GRACE AS "LoginReq.T0.4", T0.NOTIFY_TEXT AS "LoginReq.T0.5" FROM login_reqs T0 WHERE T0."ACTIVE"='1' ORDER BY T0.login_req_id
+  _SqlRec::fetchAllAndFlatten_Process called.
+  SqlRec::fetchRows: Entering Dao::fetchRows with SELECT T0.LOGIN_REQ_ID AS "LoginReq.T0.0", T0.NAME AS "LoginReq.T0.1", T0.ACTIVE AS "LoginReq.T0.2", T0.APPLIES AS "LoginReq.T0.3", T0.GRACE AS "LoginReq.T0.4", T0.NOTIFY_TEXT AS "LoginReq.T0.5" FROM login_reqs T0 WHERE T0."ACTIVE"='1' ORDER BY T0.login_req_id
+  Opening oracle....
+  openOracle: entered
+  openOracle: Login cin Cin123 to server 208.187.161.81
+2016-11-12 20:28:41
+  === PARSED SQL === SELECT T0.LOGIN_REQ_ID AS "LoginReq.T0.0", T0.NAME AS "LoginReq.T0.1", T0.ACTIVE AS "LoginReq.T0.2", T0.APPLIES AS "LoginReq.T0.3", T0.GRACE AS "LoginReq.T0.4", T0.NOTIFY_TEXT AS "LoginReq.T0.5"
+    FROM login_reqs T0
+    WHERE T0.ACTIVE ='1'
+    ORDER BY T0.login_req_id;=== /PARSED SQL ===
+  === Res2 === Resource id #164=== /Res2 ===
+  Dao.php: Res is resource Resource id #164
+  === Ex === 1=== /Ex ===
+  executed
+  res is resource
+  Dao: Returning res which is a resource
+  Dao::fetchRows
+  SqlRec::__construct: Received arg array Array
+    (
+        [0] => Array
+            (
+                [LoginReq.T0.0] => 1
+                [LoginReq.T0.1] => Business Associate Agreement
+                [LoginReq.T0.2] => 1
+                [LoginReq.T0.3] => PayDocPrimary
+                [LoginReq.T0.4] => 0
+                [LoginReq.T0.5] => OCI-Lob Object
+                    (
+                        [descriptor] => Resource id #172
+                    )
+    
+            )
+    
+    )
+    

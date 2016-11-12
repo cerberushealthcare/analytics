@@ -282,10 +282,14 @@ class LoginSession extends Rec {
       $uid = '846_pspc';
 	Logger::debug('LoginSession login function: Entered with params ' . $uid . '|' . $ptpw . '|' . $sessionId . '|' . $isAutomatedLogin);
     $user = static::fetchUser_withLogging($uid, $ptpw, $isAutomatedLogin);
+    logit_r($user, 'fetched user');
 	Logger::debug('LoginSession::login: Got user ' . print_r($user, true));
     $me = new static();
     $me->userGroupId = $user->userGroupId;
-    $me->cerberus = ApiIdXref_Cerberus::lookupPracticeId($user->userGroupId);
+    
+    //We do not need this line in Analytics but we DO need it in clicktate.
+    //$me->cerberus = ApiIdXref_Cerberus::lookupPracticeId($user->userGroupId);
+    
     require_once 'php/data/rec/sql/_SalutopiaBatch.php';
     $me->salutopia = SalutopiaBatch::isActive($user->userGroupId);
     $me->userId = $user->userId;
@@ -566,12 +570,12 @@ class LoginSession extends Rec {
     Logger::debug('LoginSession fetchUser: Entered with ' . $uid . ' and ' . $ptpw);
 	if ($isAutomatedLogin) {
 		Logger::debug('fetchUser: Automated login. Calling fetchByUidTest.');
-		$user = UserLogin::fetchByUidTest($uid);
+		$user = UserLogin::fetchByUid($uid);
 		Logger::debug('fetchUser: Did automated login. Got user ' . gettype($user));
 	}
 	else {
 		Logger::debug('fetchUser: MANUAL login. Calling fetchByUidtest.');
-		$user = UserLogin::fetchByUidTest($uid);
+		$user = UserLogin::fetchByUid($uid);
 		Logger::debug('fetchUser: Returned from fetchByUidtest.');
 	}
 	
@@ -598,10 +602,12 @@ class LoginSession extends Rec {
 	else {
 		Logger::debug('fetchUser: User does not exist!');
       if ($logging) {
+      	/*
         if (static::isEmrUid($uid)) { //very hacky and unnecessary IS_BATCH check - covers up a very odd login issue.
 		  Logger::debug('fetchUser: Throwing LoginEmrException because we can.');
           throw new LoginEmrException();
 		}
+		*/
 		//echo '<b>No user! Logging.</b><br>';
 		 if ($isAutomatedLogin) {
 			$attempts = new Attempts();
