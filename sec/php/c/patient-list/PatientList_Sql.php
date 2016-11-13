@@ -7,12 +7,12 @@ class PStub_Mru extends PatientStub {
   //
   static function fetchLimit($ugid, $limit = 30, $page = null, $activeOnly = false) {
     $c = static::asCriteria($ugid, $activeOnly);
-    return static::fetchAllBy($c, null, $limit, null, 'T1.date DESC', $page);
+    return static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
   }
   static function fetchLimit_Ayoub($ugid, $limit = 30, $page = null, $activeOnly = false) {
     $c = static::asCriteria($ugid, $activeOnly);
     $c->clientId = CriteriaValue::in(array(7383, 8164));
-    return static::fetchAllBy($c, null, $limit, null, 'T1.date DESC', $page);
+    return static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
   }
   static function asCriteria($ugid, $activeOnly) {
     $c = new static();
