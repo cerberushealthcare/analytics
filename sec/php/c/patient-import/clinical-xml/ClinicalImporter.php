@@ -43,10 +43,10 @@ class ClinicalImporter {
     $file = GroupFolder_ClinicalImport::open()->getFile($filename);
     return static::import($file, $cid);
   }
-  protected static function import($file, $cid = null) {
+  protected static function import($file, $cid = null, $uploadId = null) {
     $ci = ClinicalImport::from($file);
     try {
-      $cid = $ci->import($cid);
+      $cid = $ci->import($cid, $uploadId);
       Scanning::saveClinicalXml($cid, $file->filename);
       Proc_CcdImported::record($cid);
     } catch (DuplicateNameBirth $e) {
@@ -56,11 +56,11 @@ class ClinicalImporter {
     return $ci;
   }
   
-   static function importFromFile($file, $cid = null) {
+   static function importFromFile($file, $cid = null, $uploadId = null) {
 	Logger::debug('clinicalImporter::importFromFile: Got file ' . var_dump($file));
     $ci = ClinicalImport::fromFile($file);
     try {
-      $cid = $ci->import($cid);
+      $cid = $ci->import($cid, $uploadId);
       Scanning::saveClinicalXml($cid, $file->filename);
       Proc_CcdImported::record($cid);
     } catch (DuplicateNameBirth $e) {
@@ -121,9 +121,12 @@ class ClinicalImport extends BasicRec {
       throw new XmlParseException('Clinical document type not recognized.');
   }
   //
-  public function import($cid = null) {
+  public function import($cid = null, $uploadId = null) {
     $client = static::getClient($cid);
+    
+    if ($uploadId) $client->uploadId = $uploadId;
     $this->Client = $client;
+    //$this->Address->tableId = $this->Client->lastName . ' TEST';
     $client->saveDemo($this->Xml);
     $client->import($this->Xml);
     return $client->clientId;

@@ -155,8 +155,10 @@ class Cerberus {
 		
 		blog('rest/Cerberus.php: Importing file name ' . $rest->data['filename'] . '. Path is ' . $fileQualifiedPath);
 		try {
-			$result = ClinicalImporter::importFromFile($file);
+			$result = ClinicalImporter::importFromFile($file, null, $rest->data['upload_id']);
 			blog('cerberus.php: Successfully imported ' . $fileQualifiedPath . '!!');
+			
+			//Dao::query('UPDATE CLIENTS set UPLOAD_ID = ' . $rest->data['upload_id'] . ' where ');
 		}
 		catch (Exception $e) {
 			

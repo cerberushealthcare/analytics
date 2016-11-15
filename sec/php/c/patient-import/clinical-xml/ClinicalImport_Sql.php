@@ -29,6 +29,7 @@ abstract class Client_Ci extends Patient_Add {
   public $familyRelease;
   public $primaryPhys;
   public $huid;
+  public $uploadId;
   public /*Address_Ci*/$Address;
   //
   static function create($ugid, $addr) {
@@ -50,6 +51,7 @@ abstract class Client_Ci extends Patient_Add {
   }
   //
   public function saveDemo() {
+  	//$this->uploadId = 48484;
     if ($this->clientId == null)
       $this->throwIfDupeNameBirth();
     parent::save();

@@ -5,18 +5,18 @@
 	$folderName = 'uploads/';
 	$filename = 'Driver_3909_CCD_DUPE.XML';
 
-	set_include_path('../');
+	set_include_path('../../');
 
 	require_once 'config/Environments.php';
 	require_once 'config/MyEnv.php';
 	//require_once 'batch/_batch.php'; //Simply include this in order to use blog()
-	//require_once 'php/data/rec/sql/dao/Logger.php'; //analytics/sec/logs/log.txt
+	require_once 'php/data/rec/sql/dao/Dao.php'; //analytics/sec/logs/log.txt
 	
 	
 	
-	echo 'Opening database....' . '<br>';
+	//echo 'Opening database....' . '<br>';
 	//Queue the Oracle database for all records that need to be processed by looking at the 'STATUS' column.
-	try {
+	/*try {
 		echo 'Connecting to Oracle with DB user ' . MyEnv::$DB_USER . ', password ' . MyEnv::$DB_USER . ' and server ' . MyEnv::$DB_SERVER . ' and proc name ' . MyEnv::$DB_PROC_NAME . '<br>';
 		$conn = oci_connect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
 		
@@ -28,13 +28,25 @@
 	catch (Exception $e) {
 		echo 'Error opening the database: ' . $e->getMessage();
 		exit;
-	}
+	}*/
 	//bool $validLogin = authenticate_user1($uid, $password);
 	
 	echo 'Logging in as mm on ' . MyEnv::$CCD_INLOAD_HOST_IP . '...' . '<br>';
 	
 	//blog('<br>STR: operation=login&userId=' . $rowEntry['UPLOAD_UID'] . '&password=' . $rowEntry['UPLOAD_PW'] . '&practiceId=' . $rowEntry['USER_GROUP_ID'] . '---------';
 	//continue;
+	
+	try {
+		$GLOBALS['dbConn'] = Dao::open(MyEnv::$DB_NAME);
+		
+		if (!$GLOBALS['dbConn']) {
+			throw new RuntimeException('ERROR: Could not connect to the database.');
+		}
+	}
+	catch (Exception $e) {
+		echo 'Database Error: ' . $e->getMessage() . ' on ' . $e->getFile() . ':' . $e->getLine();
+		exit;
+	}
 	
 	try {
 		$handle = curl_init();
@@ -90,6 +102,7 @@
 	curl_setopt($handle, CURLOPT_POSTFIELDS, http_build_query(array('operation' => 'ccdupload',
 																	'filename' => $filename, //was sample_cda.xml before.
 																	'filepath' => 'uploads/',
+																	'upload_id' => 999,
 																	'sessionId' => $sessionId,
 																	'userGroupId' => 712, //This will go directly into CLIENTS.USER_GROUP_ID. It used to go into CLIENTS.UID but that was changed.
 																	'IS_BATCH' => '1')
@@ -107,16 +120,20 @@
 		echo 'CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']';
 		//throw new RuntimeException('CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']');
 	}
-	//curl_close($handle);
+	curl_close($handle);
 	echo '<pre>';
 	echo 'Our cURL result is ' . gettype($result) . ' ' . $result;
 	echo '</pre>';
 	
-	
+	if ($GLOBALS['dbConn']) {
+		echo 'Closing the DB connection....<br>';
+		Logger::debug('Closing DB connection....');
+		Dao::close($GLOBALS['dbConn']);
+	}
 	
 	//Cleanup
 	//oci_free_statement($stid);
-	oci_close($conn);
+	//oci_close($conn);
 	
 	
 	$testPassed = false;

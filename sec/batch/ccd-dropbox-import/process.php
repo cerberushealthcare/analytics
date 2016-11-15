@@ -138,6 +138,7 @@
 			curl_setopt($handle, CURLOPT_POSTFIELDS, http_build_query(array('operation' => 'ccdupload',
 																			'filename' => $rowEntry['NAME'], //was sample_cda.xml before.
 																			'filepath' => 'uploads/',
+																			'upload_id' => $rowEntry['UPLOAD_ID'],
 																			'sessionId' => $sessionId, //used to be 'kba6m0i3pqdbs56bfkp8uahhr2',
 																			'userGroupId' => $rowEntry['USER_GROUP_ID'], //should be 706
 																			'IS_BATCH' => '1')
@@ -202,6 +203,6 @@
 	
 	//Cleanup
 	
-	oci_free_statement($stid);
-	oci_close($conn);
+	//oci_free_statement($stid);
+	//oci_close($conn);
 ?>

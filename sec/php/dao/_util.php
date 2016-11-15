@@ -1246,7 +1246,11 @@ function openOracle() {
 }
 
 function close($conn) {
-  //mysql_close($conn);  // per http://www.php.net/manual/en/function.mysql-close.php: Using mysql_close() isn't usually necessary, as non-persistent open links are automatically closed at the end of the script's execution. See also freeing resources.
+  if (MyEnv::$IS_ORACLE) {
+  	return oci_close($conn);
+  }
+  
+  return mysql_close($conn);
 }
 
 function logit($msg) {

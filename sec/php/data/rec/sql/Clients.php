@@ -232,6 +232,7 @@ class Client extends ClientRec {
   public $dnr;
   public $immRegReminders;
   public $immRegRefuse;
+  public $uploadId;
   public /*Address*/ $Address_Home;
   public /*Address*/ $Address_Emergency;
   public /*Address*/ $Address_Spouse;

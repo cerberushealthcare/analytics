@@ -1,6 +1,7 @@
 <?php
 require_once 'config/MyEnv.php';
 require_once 'php/data/rec/sql/dao/Logger.php';
+require_once 'php/dao/_util.php';
 
 //
 /**
@@ -15,13 +16,47 @@ class Dao {
    * @param string $db (optional) @see open()
    * @return MySqlResource
    */
+  protected $globalConnection;
+  
   static function query($sql, $db = null, $table = null) {
     //Logger::debug('| We entered Dao::query with the query ' . $sql . '|');
-    $conn = static::open($db);
+    
 	//Logger::debug('Dao::query: Database has been opened. Running query ' . $sql);
 	//Logger::debug('Dao::query: Users table detected Backtrace is ' . print_r(debug_backtrace(), true));
+	
 	if (MyEnv::$IS_ORACLE) {
 		
+		/*
+		 * 
+		 * If you want to use a persistent connection and not have to use a new oci_connect or mysql_connect call every
+		 * time you want to do a query, define $GLOBALS['dbConn'] as the value you get from static::open.
+		 * This will set an oci_connect or mysql_connect result to $GLOBALS['dbConn'] and you can use it for as long as 
+		 * your script runs.
+		 * 
+		 * The catch: Make sure you define AND CLOSE the connection in your PHP script.
+		 */
+		
+		Logger::debug('Dao::query: Our DB connection is ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
+		if (isset($GLOBALS['dbConn'])) {
+			//Logger::debug('We already have a connection!');
+			$conn = $GLOBALS['dbConn'];
+			
+		}
+		else {
+			//Logger::debug('No connection, make a new one!!!');
+			$conn = static::open($db);
+			//$GLOBALS['dbConn'] = $conn;
+			//Logger::debug('We set the DB conn variable to ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
+		}
+		
+		/*Logger::debug('Checking out the global connection....');
+		
+		//Logger::debug('GLOBALS:');
+		//Logger::debug(print_r($GLOBALS, true));
+			
+		
+		
+		Logger::debug('Dao::query: The connection we will use is ' . gettype($conn));
 		//Oracle does not like backticks, but SQL does. Substitute them for a single quote before doing the query.
 		/*for($i = 0; $i < strlen($sql); $i++) {
 			//Logger::debug('Is ' . $sql[$i] . ' a backtick?');
@@ -72,8 +107,12 @@ class Dao {
 		
 		
 		logit_r($sql, 'PARSED SQL');
+		if ($table == 'data_meds') {
+			logit_r(debug_backtrace(), 'Backtrace');
+			Logit_r($res, 'Res2');
+		}
 		
-		Logit_r($res, 'Res2');
+		
 		$returnValue = null;
 		
 		
@@ -106,6 +145,7 @@ class Dao {
 	}
 	else {
 		Logger::debug('NOT ORACLE.');
+		$conn = static::open($db);
 		$res = mysqli_query($conn, $sql); 
 	}
 	
@@ -121,10 +161,15 @@ class Dao {
 			throw static::buildException(mysql_error(), mysql_errno($conn));
 		}
 	 }
-	Logger::debug('Dao: Returning res which is a ' . gettype($res));
-	//echo 'Dao::query: Returning res  . '<br>';
-    return $res;
-	
+	 //$closed = static::close($conn);
+	 Logger::debug('Dao: Returning res which is a ' . gettype($res) . '. oci_close result is ' . $closed);
+	 //echo 'Dao::query: Returning res  . '<br>';
+     return $res;
+  }
+  
+  
+  static function close($conn) {
+  	return close($conn);
   }
   /**
    * @param string $sql INSERT
