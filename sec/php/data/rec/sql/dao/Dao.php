@@ -36,14 +36,14 @@ class Dao {
 		 * The catch: Make sure you define AND CLOSE the connection in your PHP script.
 		 */
 		
-		Logger::debug('Dao::query: Our DB connection is ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
+		//Logger::debug('Dao::query: Our DB connection is ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
 		if (isset($GLOBALS['dbConn'])) {
-			//Logger::debug('We already have a connection!');
+			Logger::debug('We already have a connection!');
 			$conn = $GLOBALS['dbConn'];
 			
 		}
 		else {
-			//Logger::debug('No connection, make a new one!!!');
+			Logger::debug('No connection, make a new one!!!');
 			$conn = static::open($db);
 			//$GLOBALS['dbConn'] = $conn;
 			//Logger::debug('We set the DB conn variable to ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
@@ -65,8 +65,6 @@ class Dao {
 				$sql[$i] = '"';
 			}
 		}*/
-		
-		//Logger::debug('Non-backticked query: ' . $sql);
 		
 		//Take out all the quotes after the from clause. In Oracle, quotes are okay in the select area (aliases) but Oracle doesn't want any quotes
 		//anywhere else.
@@ -162,7 +160,7 @@ class Dao {
 		}
 	 }
 	 //$closed = static::close($conn);
-	 Logger::debug('Dao: Returning res which is a ' . gettype($res) . '. oci_close result is ' . $closed);
+	 Logger::debug('Dao: Returning res which is a ' . gettype($res) . '.');
 	 //echo 'Dao::query: Returning res  . '<br>';
      return $res;
   }

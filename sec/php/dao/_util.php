@@ -1236,7 +1236,7 @@ function openOracle() {
 	Logger::debug('openOracle: entered');
 	Logger::debug('openOracle: Login ' . MyEnv::$DB_USER . ' ' . MyEnv::$DB_PW . ' to server ' . MyEnv::$DB_SERVER);
 	try {
-		$conn = oci_connect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
+		$conn = oci_pconnect(MyEnv::$DB_USER, MyEnv::$DB_PW, MyEnv::$DB_SERVER . '/' . MyEnv::$DB_PROC_NAME);
 	}
 	catch (Exception $e) {
 		throw new RuntimeException('Could not connect to the oracle database ' . MyEnv::$DB_SERVER . ' with proc name ' . MyEnv::$DB_PROC_NAME . ': ' . $e->getMessage());

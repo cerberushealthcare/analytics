@@ -37,18 +37,6 @@
 	//continue;
 	
 	try {
-		$GLOBALS['dbConn'] = Dao::open(MyEnv::$DB_NAME);
-		
-		if (!$GLOBALS['dbConn']) {
-			throw new RuntimeException('ERROR: Could not connect to the database.');
-		}
-	}
-	catch (Exception $e) {
-		echo 'Database Error: ' . $e->getMessage() . ' on ' . $e->getFile() . ':' . $e->getLine();
-		exit;
-	}
-	
-	try {
 		$handle = curl_init();
 		$postStr = 'operation=login&userId=mm&password=clicktate1&practiceId=705';//&filename=' . $rowEntry['NAME'] . '&filepath=' . $folderName;
 		echo 'Using post string ' . $postStr . '<br>';
@@ -104,7 +92,7 @@
 																	'filepath' => 'uploads/',
 																	'upload_id' => 999,
 																	'sessionId' => $sessionId,
-																	'userGroupId' => 712, //This will go directly into CLIENTS.USER_GROUP_ID. It used to go into CLIENTS.UID but that was changed.
+																	'userGroupId' => 705, //This will go directly into CLIENTS.USER_GROUP_ID. It used to go into CLIENTS.UID but that was changed.
 																	'IS_BATCH' => '1')
 																)
 	);
@@ -125,11 +113,7 @@
 	echo 'Our cURL result is ' . gettype($result) . ' ' . $result;
 	echo '</pre>';
 	
-	if ($GLOBALS['dbConn']) {
-		echo 'Closing the DB connection....<br>';
-		Logger::debug('Closing DB connection....');
-		Dao::close($GLOBALS['dbConn']);
-	}
+	
 	
 	//Cleanup
 	//oci_free_statement($stid);
