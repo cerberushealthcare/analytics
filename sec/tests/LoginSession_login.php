@@ -13,11 +13,11 @@
 		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';
 	}
 	
-	echo 'User is a ' . gettype($user) . ' ' . var_dump($user);
+	echo 'User is a ' . gettype($user) . ' <pre>' . var_dump($user) . '</pre>';
 	
 	$testPassed = false;
 	
-	if (gettype($user) == 'Object') {
+	if (gettype($user) == 'object') {
 		$testPassed = true;
 	}
 	

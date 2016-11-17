@@ -1,3 +1,4 @@
+
 <?php
 	//Verify that when we make something from _Rec, we get the correct query field names.
 	//In Oracle / SQL there are many words that we can't use in our queries and we want to make sure we don't try using any of them because it'll break the query.
@@ -17,7 +18,7 @@
 	foreach ($fields as $key => $value) {
 		//echo 'getSqlInsert: Converting word ' . $value . '<br>';
 		//$field = SqlRec::convertReservedOracleWords($field, true);
-		$converted = SqlRec::convertReservedOracleColumnWords($value, true, array('rowid'));
+		$converted = SqlRec::testOracleWords($value, true);
 		unset($fields[$key]);
 		$fields[$converted] = $converted;
 		//echo 'Changed the word to ' . $fields[$converted] . '<br>';

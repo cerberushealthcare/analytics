@@ -3,7 +3,7 @@
 	//ini_set('display_errors', '1');
 	
 	$folderName = 'uploads/';
-	$filename = 'Driver_3909_CCD_DUPE.XML';
+	$filename = 'Blue_4189_CCD.XML';
 
 	set_include_path('../../');
 
@@ -102,13 +102,14 @@
 	if (!$result) {
 		$curlErrNo = curl_errno($handle);
 		$curlErrMsg = curl_error($handle);
-		curl_close($handle);
 		
 		$err = error_get_last();
 		echo 'CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']';
 		//throw new RuntimeException('CURL error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']');
 	}
+	
 	curl_close($handle);
+	
 	echo '<pre>';
 	echo 'Our cURL result is ' . gettype($result) . ' ' . $result;
 	echo '</pre>';
@@ -121,6 +122,8 @@
 	
 	
 	$testPassed = false;
-	if (strlen($result) == 0) $testPassed = true;
+	echo 'The result we got is ' . gettype($result) . ' ' . print_r($result) . '. the string is ' . $result;
+	echo '<br>If this tests fails, check out /api/blog.txt as well as logs/log.txt!<br>';
+	if ($result == '' && gettype($result) == 'string') $testPassed = true;
 	include('postTestProcedures.php');
 ?>

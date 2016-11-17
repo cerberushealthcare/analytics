@@ -30,6 +30,11 @@ abstract class SqlRec extends Rec {
   public function getSqlTable() {
     return static::$SQL_TABLE;
   }
+  
+  public function testOracleWords($value, $includeSqlWords) {
+  	//$this->SQL_TABLE = 'yaya';
+  	return static::convertReservedOracleColumnWords($value, $includeSqlWords);
+  }
   /**
    * Assigns fields based upon args supplied:
    *   (value1,value2,..)      multiple args: each assigned in field definition order
@@ -515,9 +520,9 @@ abstract class SqlRec extends Rec {
 		}
 		//$fields = implode(',', $fields);
 		
-		echo '<pre>';
+		/*echo '<pre>';
 		var_dump(debug_backtrace());
-		echo '</pre>';
+		echo '</pre>';*/
 		if ($table == 'logins') {
 			$valueArray = $this->getSqlValues();
 			unset($valueArray[0]);
