@@ -112,7 +112,7 @@ $noAlert = ($page == "registerCard.php");
         <?php } else { ?>
         <?php } ?>
       </div>        
-<?
+<?php 
 function daysLeft($myLogin) {
 	$s = $myLogin->daysLeft;
 	if ($s == 1) {

@@ -181,13 +181,14 @@ class Dao {
 		
 		//echo 'Dao::insert: stmt is a ' . gettype($stmt) . '<br>';
 		
-		if ($table == 'logins') {
+		//We may not need the below oci_fetch_array? This is an insert statement, we shouldn't need an array returned.....
+		/*if ($table == 'logins') {
 			//echo 'Dao::insert: The sql table is logins. The stmt is ' . gettype($stmt) .  ' ' . $stmt;
 		}
 		else {
 			$array = oci_fetch_array($stmt, OCI_BOTH);
 			//echo 'Dao::insert: Got array :<pre>' . print_r($array, true) . '</pre><br><br>---------<br><br>';
-		}
+		}*/
 	}
 	else {
 		static::query($sql);

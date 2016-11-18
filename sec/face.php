@@ -1,4 +1,4 @@
-<?
+<?php
 ob_start('ob_gzhandler');
 require_once "php/data/LoginSession.php";
 require_once "inc/uiFunctions.php";

@@ -216,7 +216,7 @@ if ($page != 'cerberus-login.php' && $login->cerberus)
         </div>
       </div>
     <?php } ?>
-<?
+<?php 
 function daysLeft($amt, $cap = false) {
 	$s = round($amt);
 	if ($s < 1)

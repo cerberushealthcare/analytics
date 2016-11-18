@@ -3,7 +3,7 @@
 	//ini_set('display_errors', '1');
 	
 	
-	$folderName = 'C:/www/clicktate/cert/sec/analytics/uploads';
+	$folderName = 'C:/www/clicktate/cert/sec/analytics/uploads/';
 	
 	set_include_path('../../');
 
@@ -47,6 +47,7 @@
 			order by upload.user_group_id");
 	oci_execute($stid);
 	
+	
 	set_time_limit(10800); //3 hours. We could end up having to process hundreds of xml files.
 	while (($rowEntry = oci_fetch_assoc($stid)) != false) {
 		
@@ -84,32 +85,31 @@
 			//blog('<br>STR: operation=login&userId=' . $rowEntry['UPLOAD_UID'] . '&password=' . $rowEntry['UPLOAD_PW'] . '&practiceId=' . $rowEntry['USER_GROUP_ID'] . '---------';
 			//continue;
 			
-			//try {
-				$handle = curl_init();
-				$postStr = 'operation=login&userId=' . $rowEntry['UPLOAD_UID'] . '&password=' . $rowEntry['UPLOAD_PW'] . '&practiceId=' . $rowEntry['USER_GROUP_ID'];//&filename=' . $rowEntry['NAME'] . '&filepath=' . $folderName;
-				blog('process.php: Using post string ' . $postStr);
+			$handle = curl_init();
+			$postStr = 'operation=login&userId=' . $rowEntry['UPLOAD_UID'] . '&password=' . $rowEntry['UPLOAD_PW'] . '&practiceId=' . $rowEntry['USER_GROUP_ID'];//&filename=' . $rowEntry['NAME'] . '&filepath=' . $folderName;
+			blog('process.php: Using post string ' . $postStr);
 
-				curl_setopt($handle, CURLOPT_URL, '127.0.0.1/analytics/api/cerberus.php');
-				curl_setopt($handle, CURLOPT_HEADER, 0);
-				curl_setopt($handle, CURLOPT_RETURNTRANSFER, 1); //Keep curl_exec quiet by stopping it from echoing output
-				curl_setopt($handle, CURLOPT_POST, 4); 
-				curl_setopt($handle, CURLOPT_POSTFIELDS, $postStr);
-				
-				$result = curl_exec($handle);
-				
-				if (!$result) {
-					$curlErrNo = curl_errno($handle);
-					$curlErrMsg = curl_error($handle);
-					curl_close($handle);
-					
-					$err = error_get_last();
-					curl_close($handle);
-					throw new RuntimeException('CURL login error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']');
-				}
-				blog('cURL successful! Closing handle....');
+			curl_setopt($handle, CURLOPT_URL, '127.0.0.1/analytics/api/cerberus.php');
+			curl_setopt($handle, CURLOPT_HEADER, 0);
+			curl_setopt($handle, CURLOPT_RETURNTRANSFER, 1); //Keep curl_exec quiet by stopping it from echoing output
+			curl_setopt($handle, CURLOPT_POST, 4); 
+			curl_setopt($handle, CURLOPT_POSTFIELDS, $postStr);
+			
+			$result = curl_exec($handle);
+			
+			if (!$result) {
+				$curlErrNo = curl_errno($handle);
+				$curlErrMsg = curl_error($handle);
 				curl_close($handle);
 				
-				blog('Login: Result is `' . gettype($result) . ' ' . $result . '`');
+				$err = error_get_last();
+				curl_close($handle);
+				throw new RuntimeException('CURL login error ' . $curlErrNo . ': ' . $curlErrMsg . ' [PHP said ' . $err['message'] . ']');
+			}
+			blog('cURL successful! Closing handle....');
+			curl_close($handle);
+			
+			blog('Login: Result is `' . gettype($result) . ' ' . $result . '`');
 			/*}
 			catch (Exception $e) {
 				blog('Got an exception: ' . $e->getMessage());// . ' ' . $e->getTraceAsString();
@@ -146,10 +146,19 @@
 			);
 			
 			$result = curl_exec($handle);
-			blog('We got a result: ' . gettype($result));
+			blog('We got a result: ' . gettype($result) . ' ' . $result . '. Got result? ' . !$result);
+			
+			if (strlen($result) > 0) {
+				setUploadTableStatus($rowEntry['UPLOAD_ID'], 'FAILED');
+				appendToErrorLogColumn($rowEntry['UPLOAD_ID'], 'ccd_file_upload test: An error occured: ' . $result);
+			}
+			else {
+				blog('Successfully imported ' . $rowEntry['NAME'] . '! Updating the uploads table...');
+				setUploadTableStatus($rowEntry['UPLOAD_ID'], 'UPLOADED');
+			}
 			
 			
-			if (!$result) {
+			/*if (!$result) {
 				blog('Got an invalid cURL result.');
 				$curlErrNo = curl_errno($handle);
 				$curlErrMsg = curl_error($handle);
@@ -173,36 +182,76 @@
 				/*if (!$updateResult) {
 					$err = oci_error();
 					
-				}*/
-			}
+				}
+			}*/
 			//curl_close($handle);
-			//blog('Our cURL result is ' . gettype($result) . ' ' . $result);
+			//blog('Our cURL result is ' . gettype($result) . ' ' . $result);*/
 			blog('-------------------------------------------------------------------------------------------------------------------');
-			continue;
 		}
 		catch (Exception $e) {
 			blog('ERROR: Could not upload file ' . $rowEntry['NAME'] . ': ' . $e->getMessage());
 			blog('-------------------------------------------------------------------------------------------------------------------');
 			setUploadTableStatus($rowEntry['UPLOAD_ID'], 'FAILED');
+			appendToErrorLogColumn($rowEntry['UPLOAD_ID'], 'Error during import: ' . $e->getMessage());
 			continue;
-		}
-	}
-	
-	function setUploadTableStatus($rowID, $str) {
-		$sql = "update UPLOAD set STATUS = '" . $str . "' where UPLOAD_ID = " . $rowID;
-		$res = Dao::query($sql);
-		
-		if (oci_error($res)) {
-			$err = oci_error($res);
-			blog('Error: Could not update the UPLOAD table record ' . $rowID . ' to ' . $str . ': ' . $err['message']);
-		}
-		else {
-			blog('UPLOAD table record ' . $rowID . ' updated to ' . $str . ' successfully!');
 		}
 	}
 	
 	//Cleanup
 	
-	//oci_free_statement($stid);
-	//oci_close($conn);
+	oci_free_statement($stid);
+	oci_close($conn);
+	
+	
+	function setUploadTableStatus($rowID, $str) {
+		$sql = "update UPLOAD set STATUS = '" . $str . "' where UPLOAD_ID = " . $rowID;
+		blog('Running query ' . $sql);
+		
+		try {
+			$res = Dao::query($sql);
+		}
+		catch (Exception $e) {
+			throw new RuntimeException('setUploadTableStatus: Query ' . $sql . ' failed: ' . $err['message']);
+		}
+		
+		if (oci_error($res)) {
+			$err = oci_error($res);
+			blog('Error in setUploadTableStatus: Invalid result (' . gettype($res) . ' ' . $res . ' [should be a resource]. Got error ' . $err['message']);
+			throw new RuntimeException('setUploadTableStatus: Query ' . $sql . ' failed: ' . $err['message']);
+		}
+	}
+	
+	function appendToErrorLogColumn($rowID, $str) {
+		/*$sql = "update upload
+					set PROCESS_MSG = PROCESS_MSG || '" . $str . "' || chr(10)
+					where UPLOAD_ID = " . $rowID;*/
+		
+		
+		$sql = "DECLARE
+					longText CLOB;
+				BEGIN
+					longText := '" . $str . "';
+				
+					update upload
+					set PROCESS_MSG = PROCESS_MSG || longText || chr(10)
+					where UPLOAD_ID = " . $rowID . ";
+				END;";
+		
+		blog('Running query ' . $sql);
+		
+		try {
+			$res = Dao::query($sql);
+		}
+		catch (Exception $e) {
+			throw new RuntimeException('appendToErrorLogColumn: Query ' . $sql . ' failed: ' . $err['message']);
+		}
+		
+		if (oci_error($res)) {
+			$err = oci_error($res);
+			blog('Error in appendToErrorLogColumn: Invalid result (' . gettype($res) . ' ' . $res . ' [should be a resource]. Got error ' . $err['message']);
+			throw new RuntimeException('appendToErrorLogColumn: Query ' . $sql . ' failed: ' . $err['message']);
+		}
+    }
+	
+	
 ?>

@@ -22,6 +22,7 @@ class Client_Ci_Ccd extends Client_Ci {
     $patientRole = $ccd->getPatientRole();
     $this->setFrom($patientRole);
     $this->Address->setFrom($patientRole);
+    //$this->Address->tableId = 5;
     return parent::saveDemo();
   }
   public function import(/*ContinuityCareDocument*/$ccd) {

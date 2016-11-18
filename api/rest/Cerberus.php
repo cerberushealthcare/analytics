@@ -121,6 +121,25 @@ class Cerberus {
 			throw new ApiException('Session required.');
 		}
 		
+		
+		//Define a connection so that we only use this one. We need to do this so that Oracle's package variables stay intact while we
+		//are importing the patient.
+		//We NEED to do the global connection here because we cant do it in the process.php file - by the time we hit HERE, we are already doing another PHP call and thus the $GLOBALS file will be reset.
+		try {
+			$GLOBALS['dbConn'] = Dao::open(MyEnv::$DB_NAME);
+			Logger::debug('requestCCD_UPLOAD: Got Globals dbConn to be ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
+		
+			if (!$GLOBALS['dbConn']) {
+				throw new RuntimeException('ERROR: Could not connect to the database.');
+			}
+		}
+		catch (Exception $e) {
+			echo 'Database Error: ' . $e->getMessage() . ' on ' . $e->getFile() . ':' . $e->getLine();
+			exit;
+		}
+		
+		Logger::debug('requestCCD_UPLOAD: Globals dbConn = ' . gettype($GLOBALS['dbConn']) . ' ' . $GLOBALS['dbConn']);
+		
 		//Hacky workaround: When we call this process from a web service, $_GET is empty. And some of the functions below, most notably the clinical file upload process,
 		//depends on $_GET having certain values, otherwise it will choke.
 		
@@ -131,7 +150,7 @@ class Cerberus {
 			blog('rest/Cerberus.php:GET userGroupID is now ' .  $_GET['userGroupId']);
 		}
 		
-		echo 'rest/Cerberus.php:Entered requestCCDUpload session ID is ' . $sessionId;
+		//echo 'rest/Cerberus.php:Entered requestCCDUpload session ID is ' . $sessionId;
 		//$sessionId = $rest->data['sessionId'];
 		//LoginSession::login('mm', 'clicktate1');
 		
@@ -164,16 +183,30 @@ class Cerberus {
 			
 			throw new RuntimeException('cerberus.php: Could not import the file: ' . $e->getMessage());
 		}
+		
+		if ($GLOBALS['dbConn']) {
+			echo 'Closing the DB connection....<br>';
+			Logger::debug('Closing DB connection....');
+			Dao::close($GLOBALS['dbConn']);
+		}
+		
+		
 		blog('Imported ' . $fileQualifiedPath . ' successfully!');
 		echo 'OK. ' . $rest->data['sessionId'];
 	}
 	catch (Exception $e) {
 		//$errorLog->log($e->getMessage()) for debugging
 		blog('cerberus.php ERROR: Could not import the file: ' . $e->getMessage());
-		echo 'ERROR, ' . $e->getMessage();
+		echo 'api/rest/Cerberus.php: ERROR, ' . $e->getMessage();
+		exit; //ABSOLUTELY NECESSARY if we are to get any response text.
+		//appendToErrorLogColumn($_GET['upload_id'], $e->getMessage());
 	}
 	blog('------');
   }
+  
+  
+  
+  
   
   
   

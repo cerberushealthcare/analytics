@@ -12,15 +12,15 @@ $pop = ($page == 'face.php' && isset($_GET['pop']));
 $popstyle = ($pop) ? 'style="display:none"' : '';
 $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
 ?>
-    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Header.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Includer.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Page.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/pages/Polling.js?<?=Version::getUrlSuffix() ?>"></script>
-    <script language="JavaScript1.2" src="js/ui.js?<?=Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Ajax.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Header.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Includer.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Lookup.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Page.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/pages/Polling.js?<?php echo Version::getUrlSuffix() ?>"></script>
+    <script language="JavaScript1.2" src="js/ui.js?<?php echo Version::getUrlSuffix() ?>"></script>
     <div id="header">
-      <div id="logo-head" <?=$popstyle?>>
+      <div id="logo-head" <?php echo $popstyle?>>
         <div style='background:#D2E3E0;'>
           <img src='img/papy-pyr.png' class='pyr' />
           <div id='paptext'>PAPYRUS MEDICAL</div>
@@ -30,7 +30,7 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
               <td class="logo-right">
                 <div class="loginfo tf-header">
                   <?php if (isset($login)) { ?>
-                    Logged in as <b><?=$login->uid ?></b>
+                    Logged in as <b><?php echo $login->uid ?></b>
                     <?php if ($login->Role->Profile->any()) { ?>| <a href="profile2.php">My Profile</a><?php } else { ?>| <a href="profile.php?cp=1">Change Password</a><?php } ?>
                     | <a href="javascript:Header.icdLook()">ICD</a>
                     <?php if ($login->admin) { ?>| <a href="serverAdm.php">Admin</a><?php } ?>
@@ -94,7 +94,7 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
         </div>
       </div>
     </div>
-    <div id="stickies" <?=$popstyle?>>
+    <div id="stickies" <?php echo $popstyle?>>
       <?php if (! $login->isPapyrus()) { ?>
         <?php if ($page == 'welcome.php' && 0 == 1) { ?>
           <?php STICKY('downnote') ?>
@@ -111,12 +111,12 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
         <?php } ?>
         <?php if (! $noAlert && $login->User->isDoctor() && $login->User->isOnTrial() && $login->daysLeft < 25) { ?>
           <?php STICKY('countdown') ?>
-            Your trial account has <?=daysLeft($login->daysLeft) ?> remaining.
+            Your trial account has <?php echo daysLeft($login->daysLeft) ?> remaining.
             <a href="registerCard.php">Activate now &gt;</a>
           <?php _STICKY('countdown', false) ?>
         <?php } else if (! $noAlert && $login->isInactive()) { ?>
           <?php STICKY('countdown') ?>
-            <?=$login->expireReason ?><br/> 
+            <?php echo $login->expireReason ?><br/> 
             At present you have limited (read-only) access to your information.<br/>
             <a href="registerCard.php">Update billing info and restore full access &gt;</a>
           <?php _STICKY('countdown', false) ?>
@@ -125,7 +125,7 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
             <?php if ($login->daysLeft < 0) { ?>
               Your credit card has expired. 
             <?php } else { ?>
-              Your credit card on file expires in <?=daysLeft($login->daysLeft) ?>.
+              Your credit card on file expires in <?php echo daysLeft($login->daysLeft) ?>.
             <?php } ?>
             <a href="registerCard.php">Update card &gt;</a>
           <?php _STICKY('countdown', false) ?>
@@ -135,8 +135,8 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
             <?php foreach ($reqs as $req) { ?>
               <?php $stid = 'req' . $req->userLoginReqId ?>
               <?php STICKY($stid) ?>
-                <?=daysLeft($req->_daysLeft, true) ?> left for
-                <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?=$req->LoginReq->name ?> &gt;</a>
+                <?php echo daysLeft($req->_daysLeft, true) ?> left for
+                <a style='color:red' href='javascript:' onclick='Pop.show("pop-not");return false'><?php echo $req->LoginReq->name ?> &gt;</a>
               <?php _STICKY($stid) ?>
             <?php } ?>
           <?php } ?>
@@ -159,8 +159,8 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
           <?php foreach ($login->LoginReqs as $action => $reqs) { ?>
             <?php foreach ($reqs as $req) { ?>
               <?php renderBoxStart('wide min-pad push') ?>
-                <h4 style='color:red;margin-bottom:-0.5em'><?=$action . ': ' . $req->LoginReq->name ?></h4>
-                <div><?=$req->LoginReq->notifyText ?></div>
+                <h4 style='color:red;margin-bottom:-0.5em'><?php echo $action . ': ' . $req->LoginReq->name ?></h4>
+                <div><?php echo $req->LoginReq->notifyText ?></div>
               <?php renderBoxEnd() ?>
             <?php } ?>
           <?php } ?>
@@ -170,7 +170,7 @@ $sessId = isset($_GET['sess']) ? $_GET['sess'] : null;
         </div>
       </div>
     <?php } ?>
-<?
+<?php
 function daysLeft($amt, $cap = false) {
 	$s = round($amt);
 	if ($s < 1) 
@@ -183,16 +183,16 @@ function daysLeft($amt, $cap = false) {
 }
 ?>
 <script>
-var today = "<?=date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
-var now = <?=now() ?>;
-var me = <?=$login->asJson() ?>;
+var today = "<?php echo date("m/d/Y", strtotimeAdjusted(nowTimestamp())) ?>";
+var now = <?php echo now() ?>;
+var me = <?php echo $login->asJson() ?>;
 me.isErx = function() {return me.User.UserGroup.usageLevel == 2};
 Header.load(
-  '<?=$page ?>', 
-  <?=Messaging::getMyUnreadCt()?>, 
-  <?=Messaging_DocStubReview::getUnreviewedCt()?>,
-  <?=HL7_Labs::getInboxCt()?>);
+  '<?php echo $page; ?>', 
+  <?php echo Messaging::getMyUnreadCt(); ?>, 
+  <?php echo Messaging_DocStubReview::getUnreviewedCt(); ?>,
+  <?php echo HL7_Labs::getInboxCt(); ?>);
 <?php if ($sessId) { ?>
-Ajax.setSessionId('<?=$sessId ?>');
+Ajax.setSessionId('<?php echo $sessId; ?>');
 <?php } ?>
 </script>

@@ -57,7 +57,7 @@ class ClinicalImporter {
   }
   
    static function importFromFile($file, $cid = null, $uploadId = null) {
-	Logger::debug('clinicalImporter::importFromFile: Got file ' . var_dump($file));
+	//Logger::debug('clinicalImporter::importFromFile: Got file ' . var_dump($file));
     $ci = ClinicalImport::fromFile($file);
     try {
       $cid = $ci->import($cid, $uploadId);
@@ -123,6 +123,7 @@ class ClinicalImport extends BasicRec {
   //
   public function import($cid = null, $uploadId = null) {
     $client = static::getClient($cid);
+    //throw new RuntimeException('Something terrible happened in php/c/patient-import/clinicalXML/ClinicalImporter.php. This is a test.');
     
     if ($uploadId) $client->uploadId = $uploadId;
     $this->Client = $client;
