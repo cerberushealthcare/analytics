@@ -13,7 +13,7 @@ require_once "php/data/rec/sql/HL7_Labs.php";
 
 $testPassed = false;
 
-$unread = MsgInbox::countUnread('mm');
+$unread = MsgInbox::countUnread('mm'); //This MUST BE AN INTEGER, not a string....
 
 echo 'Unread is ' . gettype($unread) . ' ' . $unread . '<br>';
 

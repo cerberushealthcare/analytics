@@ -95,12 +95,12 @@ class Dao {
 		//echo 'Dao::query:';
 		$res = oci_parse($conn, $sql);
 		
-		if ($table == 'logins') {
+		/*if ($table == 'logins') {
 			oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
 			//echo 'Dao::query: ReturnValue is ' . $returnValue;
 			//return $returnValue;
 			Logger::debug('Dao::query: Got return val as ' . $returnValue);
-		}
+		}*/
 		
 		
 		
@@ -123,9 +123,9 @@ class Dao {
 		
 		
 		//echo '<hr>';
-		$ex = oci_execute($res);
-		logit_r($ex, 'Ex');
-		logit_r('executed');
+		//$ex = oci_execute($res); //If things break we may have to uncomment this....what we really want is to return the result of oci_parse and NOT actually run oci_execute. The reason for this is we may want to bind return variables with oci_bind_by_name and we have to do that BEFORE we run oci_execute.
+		//logit_r($ex, 'Ex');
+		//logit_r('executed');
 		/*
 		$rows = oci_fetch_all($res, $res2);
 		logit_r('rows='.$rows);
@@ -139,7 +139,7 @@ class Dao {
 			throw static::buildException(htmlentities('Dao::query: Error in Oracle query: ' . $err['message'] . '. Query is ' . $sql, ENT_QUOTES), E_USER_ERROR);
 		}
 		
-		if ($table == 'logins') return $returnValue;
+		//if ($table == 'logins') return $returnValue;
 	}
 	else {
 		Logger::debug('NOT ORACLE.');
@@ -177,8 +177,18 @@ class Dao {
 	if (MyEnv::$IS_ORACLE) {
 		//echo 'Dao::insert: Got query ' . $sql . '<br>';
 		
-		$stmt = static::query($sql, null, $table);
+		$stmt = static::query($sql, null, $table); //We want to return the inserted row ID after this gets returned.
+		Logger::debug('Dao::query: Oracle stmt is ' . gettype($stmt));
+		$insertId = null;
+		oci_bind_by_name($stmt, ':returnVal', $insertId, 8, OCI_B_INT);
+		oci_execute($stmt);
+	    //return integer ID
 		
+		//$rows = oci_fetch_all($stmt, $arr);
+		
+		//$id = $arr[0]['insert_id'];
+		Logger::debug('Dao::query: Returning ' . gettype($insertId) . ' ' . $insertId);
+		return $insertId;
 		//echo 'Dao::insert: stmt is a ' . gettype($stmt) . '<br>';
 		
 		//We may not need the below oci_fetch_array? This is an insert statement, we shouldn't need an array returned.....
@@ -234,9 +244,20 @@ class Dao {
    */
   static function fetchRows($sql, $db = null) {
     $res = static::query($sql, $db);
+	
+	
 	Logger::debug('Dao::fetchRows');
 	
 	if (MyEnv::$IS_ORACLE) {
+		/*if ($table == 'logins') {
+			oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
+			//echo 'Dao::query: ReturnValue is ' . $returnValue;
+			//return $returnValue;
+			Logger::debug('Dao::query: Got return val as ' . $returnValue);
+		}*/
+		
+		//oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
+		oci_execute($res);
 		$rows = array();
 		//logit_r('looping thru orc rows');
 		while (($row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
@@ -244,6 +265,8 @@ class Dao {
 			//array_push($rows, row);
 			$rows[] = $row;
 		}
+		
+		Logger::debug('Dao::fetchRows: Got row array ' . print_r($rows, true));
 		
 	}
     else {
@@ -263,21 +286,12 @@ class Dao {
    */
   static function fetchValue($sql, $col = 0) {
 	//echo 'fetchValue with col ' . $col;
-   $res = static::query($sql); //Should return whatever oci_execute returns.
-	while (($row = oci_fetch_array($res, OCI_BOTH)) != false) {
-		//echo 'Looping. Got ' . $row[$col] . '. print_rred:';
-		//print_r($row);
-	}
-	return;
-  //}
-   /* $res = static::query($sql); //Should return whatever oci_execute returns.
-	echo 'res is a ' . gettype($res);
-	$rows = oci_fetch_all($res, $r);
-	echo 'in our res we have ' . $rows . ' rows.';
+    $res = static::query($sql); //Should return whatever oci_parse returns.
 	if (MyEnv::$IS_ORACLE) {
-		echo 'fetchValue: row is this: ';
+	    oci_execute($res);
 		$row = oci_fetch_array($res, OCI_BOTH);
-		print_r($row);
+		//print_r($row);
+		Logger::debug('Dao::fetchValue: Got row ' . print_r($row, true) . '. Col is ' . $col);
 		$val = $row[$col];
 	}
 	else {
@@ -285,7 +299,19 @@ class Dao {
 		$val = $row[$col];
 	}
 	echo 'fetchValue: Returning ' . $val;
-	return $val;*/
+	return $val;
+    /*oci_execute();
+	while (($row = oci_fetch_array($res, OCI_BOTH)) != false) {
+		//echo 'Looping. Got ' . $row[$col] . '. print_rred:';
+		//print_r($row);
+	}
+	return;*/
+  //}
+   /* $res = static::query($sql); //Should return whatever oci_execute returns.
+	echo 'res is a ' . gettype($res);
+	$rows = oci_fetch_all($res, $r);
+	echo 'in our res we have ' . $rows . ' rows.';
+	*/
   }
   /** 
    * Fetch column value across multiple rows 

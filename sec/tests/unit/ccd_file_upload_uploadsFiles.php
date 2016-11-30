@@ -7,8 +7,8 @@
 	//ini_set('display_errors', '1');
 	
 	$folderName = 'uploads/';
-	$filename = '2645_38224_CRAFT_PHYLLIS_20161113142235.xml';
-	$testUploadId = 239;
+	$filename = '2645_38267_ELLIOTT_DAN_20161113142256.xml';
+	$testUploadId = 279;
 	$testPassed = false;
 
 	set_include_path('../../');
@@ -106,14 +106,24 @@
 		
 		$result = curl_exec($handle);
 		
-		echo 'The result is ' . gettype($result) . ' ' . $result . '<br>';
+		echo 'The result is ' . gettype($result) . ' ' . sizeof($result) . '<br>';
 		
 		if (strlen($result) > 0) {
-			setUploadTableStatus($testUploadId, 'FAILED');
-			appendToErrorLogColumn($testUploadId, 'ccd_file_upload test: An error occured: ' . $result);
+			try {
+				setUploadTableStatus($rowEntry['UPLOAD_ID'], 'FAILED');
+				appendToErrorLogColumn($rowEntry['UPLOAD_ID'], 'ccd_file_upload test: Error during import: ' . $e->getMessage());
+			}
+			catch (Exception $e) {
+				blog('Something went wrong with updating the status column: ' . $e->getMessage());
+			}
 		}
 		else {
-			setUploadTableStatus($testUploadId, 'UPLOADED');
+			try {
+				setUploadTableStatus($testUploadId, 'UPLOADED');
+			}
+			catch (Exception $e) {
+				blog('Something went wrong with updating the status column: ' . $e->getMessage());
+			}
 			$testPassed = true;
 		}
 		
