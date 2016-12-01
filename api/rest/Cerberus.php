@@ -167,13 +167,20 @@ class Cerberus {
 		//$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
 		$file->setContent(file_get_contents($fileQualifiedPath));
 		$file->setFilename($rest->data['filename']);
+		
+		//Logger::debug('api/rest/Cerberus.php: File is a ' . gettype($file) . ' ' . var_dump($file));
+		//Logger::debug('api/rest/Cerberus.php: filename is ' . $rest->data['filename']);
 
 		if (gettype($file) !== 'object') {
 			throw new RuntimeException("Can't import anything that isn't a <b>ClinicalFile</b> object. I got a(n) " . gettype($file));
 		}
 		
-		blog('rest/Cerberus.php: Importing file name ' . $rest->data['filename'] . '. Path is ' . $fileQualifiedPath);
+		//Logger::debug('rest/Cerberus.php: Importing file name ' . $rest->data['filename'] . '. Path is ' . $fileQualifiedPath);
 		try {
+			Logger::debug('Cerberus.php: Running ClinicalImpoter::importFromFile with ' . gettype($file) . ' , null, ' . $rest->data['upload_id']);
+			//Logger::debug('api/rest/Cerberus.php: File is a ' . gettype($file) . ' ' . print_r($file, true));
+			Logger::debug('api/rest/Cerberus.php: filename is ' . $rest->data['filename']);
+			
 			$result = ClinicalImporter::importFromFile($file, null, $rest->data['upload_id']);
 			blog('cerberus.php: Successfully imported ' . $fileQualifiedPath . '!!');
 			
@@ -197,7 +204,7 @@ class Cerberus {
 	catch (Exception $e) {
 		//$errorLog->log($e->getMessage()) for debugging
 		blog('cerberus.php ERROR: Could not import the file: ' . $e->getMessage());
-		echo 'api/rest/Cerberus.php: ERROR, ' . $e->getMessage();
+		blog('api/rest/Cerberus.php: ERROR, ' . $e->getMessage());
 		exit; //ABSOLUTELY NECESSARY if we are to get any response text.
 		//appendToErrorLogColumn($_GET['upload_id'], $e->getMessage());
 	}
@@ -305,7 +312,7 @@ class Cerberus {
 	//echo 'requestLogin for rest triggered.';
 			
 	$login = new ApiLogin($rest->data);
-	Logger::debug('rest/Cerberus:273: this is ' . var_dump($this, true));
+	//Logger::debug('rest/Cerberus:273: this is ' . print_r($this, true));
 	$params = $this->dao->login($login, true);
 	echo 'requestLogin in Cerberus.php: done';
     return $this->response('OK....', $params);

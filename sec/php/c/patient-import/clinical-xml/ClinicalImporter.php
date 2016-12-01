@@ -57,9 +57,11 @@ class ClinicalImporter {
   }
   
    static function importFromFile($file, $cid = null, $uploadId = null) {
-	//Logger::debug('clinicalImporter::importFromFile: Got file ' . var_dump($file));
+   	Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/clinicalImporter::importFromFile: Got file. It is a(n) ' . gettype($file) . ' ' . print_r($file, true));
     $ci = ClinicalImport::fromFile($file);
+    Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/ClinicalImpoter::importFromFile: ci is a ' . gettype($ci) . ', methods: ' . print_r(get_class_methods($ci), true) . ' and the upload ID is ' . $uploadId);
     try {
+      Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/ClinicalImpoter::importFromFile: We are importing with ' . gettype($ci) . ' ' . print_r($ci, true) . ' and filename ' . $file->filename);
       $cid = $ci->import($cid, $uploadId);
       Scanning::saveClinicalXml($cid, $file->filename);
       Proc_CcdImported::record($cid);
@@ -106,11 +108,13 @@ class ClinicalImport extends BasicRec {
   }
   
   static function fromFile(/*ClinicalFile*/$file, $cid = null) {
+  	Logger::debug('sec/php/c/patient-import/clinical-xml/ClinicalImpoter.php::fromFile: Entered.');
     $xml = $file->getContent();
     $filename = $file->getFilename();
     $type = ClinicalXml::getDocType($xml);
     switch ($type) {
       case ClinicalXml::TYPE_CCD:
+      	Logger::debug('sec/php/c/patient-import/clinical-xml/ClinicalImpoter.php::fromFile: Create a CCD with 706, ' . $filename . ' and XML size ' . sizeof($xml) . '.');
         return ClinicalImport_Ccd::create(706, $filename, $xml); //706 = group ID of the user that we defined that will do the import. We need this to match. McKinley
       case ClinicalXml::TYPE_CCR:
         return ClinicalImport_Ccr::create(1, $filename, $xml);
@@ -163,7 +167,9 @@ class ClinicalImport_Ccd extends ClinicalImport {
   }
   //
   protected static function create($ugid, $filename, $xml) {
+  	Logger::debug('clinicalImporter::create: Entered with ' . $ugid . ' ' . $filename . ' and XML ' . gettype($xml) . ' (size ' . strlen($xml) . ')');
     $ccd = ContinuityCareDocument::fromXml($xml);
+    Logger::debug('clinicalImporter::create: The CCD is ' . gettype($ccd));// . ' ' . $ccd);
     return parent::create($ugid, $filename, ClinicalXml::TYPE_CCD, $ccd);
   }
 }

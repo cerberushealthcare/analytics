@@ -10,7 +10,6 @@ echo $HTTP_RAW_POST_DATA;
 print_r($_GET);
 //echo fgets($post, 1024);
 //exit;*/
-
 set_include_path($_SERVER['DOCUMENT_ROOT'] . '/analytics/api/');
 require_once 'rest/Rest.php';
 require_once 'rest/ApiException.php';
@@ -23,7 +22,8 @@ $data = $rest->data;
 $server = new Cerberus();
 try {
   $response = $server->request($rest);
-  blog($response);
+  echo 'Got a response: ' . $response;
+  blog('Our response is ' . $response);
   ob_clean();
   header("Cache-Control: no-cache, must-revalidate");
   header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");

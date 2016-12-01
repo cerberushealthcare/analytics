@@ -31,6 +31,19 @@ abstract class SqlRec extends Rec {
     return static::$SQL_TABLE;
   }
   
+  /*
+	Get and set SqlInsertQueryReturningClause: When we are working with Oracle, we want to be able to add a RETURNING x into y clause at the end of an INSERT query.
+	ONLY INSERTS should use these methods - returning doesn't apply to updates, selects, etc.
+  */
+  
+  /*public function setSqlInsertQueryReturningClause($str) {
+	static::$returningClause = $str;  
+  }
+  
+  public function getSqlInsertQueryReturningClause() {
+	return static::$returningClause;
+  }*/
+  
   public function testOracleWords($value, $includeSqlWords) {
   	//$this->SQL_TABLE = 'yaya';
   	return static::convertReservedOracleColumnWords($value, $includeSqlWords);
@@ -534,6 +547,29 @@ abstract class SqlRec extends Rec {
 			$fields = implode(',', $fields);
 			$values = implode(',', $this->getSqlValues());
 			$sql = "INSERT INTO $table ($fields) VALUES($values)";
+			
+			
+			
+			/*if (method_exists($this, 'getOracleReturnClause')) { //TODO 21-1-16 - remove this check after we update all the files in php/data/rec/sql/ with a getOracleReturnClause() method that will return a string. An example on how to do it is in php/data/rec/sql/_ClientRec.
+			
+			//We have two options:
+				-Go through each and every rec in php/data/rec/sql and add the getOracleReturnClause() function and make sure they all work
+				-Only add getOracleReturnClause() to the ones we actually need a returning clause in, and do a check here to make sure that the method exists before running the method. The problem with this approach is that we get a security exception when we try to use method_exists to check if the method does exist - some kind of medical field security measure.
+				
+			*/	
+			
+			$sql .= ' RETURNING ' . $this->getPkField() . ' INTO :returnVal';
+			
+			//Logger::debug('SqlRec::getSqlInsert: Got query ' . $sql);
+				/*try {
+					if (strlen($this->getOracleReturnClause()) > 0) {
+						$sql .= ' ' . $this->getOracleReturnClause();
+					}
+				}
+				catch (Exception $e) {
+					Logger::debug('ERROR in _SqlRec::insert: Could not append the oracle return clause - likely because the method does not exist. Check php/data/rec/sql for the rec that uses the ' . $table . ' table and add the getOracleReturnClause() method.');
+				}*/
+			//}
 		}
     }
 	else {

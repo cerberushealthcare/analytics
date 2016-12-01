@@ -1,6 +1,6 @@
 <?php
-	//error_reporting(E_ALL);
-	//ini_set('display_errors', '1');
+	error_reporting(E_ALL);
+	ini_set('display_errors', '1');
 	
 	
 	$folderName = 'C:/www/clicktate/cert/sec/analytics/uploads/';
@@ -209,6 +209,7 @@
 		
 		try {
 			$res = Dao::query($sql);
+			oci_execute($res);
 		}
 		catch (Exception $e) {
 			throw new RuntimeException('setUploadTableStatus: Query ' . $sql . ' failed: ' . $err['message']);
@@ -241,6 +242,7 @@
 		
 		try {
 			$res = Dao::query($sql);
+			oci_execute($res);
 		}
 		catch (Exception $e) {
 			throw new RuntimeException('appendToErrorLogColumn: Query ' . $sql . ' failed: ' . $err['message']);
