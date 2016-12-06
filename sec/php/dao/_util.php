@@ -434,7 +434,7 @@ function castRowsAsDate(&$rows, $fields) {
 // Returns resource for SQL statements and an associative array if it's Oracle.
 function query($sql, $logging = true) {
   Logger::debug('sec/php/dao/_util.php: Entered _util query function with query ' . $sql);
-  Logger::debug('Trace is ' . print_r(debug_backtrace(), true));
+  //Logger::debug('_util: Trace is ' . print_r(debug_backtrace(), true));
   if ($logging) logit($sql);
   if (MyEnv::$IS_ORACLE) {
 	try {
@@ -529,9 +529,32 @@ function decr($value, $decrypt = true) {
   return ($decrypt) ? MyCrypt_Auto::decrypt($value) : $value; 
 }
 function quote($field, $escape = false) {
-   //echo 'dao _util.php::quote: Got field ' . gettype($field) . ' ' . $field . '<br>';
+   Logger::debug('dao _util.php::quote: Got field ' . gettype($field) . ' ' . $field);
   //$field = str_replace(array("\r", "\n"), " ", $field);
-  $value = ($escape) ? addslashes($field) : $field;
+  
+  /*In oracle, escaping strings is done like "O''Connor", whereas in SQL it's "O\'Connor"
+  
+  We must update this to support this. The below screws things up.*/
+  
+  $value = null;
+  
+  if ($escape) {
+	  if (MyEnv::$IS_ORACLE) {
+		$value = $field;
+		echo 'Oracle. Value is ' . $value;
+		$value = str_replace("'", "''", $value);
+	  }
+	  else {
+		$value = addslashes($field);
+	  }
+  }
+  else {
+	  $value = $field;
+  }
+  
+  Logger::debug(' _util.php::quote: Returning ' . ((isNull($field)) ?  "null" : "'" . $value . "'"));
+  
+  //$value = ($escape) ? addslashes($field) : $field; //Old SQL-only code
   return (isNull($field)) ?  "null" : "'" . $value . "'";
 }
 function gquote($obj, $prop, $escape = false) {

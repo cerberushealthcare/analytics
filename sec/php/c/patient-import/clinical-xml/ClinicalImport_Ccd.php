@@ -26,11 +26,46 @@ class Client_Ci_Ccd extends Client_Ci {
     return parent::saveDemo();
   }
   public function import(/*ContinuityCareDocument*/$ccd) {
+	//Logger::debug('ClinicalImport_Ccd: Entered import.');
     $ugid = $this->userGroupId;
     $cid = $this->clientId;
-    Diagnosis_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Problems());
-    Allergy_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Alerts());
-    Med_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Meds());
+	/*ob_start();
+	debug_print_backtrace();
+	$trace = ob_get_contents();
+	ob_end_clean();
+	Logger::debug('ClinicalImport_Ccd: Entered import. ugid is ' . $ugid . ', cid is a ' . gettype($cid) . ', trace: ' . $trace);*/
+	
+	
+	try {
+		Diagnosis_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Problems()); //This is where it breaks. At this point we would be looking at "DeQuervian's"
+	}
+	catch (Exception $e) {
+		if ($_POST['IS_BATCH']) echo 'ERROR importing the patient diagnoses: ' . $e->getMessage() . ' - continuing with import....';
+		Logger::debug('ClinicalImport_Ccd::import: ERROR importing the patient diagnoses: ' . $e->getMessage() . ' - continuing with import....');
+	}
+	
+	Logger::debug('ClinicalImport_Ccd::import: Imported the patient diagnoses. Importing allergies. Alerts is a ' . gettype($ccd->getSection_Alerts()));
+    
+	try {
+		Allergy_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Alerts());
+	}
+	catch (Exception $e) {
+		if ($_POST['IS_BATCH']) echo 'ERROR importing the patient allergies: ' . $e->getMessage() . ' - continuing with import....';
+		Logger::debug('ClinicalImport_Ccd::import: ERROR importing the patient allergies: ' . $e->getMessage() . ' - continuing with import....');
+	}
+	
+	Logger::debug('ClinicalImport_Ccd::import: Imported the patient allergies. Importing meds....');
+    
+	try {
+		Med_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Meds());
+	}
+	catch (Exception $e) {
+		if ($_POST['IS_BATCH']) echo 'ERROR importing the patient medications: ' . $e->getMessage() . ' - continuing with import....';
+		Logger::debug('ClinicalImport_Ccd::import: ERROR importing the patient medications: ' . $e->getMessage() . ' - continuing with import....');
+	}
+	
+	Logger::debug('ClinicalImport_Ccd::import: Imported the patient meds! Returning.');
+    
     return;  // do not need to do these for mu2
     Immun_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Immuns());
     Proc_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Procedures());
@@ -58,7 +93,7 @@ class Address_Ci_Ccd extends Address_Ci {
       $this->state = $addr->state;
       $this->zip = $addr->postalCode;
     }
-	echo 'ClinicalImport_Ccd setFrom: Got data ' . $this->type;// . '|' . $this->addr2 . '|' . $city . '|' . $state . '|' . $zip;
+	//echo 'ClinicalImport_Ccd setFrom: Got data ' . $this->type;// . '|' . $this->addr2 . '|' . $city . '|' . $state . '|' . $zip;
     $phone = $patientRole->first('telecom');
     if ($phone) {
       $this->phone1 = $phone->getValue();
@@ -69,24 +104,44 @@ class Address_Ci_Ccd extends Address_Ci {
 class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
   //
   static function all($ugid, $cid, /*Ccd_Section_Problems*/$problems) {
+	  
+	  ob_start();
+	  var_dump($problems);
+	  $content = ob_get_contents();
+	  ob_end_clean();
+	  
+	  
+	Logger::debug('Diagnosis_Ci_Ccd::all: Got ugid ' . $ugid . ', cid ' . $cid . ' and problems as string with length ' . strlen($content));
     $recs = array();
     if ($problems && $problems->has()) { 
-      foreach ($problems->entry as $problem)
+      foreach ($problems->entry as $problem) {
+		Logger::debug('ClinicalImport_Ccd::all: We got a problem. The text is ' . $text);
         $recs[] = static::from($ugid, $cid, $problem, $problems->text);
+	  }
     }
     return $recs;
   }
   static function saveAll($ugid, $cid, /*Ccd_Section_Problems*/$problems) {
+	  
+	  ob_start();
+	  var_dump($problems);
+	  $content = ob_get_contents();
+	  ob_end_clean();
+	  
+  
+	Logger::debug('Diagnosis_Ci_Ccd::saveAll:Entered with ' . $ugid . ', cid ' . $cid . ' and problems as a string with length ' . strlen($content));
     $us = static::all($ugid, $cid, $problems);
-    foreach ($us as $me) 
+    foreach ($us as $me) {
       $me->save();
+	}
+	Logger::debug('Diagnosis_Ci_Ccd::saveAll: Finished.');
   }
   static function from($ugid, $cid, /*Ccd_ProblemEntry*/$problem, /*Ccd_Text*/$text) {
-    //logit_r($problem, 'problem');
+    //logit_r($problem, 'ClinicalImport_Ccd::from: The problem');
     //logit_r($text, 'text');
     $date = $problem->getSqlDate();
     $cd = $problem->getIcdCode();
-    logit_r($cd, 'geticdcode');
+    //logit_r($cd, 'geticdcode');
     $icd = null;
     $snomed = null;
     $desc = null;
@@ -105,8 +160,11 @@ class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
           $desc = $problem->getValueName();
       }
     }
+	Logger::debug('ClinicalImport_Ccd::from: Getting status....');
     $status = static::asStatus($problem->getStatus());
+	Logger::debug('ClinicalImport_Ccd::from: Received status. Creating with params ' . $ugid . '|' . $cid . '|' . $date . '|' . $desc);
     $me = static::create($ugid, $cid, $icd, $date, $desc, $status, $snomed);
+	Logger::debug('ClinicalImport_Ccd::from: We created it. Returning a ' . gettype($me)); //this doesn't get echoed.
     return $me;
   }
   protected static function asStatus($s) {

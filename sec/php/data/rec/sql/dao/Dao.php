@@ -93,7 +93,23 @@ class Dao {
 		//echo 'Dao: Getting resource. SQL is ' . $sql;
 		
 		//echo 'Dao::query:';
-		$res = oci_parse($conn, $sql);
+		try {
+			$res = oci_parse($conn, $sql);
+			
+			if (!$res) {
+				throw new RuntimeException('Invalid oci_parse result.');
+			}
+		}
+		catch (Exception $e) {
+			
+			ob_start();
+			debug_print_backtrace();
+			$trace = ob_get_contents();
+			ob_end_clean();
+	
+			Logger::debug('ERROR in Dao::query oci_PARSE call: ' . $err['message'] . '. Query is ' . $sql . '. Trace = ' . $trace);
+			if ($_POST['IS_BATCH'] == '1') echo 'ERROR in Dao::query oci_PARSE call: ' . $err['message'] . '. Query is ' . $sql; //When we echo something out in batch, we want to echo the error so it will be more noticeable. Sometimes the logs get WAY too big with debug code and it's good to have this query error immediately visible. This was mainly put here to help with debugging the patient batch import process.
+		}
 		
 		/*if ($table == 'logins') {
 			oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
@@ -105,11 +121,6 @@ class Dao {
 		
 		
 		logit_r($sql, 'PARSED SQL');
-		if ($table == 'data_meds') {
-			logit_r(debug_backtrace(), 'Backtrace');
-			Logit_r($res, 'Res2');
-		}
-		
 		
 		$returnValue = null;
 		
@@ -131,9 +142,15 @@ class Dao {
 		logit_r('rows='.$rows);
 		logit_r($res2, 'res2');
 		*/
-				
-		//echo '<br>Got resource.';
-		$err = oci_error($res);
+		
+		try {
+			$err = oci_error($res);
+		}
+		catch (Exception $e) {
+			Logger::debug('ERROR in Dao::query oci_error call: ' . $err['message'] . '. Query is ' . $sql);
+			echo 'ERROR in Dao::query oci_error call: ' . $err['message'] . '. Query is ' . $sql; //When we echo something out in batch it will be more noticeable. Sometimes the logs get WAY too big with debug code and it's good to have this query error immediately visible. This was mainly put here to help with debugging the patient batch import process.
+		}
+		
 		if (!empty($err)) {
 			Logger::debug('ERROR in Dao::query: ' . $err['message']);
 			throw static::buildException(htmlentities('Dao::query: Error in Oracle query: ' . $err['message'] . '. Query is ' . $sql, ENT_QUOTES), E_USER_ERROR);

@@ -119,20 +119,27 @@ class Diagnosis_Ci extends Diagnosis {
   public $reconBy;
   //
   static function create($ugid, $cid, $icd, $date, $text, $status, $snomed) {
+	Logger::debug('ClinicalImport_Sql: Entered create with params ' . $ugid . '|' . $cid . '|' . $icd . '|' . $date . '|' . $text . '|' . $status);
+	//We still have NO \ here. The Diagnosis condition name is $text, and it is NOT escaped yet.
     $me = new static();
     $me->userGroupId = $ugid;
     $me->clientId = $cid;
     $me->text = $text ?: 'UNKNOWN';
     if ($me->clientId) {
+	  Logger::debug('ClinicalImport_Sql::create: We have a client ID. getting dupe...');
       $dupe = $me->fetchDupe($date);
-      if ($dupe)
+	  Logger::debug('ClinicalImport_Sql::create: The dupe is ' . gettype($dupe) . ' ' . $dupe);
+      if ($dupe) {
+		Logger::debug('ClinicalImport_Sql::create: Returning dupe which is a ' . gettype($dupe));
         return $dupe;
+	  }
     }
     $me->date = $date;
     $me->snomed = $snomed;
     $me->icd = $icd;
     $me->status = $status;
     $me->active = $me->isActiveStatus($me->status);
+	Logger::debug('ClinicalImport_Sql::crate: Returning....');
     return $me;
   }
   //
@@ -141,7 +148,14 @@ class Diagnosis_Ci extends Diagnosis {
     $c->sessionId = CriteriaValue::isNull();
     $c->Hd_Date = Hdata_DiagnosisDate::join(CriteriaValue::equals($date));
     logit_r($c, 'diag dupe fetch');
-    $dupe = static::fetchOneBy($c);
+	
+	try {
+		$dupe = static::fetchOneBy($c);
+	}
+	catch (Exception $e) {
+		Logger::debug('ERROR in fetchDupe: ' . substr($e->getMessage(), 0, 200));
+	}
+	Logger::debug('ClinicalImport_Sql::fetchDupe: Returning a ' . gettype($dupe));
     return $dupe;
   }
 }
@@ -162,8 +176,15 @@ class Allergy_Ci extends Allergy {
     $me->userGroupId = $ugid;
     $me->clientId = $cid;
     $me->agent = $agent;
-    if ($me->clientId)
-      $me = $me->fetchDupe(); /*look for existing record after assigning enough fields to identify*/
+    if ($me->clientId) {
+		
+	  try {
+		$me = $me->fetchDupe(); /*look for existing record after assigning enough fields to identify*/
+	  }
+	  catch (Exception $e) {
+		  Logger::debug('ClinicalImport_Sql::create: ERROR finding duplicates: ' . $e->getMessage());
+	  }
+	}
     $me->reactions = $reactions;
     $me->active = $active; 
     return $me;
@@ -224,7 +245,15 @@ class Med_Ci extends Med {
     $c->sessionId = CriteriaValue::isNull();
     // $c->Hd_Date = Hdata_MedDate::join(CriteriaValue::equals($date));
     logit_r($c, 'fetch dupe med');
-    $dupe = static::fetchOneBy($c);
+	
+	try {
+		$dupe = static::fetchOneBy($c);
+	}
+	catch (Exception $e) {
+		Logger::debug('ERROR in fetchDupe: ' . substr($e->getMessage(), 0, 500));
+	}
+	Logger::debug('ClinicalImport_Sql::fetchDupe: Returning a ' . gettype($dupe));
+	
     return $dupe; 
   }
 } 

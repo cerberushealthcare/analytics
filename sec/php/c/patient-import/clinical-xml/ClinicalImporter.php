@@ -57,11 +57,11 @@ class ClinicalImporter {
   }
   
    static function importFromFile($file, $cid = null, $uploadId = null) {
-   	Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/clinicalImporter::importFromFile: Got file. It is a(n) ' . gettype($file) . ' ' . print_r($file, true));
+   	//Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/clinicalImporter::importFromFile: Got file. It is a(n) ' . gettype($file) . ' ' . print_r($file, true));
     $ci = ClinicalImport::fromFile($file);
     Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/ClinicalImpoter::importFromFile: ci is a ' . gettype($ci) . ', methods: ' . print_r(get_class_methods($ci), true) . ' and the upload ID is ' . $uploadId);
     try {
-      Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/ClinicalImpoter::importFromFile: We are importing with ' . gettype($ci) . ' ' . print_r($ci, true) . ' and filename ' . $file->filename);
+      //Logger::debug('analytics/sec/php/c/patient-import/clinical-xml/ClinicalImpoter::importFromFile: We are importing with ' . gettype($ci) . ' ' . print_r($ci, true) . ' and filename ' . $file->filename);
       $cid = $ci->import($cid, $uploadId);
       Scanning::saveClinicalXml($cid, $file->filename);
       Proc_CcdImported::record($cid);
