@@ -1,5 +1,5 @@
 <?php
-	set_include_path('../../');
+	set_include_path('../');
 
 	require_once 'config/Environments.php';
 	require_once 'config/MyEnv.php';

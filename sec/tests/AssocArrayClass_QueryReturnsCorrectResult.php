@@ -1,6 +1,6 @@
 <?php
 	
-	set_include_path('../..');
+	set_include_path('../');
 	
 	require('php/data/Database.class.php');
 	require('php/data/AssocArray.class.php');

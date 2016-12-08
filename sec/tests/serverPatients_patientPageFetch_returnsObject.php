@@ -19,7 +19,6 @@
 	$testPassed = false;
 	
 	$decode = json_decode($page);
-	echo 'decode is ' . gettype($decode) . ' ' . $decode;
 	
 	if (gettype($page) == 'object') {
 		$testPassed = true;

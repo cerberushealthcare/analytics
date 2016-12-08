@@ -9,7 +9,7 @@
 	require_once 'config/MyEnv.php';
 	require_once 'php/data/rec/sql/_SqlRec.php';
 	
-	$fields = array('quid' => 'quid',
+	$fields = array('level' => 'level',
 					'index' => 'index',
 					'rowid' => 'rowid',
 					'expires' => 'expires'
@@ -27,7 +27,7 @@
 	//echo 'final array: ' . print_r($fields, true);
 	
 	if (array_key_exists('index_', $fields)) {
-		if ($fields['index_'] == 'index_' && array_key_exists('rowid', $fields)) $testPassed = true;
+		if ($fields['level_'] == 'level_' && array_key_exists('rowid', $fields)) $testPassed = true;
 	}
 	
 	include('postTestProcedures.php');

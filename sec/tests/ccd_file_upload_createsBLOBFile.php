@@ -3,7 +3,7 @@
 	$upload_ID = 239; //Which row in the UPLOADS table do we want to make a BLOB from? This is used in a query.
 	$testPassed = false;
 	
-	set_include_path('../../');
+	set_include_path('../');
 
 	require_once 'config/Environments.php';
 	require_once 'config/MyEnv.php';
