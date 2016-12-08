@@ -281,10 +281,24 @@ function array_keyify($recs, $fid) {
  */
 function fetch($sql, $logging = true) {
   $res = query($sql, $logging);
-  if (mysql_num_rows($res) < 1) {
-    return false;
+  
+  if (MyEnv::$IS_ORACLE) {
+	//oci_execute($res);
+	$rows = oci_fetch_all($res, $resultArray);
+	if ($rows < 1) {
+		return false;
+	}
+	
+	$row = oci_fetch_array($res, OCI_ASSOC);
+	oci_free_statement($res);
+	return $row;
   }
-  return mysql_fetch_array($res, MYSQL_ASSOC);
+  else {
+	  if (mysql_num_rows($res) < 1) {
+		return false;
+	  }
+	  return mysql_fetch_array($res, MYSQL_ASSOC);
+  }
 }
 /*
  * Fetch single field
@@ -295,18 +309,25 @@ function fetchField($sql, $field = 0, $logging = true) {
   $res = query($sql, $logging);
   //$field = null;
   
-  //echo 'fetchField: field is ' . $field . '|';
+  Logger::debug('fetchField: field is ' . $field);
   
   if (MyEnv::$IS_ORACLE) {
-	$rows = oci_fetch_all($res, $resultArray);
-	//echo 'FetchFIELD: rows is ' . $rows . '|';
+	$field = strtoupper($field);
+	//$rows = oci_fetch_all($res, $resultArray);
+	/*$rows = oci_num_rows($res);
+	
+	Logger::debug('FetchFIELD: rows is ' . $rows);
 	if ($rows < 1) {
 		return false;
-	}
+	}*/
+	
+	$resultArray = oci_fetch_array($res, OCI_BOTH);
 	//$row = oci_fetch_all($stid, $res);
 	
-	//logit(print_r($row));
-	$row = oci_fetch_array($res, OCI_BOTH);
+	
+	//$row = oci_fetch_array($res, OCI_BOTH);
+	Logger::debug('util::fetchField: Got this as a result: ');
+	logit(print_r($resultArray, true));
 	//echo 'fetchField: Our row is ';
 	//print_r($resultArray);
 	//echo 'fetchFIELD: returning ' . $resultArray[strtoupper($field)][0];
@@ -334,14 +355,33 @@ function fetchField($sql, $field = 0, $logging = true) {
 function fetchArray($sql, $keyField = null, $logging = true) {
   $rows = array();
   $res = query($sql, $logging);
-  if (isnull($keyField)) {
-    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
-      $rows[] = $row;
-    }
-  } else {
-    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
-      $rows[$row[$keyField]] = $row;
-    }
+  
+  if (!$res) {
+	Logger::debug('Error in _util::fetchArray: Query failed: ' . $sql . '. Trace is ' . getStackTrace());  
+  }
+  
+  if (MyEnv::$IS_ORACLE) {
+	if (isnull($keyField)) {
+		while ($row = oci_fetch_array($res, OCI_ASSOC)) {
+			$rows[] = $row;
+		}
+	}
+	else {
+		while ($row = oci_fetch_assoc($res, OCI_ASSOC)) {
+		  $rows[$row[$keyField]] = $row;
+		}
+	}
+  }
+  else {
+	  if (isnull($keyField)) {
+		while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+		  $rows[] = $row;
+		}
+	  } else {
+		while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+		  $rows[$row[$keyField]] = $row;
+		}
+	  }
   }
   return $rows;
 }
@@ -452,8 +492,19 @@ function query($sql, $logging = true) {
 			echo 'We have ' . oci_fetch_all($stid, $res) . ' rows!';
 		
 		*/
-		$res = oci_parse($conn, $sql);
-		oci_execute($res);
+		
+		try {
+			$res = oci_parse($conn, $sql);
+			$executed = oci_execute($res);
+			
+			if (!$executed) {
+				$err = oci_error($res);
+				throw new RuntimeException('parse / execute failed: ' . $err['message']);
+			}
+		}
+		catch (Exception $e) {
+			Logger::debug('QUERY ERROR in _util.php: ' . $e->getMessage() . '. Query is ' . $sql);
+		}
 		//oci_free_statement($res);
 		oci_close($conn);
 	}
@@ -541,7 +592,6 @@ function quote($field, $escape = false) {
   if ($escape) {
 	  if (MyEnv::$IS_ORACLE) {
 		$value = $field;
-		echo 'Oracle. Value is ' . $value;
 		$value = str_replace("'", "''", $value);
 	  }
 	  else {
@@ -1282,6 +1332,15 @@ function logit($msg) {
 
 function logit_r($o, $caption = null) {
   Logger::debug_r($o, $caption);
+}
+
+function getStackTrace() {
+	ob_start();
+	debug_print_backtrace();
+	$trace = ob_get_contents();
+	ob_end_clean();
+	
+	return $trace;
 }
 
 function convert_line_breaks($string, $line_break=PHP_EOL) {

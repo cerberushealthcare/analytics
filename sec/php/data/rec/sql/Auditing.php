@@ -16,8 +16,13 @@ class Auditing {
   const REC_RX = 'RX';
   //
   static function getClientUpdateTimestamp($cid) {
-    $sql = "SELECT date FROM audit_mrus WHERE client_id=$cid";
-    return Dao::fetchValue($sql);
+  	if (MyEnv::$IS_ORACLE) {
+  		$query = "SELECT DATE_ FROM audit_mrus WHERE client_id=$cid";
+  	}
+  	else {
+  		$sql = "SELECT date FROM audit_mrus WHERE client_id=$cid";
+  	}
+  	return Dao::fetchValue($sql);
   }
   /**
    * @param string $action AuditRec::ACTION_

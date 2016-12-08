@@ -363,6 +363,7 @@ eos;
     return $ppis;
   }
   public static function searchMeds($wildcard) {
+	
     $res = query("SELECT DISTINCT Drugname, Form, Dosage FROM meds WHERE Drugname LIKE '%" . $wildcard . "%' ORDER BY Drugname, Form, Dosage LIMIT 101");
     $meds = array();
     while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
@@ -715,10 +716,23 @@ eos;
    */
   public static function prefToPid($ref, $tid, $noteDate) {
     $a = explode(".", $ref);
-    $sql = "SELECT p.par_id FROM template_sections s INNER JOIN template_pars p ON s.section_id=p.section_id WHERE s.template_id=" . quote($tid) . " AND s.uid=" . quote($a[0]) . " AND p.uid=" . quote($a[1]) . " AND date_effective<" . quote($noteDate);
+	
+	$uidCol = 's.uid';
+	
+	if (MyEnv::$IS_ORACLE) {
+		$uidCol = 's.UID_';
+	}
+	
+    $sql = "SELECT p.par_id FROM template_sections s INNER JOIN template_pars p ON s.section_id=p.section_id WHERE s.template_id=" . quote($tid) . " AND " . $uidCol . "=" . quote($a[0]) . " AND p.uid=" . quote($a[1]) . " AND date_effective<" . quote($noteDate);
     global $login;
     if (! $login->admin) $sql .= " AND dev IS NULL";
-    $sql .= " ORDER BY date_effective DESC LIMIT 1";
+    $sql .= " ORDER BY date_effective DESC ";
+	
+	$limit = "LIMIT 1";
+	
+	if (MyEnv::$IS_ORACLE) $limit = "FETCH FIRST 1 ROWS ONLY";
+	
+	$sql .= $limit;
     $row = fetch($sql);
     return $row["par_id"];
   }
@@ -764,10 +778,24 @@ eos;
   public static function toPid($ref, $tid, $noteDate = null) {
     JsonDao::defaultNoteDate($noteDate);
     $a = explode(".", $ref);
-    $sql = "SELECT par_id FROM template_sections s, template_pars p WHERE s.template_id=" . $tid . " AND s.uid=" . quote($a[0]) . " AND p.section_id=s.section_id AND p.uid=" . quote($a[1]) . " AND date_effective<" . quote($noteDate);
+	
+	$uidCol = 'uid';
+	
+	if (MyEnv::$IS_ORACLE) {
+		$uidCol = 'UID_';
+	}
+	
+    $sql = "SELECT par_id FROM template_sections s, template_pars p WHERE s.template_id=" . $tid . " AND s." . $uidCol . "=" . quote($a[0]) . " AND p.section_id=s.section_id AND p." . $uidCol . "=" . quote($a[1]) . " AND date_effective<" . quote($noteDate);
     global $login;
     if (! $login->admin) $sql .= " AND dev IS NULL";
-    $sql .= " ORDER BY date_effective DESC LIMIT 1";
+    $sql .= " ORDER BY date_effective DESC ";
+	
+	$limit = "LIMIT 1";
+	
+	if (MyEnv::$IS_ORACLE) $limit = "FETCH FIRST 1 ROWS ONLY";
+	
+	$sql .= $limit;
+	
     $row = fetch($sql);
     if (! $row) {
       logit("toPid error: cannot find " . $ref);
