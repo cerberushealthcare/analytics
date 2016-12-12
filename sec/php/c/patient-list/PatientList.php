@@ -16,8 +16,9 @@ class PatientList {
     return $recs;
   }
   /** Get page of most recently used patients */
-  static function /*PatientPage*/page($page = 1, $activeOnly = true, $byMru = true, $limit = 35) {
+  static function /*PatientPage*/page($page = 1, $activeOnly = true, $byMru = true, $limit = 100) {
     global $login;
+    Logger::debug('c/patient-list/PatientList.php: Entered with ' . $login->userGroupId . ' and limit ' . $limit);
     $page = PatientPage::fetch($login->userGroupId, $limit, $page, $activeOnly, $byMru);
     return $page;
   }

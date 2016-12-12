@@ -6,8 +6,9 @@ require_once 'php/data/rec/sql/_HdataRec.php';
 class PStub_Mru extends PatientStub {
   //
   static function fetchLimit($ugid, $limit = 30, $page = null, $activeOnly = false) {
+  	Logger::debug('patient-list/PatientList_Sql::fetchLimit: Entered. Limit is ' . $limit);
     $c = static::asCriteria($ugid, $activeOnly);
-    return static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
+    return static::fetchAllBy($c, null, $limit, null, 'T0.LAST_NAME', $page); //Used to be T1.DATE_ DESC
   }
   static function fetchLimit_Ayoub($ugid, $limit = 30, $page = null, $activeOnly = false) {
     $c = static::asCriteria($ugid, $activeOnly);

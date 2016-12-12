@@ -274,13 +274,25 @@ class Dao {
 		}*/
 		
 		//oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
-		oci_execute($res);
-		$rows = array();
-		//logit_r('looping thru orc rows');
-		while (($row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
-			//logit_r($row, 'orc row');
-			//array_push($rows, row);
-			$rows[] = $row;
+		
+		Logger::debug('Dao::fetchRows: Fetching....');
+		try {
+			$parsed = oci_execute($res);
+			
+			if (!$parsed) {
+				$err = oci_error($res);
+				throw new RuntimeException('ERROR in Dao::fetchRows: ' . $err['message'] . '. Query is ' . $sql . ' and trace is ' . getStackTrace());
+			}
+			$rows = array();
+			//logit_r('looping thru orc rows');
+			while (($row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
+				//logit_r($row, 'orc row');
+				//array_push($rows, row);
+				$rows[] = $row;
+			}
+		}
+		catch (Exception $e) {
+			Logger::debug('ERROR in Dao::fetchRows: ' . $e->getMessage());// . '. Trace: ' . getStackTrace());
 		}
 		
 		Logger::debug('Dao::fetchRows: Got row array ' . print_r($rows, true));
@@ -305,8 +317,21 @@ class Dao {
 	//echo 'fetchValue with col ' . $col;
     $res = static::query($sql); //Should return whatever oci_parse returns.
 	if (MyEnv::$IS_ORACLE) {
-	    oci_execute($res);
-		$row = oci_fetch_array($res, OCI_BOTH);
+		
+		try {
+			$executed = oci_execute($res);
+			
+			if (!$executed) {
+				$err = oci_error($res);
+				throw new RuntimeException($err['message']);
+			}
+			else {
+				$row = oci_fetch_array($res, OCI_BOTH);
+			}
+		}
+		catch (Exception $e) {
+			Logger::debug('ERROR in Dao::fetchValue: ' . $e->getMessage() . '. Query = ' . $sql . '. Trace = ' . getStackTrace());
+		}
 		//print_r($row);
 		Logger::debug('Dao::fetchValue: Got row ' . print_r($row, true) . '. Col is ' . $col);
 		$val = $row[$col];
@@ -315,7 +340,7 @@ class Dao {
 		$row = mysql_fetch_array($res, MYSQL_BOTH);
 		$val = $row[$col];
 	}
-	echo 'fetchValue: Returning ' . $val;
+	//echo 'fetchValue: Returning ' . $val;
 	return $val;
     /*oci_execute();
 	while (($row = oci_fetch_array($res, OCI_BOTH)) != false) {
