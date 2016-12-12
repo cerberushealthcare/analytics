@@ -266,17 +266,38 @@ var Pop = {
       p.style.top = Pop._lastPos.top;
     }
   },
-  cacheMousePos:function() {
+  cacheMousePos:function(ev) {
     Pop._event = null;
-    if (event && event.clientX) {
+	
+	console.log('trg = ' + ev.target + ', srcElem = ' + ev.srcElement);
+	
+   if (typeof(ev.srcElement) == 'undefined') {
+	  var evnt = ev.target;
+	}
+	else {
+	  var evnt = ev.srcElement;
+	}
+	
+	
+    if (evnt && evnt.clientX) {
       Pop._event = {
-        'clientX':event.clientX,
-        'clientY':event.clientY};
+        'clientX':evnt.clientX,
+        'clientY':evnt.clientY};
     }
   },
   _setPosCursor:function(p) {
-    var e = (event && event.clientX) ? event : Pop._event;
-    if (event)
+  
+   console.log('trg = ' + p.target + ', srcElem = ' + p.srcElement);
+	
+   if (typeof(p.srcElement) == 'undefined') {
+	  var evnt = p.target;
+	}
+	else {
+	  var evnt = p.srcElement;
+	}
+	
+    var e = (evnt && evnt.clientX) ? evnt : Pop._event;
+    if (evnt)
       Pop.cacheMousePos();
     if (e == null) { 
       Pop._setPosCenter(p);
@@ -423,7 +444,7 @@ Pop._Loader = {
   TILE_PATH:'js/tiles/',
   //
   get:function(name, hasHtml, fn) {
-    Pop.cacheMousePos();
+    Pop.cacheMousePos(fn);
     var inc = [Pop._Loader.JS_PATH + name + '.js'];
     if (hasHtml)
       inc.push(Pop._Loader.HTML_PATH + name + '.php');
@@ -437,7 +458,7 @@ Pop.Calendar = {
    * @callback(value) on calendar save
    */
   show:function(value, callback) {
-    Pop.cacheMousePos();
+    Pop.cacheMousePos(callback);
     Pop._Loader.get('Calendar', true, function() {
       Calendar.pop(value, callback);
     });

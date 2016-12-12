@@ -30,7 +30,7 @@
           <th>S</th>
         </tr>
       </thead>
-      <tbody id='cal-tbody' onclick='Calendar.click()'>
+      <tbody id='cal-tbody' onclick='Calendar.click(event)'>
         <tr>
           <td>&nbsp;</td>
           <td>&nbsp;</td>

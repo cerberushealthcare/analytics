@@ -65,10 +65,20 @@ var Calendar = {
     this.year = this.now.getFullYear();
     this._drawCalendar();
   },
-  click:function() {
+  click:function(ev) {
+    console.log('Click triggered!');
     var dv = null;
-    if (window.event && window.event.srcElement) {
-      var day = window.event.srcElement.day;
+	
+	if (typeof(ev.srcElement) == 'undefined') {
+	  var evnt = ev.target;
+	}
+	else {
+	  var evnt = ev.srcElement;
+	}
+	
+	console.log('evnt is ' + typeof(evnt) + ', window evnt is ' + evnt + ', srcElem is ' + evnt.srcElement);
+    if (evnt) { //if (window.evnt) {//} && window.evnt.srcElement) {
+      var day = evnt.day; //window.evnt.srcElement.day;
       if (day) 
         dv = new DateValue([this.year, this.month, day]);
     }

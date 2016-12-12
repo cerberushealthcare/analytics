@@ -315,7 +315,7 @@ class Dao {
 		$row = mysql_fetch_array($res, MYSQL_BOTH);
 		$val = $row[$col];
 	}
-	echo 'fetchValue: Returning ' . $val;
+	//echo 'fetchValue: Returning ' . $val;
 	return $val;
     /*oci_execute();
 	while (($row = oci_fetch_array($res, OCI_BOTH)) != false) {

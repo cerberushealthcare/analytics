@@ -1,13 +1,13 @@
 <?php
 require_once 'php/data/rec/sql/_ClientRec.php';
 require_once 'php/data/rec/sql/_AuditMruRec.php';
-require_once 'php/data/rec/sql/_HdataRec.php';
+//require_once 'php/data/rec/sql/_HdataRec.php';
 //
 class PStub_Mru extends PatientStub {
   //
   static function fetchLimit($ugid, $limit = 30, $page = null, $activeOnly = false) {
     $c = static::asCriteria($ugid, $activeOnly);
-    return static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
+    return static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page); //Setting this to T0.LAST_NAME kills it. T0.BIRTH and T0.SEX works, T0.FIRST_NAME does not. It will throw a "class 'label' not found" exception in _Rec.php. To work around this, add your order by in the Oracle wrapper.
   }
   static function fetchLimit_Ayoub($ugid, $limit = 30, $page = null, $activeOnly = false) {
     $c = static::asCriteria($ugid, $activeOnly);
@@ -97,7 +97,8 @@ class PStub_Search extends PatientStub {
   protected static function fetchCandidates($ugid, $last, $limit = 400, $activeOnly = false) {
     $c = new static();
     $c->userGroupId = $ugid;
-    $c->Hd_name = Hdata_ClientName::create()->setValue($last)->asJoin($ugid);
+    //$c->Hd_name = Hdata_ClientName::create()->setValue($last)->asJoin($ugid); //Encrypted and therefore hits the HDATA tables, but in Analytics we don't have encrypted fields. So just use the last name as criteria.
+	$c->lastName = $last;
     $c->setActiveOnly($activeOnly);
     $recs = static::fetchAllBy($c, null, $limit);
     return $recs;
@@ -105,7 +106,8 @@ class PStub_Search extends PatientStub {
   protected static function fetchAllByBirth($ugid, $birth, $activeOnly = false) {
     $c = new static();
     $c->userGroupId = $ugid;
-    $c->Hd_dob = Hdata_ClientDob::create()->setValue($birth)->asJoin($ugid);
+    //$c->Hd_dob = Hdata_ClientDob::create()->setValue($birth)->asJoin($ugid); //Encrypted and therefore hits the HDATA tables, but in Analytics we don't have encrypted fields. So just use the last name as criteria.
+	$c->birth = $birth;
     $c->setActiveOnly($activeOnly);    
     $recs = static::fetchAllBy($c, null, 50);
     return $recs;
