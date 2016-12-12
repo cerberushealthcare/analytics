@@ -43,6 +43,8 @@ class PStub_Search extends PatientStub {
   }
   //
   static function /*PStub_Search[]*/search($ugid, $last, $first, $uid, $birth = null, $activeOnly = false) {
+	$last = strtoupper($last);
+	$first = strtoupper($first);
     $recs = array();
     if (! empty($uid)) {
       $rec = static::searchForUid($ugid, $uid, null, $activeOnly);
@@ -57,14 +59,17 @@ class PStub_Search extends PatientStub {
     }
     return $recs;
   }
-  static function /*PStub_Search[]*/searchByName($ugid, $last, $first, $perfect = false, $activeOnly = false) {
+  static function /*PStub_Search[]*/searchByName($ugid, $last, $first, $perfect = false, $activeOnly = false, $limit = 100) {
     $recs = static::fetchCandidates($ugid, $last, 400, $activeOnly);
     logit_r($recs, 'candidates');
+	//filterCandidates($recs, $perfect = false, $limit = 20) {
+	Logger::debug('PatientList_Sql::searchByName: Before filtering, recs size is ' . sizeof($recs));
     if (! empty($recs)) {
       $sc = SearchCrit::create($last, $first);
       $recs = static::scoreCandidates($recs, $sc);
-      $recs = static::filterCandidates($recs, $perfect);
+      $recs = static::filterCandidates($recs, $perfect, $limit);
     }
+	Logger::debug('PatientList_Sql::searchByName: AFTER filtering, recs size is ' . sizeof($recs));
     return $recs;
   }
   static function searchByName_perfect($ugid, $last, $first) {
@@ -95,18 +100,36 @@ class PStub_Search extends PatientStub {
   }
   // 
   protected static function fetchCandidates($ugid, $last, $limit = 400, $activeOnly = false) {
+	Logger::debug('PatientList_Sql::FetchCandidates: Entered with ' . $ugid . ', ' . $last . ', limit ' . $limit);
     $c = new static();
     $c->userGroupId = $ugid;
     //$c->Hd_name = Hdata_ClientName::create()->setValue($last)->asJoin($ugid); //Encrypted and therefore hits the HDATA tables, but in Analytics we don't have encrypted fields. So just use the last name as criteria.
 	$c->lastName = $last;
     $c->setActiveOnly($activeOnly);
-    $recs = static::fetchAllBy($c, null, $limit);
+	
+	try {
+		$recs = static::fetchAllBy($c, null, $limit);
+	}
+	catch (Exception $e) {
+		Logger::debug('PatientList_Sql::fetchCandidates: Got ERROR ' . $e->getMessage());
+	}
+	//Logger::debug('PatientList_Sql::fetchCandidates: Got result ' . print_r($recs, true));
     return $recs;
   }
   protected static function fetchAllByBirth($ugid, $birth, $activeOnly = false) {
     $c = new static();
     $c->userGroupId = $ugid;
     //$c->Hd_dob = Hdata_ClientDob::create()->setValue($birth)->asJoin($ugid); //Encrypted and therefore hits the HDATA tables, but in Analytics we don't have encrypted fields. So just use the last name as criteria.
+	//Since we aren't using HDATA to format the date anymore, we have to manually format it to the way the DB stores it.
+	//Convert from the format 02-Jul-1960 (that Javascript has) to 1960-07-02 (that the database has)
+	
+	try {
+		$dateObj = DateTime::createFromFormat('d-M-Y', $birth);
+		$birth = $dateObj->format('Y-m-d');
+	}
+	catch (Exception $e) {
+		throw new RuntimeException('Could not format the date ' . $birth);
+	}
 	$c->birth = $birth;
     $c->setActiveOnly($activeOnly);    
     $recs = static::fetchAllBy($c, null, 50);

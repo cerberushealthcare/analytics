@@ -671,12 +671,18 @@ class LookupDao {
   private static function readValues($tableId, $userId, $clientId, $valuesAs, $assocBy, $filter, $filterValue, $includeLookupProps, $mergeAncestry = false) {
     global $login;
     $userId = LookupDao::defaultUserId($login, $userId);
-    $sql = ($mergeAncestry) ? "" : "SELECT lookup_data_id, level, instance, data FROM (";
-    $sql .= "SELECT lookup_data_id, level, instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId . " AND (";
+	
+	$levelColumn = 'level';
+	
+	if (MyEnv::$IS_ORACLE) {
+		$levelColumn = '"LEVEL_"';
+	}
+    $sql = ($mergeAncestry) ? "" : "SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM (";
+    $sql .= "SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId . " AND (";
     if ($clientId != null) {
-      $sql .= "(level='X' and level_id=". $clientId . ") OR ";
+      $sql .= "(" . $levelColumn . "='X' and level_id=". $clientId . ") OR ";
     }
-    $sql .= "(level='U' AND level_id=" . $userId . ") OR (level='G' AND level_id=" . $login->userGroupId . ") OR (level='A')) ORDER BY instance, level DESC";
+    $sql .= "(" . $levelColumn . "='U' AND level_id=" . $userId . ") OR (" . $levelColumn . "='G' AND level_id=" . $login->userGroupId . ") OR (" . $levelColumn . "='A')) ORDER BY instance, " . $levelColumn . " DESC";
     if (! $mergeAncestry) $sql .= ") a GROUP BY a.instance";
     $res = query($sql);
     if ($valuesAs == LookupDao::AS_PHP_OBJECT || $valuesAs == LookupDao::AS_ASSOC_ARRAY) {
@@ -752,11 +758,18 @@ class LookupDao {
     global $login;
     $userId = LookupDao::defaultUserId($login, $userId);
     $instanceId = LookupDao::defaultInstanceId($instanceId);
-    $sql = "SELECT lookup_data_id, level, instance, data FROM (SELECT lookup_data_id, level, instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId
-        . " AND instance=" . $instanceId 
-        . " AND ((level='U' AND level_id=" . $userId 
-        . ") OR (level='G' AND level_id=" . $login->userGroupId 
-        . ") OR (level='A')) ORDER BY level DESC) a GROUP BY a.instance";
+	Logger::debug('LookupDao::readSingleVale: Entered. Is oracle? ' . MyEnv::$IS_ORACLE);
+	
+	$levelColumn = 'level';
+	if (MyEnv::$IS_ORACLE) {
+		$levelColumn = '"LEVEL_"';
+	}
+	
+	$sql = "SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM (SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId
+	. " AND instance=" . $instanceId 
+	. " AND ((" . $levelColumn . "='U' AND level_id=" . $userId 
+	. ") OR (" . $levelColumn . "='G' AND level_id=" . $login->userGroupId 
+	. ") OR (" . $levelColumn . "='A')) ORDER BY " . $levelColumn . " DESC) a GROUP BY a.instance";
     return LookupDao::buildValue(fetch($sql), $valueAs, $includeLookupProps);
   }
   

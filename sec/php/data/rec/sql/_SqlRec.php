@@ -58,7 +58,7 @@ abstract class SqlRec extends Rec {
   public function __construct() {
     $args = func_get_args();
     if (count($args) == 1) {
-	  Logger::debug('SqlRec::__construct: Received arg ' . gettype($args) . ' ' . print_r($args, true));
+	  //Logger::debug('SqlRec::__construct: Received arg ' . gettype($args) . ' ' . print_r($args, true));
       if (is_assoc($args[0])) {  
         $this->__constructFromSqlArray($args[0]);
         $args = null;
@@ -169,10 +169,11 @@ abstract class SqlRec extends Rec {
     //logit_r("$fid=$value", 'set');
     if ($value !== null) {
       if (is_array($value)) {
-		//Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . print_r($value, true));
+		Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . print_r($value, true));
         $this->setSqlArray($fid, $value);
 	  }
       else {
+		//Logger::debug('set: calling setSqlArray with ' . $fid . ' and ' . $value);
         parent::set($fid, $value);
 	  }
     }
@@ -332,6 +333,7 @@ abstract class SqlRec extends Rec {
    * @throws ReadOnlySaveException, SecurityException, RecValidatorException
    */
   public function save($ugid = null, $mode = null, $auditAction = null) {
+	Logger::debug('_SqlRec save: Got ugid ' . $ugid. ', mode ' . $mode);
     if ($this instanceof ReadOnly) 
       throw new ReadOnlySaveException($this);
     if ($this instanceof AdminOnly) { 
@@ -359,7 +361,9 @@ abstract class SqlRec extends Rec {
 	if (isset($_POST['IS_BATCH']) && !$_POST['IS_BATCH']) $this->authenticate($mode);
     switch ($mode) {
       case SaveModes::INSERT:  
+	    Logger::debug('Insert!! Getting SQL....');
         $sql = $this->getSqlInsert();
+		Logger::debug('_SqlRec::save: Got SQL ' . $sql . ', setting table to ' . $this->getSqlTable());
         $id = Dao::insert($sql, $this->getSqlTable());
         //logit_r($id, 'Dao::insert');
         if ($this->getPkValue() == null && $this->getPkFieldCount() == 1) 
@@ -547,29 +551,7 @@ abstract class SqlRec extends Rec {
 			$fields = implode(',', $fields);
 			$values = implode(',', $this->getSqlValues());
 			$sql = "INSERT INTO $table ($fields) VALUES($values)";
-			
-			
-			
-			/*if (method_exists($this, 'getOracleReturnClause')) { //TODO 21-1-16 - remove this check after we update all the files in php/data/rec/sql/ with a getOracleReturnClause() method that will return a string. An example on how to do it is in php/data/rec/sql/_ClientRec.
-			
-			//We have two options:
-				-Go through each and every rec in php/data/rec/sql and add the getOracleReturnClause() function and make sure they all work
-				-Only add getOracleReturnClause() to the ones we actually need a returning clause in, and do a check here to make sure that the method exists before running the method. The problem with this approach is that we get a security exception when we try to use method_exists to check if the method does exist - some kind of medical field security measure.
-				
-			*/	
-			
 			$sql .= ' RETURNING ' . $this->getPkField() . ' INTO :returnVal';
-			
-			//Logger::debug('SqlRec::getSqlInsert: Got query ' . $sql);
-				/*try {
-					if (strlen($this->getOracleReturnClause()) > 0) {
-						$sql .= ' ' . $this->getOracleReturnClause();
-					}
-				}
-				catch (Exception $e) {
-					Logger::debug('ERROR in _SqlRec::insert: Could not append the oracle return clause - likely because the method does not exist. Check php/data/rec/sql for the rec that uses the ' . $table . ' table and add the getOracleReturnClause() method.');
-				}*/
-			//}
 		}
     }
 	else {
@@ -1104,15 +1086,19 @@ abstract class SqlRec extends Rec {
    * @return SqlRec[]
    */
   static function fetchAllBy($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
+	  Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit);
+	  //static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
     $a = static::fetchAllAndFlatten($criteria, $order, $limit, $keyFid, $sortBy, $page, $groupBy);
 	//echo 'fetchAllBy: We are returning a ' . gettype($a[0]) . ' ' . print_r($a[0]);
-	Logger::debug('fetchAllBy: We are returning a ' . gettype($a[0]));
+	//Logger::debug('fetchAllBy: We are returning a ' . gettype($a[0]));
     return $a[0];
   }
   /**
    * @return array(SqlRec[], row[], limit) -- row array is raw output of SQL query (which flatten into SqlRec[])  
    */
   static function fetchAllAndFlatten($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
+	  Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit . ' and sort by ' . $sortBy . ' and group by ' . $groupBy);
+	Logger::debug('fetchAllAndFlatten: trace is ' . getStackTrace());
     $criteria->authenticateAsCriteria();
     $class = $criteria->getMyName();
     $ci = $criteria->getRecsFromCriteria();
@@ -1121,13 +1107,32 @@ abstract class SqlRec extends Rec {
 	Logger::debug(print_r($ci['recs'], true));
 	Logger::debug(print_r($infos, true));*/
 	//Logger::debug('fetchAllAndFlatten: Calling getSqlSelect(' . $ci['recs'] . ', ' . $infos . ', null, ' . $sortBy . ', ' . $groupBy);
-    $sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
+	
+	$sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
+    if ($limit > 0) {
+	  if (MyEnv::$IS_ORACLE) {
+		  
+		$sql = self::getOracleLimitWrapper($ci, $sql, $page, $limit);
+		
+	  }
+	  else {
+		if ($page >= 1) {
+			$sql .= " LIMIT " . ($limit * ($page - 1)) . "," . ($limit + 1);
+		}
+		else {
+			$sql .= " LIMIT $limit"; 
+		}
+	  }
+    }
+	
+	
+    /*$sql = $criteria->getSqlSelect($ci['recs'], $infos, null, $sortBy, $groupBy);
     if ($limit > 0 && !MyEnv::$IS_ORACLE) {
       if ($page >= 1)
         $sql .= " LIMIT " . ($limit * ($page - 1)) . "," . ($limit + 1);
       else
         $sql .= " LIMIT $limit";
-    }
+    }*/
 	
 	Logger::debug('fetchAllAndFlatten: Running query ' . $sql);
 	
@@ -1183,15 +1188,15 @@ abstract class SqlRec extends Rec {
     foreach ($rows as &$row) {
       $rec = new static($row);
       if ($keyFid) {
-		Logger::debug('fromRows: recs[' . $rec->$keyFid . '] being set to ' . gettype($rec) . ' ' . print_r($rec));
+		//Logger::debug('fromRows: recs[' . $rec->$keyFid . '] being set to ' . gettype($rec) . ' ' . print_r($rec));
         $recs[$rec->$keyFid] = $rec;
 	  }
       else {
-	    Logger::debug('No keyFid. Setting recs (an array) to ' . print_r($rec, true));
+	    //Logger::debug('No keyFid. Setting recs (an array) to ' . print_r($rec, true));
         $recs[] = $rec;
 	  }
     }
-	Logger::debug('fromRows: Returning rec which is a ' . gettype($recs) . ' ' . print_r($recs, true));
+	//Logger::debug('fromRows: Returning rec which is a ' . gettype($recs) . ' ' . print_r($recs, true));
     return $recs;
   }
   /**
@@ -1315,6 +1320,39 @@ abstract class SqlRec extends Rec {
     return new static();
   }
   //
+  //This function is our substitute for SQL's LIMIT clause - Oracle does things quite differently.
+  //Take the original SQL query and wrap it with the necessary SELECTS so that we get only a subset of results from the original query.
+  //This will also be our answer to pagination in oracle - set $page to the lower limit and $limit to the upper limit.
+  
+  //PAGINATION: In Oracle we must double-wrap the entire query with the below in order to get pagination working.
+  
+  protected static function getOracleLimitWrapper($ci, $sql, $page, $limit) {
+	    //VERY interesting:
+		$infos = self::buildSqlSelectInfos($ci);
+		$fields = implode(', ', array_filter($infos['fields']));//We may need this: ($asCount) ? 'COUNT(*)' : implode(', ', array_filter($infos['fields']));
+		//This will make $fields a string containing ALL of the needed SELECTS. This is a seam point.
+		Logger::debug('SqlRec::getOracleLimitWrapper: Got fields ' . $fields);
+		if ($page > 1) {
+			//$sql .= " LIMIT " . ($limit * ($page - 1)) . "," . ($limit + 1); //THIS WILL NOT WORK. Must be fixed. This is for pagination.
+
+			$sql = 'select * from (
+					select ' . $fields . ', rownum as rowposition
+					from (' . $sql . '
+					)
+				)
+				where rowposition between ' . ($limit * ($page - 1)) . ' and ' . ($limit + 1);
+		}
+		else { //If we only have one page, we can omit the select * from () wrapper
+			$sql = 'select *
+		from (' . $sql . '
+		)
+		where rownum < ' . ($limit + 1);
+
+			//$sql .= " FETCH FIRST $limit ROWS ONLY";
+		}
+
+		return $sql;
+	}
   protected static function buildSqlSelectInfos($ci) {
     $recs = $ci['recs'];
     $infos = array();

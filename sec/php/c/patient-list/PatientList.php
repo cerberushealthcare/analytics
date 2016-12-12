@@ -22,9 +22,9 @@ class PatientList {
     return $page;
   }
   /** Search for partial matches */
-  static function /*PatientStub[]*/search($last, $first, $uid = null, $birth = null, $activeOnly = true) {
+  static function /*PatientStub[]*/search($last, $first, $uid = null, $birth = null, $activeOnly = true, $limit = 500) {
     global $login;
-    $recs = PStub_Search::search($login->userGroupId, $last, $first, $uid, $birth, $activeOnly);
+    $recs = PStub_Search::search($login->userGroupId, $last, $first, $uid, $birth, $activeOnly, $limit);
     return $recs;
   }
   /** Search for exact match */

@@ -9,6 +9,7 @@
 	
 		<script type="text/javascript">
 			var files = [		'LoginSession_login.php',
+								'patientList_search_returnsCorrectAmountOfRows.php',
 								'unit/_SqlRec_ReservedOracleWords_ConvertsWord.php',
 								'unit/util_quote_properlyEscapesStrings.php',
 								'apiLogin_ReturnsNoErrors.php',
