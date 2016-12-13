@@ -677,22 +677,62 @@ class LookupDao {
 	if (MyEnv::$IS_ORACLE) {
 		$levelColumn = '"LEVEL_"';
 	}
-    $sql = ($mergeAncestry) ? "" : "SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM (";
+	
+	//When we hit the work we do below we do a call to Services_JSON.php, which works with the data column. In MySQL, data is a string and Services_JSON is happy.
+	//But in Oracle, by default, the data column is a CLOB object and the JSON reader does not like it. To fix this, convert the data column to a string if we are working with Oracle.
+	
+	$dataCol = 'data';
+	
+	if (MyEnv::$IS_ORACLE) {
+		$dataCol = 'dbms_lob.substr(data, 60, 1) as "data"'; //Lob > string conversion
+	}
+    $sql = ($mergeAncestry) ? "" : "SELECT lookup_data_id, " . $levelColumn . ", instance, " . $dataCol . " FROM (";
     $sql .= "SELECT lookup_data_id, " . $levelColumn . ", instance, data FROM lookup_data WHERE lookup_table_id=" . $tableId . " AND (";
     if ($clientId != null) {
       $sql .= "(" . $levelColumn . "='X' and level_id=". $clientId . ") OR ";
     }
     $sql .= "(" . $levelColumn . "='U' AND level_id=" . $userId . ") OR (" . $levelColumn . "='G' AND level_id=" . $login->userGroupId . ") OR (" . $levelColumn . "='A')) ORDER BY instance, " . $levelColumn . " DESC";
-    if (! $mergeAncestry) $sql .= ") a GROUP BY a.instance";
+    if (! $mergeAncestry) $sql .= ")";// a GROUP BY a.instance";
     $res = query($sql);
     if ($valuesAs == LookupDao::AS_PHP_OBJECT || $valuesAs == LookupDao::AS_ASSOC_ARRAY) {
       $dtos = array();
-      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      while ($row = Dao::fetchRowFromResource($res)) { //mysql_fetch_array($res, MYSQL_ASSOC)) {
+	    
+		
+		
+		//Oracle fix: Since the array keys are hardcoded in the original code below, make the column keys lowercase if we are dealing with Oracle.
+		//When we get them back from the DB by calling Dao::fetchRowFromResource, they are all uppercase if we are using Oracle, and in the below code
+		//where we do things with the data, everything is lowercase.
+		
+		if (MyEnv::$IS_ORACLE) {
+			Logger::debug('This is Oracle.');
+			$row = array_change_key_case($row, CASE_LOWER);
+			
+			//Now when we get the level column, remove the _.
+			$row['level'] = $row['level_'];
+			unset($row['level_']);
+		}
+		Logger::debug('LookupDao::readValues: Transformed row to ' . print_r($row, true));
+		/*
+		LookupDao::readValues: Got row Array
+    (
+        [LOOKUP_DATA_ID] => 1655
+        [LEVEL_] => A
+        [INSTANCE] => 1
+        [DATA] => OCI-Lob Object
+            (
+                [descriptor] => Resource id #391
+            )
+    
+    )
+		*/
         $dto = LookupDao::buildValue($row, $valuesAs, $includeLookupProps);
         if ($filter == null || $dto->$filter == $filterValue) {
           if ($assocBy == LookupDao::NO_ASSOCIATE) {
             $dtos[] = $dto;
           } else {
+		  
+		  
             $key = ($assocBy == LookupDao::ASSOCIATE_BY_INSTANCE_ID) ? $row["instance"] : $dto->id;
             if ($mergeAncestry && isset($dtos[$key])) {
               $dto = LookupDao::merge($dto, $dtos[$key]);
@@ -704,7 +744,7 @@ class LookupDao {
       return $dtos;
     } else {
       $json = "";
-      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      while ($row = Dao::fetchRow($res)) { //mysql_fetch_array($res, MYSQL_ASSOC)) {
         if ($json != "") {
           $json .= ",";
         }

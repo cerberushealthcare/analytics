@@ -483,7 +483,7 @@ function query($sql, $logging = true) {
 		
 		$sql = str_replace('`', "'", $sql);
 		
-		Logger::debug('sec/php/dao/_util.php: Util Query: Doing query ' . $sql);
+		//Logger::debug('sec/php/dao/_util.php: Util Query: Doing query ' . $sql . '. Trace is ' . getStackTrace());
 		
 		/*
 			This works!

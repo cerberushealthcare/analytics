@@ -237,6 +237,19 @@ class Dao {
 		return mysqli_affected_rows($res);
 	}
   }
+  
+  
+  static function fetchRowFromResource($res) {
+	if (MyEnv::$IS_ORACLE) {
+		$row = oci_fetch_assoc($res);
+	}
+	else {
+		$row = mysqli_fetch_array($res, MYSQLI_ASSOC);
+	}
+	
+	return $row;
+  }
+  
   /**
    * Fetch single row
    * @param string $sql SELECT
@@ -244,14 +257,7 @@ class Dao {
    */
   static function fetchRow($sql, $db = null) {
     $res = static::query($sql, $db);
-	
-	if (MyEnv::$IS_ORACLE) {
-		$row = oci_fetch_assoc($res);
-	}
-	else {
-		$row = mysqli_fetch_array($res, MYSQLI_ASSOC);
-	}
-    return $row;
+	return fetchRowFromResource($res);
   }
   /**
    * Fetch multiple rows
@@ -283,7 +289,7 @@ class Dao {
 			$rows[] = $row;
 		}
 		
-		Logger::debug('Dao::fetchRows: Got row array ' . print_r($rows, true));
+		//Logger::debug('Dao::fetchRows: Got row array ' . print_r($rows, true));
 		
 	}
     else {
@@ -308,7 +314,7 @@ class Dao {
 	    oci_execute($res);
 		$row = oci_fetch_array($res, OCI_BOTH);
 		//print_r($row);
-		Logger::debug('Dao::fetchValue: Got row ' . print_r($row, true) . '. Col is ' . $col);
+		//Logger::debug('Dao::fetchValue: Got row ' . print_r($row, true) . '. Col is ' . $col);
 		$val = $row[$col];
 	}
 	else {

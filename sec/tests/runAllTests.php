@@ -22,7 +22,8 @@
 								'Dao_query_returnsIntegerFromInsertQuery.php',
 								'MsgInbox_countUnread_IsNotEmpty.php',
 								'apiLogin_ReturnsNoErrors.php',
-								'serverPatients_patientPageFetch_returnsObject.php'
+								'serverPatients_patientPageFetch_returnsObject.php',
+								'uiFunctions_CONSTANTS_returnsJsonString.php' //VERY slow, takes about 12 seconds?.....
 								/*'../tester.php?t=1',
 								'../tester.php?t=2',
 								'../tester.php?t=3',

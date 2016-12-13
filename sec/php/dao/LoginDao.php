@@ -20,7 +20,7 @@ class LoginDao {
     debug_print_backtrace();
     $trace = ob_get_contents();
     ob_end_clean();
-    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId). Trace = "  . $trace);
+    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId).");
   }
   // Group authentications
   // If authenticated, user can make updates to group entities
@@ -30,7 +30,7 @@ class LoginDao {
     debug_print_backtrace();
     $trace = ob_get_contents();
     ob_end_clean();
-	Logger::debug('LoginDao::authenticateUserGroupId: Trace is ' . $trace);
+	Logger::debug('LoginDao::authenticateUserGroupId: user group ID is ' . $userGroupId . ', login UGID is ' . $login->userGroupId);
     if ($userGroupId == null)
       LoginDao::throwSecurityError('ugi', $userGroupId);
     if (! $login->admin)

@@ -664,7 +664,9 @@ class SessionCache {
    * @param mixed $data
    */
   static function set($key, $data) {
+	
     global $login;
+	//Logger::debug('LoginSession::set: Trace is ' . print_r(debug_print_backtrace(), true));
     $login->cache[$key] = $data;
     $login->save();
   }
