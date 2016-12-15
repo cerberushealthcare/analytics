@@ -8,7 +8,46 @@ class FacesheetDao {
   const INCLUDE_DEFS = true;
   //
   const TID_IMMUN = 12;  // Messaging template
-  /**
+  
+   /*
+	Utilize the private methods and return a test object that can be used in our tests.
+   */
+   public function testFacesheet($clientId, $section) {
+	   
+	   switch ($section) {
+		   case 1:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_ALL);
+				static::loadClientHistory($fs, $clientId);
+		   break;
+		   case 2:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_ALLERGIES);
+				static::loadAllergies($fs, $clientId);
+		   break;
+		   case 3:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_DIAGNOSES);
+				static::loadDiagnoses($fs, $clientId);
+		   break;
+		   case 4:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_MEDS);
+				static::loadMeds($fs, $clientId);
+		   break;
+		   case 5:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_VITALS);
+				static::loadVitals($fs, $clientId);
+		   break;
+		   case 6:
+				$fs = new JFacesheet($clientId, JFacesheet::CONTAINS_TRACKING);
+				static::loadTracking($fs, $clientId);
+		   break;
+		   default:
+				$result = null;
+		   break;
+	   }
+	   
+	   return $fs;
+   }
+   
+   /**
    * Assemble entire facesheet
    * @param int $clientId
    * @param bool $audit
@@ -31,13 +70,21 @@ class FacesheetDao {
     FacesheetDao::loadVitals($fs, $clientId);
     FacesheetDao::loadMedhx($fs, $clientId);
     //FacesheetDao::loadHm($fs, $fs->client);  // can remove once we have in/out_data for procedures
-    FacesheetDao::loadProcedures($fs, $clientId);
-    FacesheetDao::loadCds($fs, $clientId);
-    FacesheetDao::loadSurghx($fs, $clientId);
-    FacesheetDao::loadFamhx($fs, $clientId, FacesheetDao::INCLUDE_DEFS);
-    FacesheetDao::loadSochx($fs, $clientId);
-    FacesheetDao::loadImmuns($fs, $clientId);
-    FacesheetDao::loadTracking($fs, $clientId);
+	
+	try {
+		//FacesheetDao::loadProcedures($fs, $clientId); //When we call this procedure, a fatal error occurs, "class desc not found". Might have to do with the OracleColumnWords function which converts DESC to DESC_....
+		//FacesheetDao::loadCds($fs, $clientId); //This one too
+		FacesheetDao::loadSurghx($fs, $clientId);
+		FacesheetDao::loadFamhx($fs, $clientId, FacesheetDao::INCLUDE_DEFS);
+		FacesheetDao::loadSochx($fs, $clientId);
+		FacesheetDao::loadImmuns($fs, $clientId);
+		FacesheetDao::loadTracking($fs, $clientId);
+	}
+	catch (Exception $e) {
+	  Logger::debug('ERROR in FacesheetDao.php: ' . $e->getMessage());
+	  
+	}
+    
     global $login;
     if ($login->cerberus) {
       require_once 'php/c/patient-billing/CerberusBilling.php';      

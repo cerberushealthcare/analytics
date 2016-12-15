@@ -714,7 +714,7 @@ abstract class SqlRec extends Rec {
     //p_r($infos);
     //p_r($sqljoins);
 	
-	Logger::debug('_SqlRec: infos fields is an array:' . print_r($infos['fields'], true));
+	//Logger::debug('_SqlRec: infos fields is an array:' . print_r($infos['fields'], true));
 	
     $fields = ($asCount) ? 'COUNT(*)' : implode(', ', array_filter($infos['fields']));
     $table = self::implodeTables($infos);
@@ -1097,8 +1097,9 @@ abstract class SqlRec extends Rec {
    * @return array(SqlRec[], row[], limit) -- row array is raw output of SQL query (which flatten into SqlRec[])  
    */
   static function fetchAllAndFlatten($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
-	  Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit . ' and sort by ' . $sortBy . ' and group by ' . $groupBy);
-	Logger::debug('fetchAllAndFlatten: trace is ' . getStackTrace());
+	Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit . ' and sort by ' . $sortBy . ' and group by ' . $groupBy);
+	Logger::debug('_SqlRec::fetchAllAndFlatten: Trace is ' . getStackTrace());
+	//Logger::debug('fetchAllAndFlatten: trace is ' . getStackTrace());
     $criteria->authenticateAsCriteria();
     $class = $criteria->getMyName();
     $ci = $criteria->getRecsFromCriteria();
@@ -1353,6 +1354,11 @@ abstract class SqlRec extends Rec {
 
 		return $sql;
 	}
+	
+  //For testing we need to expose the protected function as public so that we can call it directly.
+  public static function buildSqlSelectInfos_Test($ci) {
+	return self::buildSqlSelectInfos($ci);
+  }
   protected static function buildSqlSelectInfos($ci) {
     $recs = $ci['recs'];
     $infos = array();

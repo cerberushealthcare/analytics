@@ -23,7 +23,15 @@
 								'MsgInbox_countUnread_IsNotEmpty.php',
 								'apiLogin_ReturnsNoErrors.php',
 								'serverPatients_patientPageFetch_returnsObject.php',
-								'uiFunctions_CONSTANTS_returnsJsonString.php' //VERY slow, takes about 12 seconds?.....
+								'uiFunctions_CONSTANTS_returnsJsonString.php', //VERY slow, takes about 12 seconds?.....
+								//All of the facesheet tests take 1+ seconds
+								'facesheet/facesheet_ajax_getsCorrectVitals.php',
+								'facesheet/facesheet_ajax_getsCorrectMeds.php',
+								'facesheet/facesheet_ajax_getsCorrectDiagnoses.php',
+								'facesheet/facesheet_ajax_getsCorrectAllergies.php',
+								'facesheet/facesheet_ajax_getsCorrectDocHistory.php',
+								'facesheet/facesheet_ajax_getsCorrectTrackingInfo.php',
+								'facesheet_ajax_getsCorrectPatientData.php' //This is thie big one - the one that makes sure face.php gets the data it needs.
 								/*'../tester.php?t=1',
 								'../tester.php?t=2',
 								'../tester.php?t=3',

@@ -94,7 +94,7 @@ class UserDao {
       $sql = "SELECT user_id, uid, pw, name, admin, subscription, active, reg_id, trial_expdt, user_group_id, user_type, license_state, license, dea, npi, email, expiration, expire_reason FROM users WHERE active=1 AND user_type=1 AND user_group_id=" . $userGroupId . " ORDER BY name";
       $res = query($sql);
       $dtos = array();
-      while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+      while ($row = Dao::fetchRowFromResource($res)) { //mysql_fetch_array($res, MYSQL_ASSOC)) {
         $user = UserDao::buildUser($row);
         $user->includeLicLine();
         UserDao::eraseSensitive($user);
@@ -107,7 +107,7 @@ class UserDao {
   public static function getUsersOfMyGroup($where = "") {
     $dtos = array();
     $res = UserDao::getUsersOfMyGroupAsRows($where);
-    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+    while ($row = Dao::fetchRowFromResource($res)) { //mysql_fetch_array($res, MYSQL_ASSOC)) {
       $dto = UserDao::buildUser($row);
       $dtos[] = $dto;
     }
@@ -133,7 +133,7 @@ class UserDao {
     $sql = "SELECT address_id, table_code, table_id, type, addr1, addr2, addr3, city, state, zip, country, phone1, phone1_type, phone2, phone2_type, phone3, phone3_type, email1, email2, name FROM addresses WHERE table_code=" . quote($table) . " AND table_id=" . $tableId . " ORDER BY type";
     $res = query($sql);
     $dtos = array();
-    while ($row = mysql_fetch_array($res, MYSQL_ASSOC)) {
+    while ($row = Dao::fetchRowFromResource($res)) { //mysql_fetch_array($res, MYSQL_ASSOC)) {
       $dto = UserDao::buildAddress($row);
       $dtos[] = $dto;
     }

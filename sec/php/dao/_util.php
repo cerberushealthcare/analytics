@@ -401,7 +401,7 @@ function fetchSimpleArray($sql, $valueField = 0, $keyField = null, $decrypt = fa
         $a[] = decr($row[$valueField], $decrypt);
     }
   } else {
-    while ($row = mysql_fetch_array($res, MYSQL_ASSOC))
+    while ($row = Dao::fetchRowFromResource($res))  //mysql_fetch_array($res, MYSQL_ASSOC)) {
       $a[$row[$keyField]] = decr($row[$valueField], $decrypt);
   }
   return $a;
