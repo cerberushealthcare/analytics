@@ -64,7 +64,16 @@ class Client_Ci_Ccd extends Client_Ci {
 		Logger::debug('ClinicalImport_Ccd::import: ERROR importing the patient medications: ' . $e->getMessage() . ' - continuing with import....');
 	}
 	
-	Logger::debug('ClinicalImport_Ccd::import: Imported the patient meds! Returning.');
+	Logger::debug('ClinicalImport_Ccd::import: Imported the patient meds!');
+	
+	//12/20/16 - NEW VITALS import
+	try {
+		Vitals_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSectionVitals());
+	}
+	catch (Exception $e) {
+		if ($_POST['IS_BATCH']) echo 'ERROR importing the patient vitals: ' . $e->getMessage() . ' - continuing with import....';
+		Logger::debug('ClinicalImport_Ccd::import: ERROR importing the patient vitals: ' . $e->getMessage() . ' - continuing with import....');
+	}
     
     return;  // do not need to do these for mu2
     Immun_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Immuns());
@@ -196,6 +205,93 @@ class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
     return $text;
   }
 }
+
+class Vitals_Ci_Ccd extends Vital_Ci {
+	//
+	static function all($ugid, $cid, /*Ccd_Section_Vitals_Sql*/$vitals) {
+		$recs = array();
+		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with ' . $ugid . ' | ' . $cid);
+		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with vitals as ' . print_r($vitals, true));
+		if ($vitals) {// && $vitals->has()) {
+			Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: There are vitals!');
+			//foreach ($vitals as &$vitalsOccurance) {
+				//Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Got a vitals entry: ' . print_r($vitalsOccurance, true));
+				$recs[] = static::from($ugid, $cid, $vitals);
+			//}
+		}
+		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Returning ' . print_r($recs, true));
+		return $recs;
+	}
+	static function saveAll($ugid, $cid, /*Ccd_Section_Alerts*/$vitals) {
+		//Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::saveAll: Entered with vitals as ' . print_r(var_dump($vitals), true));
+		$us = static::all($ugid, $cid, $vitals);
+		logit_r($us, 'us vitals');
+		foreach ($us as $me) {
+			Logger::debug('Vitals_Ci_Ccd: gonna save....');
+			$me->save();
+			//parent::save();
+		}
+	}
+	
+	static function from($ugid, $cid, /*Ccd_Entry_Vitals*/$vital) {
+		Logger::debug('ClinicalImport_Ccd::Vitals_Ci_Ccd::from: Got alert as object type ' . get_class($vital) . '. Contents: ' . print_r($vital, true));
+		Logger::debug('ClinicalImport_Ccd::Vitals_Ci_Ccd::from: Trace is ' . getStackTrace());
+		//The below code fails because $vital is a object of type XmlRec, when it should be a type of Ccd_VitalEntry.
+		//we are getting a Vitals_Ci_Ccd object here and it doesn't have the getSqlDate() method.
+		$date = $vital->getSqlDate();
+		$pulse = $vital->getPulse();
+		$resp = $vital->getResp();
+		$bpLoc = $vital->getBloodPressureLoc();
+		$bpDia = $vital->getBloodPressureDiastolic();
+		$bpSys = $vital->getBloodPressureSystolic();
+		$temperature = $vital->getTemperature();
+		$wt = $vital->getWeight();
+		$height = $vital->getHeight();
+		$bmi = $vital->getBMI();
+		Logger::debug('Blood pressure is ' . $bpDia . ' / ' . $bpSys . ' ' . $bpLoc);
+		//$mat = $vital->getMaterial();
+		//$name = static::asName($mat, $text);
+		//$desc = static::asDesc($mat, $text);
+		//$ = $vital->getAmtText();
+		$me = static::create($ugid, $cid, $date, $pulse, $resp, $bpDia, $bpSys, $bpLoc, $temperature, $wt, $height, $bmi);//$date, $pulse, $weight);
+		logit_r($me, 'vital_ci_ccd');
+		return $me;
+	}
+	
+	//Or maybe:
+	
+	///static function from($ugid, $cid, $date, $pulse, $weight) {
+/*	$rec = self::asCriteria($cid);
+		$rec->pulse = $pulse;
+		$rec->weight = $weight;
+		return $rec;
+	}*/
+	
+	/*protected static function asAgent($alert, $text) {
+		Logger::debug('ClinicalImport_Ccd::Ci CCD vitals::asAgent: Got trace ' . getStackTrace());
+		$agent = null;
+		$entity = $alert->getEntity();
+		if ($entity)
+			$agent = $entity->getName();
+			if ($agent == null && $text)
+				$agent = $text->get($alert->getTextRef());
+				return $agent;
+	}
+	protected static function asReactions($alert, $text) {
+		$a = array();
+		$obs = $alert->getReactionObs();
+		foreach ($obs as $ob)
+			$a[] = static::asReaction($ob, $text);
+			return implode('; ', $a);
+	}
+	protected static function asReaction($ob, $text) {
+		$r = $ob->getValueName();
+		if ($r == null && $text)
+			$r = $text->get($ob->getTextRef());
+			return $r;
+	}*/
+}
+
 class Allergy_Ci_Ccd extends Allergy_Ci {
   //
   static function all($ugid, $cid, /*Ccd_Section_Alerts*/$alerts) {
@@ -215,6 +311,9 @@ class Allergy_Ci_Ccd extends Allergy_Ci {
     }
   }
   static function from($ugid, $cid, /*Ccd_AlertEntry*/$alert, /*Ccd_Text*/$text) {
+  	Logger::debug('ClinicalImport_Ccd::Allergy_Ci_Ccd::from: Got alert as object type ' . get_class($alert));
+    Logger::debug('ClinicalImport_Ccd::allergy_Ci_Ccd::from: Trace is ' . getStackTrace());
+    //Ccd_AlertEntry is type type of $alert, which is correct.
     $agent = static::asAgent($alert, $text);
     $reactions = static::asReactions($alert, $text);
     $active = $alert->getStatus() != '73425007'; 

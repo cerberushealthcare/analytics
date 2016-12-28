@@ -2,6 +2,7 @@
 require_once 'php/c/patient-entry/PatientEntry.php';
 require_once 'php/data/rec/sql/Diagnoses.php';
 require_once 'php/data/rec/sql/AllergiesLegacy.php';
+require_once 'php/data/rec/sql/VitalsRec.php';
 require_once 'php/data/rec/sql/MedsLegacy.php';
 require_once 'php/data/rec/sql/_ImmunRec.php';
 require_once 'php/data/rec/sql/_ProcRec.php';
@@ -157,6 +158,59 @@ class Diagnosis_Ci extends Diagnosis {
 	}
 	Logger::debug('ClinicalImport_Sql::fetchDupe: Returning a ' . gettype($dupe));
     return $dupe;
+  }
+}
+//Vitals: New 12/20/16
+class Vital_Ci extends Vital { //used to be VitalSQL {
+  //
+	public $dataVitalsId;
+	public $userGroupId;
+	public $clientId;
+	public $sessionId;
+	public $date;  
+	public $pulse;
+	public $wt;
+	//public $resp;
+	//Probably don't need these - they are included in the Vitals class
+	/*public $bpSystolic;   
+	public $bpDiastolic;
+	public $bpLoc;
+	public $temp;
+	public $tempRoute;
+	public $wt;
+	public $wtUnits;
+	public $hc;
+	public $hcUnits;
+	public $wc;
+	public $wcUnits;*/
+  //
+  static function create($ugid, $cid, $date, $pulse, $resp, $bpDia, $bpSys, $bpLoc, $temperature, $wt, $height, $bmi) {
+  	Logger::debug('ClinicalImport_Sql::create: Got params ugid ' . $ugid . ' | cid ' . $cid . ' | date ' . $date . ' | pulse ' . $pulse . ' | resp ' . $resp . ' | bp Dia ' .  $bpDia . ' | bp Sys ' . $bpSys . ' | bp Loc ' .  $bpLoc . ' | temp ' .  $temp . ' | weight ' .  $wt . ' | height ' .  $height . ' | bmi ' .  $bmi);
+    $me = new static();
+    $me->userGroupId = $ugid;
+    $me->clientId = $cid;
+    $me->pulse = $pulse;
+    $me->resp = $resp;
+    $me->bpDia = $bpDia;
+    $me->bpSys = $bpSys;
+    $me->bpLoc = $bpLoc;
+    $me->temp = $temperature;
+    $me->wt = $wt;
+    $me->height = $height;
+    $me->bmi = $bmi;
+    //$me->agent = $agent; //this may break things....
+    if ($me->clientId)
+      $me = $me->fetchDupe(); /*look for existing record after assigning enough fields to identify*/
+    $me->date = $date;
+    
+    return $me;
+  }
+  //
+  public function fetchDupe() {
+    $c = new static($this);
+    $c->sessionId = CriteriaValue::isNull();
+    $dupe = static::fetchOneBy($c);
+    return $dupe ?: $this; 
   }
 }
 class Allergy_Ci extends Allergy {

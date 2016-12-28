@@ -2,6 +2,7 @@
 require_once 'php/c/patient-entry/PatientEntry.php';
 require_once 'php/data/rec/sql/Diagnoses.php';
 require_once 'php/data/rec/sql/AllergiesLegacy.php';
+require_once 'php/data/rec/sql/Vitals.php';
 require_once 'php/data/rec/sql/MedsLegacy.php';
 require_once 'php/data/rec/sql/_ImmunRec.php';
 require_once 'php/data/rec/sql/_ProcRec.php';
@@ -144,7 +145,7 @@ class Diagnosis_Ci extends Diagnosis {
   }
 }
 class Allergy_Ci extends Allergy {
-  //
+//
   public $dataAllergyId;
   public $userGroupId;
   public $clientId;

@@ -51,6 +51,20 @@ class Ccd_Entry_Substance extends XmlRec {
     }
   }
 }
+//We don't need a vitals entry object because entries seem to exist for things that may appear
+//multiple times in a CCD document. eg. meds, diagnoses....patients can have many entries for those.
+//However for vitals, every CCD only has ONE 'entry'.
+/*class Ccd_Entry_Vitals extends XmlRec {
+	public function getSqlDate() {
+		$e = $this->substanceAdministration->first('effectiveTime');
+		if ($e instanceof Ccd_TS || $e instanceof Ccd_IVL_TS)
+			return $e->getSqlDate();
+	}
+	
+	public function getPulse() {
+		return 'PULSE!!';
+	}
+}*/
 class Ccd_Entry_Organizer extends XmlRec {
   public $organizer = 'Ccd_Organizer';
   //

@@ -192,13 +192,27 @@ class Dao {
    */
   static function insert($sql, $table = null) {
 	if (MyEnv::$IS_ORACLE) {
-		//echo 'Dao::insert: Got query ' . $sql . '<br>';
 		
 		$stmt = static::query($sql, null, $table); //We want to return the inserted row ID after this gets returned.
 		Logger::debug('Dao::query: Oracle stmt is ' . gettype($stmt));
 		$insertId = null;
 		oci_bind_by_name($stmt, ':returnVal', $insertId, 8, OCI_B_INT);
-		oci_execute($stmt);
+		
+		try {
+			$result = oci_execute($stmt);
+			if (!$result) {
+				$err = oci_error($stmt);
+				throw new RuntimeException('Could not insert a row. Query is ' . $sql . '. Error is ' . $err['message']);
+			}
+			
+			if ($insertId < 1) {
+				$err = oci_error($stmt);
+				throw new RuntimeException('Could not insert a row - INSERTID lower than 1. Query is ' . $sql . '. Error is ' . $err['message']);
+			}
+		}
+		catch (Exception $e) {
+			throw new RuntimeException('Error in Dao::insert: ' . $e->getMessage());
+		}
 	    //return integer ID
 		
 		//$rows = oci_fetch_all($stmt, $arr);

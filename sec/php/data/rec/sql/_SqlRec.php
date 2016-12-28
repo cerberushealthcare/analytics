@@ -364,7 +364,12 @@ abstract class SqlRec extends Rec {
 	    Logger::debug('Insert!! Getting SQL....');
         $sql = $this->getSqlInsert();
 		Logger::debug('_SqlRec::save: Got SQL ' . $sql . ', setting table to ' . $this->getSqlTable());
-        $id = Dao::insert($sql, $this->getSqlTable());
+        try {
+			$id = Dao::insert($sql, $this->getSqlTable());
+		}
+		catch (Exception $e) {
+			Logger::debug('Error in SqlRec::save: ' . $e->getMessage());
+		}
         //logit_r($id, 'Dao::insert');
         if ($this->getPkValue() == null && $this->getPkFieldCount() == 1) 
           $this->setPkValue($id);

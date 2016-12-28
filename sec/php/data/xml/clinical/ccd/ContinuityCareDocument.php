@@ -46,6 +46,9 @@ class ContinuityCareDocument extends ClinicalXml {
   public function getSection_Problems() {
     return $this->getSection('Ccd_Section_Problems');
   }
+  public function getSection_Vitals() {
+    return $this->getSection('Ccd_Section_Vitals_Sql');
+  }
   public function getSection_Alerts() {
     return $this->getSection('Ccd_Section_Alerts');
   }
@@ -56,14 +59,20 @@ class ContinuityCareDocument extends ClinicalXml {
     return $this->getSection('Ccd_Section_Immuns');
   }
   public function getSection_Procedures() {
-    return $this->getSection('Ccd_Section_Procedures');
+    return $sthis->getSection('Ccd_Section_Procedures');
   }
   public function getSection_Results() {
     return $this->getSection('Ccd_Section_Results');
   }
   protected function getSection($id) {
     $body = $this->first('component')->structuredBody;
-    return $body->getSection($id);
+    Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection: Body is a ' . gettype($body) . ', id is ' . gettype($id) . ' ' . $id);
+    Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection:: Body is THIS:');
+    Logger::debug(print_r($body, true));
+    $result = $body->getSection($id);
+    Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection:: Returning this: ');
+    Logger::debug(print_r($result, true));
+    return $result;
   }
 }
 class Ccd_TemplateId extends XmlRec {
@@ -76,7 +85,9 @@ class Ccd_Body extends XmlRec {
   public $component = 'Ccd_BodyComponent[]';
   //
   public function getSection($type) {
+  	Logger::debug('php/data/xml/clinical/ccd/CCD.php::getSection: type is a ' . gettype($type) . ' ' . $type);
     foreach ($this->component as $comp) {
+      Logger::debug('Looping through the components. Type is ' . $comp->getSectionType() . '. Comp: ' . print_r($comp, true));
       if ($comp->getSectionType() == $type)
         return $comp->section;
     }
@@ -111,8 +122,9 @@ class Ccd_Section extends XmlRec {
           return new Ccd_Section_Meds();
         case '2.16.840.1.113883.10.20.1.12':
           return new Ccd_Section_Procedures();
-        case '2.16.840.1.113883.10.20.1.16':
-          return new Ccd_Section_Vitals();
+        //case '2.16.840.1.113883.10.20.1.16': //12-22-16: Old? When we use the template code below it gets the vitals correctly - 1.16 doesn't find anything
+        case '2.16.840.1.113883.10.20.22.2.4':
+          return new Ccd_Section_Vitals_Sql();
         case '2.16.840.1.113883.10.20.4.9':
           return new Ccd_Section_MedHx();
         case '2.16.840.1.113883.10.20.1.15':
@@ -168,6 +180,73 @@ class Ccd_AlertEntry extends Ccd_Entry_Act {
     }
   }
   
+}
+//12-27-16 - added support for vitals here
+class Ccd_Section_Vitals_Sql extends Ccd_Section {
+	public $entry = 'Ccd_Vitals[]';
+	
+	public function getSqlDate() {
+		return $this->text->table->tbody->tr->td[0];
+		//$e = $this->substanceAdministration->first('effectiveTime');
+		//if ($e instanceof Ccd_TS || $e instanceof Ccd_IVL_TS)
+			//return $e->getSqlDate();
+	}
+	
+	public function getPulse() {
+		return $this->text->table->tbody->tr->td[1];
+	}
+	
+	public function getResp() {
+		return $this->text->table->tbody->tr->td[2];
+	}
+	
+	public function getBloodPressureLoc() {
+		$arr = preg_split( "/(\/| )/", $this->text->table->tbody->tr->td[3]);
+		Logger::debug('getBloodPressureLoc: Got array as ' . print_r($arr, true) . ', this is ' . $this->text->table->tbody->tr->td[3]);
+		return $arr[2];
+	}
+	
+	public function getBloodPressureDiastolic() {
+		$arr = preg_split( "/(\/| )/", $this->text->table->tbody->tr->td[3]);
+		return $arr[0];
+	}
+	
+	public function getBloodPressureSystolic() {
+		$arr = preg_split( "/(\/| )/", $this->text->table->tbody->tr->td[3]);
+		return $arr[1];
+	}
+	
+	public function getTemperature() {
+		return $this->text->table->tbody->tr->td[4];
+	}
+	
+	public function getWeight() {
+		return $this->text->table->tbody->tr->td[5];//->table->tbody->tr->td[6];
+	}
+	
+	public function getHeight() {
+		return $this->text->table->tbody->tr->td[6];
+	}
+	
+	public function getBMI() {
+		return $this->text->table->tbody->tr->td[7];
+	}
+}
+class Ccd_VitalsEntry extends Ccd_Entry_Act {
+	//
+	public function /*Ccd_PlayingEntity*/getEntity() {
+		return $this->act->getOb()->getEntity();
+	}
+	public function /*Ccd_Ob[]*/getReactionObs() {
+		return $this->act->getOb()->getObs('MFST');
+	}
+	public function getDate() {
+		$e = get($this->act, 'effectiveTime');
+		if ($e && $e instanceof Ccd_IVL_TS) {
+			return dateToString($e->low->_value);
+		}
+	}
+
 }
 class Ccd_Section_Meds extends Ccd_Section {
   public $entry = 'Ccd_MedEntry[]';
