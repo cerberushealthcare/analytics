@@ -26,6 +26,7 @@ class Client_Ci_Ccd extends Client_Ci {
     return parent::saveDemo();
   }
   public function import(/*ContinuityCareDocument*/$ccd) {
+    //Logger::debug('ClinicalImport_Ccd::import: Trace is ' . getStackTrace());
 	//Logger::debug('ClinicalImport_Ccd: Entered import.');
     $ugid = $this->userGroupId;
     $cid = $this->clientId;
@@ -65,10 +66,10 @@ class Client_Ci_Ccd extends Client_Ci {
 	}
 	
 	Logger::debug('ClinicalImport_Ccd::import: Imported the patient meds!');
-	
+	Logger::debug('ClinicalImport_Ccd::import: Importing vitals....');
 	//12/20/16 - NEW VITALS import
 	try {
-		Vitals_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSectionVitals());
+		Vitals_Ci_Ccd::saveAll($ugid, $cid, $ccd->getSection_Vitals());
 	}
 	catch (Exception $e) {
 		if ($_POST['IS_BATCH']) echo 'ERROR importing the patient vitals: ' . $e->getMessage() . ' - continuing with import....';
@@ -206,12 +207,12 @@ class Diagnosis_Ci_Ccd extends Diagnosis_Ci {
   }
 }
 
-class Vitals_Ci_Ccd extends Vital_Ci {
+class Vitals_Ci_Ccd extends Vital_Ci implements NoAudit {
 	//
 	static function all($ugid, $cid, /*Ccd_Section_Vitals_Sql*/$vitals) {
 		$recs = array();
-		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with ' . $ugid . ' | ' . $cid);
-		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with vitals as ' . print_r($vitals, true));
+		//Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with ' . $ugid . ' | ' . $cid);
+		//Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: Entered with vitals as ' . print_r($vitals, true));
 		if ($vitals) {// && $vitals->has()) {
 			Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::all: There are vitals!');
 			//foreach ($vitals as &$vitalsOccurance) {
@@ -223,7 +224,7 @@ class Vitals_Ci_Ccd extends Vital_Ci {
 		return $recs;
 	}
 	static function saveAll($ugid, $cid, /*Ccd_Section_Alerts*/$vitals) {
-		//Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::saveAll: Entered with vitals as ' . print_r(var_dump($vitals), true));
+		Logger::debug('ClinicalImport_Ccd Vitals_Ci_Ccd::saveAll: Entered with vitals as ' . print_r(var_dump($vitals), true));
 		$us = static::all($ugid, $cid, $vitals);
 		logit_r($us, 'us vitals');
 		foreach ($us as $me) {

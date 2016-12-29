@@ -296,9 +296,9 @@ class LoginSession extends Rec {
     $me->ip = $_SERVER['REMOTE_ADDR'];
     $me->uid = $uid;
     $me->ptpw = $ptpw;
-	Logger::debug('LoginSession::login: Got user. login disallowed? ' . $user->isLoginDisallowed());
-	Logger::debug('LoginSession: Our backtrace is this:');
-	Logger::debug(print_r(debug_backtrace(), true));
+	//Logger::debug('LoginSession::login: Got user. login disallowed? ' . $user->isLoginDisallowed());
+	//Logger::debug('LoginSession: Our backtrace is this:');
+	//Logger::debug(print_r(debug_backtrace(), true));
 	
 	if (!$isAutomatedLogin) $me->setUserFields($user); //We did this check because when we do an automated login, the database for some reason wants to update the user's information, and when it does it wants to update the user's admin status and subscription status to the user's password hash. No idea why, but it stops us from making progress and I've decided to disable it for now.
 	

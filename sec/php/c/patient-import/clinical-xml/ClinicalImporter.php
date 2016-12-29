@@ -167,9 +167,7 @@ class ClinicalImport_Ccd extends ClinicalImport {
   }
   //
   protected static function create($ugid, $filename, $xml) {
-  	Logger::debug('clinicalImporter::create: Entered with ' . $ugid . ' ' . $filename . ' and XML ' . gettype($xml) . ' (size ' . strlen($xml) . ')');
-    $ccd = ContinuityCareDocument::fromXml($xml);
-    Logger::debug('clinicalImporter::create: The CCD is ' . gettype($ccd));// . ' ' . $ccd);
+  	$ccd = ContinuityCareDocument::fromXml($xml);
     return parent::create($ugid, $filename, ClinicalXml::TYPE_CCD, $ccd);
   }
 }

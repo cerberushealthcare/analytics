@@ -219,7 +219,7 @@ abstract class SqlRec extends Rec {
    */
    
   public function authenticateAsCriteria() {
-	@Logger::debug('is batch is ' . $_POST['IS_BATCH']);
+	Logger::debug('authenticateAsCriteria: is batch is ' . $_POST['IS_BATCH'] . '. Set? ' . isset($_POST['IS_BATCH']));
     if (isset($this->_authenticated))
       return;
     if (! $this->authenticatePk(true)) {
@@ -389,7 +389,7 @@ abstract class SqlRec extends Rec {
         Dao::update($sql);
         break;
     }
-    if ($this->shouldAudit() && !$_POST['IS_BATCH']) {
+    if ($this->shouldAudit() && !isset($_POST['IS_BATCH'])) {
       //logit_r('should audit');
       switch ($mode) {
         case SaveModes::INSERT:
@@ -1093,6 +1093,7 @@ abstract class SqlRec extends Rec {
   static function fetchAllBy($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
 	  Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit);
 	  //static::fetchAllBy($c, null, $limit, null, 'T1.DATE_ DESC', $page);
+	  //Logger::debug('fetchAllBy: is batch is ' . $_POST['IS_BATCH']);
     $a = static::fetchAllAndFlatten($criteria, $order, $limit, $keyFid, $sortBy, $page, $groupBy);
 	//echo 'fetchAllBy: We are returning a ' . gettype($a[0]) . ' ' . print_r($a[0]);
 	//Logger::debug('fetchAllBy: We are returning a ' . gettype($a[0]));
@@ -1102,10 +1103,13 @@ abstract class SqlRec extends Rec {
    * @return array(SqlRec[], row[], limit) -- row array is raw output of SQL query (which flatten into SqlRec[])  
    */
   static function fetchAllAndFlatten($criteria, $order = null, $limit = 500, $keyFid = null, $sortBy = null, $page = null, $groupBy = null) {
-	Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit . ' and sort by ' . $sortBy . ' and group by ' . $groupBy);
-	Logger::debug('_SqlRec::fetchAllAndFlatten: Trace is ' . getStackTrace());
+	//Logger::debug('_SqlRec::fetchAllAndFlatten: Entered with limit ' . $limit . ' and sort by ' . $sortBy . ' and group by ' . $groupBy);
+	//Logger::debug('_SqlRec::fetchAllAndFlatten: Trace is ' . getStackTrace());
 	//Logger::debug('fetchAllAndFlatten: trace is ' . getStackTrace());
-    $criteria->authenticateAsCriteria();
+	global $login;
+	//Logger::debug('_SqlREc::fetchAllAndFlatten: Login is ' . gettype($login) . ', login ID is ' . $login->userGroupId . ', batch is ' . $_POST['IS_BATCH']);
+    
+	if (!is_null($login)) $criteria->authenticateAsCriteria(); //If login is null, that means this must be a batch job. Is there a better way to do this?.....
     $class = $criteria->getMyName();
     $ci = $criteria->getRecsFromCriteria();
     $infos = self::buildSqlSelectInfos($ci);

@@ -108,7 +108,9 @@
 		
 		echo 'The result is ' . gettype($result) . ' ' . sizeof($result) . '<br>';
 		
-		if (strlen($result) > 0) {
+		if (strlen($result) == 0) $testPassed = true;
+		
+		/*if (strlen($result) > 0) {
 			try {
 				setUploadTableStatus($rowEntry['UPLOAD_ID'], 'FAILED');
 				appendToErrorLogColumn($rowEntry['UPLOAD_ID'], 'ccd_file_upload test: Error during import: ' . $e->getMessage());
@@ -125,7 +127,7 @@
 				blog('Something went wrong with updating the status column: ' . $e->getMessage());
 			}
 			$testPassed = true;
-		}
+		}*/
 		
 		
 		
@@ -158,10 +160,10 @@
 	}
 	catch (Exception $e) {
 		echo 'Test error: ' . $e->getMessage();
-		appendToErrorLogColumn($testUploadId, $e->getMessage());
+		//appendToErrorLogColumn($testUploadId, $e->getMessage());
 	}
 		
-	function setUploadTableStatus($rowID, $str) {
+	/*function setUploadTableStatus($rowID, $str) {
 		$sql = "update UPLOAD set STATUS = '" . $str . "' where UPLOAD_ID = " . $rowID;
 		$res = Dao::query($sql);
 		
@@ -201,7 +203,7 @@
 		catch (Exception $e) {
 			echo 'ERROR: Could not update the UPLOADS table error column: ' . $e->getMessage();
 		}
-    }
+    }*/
 	
 	
 	

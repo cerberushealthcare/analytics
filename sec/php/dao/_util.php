@@ -580,7 +580,7 @@ function decr($value, $decrypt = true) {
   return ($decrypt) ? MyCrypt_Auto::decrypt($value) : $value; 
 }
 function quote($field, $escape = false) {
-   Logger::debug('dao _util.php::quote: Got field ' . gettype($field) . ' ' . $field);
+   //Logger::debug('dao _util.php::quote: Got field ' . gettype($field) . ' ' . $field);
   //$field = str_replace(array("\r", "\n"), " ", $field);
   
   /*In oracle, escaping strings is done like "O''Connor", whereas in SQL it's "O\'Connor"
@@ -602,7 +602,7 @@ function quote($field, $escape = false) {
 	  $value = $field;
   }
   
-  Logger::debug(' _util.php::quote: Returning ' . ((isNull($field)) ?  "null" : "'" . $value . "'"));
+  //Logger::debug(' _util.php::quote: Returning ' . ((isNull($field)) ?  "null" : "'" . $value . "'"));
   
   //$value = ($escape) ? addslashes($field) : $field; //Old SQL-only code
   return (isNull($field)) ?  "null" : "'" . $value . "'";

@@ -20,16 +20,17 @@ class LoginDao {
     debug_print_backtrace();
     $trace = ob_get_contents();
     ob_end_clean();
-    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId).");
+    throw new SecurityException("Access not allowed: $code($id) uid($login->userId) ugid($login->userGroupId)");
   }
   // Group authentications
   // If authenticated, user can make updates to group entities
   public static function authenticateUserGroupId($userGroupId) {
+  	//Logger::debug('LoginDao::authenticateUserGroupId: batch is ' . $_POST['IS_BATCH'] . ', trace is ' . getStackTrace());
     global $login;
-	ob_start();
+	/*ob_start();
     debug_print_backtrace();
     $trace = ob_get_contents();
-    ob_end_clean();
+    ob_end_clean();*/
 	Logger::debug('LoginDao::authenticateUserGroupId: user group ID is ' . $userGroupId . ', login UGID is ' . $login->userGroupId);
     if ($userGroupId == null)
       LoginDao::throwSecurityError('ugi', $userGroupId);

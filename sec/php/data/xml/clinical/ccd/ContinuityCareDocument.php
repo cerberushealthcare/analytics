@@ -68,10 +68,11 @@ class ContinuityCareDocument extends ClinicalXml {
     $body = $this->first('component')->structuredBody;
     Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection: Body is a ' . gettype($body) . ', id is ' . gettype($id) . ' ' . $id);
     Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection:: Body is THIS:');
-    Logger::debug(print_r($body, true));
+    //Logger::debug(print_r($body, true));
     $result = $body->getSection($id);
-    Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection:: Returning this: ');
-    Logger::debug(print_r($result, true));
+    //Logger::debug('php/data/xml/clinical/ccd/ContinutyCareDocument::getSection:: Returning this: ');
+    //Logger::debug(print_r($result, true));
+    Logger::debug('------------No section for ' . $id . ' Found in the CCD--------');
     return $result;
   }
 }

@@ -185,14 +185,14 @@ class Vital_Ci extends Vital { //used to be VitalSQL {
 	public $wcUnits;*/
   //
   static function create($ugid, $cid, $date, $pulse, $resp, $bpDia, $bpSys, $bpLoc, $temperature, $wt, $height, $bmi) {
-  	Logger::debug('ClinicalImport_Sql::create: Got params ugid ' . $ugid . ' | cid ' . $cid . ' | date ' . $date . ' | pulse ' . $pulse . ' | resp ' . $resp . ' | bp Dia ' .  $bpDia . ' | bp Sys ' . $bpSys . ' | bp Loc ' .  $bpLoc . ' | temp ' .  $temp . ' | weight ' .  $wt . ' | height ' .  $height . ' | bmi ' .  $bmi);
+  	Logger::debug('ClinicalImport_Sql::create: Got params ugid ' . $ugid . ' | cid ' . $cid . ' | date ' . $date . ' | pulse ' . $pulse . ' | resp ' . $resp . ' | bp Dia ' .  $bpDia . ' | bp Sys ' . $bpSys . ' | bp Loc ' .  $bpLoc . ' | temp ' .  $temperature . ' | weight ' .  $wt . ' | height ' .  $height . ' | bmi ' .  $bmi);
     $me = new static();
     $me->userGroupId = $ugid;
     $me->clientId = $cid;
     $me->pulse = $pulse;
     $me->resp = $resp;
-    $me->bpDia = $bpDia;
-    $me->bpSys = $bpSys;
+    $me->bpDiastolic = $bpDia;
+    $me->bpSystolic = $bpSys;
     $me->bpLoc = $bpLoc;
     $me->temp = $temperature;
     $me->wt = $wt;
