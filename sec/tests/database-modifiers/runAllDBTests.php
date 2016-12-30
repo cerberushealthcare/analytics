@@ -10,8 +10,6 @@
 		<script type="text/javascript">
 			var files = [		'LoginSession_login.php',
 								'ClinicalImport_getsAlerts.php',
-								'unit/ClinicalImport_getSectionVitals_returnsCorrectObject.php',
-								'unit/ClinicalImport_getSectionAlerts_returnsCorrectObject.php',
 								'patientList_search_returnsCorrectAmountOfRows.php',
 								'unit/_SqlRec_ReservedOracleWords_ConvertsWord.php',
 								'unit/util_quote_properlyEscapesStrings.php',

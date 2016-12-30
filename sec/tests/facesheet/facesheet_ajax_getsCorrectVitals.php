@@ -11,20 +11,16 @@
 	//To make this test pass, make sure that the client ID you specify for getMedClientHistory has at least one medication.
 	try {
 		LoginSession::verify_forServer()->requires($login->Role->Patient->facesheet);
-		$facesheet = FacesheetDao::testFacesheet(1521, 5);
+		$facesheet = FacesheetDao::testFacesheet(16665, 5);
 	}
 	catch (Exception $e) {
-		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';
+		echo 'Got ERROR: <pre>' . $e->getMessage() . ' (try logging in?)</pre>';
 	}
 	
 	echo 'facesheet is a ' . gettype($facesheet);
 	echo 'Contents: <pre>' . print_r($facesheet, true) . '</pre>';
 	
-	
-	
-	//echo 'First med is ' . $facesheet->activeMeds[0]->name;
-	
-	if (gettype($facesheet) == 'object' && strlen($facesheet->activeMeds[0]->vitals->bp) > 0) {
+	if (gettype($facesheet) == 'object' && property_exists($facesheet, 'vitals')) {
 		$testPassed = true;
 	}
 	

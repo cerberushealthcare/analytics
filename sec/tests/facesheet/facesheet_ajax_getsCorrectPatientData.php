@@ -16,7 +16,7 @@
 	//getsCorrectPatientDataSections is a more fine-grained test that tests each individual section by itself to make sure they load.
 	try {
 		LoginSession::verify_forServer()->requires($login->Role->Patient->facesheet);
-		$facesheet = FacesheetDao::getFacesheet(1521); //ShXXX XXXLE
+		$facesheet = FacesheetDao::getFacesheet(16665); //ShXXX XXXLE
 	}
 	catch (Exception $e) {
 		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';

@@ -39,7 +39,7 @@
 		var_dump($vitals);
 		echo '</span></pre>';
 		
-		if (get_class($vitals) !== 'Ccd_Section_Vitals') {
+		if (get_class($vitals) !== 'Ccd_Section_Vitals_Sql') {
 			throw new RuntimeException('Invalid vitals section! Got "' . get_class($vitals) . '" ' . print_r($vitals, true));
 		}
 		$testPassed = true;

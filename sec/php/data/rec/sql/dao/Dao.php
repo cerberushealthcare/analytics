@@ -19,7 +19,7 @@ class Dao {
   protected $globalConnection;
   
   static function query($sql, $db = null, $table = null) {
-    //Logger::debug('| We entered Dao::query with the query ' . $sql . '|');
+    if ($table == 'proc_results') Logger::debug('| We entered Dao::query with the query ' . $sql . '|  trace is ' . getStackTrace());
     
 	//Logger::debug('Dao::query: Database has been opened. Running query ' . $sql);
 	//Logger::debug('Dao::query: Users table detected Backtrace is ' . print_r(debug_backtrace(), true));
@@ -195,7 +195,7 @@ class Dao {
 		
 		$stmt = static::query($sql, null, $table); //We want to return the inserted row ID after this gets returned.
 		Logger::debug('Dao::query: Oracle stmt is ' . gettype($stmt));
-		$insertId = null;
+		$insertId = -1; //We need to accept the fact that $insertId may be null - there are insert commands that purposefully insert null into an ID column for some reason.
 		oci_bind_by_name($stmt, ':returnVal', $insertId, 8, OCI_B_INT);
 		
 		try {
@@ -205,9 +205,9 @@ class Dao {
 				throw new RuntimeException('Could not insert a row. Query is ' . $sql . '. Error is ' . $err['message']);
 			}
 			
-			if ($insertId < 1) {
+			if ($insertId == -1) {
 				$err = oci_error($stmt);
-				throw new RuntimeException('Could not insert a row - INSERTID lower than 1. Query is ' . $sql . '. Error is ' . $err['message']);
+				throw new RuntimeException('Could not insert a row - INSERTID lower than 1 [' . gettype($insertId) . ' ' . $insertId.  ']. Query is ' . $sql . '. OCI Error is ' . $err['message']);
 			}
 		}
 		catch (Exception $e) {
@@ -218,7 +218,7 @@ class Dao {
 		//$rows = oci_fetch_all($stmt, $arr);
 		
 		//$id = $arr[0]['insert_id'];
-		Logger::debug('Dao::query: Returning ' . gettype($insertId) . ' ' . $insertId);
+		Logger::debug('Dao::query: Returning insert ID as ' . gettype($insertId) . ' ' . $insertId);
 		return $insertId;
 		//echo 'Dao::insert: stmt is a ' . gettype($stmt) . '<br>';
 		

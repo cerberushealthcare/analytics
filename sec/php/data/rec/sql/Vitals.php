@@ -15,7 +15,12 @@ class Vitals {
    * @param int $cid
    */
   static function rebuild($cid) {
-    Vital::buildFacesFromOldFaces($cid);
+  	//try {
+    	Vital::buildFacesFromOldFaces($cid);
+  	/*}
+  	catch (Exception $e) {
+  		Logger::debug('ERROR in Vitals::rebuild: ' . $e->getMessage() . ' - continuing...');
+  	}*/
     Vital::buildFacesFromSessions($cid);
   }
   /**
@@ -24,7 +29,13 @@ class Vitals {
    * @return array(FaceVital,..)
    */
   static function getActive($cid, $lastOnly = false) {
-    self::rebuild($cid);
+  
+	try {
+		self::rebuild($cid);
+	}
+	catch (Exception $e) {
+		Logger::debug('ERROR in data/rec/sql/Vitals.php: Could not rebuild facesheet: ' . $e->getMessage() . ' - continuing...');
+	}
     $recs = FaceVital::fetchAllActive($cid);
     $recs = Rec::sort($recs, new RecSort('-date'));
     if ($recs) {
@@ -64,6 +75,17 @@ class Vitals {
     }
   }
 }
+
+/*class VitalSQL extends FsDataRec {
+	public $oldVital;
+	//We need to define $SQL_TABLE here.
+	
+	public function __construct() {
+		$this->oldVital = new Vital;
+	}
+	
+	
+}*/
 //
 /**
  * Vital
@@ -98,7 +120,7 @@ class Vital extends FsDataRec implements AutoEncrypt {
   public $wtLbs;
   public $htIn;
   public $updatedBy;
-  //
+  
   static $PROPS_TO_QUID = array(
     'pulse'        => 'vitals.pulse',
     'resp'         => 'vitals.rr', 

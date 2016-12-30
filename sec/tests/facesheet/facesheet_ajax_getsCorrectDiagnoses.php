@@ -11,7 +11,7 @@
 	//To make this test pass, make sure that the client ID you specify for getMedClientHistory has at least one medication.
 	try {
 		LoginSession::verify_forServer()->requires($login->Role->Patient->facesheet);
-		$facesheet = FacesheetDao::testFacesheet(1521, 3);
+		$facesheet = FacesheetDao::testFacesheet(16665, 3);
 	}
 	catch (Exception $e) {
 		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';
