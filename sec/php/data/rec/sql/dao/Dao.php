@@ -294,7 +294,18 @@ class Dao {
 		}*/
 		
 		//oci_bind_by_name($res, ':returnVal', $returnValue, 8, OCI_B_INT);
-		oci_execute($res);
+		try {
+			$result = oci_execute($res);
+			
+			if (!$result) {
+				$err = oci_error($res);
+				throw new RuntimeException($err['message'] . '. Query is ' . $sql);
+			}
+		}
+		catch(Exception $e) {
+			Logger::debug('ERROR in Dao::fetchRows: ' . $e->getMessage());
+			return null;
+		}
 		$rows = array();
 		//logit_r('looping thru orc rows');
 		while (($row = oci_fetch_array($res, OCI_ASSOC + OCI_RETURN_NULLS)) != false) {
@@ -325,7 +336,18 @@ class Dao {
 	//echo 'fetchValue with col ' . $col;
     $res = static::query($sql); //Should return whatever oci_parse returns.
 	if (MyEnv::$IS_ORACLE) {
-	    oci_execute($res);
+	    try {
+			$result = oci_execute($res);
+			
+			if (!$result) {
+				$err = oci_error($res);
+				throw new RuntimeException($err['message'] . '. Query is ' . $sql);
+			}
+		}
+		catch(Exception $e) {
+			Logger::debug('ERROR in Dao::fetchValue: ' . $e->getMessage());
+			return null;
+		}
 		$row = oci_fetch_array($res, OCI_BOTH);
 		//print_r($row);
 		//Logger::debug('Dao::fetchValue: Got row ' . print_r($row, true) . '. Col is ' . $col);

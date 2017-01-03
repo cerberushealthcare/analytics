@@ -76,7 +76,19 @@ class LoginSession extends Rec {
 			$stid = oci_parse($conn, 'select FN_AUTHENTICATE_USER1(:userid, :pw) as "result" from dual');
 			oci_bind_by_name($stid, ":userid", $uid);
 			oci_bind_by_name($stid, ":pw", $pw);
-			oci_execute($stid);
+			
+			 try {
+				$result = oci_execute($stid);
+				
+				if (!$result) {
+					$err = oci_error($stid);
+					throw new RuntimeException($err['message'] . '. Query is ' . $sql);
+				}
+			}
+			catch(Exception $e) {
+				Logger::debug('ERROR in LoginSession::checkOracleLogin: ' . $e->getMessage());
+				return null;
+			}
 
 			$array = oci_fetch_assoc($stid);
 			oci_free_statement($stid);
