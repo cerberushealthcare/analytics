@@ -229,6 +229,7 @@ class Vitals_Ci_Ccd extends Vital_Ci implements NoAudit {
 		logit_r($us, 'us vitals');
 		foreach ($us as $me) {
 			Logger::debug('Vitals_Ci_Ccd: gonna save....');
+			$me->active = 1;
 			$me->save();
 			//parent::save();
 		}

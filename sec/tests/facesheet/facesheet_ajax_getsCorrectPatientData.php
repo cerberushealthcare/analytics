@@ -1,5 +1,5 @@
 <?php
-	set_include_path('../');
+	set_include_path('../../');
 
 	require_once 'php/dao/_util.php';
 	require_once 'php/data/rec/sql/_SqlRec.php';

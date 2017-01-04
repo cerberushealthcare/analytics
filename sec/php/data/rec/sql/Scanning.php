@@ -799,7 +799,7 @@ class ScanIndex_Xml extends ScanIndex {
     $me->reviewed = $reviewed ?: 0;
     $me->withImage = 0;
 	
-	if ($_POST['IS_BATCH']) {
+	if (MyEnv::$IS_ORACLE) {
 		$me->ScanFiles = array(ScanFile_Xml::fromFormattedDate($filename));
 	}
     else {

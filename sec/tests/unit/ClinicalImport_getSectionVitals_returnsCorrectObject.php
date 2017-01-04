@@ -1,5 +1,5 @@
 <?php
-	
+	//NOTE: This test will pass will pass when getSection_Vitals() returns an object, but it will also pass if >getSection_Vitals() returns NULL - if it returns null it means the CCD being tested does not have a vitals section. To truly make sure this test works, make sure the CCD you are testing has a vitals section.
 	set_include_path('../../');
 	ob_start('ob_gzhandler');
 	require_once 'server.php';
@@ -14,12 +14,12 @@
 	$testPassed = false;
 	$file = new ClinicalFile;
 	$ugid = 2645;
-	$cid = 16665; //The client ID who will have the vitals inserted for. In our case Sharon C
+	$cid = 13575; //The client ID who will have the vitals inserted for. In our case Sharon C
 	//$_POST['IS_BATCH'] = 1; //We need to do this so that _SqlRec does not check $_GET for a user group ID.
 		
 	//$file->setContent(file_get_contents($rest->data['filepath'] . '/' . $rest->data['filename']));
-	$file->setContent(file_get_contents('C:\www\clicktate\cert\sec\analytics\2645_65119_CABLE_SHARON_20161113142950.xml'));
-	$file->setFilename('2645_65119_CABLE_SHARON_20161113142950.xml');
+	$file->setContent(file_get_contents('C:\www\clicktate\cert\sec\analytics\uploads2645_130084_SNYDER_RUTH_20161113160014.xml'));
+	$file->setFilename('uploads2645_130084_SNYDER_RUTH_20161113160014.xml');
 	
 	try {
 		//$result = ClinicalImporter::importFromFile($file);
@@ -39,8 +39,13 @@
 		var_dump($vitals);
 		echo '</span></pre>';
 		
-		if (get_class($vitals) !== 'Ccd_Section_Vitals_Sql') {
-			throw new RuntimeException('Invalid vitals section! Got "' . get_class($vitals) . '" ' . print_r($vitals, true));
+		if (is_null($vitals)) {
+			echo 'CCD does not have a vitals section.';
+		}
+		else {
+			if (get_class($vitals) !== 'Ccd_Section_Vitals_Sql') {
+				throw new RuntimeException('Invalid vitals section! Got "' . get_class($vitals) . '" ' . print_r($vitals, true));
+			}
 		}
 		$testPassed = true;
 		

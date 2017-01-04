@@ -14,7 +14,7 @@
 		$facesheet = FacesheetDao::testFacesheet(16665, 1);
 	}
 	catch (Exception $e) {
-		echo 'Got ERROR: <pre>' . $e->getMessage() . '</pre>';
+		echo 'Got ERROR: <pre>' . $e->getMessage() . ' (Try logging in?)</pre>';
 	}
 	
 	echo 'facesheet is a ' . gettype($facesheet);

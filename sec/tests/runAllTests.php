@@ -34,7 +34,7 @@
 								'facesheet/facesheet_ajax_getsCorrectAllergies.php',
 								'facesheet/facesheet_ajax_getsCorrectDocHistory.php',
 								'facesheet/facesheet_ajax_getsCorrectTrackingInfo.php',
-								'facesheet_ajax_getsCorrectPatientData.php' //This is thie big one - the one that makes sure face.php gets the data it needs.
+								'facesheet/facesheet_ajax_getsCorrectPatientData.php' //This is thie big one - the one that makes sure face.php gets the data it needs.
 								/*'../tester.php?t=1',
 								'../tester.php?t=2',
 								'../tester.php?t=3',
